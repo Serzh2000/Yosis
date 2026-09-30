@@ -1,0 +1,177 @@
+% =============================================================================
+% Преамбула учебника «ПЛИС на практике: Sipeed Tang Nano 20K»
+% Компиляция: xelatex main.tex (дважды, для оглавления и ссылок)
+% =============================================================================
+
+% --- Языки и шрифты (XeLaTeX) ---
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{russian}
+\setotherlanguage{english}
+
+% На Windows используются Times New Roman / Arial / Consolas,
+% на Linux -- метрически совместимые Liberation и DejaVu Sans Mono.
+\IfFontExistsTF{Times New Roman}
+  {\def\MainFontName{Times New Roman}}{\def\MainFontName{Liberation Serif}}
+\IfFontExistsTF{Arial}
+  {\def\SansFontName{Arial}}{\def\SansFontName{Liberation Sans}}
+\IfFontExistsTF{Consolas}
+  {\def\MonoFontName{Consolas}}{\def\MonoFontName{DejaVu Sans Mono}}
+\setmainfont{\MainFontName}[Ligatures=TeX]
+\setsansfont{\SansFontName}[Ligatures=TeX]
+\setmonofont{\MonoFontName}[Scale=MatchLowercase]
+% polyglossia требует явно указать шрифты для кириллицы
+\newfontfamily\cyrillicfont{\MainFontName}[Ligatures=TeX]
+\newfontfamily\cyrillicfontsf{\SansFontName}[Ligatures=TeX]
+\newfontfamily\cyrillicfonttt{\MonoFontName}[Scale=MatchLowercase]
+
+\usepackage{microtype}
+\emergencystretch=3em
+
+% --- Абзацы ---
+\usepackage{indentfirst}
+\usepackage{setspace}
+\setstretch{1.2}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{3pt plus 1pt}
+
+% --- Математика ---
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% --- Поля ---
+\usepackage{geometry}
+\geometry{a4paper, top=22mm, bottom=22mm, left=25mm, right=20mm,
+          headheight=15mm, footskip=12mm}
+
+% --- Цвета ---
+\usepackage[table]{xcolor}
+\definecolor{FpgaBlue}{RGB}{0, 91, 187}
+\definecolor{FpgaDark}{RGB}{22, 43, 58}
+\definecolor{FpgaOrange}{RGB}{255, 140, 0}
+\definecolor{FpgaGreen}{RGB}{0, 140, 70}
+\definecolor{FpgaRed}{RGB}{200, 30, 45}
+\definecolor{FpgaPurple}{RGB}{120, 40, 160}
+\definecolor{FpgaLight}{RGB}{242, 246, 252}
+\definecolor{FpgaGray}{RGB}{120, 120, 125}
+\definecolor{BoardGreen}{RGB}{20, 90, 60}
+\definecolor{ChipBlack}{RGB}{35, 35, 40}
+\definecolor{CodeBack}{RGB}{248, 249, 251}
+\definecolor{CodeComment}{RGB}{0, 128, 0}
+\definecolor{CodeKeyword}{RGB}{0, 60, 170}
+\definecolor{CodeString}{RGB}{170, 60, 0}
+
+% --- Графика ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, calc, positioning, shapes.geometric, shapes.misc,
+  shapes.gates.logic.US, shapes.gates.logic.IEC,
+  fit, backgrounds, decorations.pathreplacing, patterns, shadows, matrix}
+\usepackage{tikz-timing}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{groupplots}
+\usepackage[siunitx, RPvoltages]{circuitikz}
+
+% --- Заголовки, колонтитулы ---
+\usepackage[automark, headsepline]{scrlayer-scrpage}
+\clearpairofpagestyles
+\ihead{\headmark}
+\ohead{\textbf{\textcolor{FpgaBlue}{TANG NANO 20K}}}
+\cfoot{\pagemark}
+\setkomafont{pageheadfoot}{\sffamily\small\color{FpgaDark}}
+\setkomafont{pagenumber}{\sffamily\bfseries\color{FpgaBlue}}
+\setkomafont{chapter}{\sffamily\huge\bfseries\color{FpgaBlue}}
+\setkomafont{section}{\sffamily\Large\bfseries\color{FpgaBlue}}
+\setkomafont{subsection}{\sffamily\large\bfseries\color{FpgaDark}}
+\setkomafont{subsubsection}{\sffamily\normalsize\bfseries\color{FpgaOrange}}
+\setkomafont{paragraph}{\sffamily\bfseries\color{FpgaDark}}
+\setkomafont{part}{\sffamily\Huge\bfseries\color{FpgaBlue}}
+\renewcommand*{\chapterformat}{%
+  \colorbox{FpgaBlue}{\color{white}\,\thechapter\,}\enskip}
+
+% --- Списки и таблицы ---
+\usepackage{enumitem}
+\setlist{itemsep=1pt, parsep=0pt, topsep=3pt}
+\setlist[itemize]{label=\textcolor{FpgaBlue}{\textbullet}, leftmargin=*}
+\setlist[enumerate]{label=\textcolor{FpgaBlue}{\bfseries\arabic*.}, leftmargin=*}
+\setlist[description]{font=\bfseries\color{FpgaDark}}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{caption}
+\captionsetup{font=small, labelfont={bf,color=FpgaBlue}}
+\usepackage{subcaption}
+
+% --- Листинги кода (minted: нужен Pygments и ключ -shell-escape) ---
+\usepackage[outputdir=../build]{minted}
+\usemintedstyle{friendly}
+\setminted{fontsize=\small, breaklines=true, tabsize=4, baselinestretch=1.0}
+
+% --- Цветные блоки ---
+\usepackage[most]{tcolorbox}
+\tcbuselibrary{minted}
+\tcbset{codestyle/.style={enhanced, breakable, listing only, listing engine=minted,
+  colback=CodeBack, colframe=FpgaBlue, boxrule=0pt, leftrule=2.2pt, arc=0pt,
+  left=6pt, right=4pt, top=2pt, bottom=2pt, before skip=6pt, after skip=8pt,
+  fonttitle=\ttfamily\small\bfseries, coltitle=FpgaDark, colbacktitle=FpgaLight,
+  attach boxed title to top left={yshift=-1pt}, boxed title style={boxrule=0pt, arc=0pt}}}
+% Фрагмент кода: \begin{vcode} ... \end{vcode}, язык по умолчанию Verilog
+\newtcblisting{vcode}[1][verilog]{codestyle, minted language=#1,
+  minted options={fontsize=\small, breaklines=true, tabsize=4}}
+% Файл целиком с номерами строк: \vfile{путь}{подпись}
+\newtcbinputlisting{\vfile}[2]{codestyle, minted language=verilog,
+  minted options={fontsize=\small, breaklines=true, tabsize=4, linenos, numbersep=5pt},
+  listing file={#1}, title={#2}, left=20pt}
+\newtcolorbox{infobox}[1][Справка]{
+  enhanced, breakable, colback=FpgaLight, colframe=FpgaBlue,
+  fonttitle=\sffamily\bfseries, title={#1}, arc=2mm, boxrule=0.8pt}
+\newtcolorbox{warnbox}[1][Внимание!]{
+  enhanced, breakable, colback=orange!6, colframe=FpgaOrange,
+  fonttitle=\sffamily\bfseries, title={#1}, arc=2mm, boxrule=0.8pt}
+\newtcolorbox{taskbox}[1][Задание]{
+  enhanced, breakable, colback=green!4, colframe=FpgaGreen,
+  fonttitle=\sffamily\bfseries, title={#1}, arc=2mm, boxrule=0.8pt}
+\newtcolorbox{ideabox}[1][Главная мысль]{
+  enhanced, breakable, colback=purple!4, colframe=FpgaPurple,
+  fonttitle=\sffamily\bfseries, title={#1}, arc=2mm, boxrule=0.8pt}
+
+% --- Прочее ---
+\usepackage{siunitx}
+\sisetup{output-decimal-marker={,}, group-separator={\,}, locale=FR}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=FpgaBlue, urlcolor=FpgaBlue,
+  citecolor=FpgaBlue, pdftitle={ПЛИС на практике: Sipeed Tang Nano 20K},
+  pdfauthor={Корягин С.А.}}
+
+% Удобные команды
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\term}[1]{\textbf{\textcolor{FpgaDark}{#1}}}
+\newcommand{\codepath}{../code}
+
+% Общие стили TikZ
+\tikzset{
+  block/.style={draw=FpgaBlue, fill=FpgaLight, thick, rounded corners=2pt,
+                minimum height=9mm, minimum width=22mm, align=center,
+                font=\sffamily\small},
+  hblock/.style={block, fill=FpgaBlue, text=white},
+  oblock/.style={block, draw=FpgaOrange, fill=orange!10},
+  gblock/.style={block, draw=FpgaGreen, fill=green!8},
+  arr/.style={-{Stealth[length=2.5mm]}, thick, color=FpgaDark},
+  wire/.style={thick, color=FpgaDark},
+  bus/.style={line width=2pt, color=FpgaBlue},
+  lbl/.style={font=\sffamily\scriptsize, color=FpgaDark},
+}
+\tikzset{
+  gbase/.style={draw=FpgaDark, thick, fill=FpgaLight, logic gate inputs=nn,
+                minimum width=12mm, minimum height=9mm, inner sep=0pt},
+  gAND/.style={and gate US, gbase},
+  gOR/.style={or gate US, gbase},
+  gXOR/.style={xor gate US, gbase},
+  gNAND/.style={nand gate US, gbase},
+  gNOR/.style={nor gate US, gbase},
+  gNOT/.style={not gate US, draw=FpgaDark, thick, fill=FpgaLight,
+               minimum width=9mm, minimum height=6mm, inner sep=0pt},
+}

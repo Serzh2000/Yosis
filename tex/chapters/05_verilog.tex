@@ -1,0 +1,382 @@
+\chapter{Основы языка Verilog}
+
+\section{Код описывает схему, а не последовательность действий}
+
+Главное, что нужно понять перед изучением Verilog: \textbf{это не язык
+программирования в привычном смысле}. Строчки кода на Verilog не выполняются
+одна за другой. Каждая строчка описывает кусок схемы, и все куски
+работают \emph{одновременно}, как элементы на макетной плате.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[draw=FpgaBlue, fill=CodeBack, thick, rounded corners, align=left, font=\ttfamily\small, inner sep=3mm] (code) at (0,0) {
+  \textcolor{CodeKeyword}{\textbf{assign}} x = a \& b;\\
+  \textcolor{CodeKeyword}{\textbf{assign}} y = c | d;\\
+  \textcolor{CodeKeyword}{\textbf{assign}} z = x \^{} y;};
+  \node[lbl, above=1mm of code] {код на Verilog};
+  \begin{scope}[xshift=5.3cm, yshift=-0.2cm]
+    \node[gAND] (g1) at (0,0.8) {};
+    \node[gOR] (g2) at (0,-0.8) {};
+    \node[gXOR] (g3) at (2.2,0) {};
+    \draw[wire] (g1.input 1) -- ++(-0.6,0) node[left] {$a$};
+    \draw[wire] (g1.input 2) -- ++(-0.6,0) node[left] {$b$};
+    \draw[wire] (g2.input 1) -- ++(-0.6,0) node[left] {$c$};
+    \draw[wire] (g2.input 2) -- ++(-0.6,0) node[left] {$d$};
+    \draw[wire] (g1.output) -- node[above, lbl] {x} ++(0.4,0) |- (g3.input 1);
+    \draw[wire] (g2.output) -- node[below, lbl] {y} ++(0.4,0) |- (g3.input 2);
+    \draw[wire] (g3.output) -- ++(0.6,0) node[right] {$z$};
+    \node[lbl] at (1.1,1.8) {схема, которую он описывает};
+  \end{scope}
+  \draw[arr, FpgaOrange] (code.east) -- (4.0,0);
+\end{tikzpicture}
+\caption{Три строчки кода --- три логических элемента, работающих одновременно}
+\label{fig:code_to_schem}
+\end{figure}
+
+Если поменять строчки местами, схема не изменится: провод \code{x} всё равно
+соединит выход элемента И со входом «Исключающего ИЛИ».
+
+\section{Модуль}
+
+Любая схема на Verilog оформляется как \term{модуль} (\code{module}). Модуль
+похож на микросхему: у него есть имя, входы, выходы и «начинка».
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.52\textwidth}
+\begin{vcode}
+module half_adder (   // имя модуля
+    input  wire a,    // входы
+    input  wire b,
+    output wire s,    // выходы
+    output wire c
+);
+    assign s = a ^ b; // сумма
+    assign c = a & b; // перенос
+endmodule
+\end{vcode}
+\end{minipage}\hfill
+\begin{minipage}{0.44\textwidth}
+\centering
+\begin{tikzpicture}
+  \node[draw=FpgaBlue, fill=FpgaLight, very thick, minimum width=26mm, minimum height=24mm, font=\sffamily\small, align=center] (m) {half\_adder};
+  \draw[wire] ([yshift=5mm]m.west) -- ++(-0.9,0) node[left] {a};
+  \draw[wire] ([yshift=-5mm]m.west) -- ++(-0.9,0) node[left] {b};
+  \draw[wire] ([yshift=5mm]m.east) -- ++(0.9,0) node[right] {s};
+  \draw[wire] ([yshift=-5mm]m.east) -- ++(0.9,0) node[right] {c};
+  \node[lbl, below=1mm of m] {модуль = «микросхема»};
+\end{tikzpicture}
+\end{minipage}
+\caption{Модуль полусумматора и его «корпус»}
+\end{figure}
+
+Разберём ключевые слова:
+\begin{itemize}
+  \item \code{module имя ( ... ); ... endmodule} --- начало и конец описания;
+  \item \code{input}, \code{output}, \code{inout} --- направление порта;
+  \item \code{wire} --- провод (соединение);
+  \item \code{assign} --- «подключить к проводу слева выход схемы справа».
+\end{itemize}
+
+\section{Сигналы: wire и reg}
+
+\begin{description}
+  \item[wire] --- провод. Не хранит значение, а лишь передаёт то, что на него
+    подаёт какая-то схема. Присваивается через \code{assign}.
+  \item[reg] --- переменная, которой присваивают значение внутри блока
+    \code{always}. Несмотря на название, \code{reg} становится триггером
+    \emph{не всегда}: это зависит от того, в каком \code{always} он описан (см.
+    раздел~\ref{sec:always}).
+\end{description}
+
+\subsection{Шины (многоразрядные сигналы)}
+
+Несколько проводов можно объединить в \term{шину}:
+\begin{vcode}
+wire [7:0] data;      // 8 проводов: data[7], data[6], ..., data[0]
+reg  [5:0] counter;   // 6-разрядный регистр
+wire       bit3 = data[3];      // один провод из шины
+wire [3:0] low  = data[3:0];    // младшие 4 провода
+\end{vcode}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \foreach \i in {0,...,7} {
+    \pgfmathtruncatemacro{\n}{7-\i}
+    \node[draw=FpgaBlue, fill=\ifnum\n<4 orange!20\else FpgaLight\fi, minimum width=9mm, minimum height=8mm, font=\ttfamily\small] (b\i) at (\i*0.9,0) {\n};
+  }
+  \node[left=2mm of b0, font=\ttfamily\small] {data =};
+  \draw[decorate, decoration={brace, amplitude=5pt, mirror}, thick] (b4.south west) -- (b7.south east) node[midway, below=6pt, lbl] {data[3:0]};
+  \node[above=1mm of b0, lbl] {старший (MSB)};
+  \node[above=1mm of b7, lbl] {младший (LSB)};
+\end{tikzpicture}
+\caption{Шина \code{[7:0]}: нумерация разрядов справа налево}
+\end{figure}
+
+\subsection{Запись чисел}
+
+Числа в Verilog записываются в формате \code{<разрядность>'<система><значение>}:
+
+\begin{table}[H]
+\centering
+\caption{Запись чисел}
+\begin{tabular}{l l l}
+\toprule
+\textbf{Запись} & \textbf{Значение} & \textbf{Пояснение} \\
+\midrule
+\code{4'b1010}        & 10  & 4 бита, двоичная система \\
+\code{8'hFF}          & 255 & 8 бит, шестнадцатеричная \\
+\code{6'd42}          & 42  & 6 бит, десятичная \\
+\code{1'b0}, \code{1'b1} & 0, 1 & один бит \\
+\code{27\_000\_000}   & 27000000 & подчёркивания игнорируются, их ставят для удобства чтения \\
+\code{4'bx01z}        & ---  & \code{x} --- неизвестно, \code{z} --- отключено (высокий импеданс) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Операторы}
+
+\begin{table}[H]
+\centering
+\caption{Основные операторы Verilog}
+\label{tab:ops}
+\small
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Группа} & \textbf{Операторы} & \textbf{Пример и смысл} \\
+\midrule
+Побитовые & \code{\textasciitilde{} \& | \^{} \textasciitilde\&  \textasciitilde|} &
+  \code{a \& b} --- И над каждой парой битов; \code{\textasciitilde{}a} --- НЕ \\
+Логические & \code{! \&\& ||} & \code{(x > 3) \&\& en} --- результат 1 бит (истина/ложь) \\
+Свёртка & \code{\&a  |a  \^{}a} & \code{\&a} --- И всех битов шины (1, если все единицы) \\
+Арифметика & \code{+ - * / \%} & \code{cnt + 1'b1} --- сумматор \\
+Сравнение & \code{== != < > <= >=} & \code{cnt == 25} --- компаратор \\
+Сдвиги & \code{<< >>} & \code{x << 1} --- сдвиг влево на 1 \\
+Склейка & \code{\{a, b\}} & \code{\{4'b0, x\}} --- склеить шины в одну \\
+Повтор & \code{\{n\{a\}\}} & \code{\{6\{1'b1\}\}} = \code{6'b111111} \\
+Условие & \code{c ? a : b} & мультиплексор: если \code{c}, то \code{a}, иначе \code{b} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Каждый оператор --- это кусок аппаратуры. \code{a + b} --- это сумматор,
+\code{a == b} --- компаратор, \code{c ? a : b} --- мультиплексор.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[draw=FpgaDark, fill=orange!15, thick, trapezium, trapezium angle=65, shape border rotate=270, minimum width=20mm, minimum height=10mm, font=\sffamily\small] (mux) at (0,0) {MUX};
+  \draw[wire] ([yshift=3mm]mux.west) -- ++(-1,0) node[left] {a};
+  \node[font=\tiny, anchor=west] at ([yshift=3mm, xshift=1mm]mux.west) {1};
+  \draw[wire] ([yshift=-3mm]mux.west) -- ++(-1,0) node[left] {b};
+  \node[font=\tiny, anchor=west] at ([yshift=-3mm, xshift=1mm]mux.west) {0};
+  \draw[wire] (mux.east) -- ++(1,0) node[right] {y};
+  \draw[wire, FpgaBlue] (mux.south) -- ++(0,-0.6) node[below] {c};
+  \node[font=\ttfamily\small, anchor=west] at (3,0) {assign y = c ? a : b;};
+\end{tikzpicture}
+\caption{Тернарный оператор \code{?:} --- это мультиплексор}
+\end{figure}
+
+\section{Блоки always}
+\label{sec:always}
+
+Описывать сложную логику одними \code{assign} неудобно. Для этого есть блок
+\code{always}. Он бывает двух видов, и важно их не путать.
+
+\subsection{Комбинационный: always @(*)}
+
+Звёздочка означает: «пересчитывай выход при любом изменении любого входа». Такой
+блок описывает \textbf{комбинационную схему без памяти}.
+\begin{vcode}
+reg [1:0] y;
+always @(*) begin
+    case (sel)
+        2'd0: y = a;
+        2'd1: y = b;
+        2'd2: y = c;
+        default: y = 2'b00;
+    endcase
+end
+\end{vcode}
+
+\subsection{Последовательностный: always @(posedge clk)}
+
+Этот блок срабатывает только по \textbf{переднему фронту тактового сигнала}.
+Все \code{reg}, которым присваивают значение внутри него, становятся
+\textbf{триггерами}.
+\begin{vcode}
+reg [3:0] cnt = 0;
+always @(posedge clk) begin
+    cnt <= cnt + 1'b1;   // каждый такт прибавляем единицу
+end
+\end{vcode}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[draw=FpgaGreen, fill=green!8, thick, minimum width=18mm, minimum height=18mm, font=\sffamily\small, align=center] (reg) at (4.2,0) {регистр\\\scriptsize 4 бита};
+  \node[font=\sffamily\scriptsize, anchor=west] at (reg.west) {D};
+  \node[font=\sffamily\scriptsize, anchor=east] at (reg.east) {Q};
+  \draw[thick] ([xshift=-1.2mm]reg.south) -- ([yshift=1.8mm]reg.south) -- ([xshift=1.2mm]reg.south);
+  \draw[wire] (reg.south) -- ++(0,-0.8) node[below] {clk};
+  \node[draw=FpgaBlue, fill=FpgaLight, thick, circle, minimum size=11mm, font=\sffamily\bfseries] (add) at (1.2,0) {$+$};
+  \draw[bus, -{Stealth}] (add.east) -- node[above, lbl] {cnt+1} (reg.west);
+  \draw[bus, -{Stealth}] (reg.east) -- ++(1.6,0) node[right, text=FpgaDark] {cnt};
+  \draw[bus, -{Stealth}] ($(reg.east)+(0.8,0)$) -- ++(0,1.5) -| (add.north);
+  \fill[FpgaBlue] ($(reg.east)+(0.8,0)$) circle (1.6pt);
+  \draw[wire] (add.south) -- ++(0,-0.7) node[below] {1};
+\end{tikzpicture}
+\caption{Счётчик: сумматор и регистр с обратной связью. Код \code{cnt <= cnt + 1}
+описывает именно эту схему}
+\label{fig:counter}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.1, xscale=2.2, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  clk & 9{1L 1H} \\
+  cnt & 1D{0} 2D{1} 2D{2} 2D{3} 2D{4} 2D{5} 2D{6} 2D{7} 2D{8} 1D{9} \\
+\end{tikztimingtable}
+\caption{Временная диаграмма счётчика: значение увеличивается по каждому
+переднему фронту}
+\end{figure}
+
+\subsection{Блокирующее (=) и неблокирующее (<=) присваивание}
+
+\begin{warnbox}[Золотое правило]
+\begin{itemize}
+  \item В \code{always @(posedge clk)} используйте только \code{<=}.
+  \item В \code{always @(*)} используйте только \code{=}.
+\end{itemize}
+\end{warnbox}
+
+Почему? Неблокирующее присваивание \code{<=} означает: «все правые части
+вычисляются по значениям \emph{до} фронта, и все триггеры обновляются
+одновременно». Именно так ведут себя настоящие триггеры. Посмотрим на
+пример, в котором два регистра обмениваются значениями:
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.47\textwidth}
+\begin{vcode}
+always @(posedge clk) begin
+    a <= b;
+    b <= a;   // обмен работает!
+end
+\end{vcode}
+\centering
+\begin{tikzpicture}[ffn/.style={draw=FpgaGreen, fill=green!8, thick, minimum width=10mm, minimum height=10mm, font=\sffamily\small}]
+  \node[ffn] (A) at (0,0) {a};
+  \node[ffn] (B) at (2.4,0) {b};
+  \draw[arr] (A.north) to[bend left=35] (B.north);
+  \draw[arr] (B.south) to[bend left=35] (A.south);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.47\textwidth}
+\begin{vcode}
+always @(posedge clk) begin
+    a = b;
+    b = a;    // ошибка: b = b
+end
+\end{vcode}
+\centering
+\begin{tikzpicture}[ffn/.style={draw=FpgaRed, fill=red!5, thick, minimum width=10mm, minimum height=10mm, font=\sffamily\small}]
+  \node[ffn] (A) at (0,0) {a};
+  \node[ffn] (B) at (2.4,0) {b};
+  \draw[arr] (B.north) to[bend right=35] (A.north);
+  \draw[arr] (B.east) to[out=0, in=-60, looseness=6] (B.south east);
+\end{tikzpicture}
+\end{minipage}
+\caption{Слева --- правильный обмен (\code{<=}), справа --- ошибка (\code{=}):
+к моменту второй строки \code{a} уже равно \code{b}}
+\end{figure}
+
+\section{Условия: if и case}
+
+Внутри \code{always} можно использовать условия. Они тоже превращаются в
+мультиплексоры.
+\begin{vcode}
+always @(posedge clk) begin
+    if (reset)
+        cnt <= 0;               // синхронный сброс
+    else if (enable)
+        cnt <= cnt + 1'b1;      // счёт
+    // иначе cnt сохраняет значение
+end
+\end{vcode}
+
+\begin{warnbox}[Защёлки (latch)]
+Если в \code{always @(*)} при каком-то условии переменной ничего не присвоено,
+синтезатор вынужден «запомнить» старое значение и создаёт \term{защёлку} ---
+нежелательный элемент памяти без такта. Всегда пишите \code{else} и
+\code{default}!
+\end{warnbox}
+
+\section{Параметры и константы}
+
+\begin{vcode}
+localparam integer CLK_HZ = 27_000_000;  // константа внутри модуля
+localparam [1:0]   IDLE = 2'd0, RUN = 2'd1;
+
+module blink #(parameter integer HZ = 1) (...);  // параметр можно
+                                                 // менять снаружи
+\end{vcode}
+
+\section{Иерархия: модуль внутри модуля}
+
+Большие схемы собирают из маленьких модулей, как устройство из микросхем.
+Подключение одного модуля внутри другого называется \term{созданием экземпляра}
+(instantiation).
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.55\textwidth}
+\begin{vcode}
+module full_adder (
+    input  wire a, b, cin,
+    output wire s, cout
+);
+    wire s1, c1, c2;
+    half_adder ha1 (.a(a),  .b(b),
+                    .s(s1), .c(c1));
+    half_adder ha2 (.a(s1), .b(cin),
+                    .s(s),  .c(c2));
+    assign cout = c1 | c2;
+endmodule
+\end{vcode}
+\end{minipage}\hfill
+\begin{minipage}{0.42\textwidth}
+\centering
+\begin{tikzpicture}[scale=0.85, transform shape,
+  ha/.style={draw=FpgaBlue, fill=FpgaLight, thick, minimum width=13mm, minimum height=13mm, font=\sffamily\scriptsize, align=center}]
+  \node[ha] (h1) at (0,0.6) {ha1};
+  \node[ha] (h2) at (2.3,-0.2) {ha2};
+  \node[draw, circle, thick, minimum size=6mm, font=\scriptsize] (or) at (4.2,-1.3) {$\ge1$};
+  \draw[wire] ([yshift=3mm]h1.west) -- ++(-0.6,0) node[left] {a};
+  \draw[wire] ([yshift=-3mm]h1.west) -- ++(-0.6,0) node[left] {b};
+  \draw[wire] ([yshift=3mm]h1.east) -- node[above, lbl] {s1} ++(0.4,0) |- ([yshift=3mm]h2.west);
+  \draw[wire] (-1.0,-0.7) node[left] {cin} -| ([xshift=-3mm]h2.west) -- ([yshift=-3mm]h2.west);
+  \draw[wire] ([yshift=3mm]h2.east) -- ++(0.8,0) node[right] {s};
+  \draw[wire] ([yshift=-3mm]h1.east) -- node[below, lbl] {c1} ++(0.25,0) |- ([yshift=0mm]or.west);
+  \draw[wire] ([yshift=-3mm]h2.east) -- node[below, lbl] {c2} ++(0.3,0) |- ([yshift=1.5mm]or.north west);
+  \draw[wire] (or.east) -- ++(0.4,0) node[right] {cout};
+  \node[draw=FpgaGray, dashed, fit=(h1)(h2)(or), inner sep=5mm, label={[lbl]above:full\_adder}] {};
+\end{tikzpicture}
+\end{minipage}
+\caption{Полный сумматор из двух полусумматоров}
+\end{figure}
+
+Запись \code{.a(s1)} означает: «вход \code{a} экземпляра соединить с проводом
+\code{s1}».
+
+\begin{ideabox}
+\begin{itemize}
+  \item \code{assign} и \code{always @(*)} описывают \textbf{комбинационную}
+        логику (элементы И, ИЛИ, мультиплексоры, сумматоры);
+  \item \code{always @(posedge clk)} описывает \textbf{триггеры} и всё, что
+        перед ними;
+  \item все блоки работают \textbf{одновременно}.
+\end{itemize}
+\end{ideabox}

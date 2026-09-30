@@ -1,0 +1,144 @@
+\chapter{Симуляция: проверяем схему до загрузки}
+
+\section{Зачем нужна симуляция}
+
+Отладка на плате напоминает поиск неисправности с завязанными глазами:
+видно только шесть светодиодов, а внутри тысячи сигналов, и меняются они
+27 миллионов раз в секунду. Поэтому профессионалы \textbf{сначала
+проверяют схему в симуляторе} --- программе, которая вычисляет значения всех
+сигналов во времени и рисует временные диаграммы.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.8\textwidth, height=5.4cm, ybar, bar width=12mm,
+  symbolic x coords={Симуляция, {Синтез + трассировка}, {Загрузка в плату}},
+  xtick=data, ylabel={Время одной итерации, с}, ymin=0, ymax=80,
+  nodes near coords, nodes near coords style={font=\sffamily\small},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  axis lines*=left, grid=major, grid style={FpgaGray!20},
+]
+  \addplot[fill=FpgaGreen!60, draw=FpgaGreen] coordinates {(Симуляция,1) ({Синтез + трассировка},40) ({Загрузка в плату},5)};
+\end{axis}
+\end{tikzpicture}
+\caption{Типичное время одного цикла «исправил --- проверил» для небольшого
+проекта. В симуляторе видны все внутренние сигналы, а на плате --- только
+выходы}
+\end{figure}
+
+\section{Тестбенч}
+
+Для симуляции пишут ещё один модуль на Verilog --- \term{тестбенч} (testbench,
+«испытательный стенд»). У него нет портов: он сам создаёт входные сигналы,
+подключает к ним проверяемый модуль (DUT --- Device Under Test) и
+следит за выходами.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[gblock, minimum width=34mm, minimum height=20mm] (dut) {DUT\\\scriptsize проверяемый модуль\\\scriptsize (gates, blink\ldots)};
+  \node[block, left=18mm of dut, minimum height=20mm] (gen) {Генератор\\воздействий\\\scriptsize clk, кнопки};
+  \node[block, right=18mm of dut, minimum height=20mm] (mon) {Проверка\\\scriptsize \$display,\\\scriptsize VCD-файл};
+  \draw[arr] (gen) -- node[above, lbl] {входы} (dut);
+  \draw[arr] (dut) -- node[above, lbl] {выходы} (mon);
+  \node[draw=FpgaBlue, dashed, thick, rounded corners, fit=(gen)(dut)(mon), inner sep=4mm, label={[font=\sffamily\small\bfseries, text=FpgaBlue]above:модуль tb (тестбенч)}] {};
+\end{tikzpicture}
+\caption{Устройство тестбенча}
+\end{figure}
+
+В тестбенче разрешены конструкции, которые \emph{нельзя} синтезировать в
+«железо», но удобно использовать для моделирования:
+\begin{itemize}
+  \item \code{\#10;} --- подождать 10 единиц времени;
+  \item \code{initial begin ... end} --- выполнить действия один раз с начала
+        моделирования;
+  \item \code{\$display(...)}, \code{\$monitor(...)} --- печать в консоль;
+  \item \code{\$dumpfile}, \code{\$dumpvars} --- запись всех сигналов в файл
+        \code{.vcd} для просмотра в GTKWave;
+  \item \code{\$finish} --- завершить моделирование.
+\end{itemize}
+
+\section{Пример 1: таблица истинности проекта 1}
+
+\vfile{\codepath/01_gates/tb_gates.v}{code/01\_gates/tb\_gates.v}
+
+Запуск в терминале:
+\begin{vcode}[bash]
+iverilog -o tb_gates tb_gates.v gates.v   # компиляция
+vvp tb_gates                              # моделирование
+\end{vcode}
+
+Результат (это настоящий вывод симулятора):
+\begin{vcode}[text]
+ a b | AND OR NOT NAND NOR XOR
+ 0 0 |  0   0   1    1    1   0
+ 1 0 |  0   1   0    1    0   1
+ 0 1 |  0   1   1    1    0   1
+ 1 1 |  1   1   0    0    0   0
+\end{vcode}
+
+Сравните с таблицей истинности из курса схемотехники --- всё совпадает.
+
+\section{Пример 2: мигалка с уменьшенной частотой}
+
+Проверять мигалку на реальной частоте долго: чтобы дождаться одного
+переключения, нужно промоделировать $13{,}5$ млн тактов. Поэтому в модуле
+\code{blink} частота вынесена в \code{parameter}, и тестбенч задаёт
+\code{CLK\_HZ = 20}: светодиод переключается каждые 10 тактов.
+
+\vfile{\codepath/02_blink/tb_blink.v}{code/02\_blink/tb\_blink.v}
+
+Фрагмент вывода:
+\begin{vcode}[text]
+t =    0.0 нс  cnt =  0  led = 111111
+t =   18.5 нс  cnt =  1  led = 111111
+...
+t =  314.5 нс  cnt =  9  led = 111111
+t =  351.5 нс  cnt =  0  led = 000000
+t =  388.5 нс  cnt =  1  led = 000000
+\end{vcode}
+
+После \code{cnt = 9} (это \code{HALF - 1}) счётчик сбрасывается, и
+светодиоды загораются (\code{000000}). Схема работает как задумано.
+
+\section{Временные диаграммы в GTKWave}
+
+Команда \code{gtkwave tb\_blink.vcd} откроет окно, похожее на
+рис.~\ref{fig:gtkwave}. Слева выбирают сигналы, справа видны их диаграммы.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \fill[gray!15] (0,0) rectangle (15,5.4);
+  \fill[gray!35] (0,5.0) rectangle (15,5.4);
+  \node[font=\sffamily\scriptsize, anchor=west] at (0.1,5.2) {GTKWave --- tb\_blink.vcd};
+  \fill[white] (0.2,0.2) rectangle (2.8,4.8);
+  \node[font=\sffamily\scriptsize\bfseries, anchor=west] at (0.3,4.55) {Signals};
+  \foreach \n/\y in {clk/3.9, dut.cnt[24:0]/2.9, led[5:0]/1.9} \node[font=\ttfamily\scriptsize, anchor=west] at (0.3,\y) {\n};
+  \fill[black] (3.0,0.2) rectangle (14.8,4.8);
+  \begin{scope}[shift={(3.2,0)}, x=0.46cm]
+    \foreach \i in {0,...,11} {
+      \draw[green!80!white, thick] (\i*2,3.6) -- (\i*2,4.2) -- (\i*2+1,4.2) -- (\i*2+1,3.6) -- (\i*2+2,3.6);
+    }
+    \foreach \i/\v in {0/0,1/1,2/2,3/3,4/4,5/5,6/6,7/7,8/8,9/9,10/0,11/1} {
+      \draw[green!80!white, thick] (\i*2+0.15,2.6) -- (\i*2+1.85,2.6) -- (\i*2+2,2.9) -- (\i*2+1.85,3.2) -- (\i*2+0.15,3.2) -- (\i*2,2.9) -- cycle;
+      \node[white, font=\ttfamily\tiny] at (\i*2+1,2.9) {\v};
+    }
+    \draw[green!80!white, thick] (0,1.6) -- (20,1.6) -- (20.1,1.9) -- (20,2.2) -- (0,2.2);
+    \node[white, font=\ttfamily\tiny] at (10,1.9) {3F};
+    \draw[green!80!white, thick] (20.1,1.9) -- (20.2,2.2) -- (24,2.2); \draw[green!80!white, thick] (20.2,1.6) -- (24,1.6);
+    \node[white, font=\ttfamily\tiny] at (22,1.9) {00};
+    \draw[yellow, dashed] (20.1,0.3) -- (20.1,4.7);
+    \node[yellow, font=\sffamily\tiny, anchor=west] at (20.2,0.6) {351,5 нс};
+  \end{scope}
+\end{tikzpicture}
+\caption{Так выглядит результат симуляции в GTKWave (схематично)}
+\label{fig:gtkwave}
+\end{figure}
+
+\begin{warnbox}[Симуляция не заменяет плату]
+Симулятор проверяет \emph{логику}, но не знает о дребезге кнопок, задержках
+в проводах и ошибках в файле \code{.cst}. Поэтому последний шаг всегда
+проверка на реальной плате.
+\end{warnbox}

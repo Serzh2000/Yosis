@@ -1,0 +1,199 @@
+\chapter{Плата Sipeed Tang Nano 20K}
+
+\section{Общий вид}
+
+Tang Nano 20K --- маленькая (примерно $22\times54$~мм) и недорогая
+отладочная плата компании Sipeed. На ней установлена ПЛИС \textbf{Gowin
+GW2AR-LV18QN88C8/I7}, а также всё необходимое, чтобы сразу начать
+эксперименты: кнопки, светодиоды, разъём HDMI, слот для карты памяти и встроенный
+программатор с разъёмом USB-C.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.35,
+  callout/.style={font=\sffamily\scriptsize, text=FpgaDark, align=left},
+  cl/.style={FpgaDark, thin, -{Circle[length=1.3mm]}}]
+  % Плата
+  \fill[BoardGreen, rounded corners=4pt] (0,0) rectangle (10.8,4.4);
+  % Отверстия
+  \foreach \p in {(0.3,0.3),(10.5,0.3),(0.3,4.1),(10.5,4.1)} \fill[white] \p circle (0.12);
+  % Гребёнки выводов
+  \foreach \i in {0,...,19} {
+    \fill[yellow!70!orange] (0.8+\i*0.48,0.2) circle (0.09);
+    \fill[yellow!70!orange] (0.8+\i*0.48,4.2) circle (0.09);
+  }
+  % USB-C
+  \fill[gray!60, rounded corners=1pt] (-0.35,1.6) rectangle (0.55,2.8);
+  % BL616
+  \fill[ChipBlack] (1.1,1.7) rectangle (2.1,2.7);
+  \node[white, font=\tiny\sffamily] at (1.6,2.2) {BL616};
+  % Flash
+  \fill[ChipBlack] (2.5,0.7) rectangle (3.2,1.2);
+  % Генератор
+  \fill[gray!40] (2.5,3.1) rectangle (3.2,3.6);
+  % ПЛИС
+  \fill[ChipBlack] (3.8,1.1) rectangle (6.0,3.3);
+  \foreach \i in {0,...,9} {
+    \fill[gray!60] (3.95+\i*0.2,1.0) rectangle ++(0.08,0.1);
+    \fill[gray!60] (3.95+\i*0.2,3.3) rectangle ++(0.08,0.1);
+    \fill[gray!60] (3.7,1.25+\i*0.2) rectangle ++(0.1,0.08);
+    \fill[gray!60] (6.0,1.25+\i*0.2) rectangle ++(0.1,0.08);
+  }
+  \node[white, font=\tiny\sffamily, align=center] at (4.9,2.2) {GOWIN\\GW2AR-18\\\scalebox{0.7}{+ SDRAM 64 Мбит}};
+  % Светодиоды
+  \foreach \i in {0,...,5} \fill[FpgaOrange] (6.6+\i*0.3,3.45) rectangle ++(0.18,0.14);
+  % RGB
+  \fill[white] (6.7,2.6) rectangle (7.1,3.0);
+  % Кнопки
+  \fill[gray!30] (6.6,0.6) rectangle (7.2,1.2); \fill[gray!80] (6.9,0.9) circle (0.17);
+  \fill[gray!30] (7.6,0.6) rectangle (8.2,1.2); \fill[gray!80] (7.9,0.9) circle (0.17);
+  % HDMI
+  \fill[gray!55] (9.6,1.2) rectangle (11.0,3.2);
+  % TF
+  \fill[gray!35] (7.6,1.6) rectangle (9.2,2.8);
+  % FPC
+  \fill[gray!20] (2.3,-0.1) rectangle (3.5,0.4);
+
+  % Подписи
+  \draw[cl] (0.1,4.9) node[callout, above] {USB-C: питание,\\загрузка, UART} -- (0.1,2.4);
+  \draw[cl] (1.6,5.1) node[callout, above] {BL616:\\программатор} -- (1.6,2.5);
+  \draw[cl] (2.85,4.9) node[callout, above] {генератор\\27 МГц} -- (2.85,3.4);
+  \draw[cl] (4.9,4.9) node[callout, above] {ПЛИС GW2AR-18\\со встроенной SDRAM} -- (4.9,3.0);
+  \draw[cl] (7.3,4.9) node[callout, above] {6 светодиодов\\(led[0..5])} -- (7.3,3.5);
+  \draw[cl] (10.3,4.9) node[callout, above] {HDMI} -- (10.3,3.0);
+  \draw[cl] (6.9,-0.7) node[callout, below] {кнопка S1} -- (6.9,0.9);
+  \draw[cl] (7.9,-1.3) node[callout, below] {кнопка S2} -- (7.9,0.9);
+  \draw[cl] (8.4,-0.7) node[callout, below right=-1mm] {слот\\TF-карты} -- (8.4,2.0);
+  \draw[cl] (6.2,-1.3) node[callout, below left=-1mm] {RGB-светодиод\\WS2812} -- (6.9,2.8);
+  \draw[cl] (2.85,-0.7) node[callout, below] {Flash 64 Мбит\\(конфигурация)} -- (2.85,0.95);
+  \draw[cl] (0.9,-0.7) node[callout, below] {выводы\\GPIO} -- (0.8,0.2);
+\end{tikzpicture}
+\caption{Расположение основных элементов на плате Tang Nano 20K (схематично)}
+\label{fig:board}
+\end{figure}
+
+\section{Характеристики}
+
+\begin{table}[H]
+\centering
+\caption{Основные характеристики Tang Nano 20K}
+\label{tab:specs}
+\small
+\begin{tabularx}{0.95\textwidth}{>{\bfseries}l X}
+\toprule
+ПЛИС                 & Gowin GW2AR-LV18QN88C8/I7 (семейство GW2AR-18C, корпус QFN88) \\
+Логика               & 20\,736 LUT4, 15\,552 триггеров \\
+Распределённая память (SSRAM) & 41\,472 бит \\
+Блочная память (BSRAM) & 828 Кбит (46 блоков по 18 Кбит) \\
+Встроенная SDRAM     & 64 Мбит (8 Мбайт), шина 32 бита --- в том же корпусе, что и ПЛИС \\
+Умножители           & 48 штук $18\times18$ \\
+PLL                  & 2 \\
+Тактовый генератор   & кварцевый, 27 МГц (плюс программируемый генератор MS5351) \\
+Flash                & 64 Мбит, SPI --- хранит конфигурацию ПЛИС \\
+Программатор         & BL616: USB-JTAG и USB-UART через один разъём USB-C \\
+Периферия            & HDMI, TF-карта, 6 светодиодов, 2 кнопки, RGB-светодиод WS2812, \\
+                     & разъём для RGB-дисплея, усилитель звука \\
+Напряжение на выводах & 3,3 В (LVCMOS33) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{infobox}[Что значит «R» в названии GW2AR]
+Буква R означает, что в корпус микросхемы, помимо кристалла ПЛИС, установлен ещё
+один кристалл --- память SDRAM. Такая сборка называется SiP
+(System in Package, «система в корпусе»). Провода между ПЛИС и SDRAM проложены
+внутри корпуса, поэтому на плате их не видно.
+\end{infobox}
+
+\section{Структурная схема}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=5mm and 12mm]
+  \node[hblock, minimum width=40mm, minimum height=42mm] (fpga) {ПЛИС\\GW2AR-18\\[2mm]\scriptsize 20\,736 LUT4};
+  \node[oblock, below=3mm of fpga.south, anchor=north, minimum width=40mm] (sdram) {SDRAM 64 Мбит\\\scriptsize (внутри корпуса)};
+  \draw[bus, <->] (fpga.south) -- (sdram.north);
+  \begin{scope}[on background layer]
+    \node[draw=FpgaGray, dashed, rounded corners, fit=(fpga)(sdram), inner sep=2.5mm, label={[lbl]below:корпус QFN88}] {};
+  \end{scope}
+
+  \node[block, left=30mm of fpga.north west, anchor=north east] (osc) {Генератор\\27 МГц};
+  \node[block, below=of osc] (bl) {BL616\\USB-JTAG/UART};
+  \node[block, below=of bl] (flash) {Flash\\64 Мбит};
+  \node[gblock, left=8mm of bl] (usb) {USB-C};
+  \draw[arr] (osc.east) -- node[above, lbl] {clk (вывод 4)} (osc.east -| fpga.west);
+  \draw[arr, <->] (bl.east) -- node[above, lbl] {JTAG, UART} (bl.east -| fpga.west);
+  \draw[arr, <->] (flash.east) -- node[above, lbl] {SPI} (flash.east -| fpga.west);
+  \draw[arr, <->] (usb) -- (bl);
+
+  \node[block, right=20mm of fpga.north east, anchor=north west] (led) {6 светодиодов};
+  \node[block, below=of led] (btn) {Кнопки S1, S2};
+  \node[block, below=of btn] (hdmi) {HDMI};
+  \node[block, below=of hdmi] (tf) {TF-карта};
+  \node[block, below=of tf] (gpio) {Выводы GPIO};
+  \draw[arr] (led.west -| fpga.east) -- (led.west);
+  \draw[arr] (btn.west) -- (btn.west -| fpga.east);
+  \draw[arr] (hdmi.west -| fpga.east) -- node[above, lbl] {TMDS} (hdmi.west);
+  \draw[arr, <->] (tf.west -| fpga.east) -- node[above, lbl] {SPI/SD} (tf.west);
+  \draw[arr, <->] (gpio.west) -- (gpio.west -| fpga.east);
+\end{tikzpicture}
+\caption{Структурная схема платы}
+\end{figure}
+
+\section{Выводы, которые понадобятся в примерах}
+
+Каждая ножка ПЛИС имеет номер. Чтобы связать сигнал в коде
+(например, \code{led[0]}) с физической ножкой, используют файл ограничений
+\code{.cst} (Constraints). Номера выводов для Tang Nano 20K приведены в
+табл.~\ref{tab:pins}.
+
+\begin{table}[H]
+\centering
+\caption{Выводы ПЛИС, используемые в примерах}
+\label{tab:pins}
+\begin{tabular}{l c l}
+\toprule
+\textbf{Сигнал} & \textbf{Вывод ПЛИС} & \textbf{Примечание} \\
+\midrule
+\code{clk}     & 4  & тактовый генератор 27 МГц \\
+\code{btn[0]}  & 88 & кнопка S1, нажата $\to$ 1 \\
+\code{btn[1]}  & 87 & кнопка S2, нажата $\to$ 1 \\
+\code{led[0]}  & 15 & \multirow{6}{*}{\parbox{5.5cm}{светодиоды, горят при \textbf{0}\\ (активный уровень --- низкий)}} \\
+\code{led[1]}  & 16 & \\
+\code{led[2]}  & 17 & \\
+\code{led[3]}  & 18 & \\
+\code{led[4]}  & 19 & \\
+\code{led[5]}  & 20 & \\
+\code{uart\_tx} & 69 & передача в компьютер через BL616 \\
+\code{uart\_rx} & 70 & приём из компьютера \\
+\code{ws2812}  & 79 & RGB-светодиод \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{warnbox}[Светодиоды горят от нуля!]
+Светодиоды на плате подключены анодом к питанию $+3{,}3$~В, а катодом --- через
+резистор к ножке ПЛИС. Ток течёт (и светодиод горит), когда на ножке
+\textbf{логический 0}. Поэтому во всех примерах перед выходом стоит
+инверсия: \code{assign led = \textasciitilde{}value;}
+\end{warnbox}
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.9, transform shape]
+  \draw (0,4) node[vcc]{$+3{,}3$ В} -- (0,3.4) to[leD, l=LED] (0,2) to[R, l=$R$] (0,0.4) -- (1.8,0.4);
+  \draw (1.8,-0.4) rectangle (4.2,1.2);
+  \node[font=\sffamily\small] at (3,0.4) {ПЛИС};
+  \node[font=\sffamily\scriptsize, anchor=east] at (1.75,0.65) {вывод 15};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5,2.4) {на выводе \textbf{0}: ток есть $\to$ горит};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5,1.6) {на выводе \textbf{1}: $U_\text{R}=0$ $\to$ не горит};
+\end{circuitikz}
+\caption{Подключение светодиода с активным низким уровнем}
+\end{figure}
+
+\begin{infobox}[Кнопки]
+В примерах мы считаем, что нажатая кнопка даёт на выводе логическую 1. Если на вашей
+ревизии платы окажется наоборот, достаточно поставить инверсию на входе:
+\code{wire pressed = \textasciitilde{}btn[0];}. Проверить это легко с помощью первого примера
+(глава~\ref{ch:examples}).
+\end{infobox}

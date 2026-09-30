@@ -1,0 +1,77 @@
+\chapter{Шпаргалка}
+
+\section{Verilog на одной странице}
+
+\begin{vcode}
+module name #(parameter integer N = 8) (   // параметр
+    input  wire         clk,
+    input  wire [N-1:0] a,
+    output wire         y,
+    output reg  [N-1:0] q
+);
+    localparam [1:0] S0 = 2'd0;            // константа
+
+    wire t = &a;                           // свёртка И
+    assign y = t ? 1'b1 : 1'b0;            // мультиплексор
+
+    always @(*) begin                      // комбинационная логика: =
+        case (a[1:0])
+            2'd0:    ...;
+            default: ...;
+        endcase
+    end
+
+    always @(posedge clk) begin            // триггеры: <=
+        if (a == 0) q <= 0;
+        else        q <= q + 1'b1;
+    end
+
+    other_module u1 (.in(a), .out(...));   // экземпляр модуля
+endmodule
+\end{vcode}
+
+\section{Типичные ошибки}
+
+\begin{longtable}{p{0.42\textwidth} p{0.52\textwidth}}
+\toprule
+\textbf{Симптом} & \textbf{Вероятная причина} \\
+\midrule
+\endhead
+Светодиоды горят «наоборот» & Забыли, что LED горят от 0: нужна инверсия \\
+Ничего не работает, схема «пустая» & Выход модуля ни к чему не подключён, и синтезатор удалил всю логику; неверные имена в \code{.cst} \\
+Счётчик считает одно нажатие много раз & Нет антидребезга и/или детектора фронта \\
+Предупреждение \emph{latch inferred} & В \code{always @(*)} не хватает \code{else} или \code{default} \\
+Два регистра не обмениваются значениями & В \code{always @(posedge clk)} использовано \code{=} вместо \code{<=} \\
+Число не помещается, счётчик не доходит до нужного значения & Мала разрядность регистра: проверьте $2^n > N$ \\
+\emph{Multiple drivers} & Одному сигналу присваивают значение в двух разных \code{always} или \code{assign} \\
+После выключения питания схема пропадает & Загрузили в SRAM; для постоянной работы загрузите во Flash \\
+\bottomrule
+\end{longtable}
+
+\section{Выводы Tang Nano 20K}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{l c l}
+\toprule
+\textbf{Сигнал} & \textbf{Вывод} & \textbf{Назначение} \\
+\midrule
+\code{clk} & 4 & 27 МГц \\
+\code{btn[0]}, \code{btn[1]} & 88, 87 & кнопки S1, S2 \\
+\code{led[0..5]} & 15--20 & светодиоды (активный 0) \\
+\code{uart\_tx}, \code{uart\_rx} & 69, 70 & UART через USB \\
+\code{ws2812} & 79 & RGB-светодиод \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Полезные ссылки}
+
+\begin{itemize}
+  \item Документация Sipeed: \url{https://wiki.sipeed.com/hardware/en/tang/tang-nano-20k/nano-20k.html}
+  \item Примеры Sipeed: \url{https://github.com/sipeed/TangNano-20K-example}
+  \item Среда Gowin EDA: \url{https://www.gowinsemi.com}
+  \item Открытые инструменты (OSS CAD Suite): \url{https://github.com/YosysHQ/oss-cad-suite-build}
+  \item Проект Apicula: \url{https://github.com/YosysHQ/apicula}
+  \item Интерактивный учебник по Verilog HDLBits: \url{https://hdlbits.01xz.net}
+\end{itemize}

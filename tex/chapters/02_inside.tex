@@ -1,0 +1,331 @@
+\chapter{Что внутри ПЛИС}
+
+Если снять крышку с ПЛИС и посмотреть на кристалл под микроскопом, мы
+увидим аккуратную «шахматную доску»: одинаковые логические блоки, окружённые
+сетью проводников, а по краям --- блоки ввода-вывода. Разберём все эти
+части по порядку.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.92]
+  % Кристалл
+  \fill[ChipBlack!8] (-0.6,-0.6) rectangle (12.6,8.6);
+  \draw[very thick, FpgaDark] (-0.6,-0.6) rectangle (12.6,8.6);
+  % Трассировочные каналы
+  \foreach \x in {0,...,12} \draw[FpgaOrange!55, line width=0.7pt] (\x,0) -- (\x,8);
+  \foreach \y in {0,...,8} \draw[FpgaOrange!55, line width=0.7pt] (0,\y) -- (12,\y);
+  % Логические блоки / память / DSP
+  \foreach \x in {0,...,11} \foreach \y in {0,...,7} {
+    \pgfmathtruncatemacro{\col}{\x}
+    \ifnum\col=4
+      \fill[FpgaPurple!65] (\x+0.15,\y+0.15) rectangle ++(0.7,0.7);
+    \else\ifnum\col=8
+      \fill[FpgaRed!65] (\x+0.15,\y+0.15) rectangle ++(0.7,0.7);
+    \else
+      \fill[FpgaBlue!75] (\x+0.15,\y+0.15) rectangle ++(0.7,0.7);
+    \fi\fi
+  }
+  % Коммутаторы на пересечениях
+  \foreach \x in {0,...,12} \foreach \y in {0,...,8}
+    \fill[FpgaOrange] (\x,\y) circle (0.06);
+  % Блоки ввода-вывода
+  \foreach \x in {0,...,11} {
+    \fill[FpgaGreen] (\x+0.25,-0.5) rectangle ++(0.5,0.3);
+    \fill[FpgaGreen] (\x+0.25,8.2) rectangle ++(0.5,0.3);
+  }
+  \foreach \y in {0,...,7} {
+    \fill[FpgaGreen] (-0.5,\y+0.25) rectangle ++(0.3,0.5);
+    \fill[FpgaGreen] (12.2,\y+0.25) rectangle ++(0.3,0.5);
+  }
+  % PLL
+  \fill[yellow!80!orange] (-0.55,-0.55) rectangle (-0.05,-0.05);
+  \fill[yellow!80!orange] (12.05,8.05) rectangle (12.55,8.55);
+  % Легенда
+  \begin{scope}[xshift=13.3cm, yshift=7.4cm, every node/.style={font=\sffamily\small, anchor=west}]
+    \fill[FpgaBlue!75] (0,0) rectangle (0.4,0.4); \node at (0.5,0.2) {CFU (логика)};
+    \fill[FpgaPurple!65] (0,-0.8) rectangle (0.4,-0.4); \node at (0.5,-0.6) {BSRAM (память)};
+    \fill[FpgaRed!65] (0,-1.6) rectangle (0.4,-1.2); \node at (0.5,-1.4) {DSP (умножители)};
+    \fill[FpgaGreen] (0,-2.4) rectangle (0.4,-2.0); \node at (0.5,-2.2) {IOB (ввод-вывод)};
+    \fill[yellow!80!orange] (0,-3.2) rectangle (0.4,-2.8); \node at (0.5,-3.0) {PLL (такты)};
+    \draw[FpgaOrange!70, line width=1pt] (0,-3.8) -- (0.4,-3.8); \node at (0.5,-3.8) {трассировка};
+    \fill[FpgaOrange] (0.2,-4.5) circle (0.08); \node at (0.5,-4.5) {коммутатор};
+  \end{scope}
+\end{tikzpicture}
+\caption{Упрощённое устройство кристалла ПЛИС}
+\label{fig:fpga_grid}
+\end{figure}
+
+\section{Главная идея: таблица истинности как память}
+
+Как сделать универсальный логический элемент, который по желанию
+становится И, ИЛИ, «Исключающим ИЛИ» или чем угодно ещё? Инженеры
+придумали изящный трюк.
+
+Любая логическая функция от $n$ входов полностью задаётся своей
+таблицей истинности, в которой $2^n$ строк. Значит, достаточно
+\emph{запомнить} правый столбец таблицы в маленькой памяти, а входы
+использовать как \emph{адрес} ячейки. Такое устройство называется
+\term{LUT} (Look-Up Table, таблица поиска).
+
+\begin{table}[H]
+\centering
+\caption{Одна «заготовка» LUT2 --- четыре разных функции}
+\label{tab:lut2}
+\begin{tabular}{cc|c|cccc}
+\toprule
+$a$ & $b$ & адрес & И & ИЛИ & И-НЕ & Искл. ИЛИ \\
+\midrule
+0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+0 & 1 & 1 & 0 & 1 & 1 & 1 \\
+1 & 0 & 2 & 0 & 1 & 1 & 1 \\
+1 & 1 & 3 & 1 & 1 & 0 & 0 \\
+\midrule
+\multicolumn{3}{r|}{\textbf{содержимое памяти:}} & \code{1000} & \code{1110} & \code{0111} & \code{0110} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Чтобы LUT «стал» элементом И, в его память записывают числа
+$0,0,0,1$; чтобы он стал ИЛИ --- $0,1,1,1$. Никакой перепайки:
+меняются лишь четыре бита конфигурации.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  cell/.style={draw=FpgaDark, fill=FpgaLight, minimum width=9mm, minimum height=6.5mm, font=\ttfamily\small},
+  mux/.style={draw=FpgaDark, fill=orange!15, thick, trapezium, trapezium angle=70,
+              shape border rotate=270, minimum width=13mm, minimum height=6mm, font=\sffamily\tiny},
+]
+  % Ячейки памяти
+  \foreach \i/\v in {0/0,1/0,2/0,3/1} {
+    \node[cell] (m\i) at (0,-\i*1.0) {\v};
+    \node[lbl, left=1mm of m\i] {ячейка \i};
+  }
+  % Уровень 1 (управляется b)
+  \node[mux] (x0) at (2.6,-0.5) {MUX};
+  \node[mux] (x1) at (2.6,-2.5) {MUX};
+  \draw[wire] (m0.east) -- ++(0.5,0) |- ([yshift=1.3mm]x0.west);
+  \draw[wire] (m1.east) -- ++(0.5,0) |- ([yshift=-1.3mm]x0.west);
+  \draw[wire] (m2.east) -- ++(0.5,0) |- ([yshift=1.3mm]x1.west);
+  \draw[wire] (m3.east) -- ++(0.5,0) |- ([yshift=-1.3mm]x1.west);
+  % Уровень 2 (управляется a)
+  \node[mux] (y) at (5.0,-1.5) {MUX};
+  \draw[wire] (x0.east) -- ++(0.4,0) |- ([yshift=1.3mm]y.west);
+  \draw[wire] (x1.east) -- ++(0.4,0) |- ([yshift=-1.3mm]y.west);
+  \draw[wire] (y.east) -- ++(1.0,0) node[right] {$y = f(a,b)$};
+  % Управляющие входы
+  \draw[wire, FpgaBlue] (2.6,-4.0) node[below] {$b$} -- (x1.south);
+  \draw[wire, FpgaBlue] (2.6,-3.5) -| (1.9,-1.2) -| (x0.south);
+  \draw[wire, FpgaBlue] (5.0,-4.0) node[below] {$a$} -- (y.south);
+  % Рамка
+  \draw[dashed, FpgaGray, rounded corners] (-1.9,0.6) rectangle (5.7,-4.6);
+  \node[lbl, anchor=south west] at (-1.9,0.6) {LUT2, настроенный как элемент И};
+  \node[lbl, anchor=south, align=center, text=FpgaGray] at (0,0.3) {конфигурация};
+\end{tikzpicture}
+\caption{Устройство LUT2: четыре бита памяти и дерево мультиплексоров. Входы
+$a$ и $b$ выбирают одну из ячеек}
+\label{fig:lut2}
+\end{figure}
+
+В ПЛИС Gowin, установленной на Tang Nano 20K, используются
+\term{LUT4} --- таблицы на 4 входа. Сколько различных функций может
+реализовать один LUT4? В памяти 16 бит, каждый может быть 0 или 1:
+\[
+  N = 2^{2^4} = 2^{16} = 65\,536 \text{ функций.}
+\]
+Среди них и И, и ИЛИ-НЕ, и мажоритарный элемент, и полусумматор,
+и вообще всё, что вы можете придумать для четырёх входов.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar, bar width=14mm, width=0.7\textwidth, height=6cm,
+  ymode=log, log origin=infty, ymin=1, ymax=1e6,
+  symbolic x coords={LUT1, LUT2, LUT3, LUT4},
+  xtick=data, ylabel={Число возможных функций},
+  nodes near coords, nodes near coords style={font=\sffamily\small},
+  point meta=explicit symbolic,
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  grid=major, grid style={FpgaGray!20}, axis lines*=left,
+]
+  \addplot[fill=FpgaBlue!70, draw=FpgaBlue] coordinates {
+    (LUT1,4) [4] (LUT2,16) [16] (LUT3,256) [256] (LUT4,65536) [65\,536]};
+\end{axis}
+\end{tikzpicture}
+\caption{Число функций, которые умеет реализовывать LUT с $n$ входами ($2^{2^n}$)}
+\end{figure}
+
+\begin{warnbox}[А если входов больше четырёх?]
+Функция от 5, 6 и более переменных раскладывается на несколько LUT4,
+соединённых между собой. Синтезатор делает это автоматически, а
+специальные мультиплексоры MUX2 рядом с LUT помогают собрать из двух LUT4
+один LUT5, из двух LUT5 --- LUT6 и т.\,д. Вы увидите их в отчёте синтеза
+под именами \code{MUX2\_LUT5}, \code{MUX2\_LUT6}.
+\end{warnbox}
+
+\section{Триггер: у схемы появляется память}
+
+Одних LUT мало. Из курса схемотехники вы помните, что есть
+\emph{комбинационные} схемы (выход зависит только от текущих входов) и
+\emph{последовательностные}, у которых есть память. Для памяти рядом с
+каждым LUT стоит \term{D-триггер}.
+
+D-триггер запоминает значение входа $D$ в момент \emph{переднего фронта}
+тактового сигнала (перехода $0\to1$) и держит его на выходе $Q$ до
+следующего фронта.
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.1, timing/coldist=2pt, xscale=2.6, yscale=1.4,
+  timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  CLK & 8{1L 1H} \\
+  D   & 2L 4H 4L 2H 2L 2H \\
+  Q   & 3L 4H 4L 2H 2L 1H \\
+\extracode
+  \begin{pgfonlayer}{background}
+    \foreach \t in {1,3,...,15} \draw[FpgaOrange, dashed, thin] (\t,0.6) -- (\t,-5.0);
+  \end{pgfonlayer}
+  \node[lbl, text=FpgaOrange, anchor=south] at (8,0.6) {пунктир --- передние фронты CLK};
+\end{tikztimingtable}
+\caption{Временная диаграмма D-триггера: выход $Q$ меняется только по
+переднему фронту CLK и принимает значение, которое было на $D$ в этот момент}
+\label{fig:dff}
+\end{figure}
+
+\section{Логическая ячейка CFU}
+
+LUT и триггеры объединяются в \term{логические ячейки}. У Gowin такая ячейка
+называется \term{CFU} (Configurable Function Unit). Внутри CFU есть четыре
+«ломтика» CLS (Configurable Logic Slice); в каждом по два LUT4, а в трёх из них
+ещё и по два триггера. Итого в одной CFU: 8 LUT4 и 6 триггеров.
+
+Проверим: в ПЛИС GW2AR-18 содержится $2592$ ячеек CFU, т.\,е.
+$2592\cdot 8 = 20\,736$ LUT4 и $2592\cdot 6 = 15\,552$ триггеров. Эти числа и
+указаны в документации на микросхему.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  lut/.style={draw=FpgaBlue, fill=FpgaLight, thick, minimum width=16mm, minimum height=13mm, font=\sffamily\small, align=center},
+  ff/.style={draw=FpgaGreen, fill=green!8, thick, minimum width=11mm, minimum height=13mm, font=\sffamily\small},
+  mx/.style={draw=FpgaDark, fill=orange!15, thick, trapezium, trapezium angle=70, shape border rotate=270, minimum width=10mm, minimum height=5mm, font=\sffamily\tiny},
+]
+  \node[lut] (lut) at (0,0) {LUT4\\\scriptsize 16 бит};
+  \foreach \i/\n in {1/A,2/B,3/C,4/D} {
+    \draw[wire] ([yshift={(2.5-\i)*2.6mm}]lut.west) -- ++(-1,0) node[left, font=\sffamily\small] {\n};
+  }
+  \node[ff] (ff) at (3.6,0) {D\quad Q};
+  \draw[wire] (lut.east) -- node[above, lbl] {F} (ff.west);
+  \draw[wire] ([xshift=-3mm]ff.south) -- ++(0,-0.8) node[below left=0mm, lbl] {CLK};
+  \draw[wire] ([xshift=3mm]ff.south) -- ++(0,-0.8) node[below right=0mm, lbl] {CE, SR};
+  \node[mx] (m) at (6.1,0) {MUX};
+  \draw[wire] (ff.east) -- ([yshift=-1.2mm]m.west);
+  \draw[wire] (1.6,0) |- (5.0,1.1) |- ([yshift=1.2mm]m.west);
+  \fill (1.6,0) circle (1.3pt);
+  \draw[wire] (m.east) -- ++(1,0) node[right, font=\sffamily\small] {Выход};
+  \draw[wire, FpgaGray] (m.south) -- ++(0,-0.7) node[below, lbl] {бит конфигурации};
+  \node[lbl, align=center] at (3.1,1.45) {комбинационный выход (в обход триггера)};
+  \draw[dashed, FpgaGray, rounded corners] (-2.0,-1.9) rectangle (8.8,1.9);
+  \node[lbl, anchor=north west] at (-2.0,1.9) {половина CLS};
+\end{tikzpicture}
+\caption{Базовый элемент логической ячейки: LUT4, D-триггер и мультиплексор,
+который выбирает, пойдёт ли на выход сигнал с триггера или прямо с LUT}
+\label{fig:cls}
+\end{figure}
+
+\section{Трассировочные ресурсы}
+
+Тысячи ячеек нужно соединять друг с другом. Для этого между ними проложены
+\term{трассировочные каналы} --- пучки проводников разной длины (короткие для
+соседей, длинные для дальних блоков). На пересечениях стоят
+\term{коммутационные матрицы}: транзисторные ключи, каждым из которых
+управляет свой бит конфигурации.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \foreach \i in {0,1,2,3} {
+    \draw[wire, FpgaGray] (\i*0.5,-0.5) -- (\i*0.5,2.5);
+    \draw[wire, FpgaGray] (-0.5,\i*0.5+0.25) -- (2.0,\i*0.5+0.25);
+  }
+  \foreach \x in {0,1,2,3} \foreach \y in {0,1,2,3}
+    \draw[FpgaGray] (\x*0.5,\y*0.5+0.25) circle (0.08);
+  \foreach \x/\y in {0/1, 2/3, 3/0}
+    \fill[FpgaOrange] (\x*0.5,\y*0.5+0.25) circle (0.1);
+  \draw[very thick, FpgaOrange] (-0.5,0.75) -- (0,0.75) -- (0,2.5);
+  \draw[very thick, FpgaOrange] (1.0,-0.5) -- (1.0,1.75) -- (2.0,1.75);
+  \draw[very thick, FpgaOrange] (1.5,-0.5) -- (1.5,0.25) -- (2.0,0.25);
+  \node[lbl, align=left, anchor=west] at (2.6,1.9) {\textcolor{FpgaOrange}{$\bullet$} ключ замкнут (бит = 1)};
+  \node[lbl, align=left, anchor=west] at (2.6,1.3) {$\circ$ ключ разомкнут (бит = 0)};
+  \node[lbl, align=left, anchor=west] at (2.6,0.5) {Оранжевые линии --- три\\ реальных «провода» схемы};
+\end{tikzpicture}
+\caption{Коммутационная матрица: замкнутые ключи образуют нужные соединения}
+\end{figure}
+
+\begin{infobox}[Любопытный факт]
+Большая часть площади кристалла ПЛИС занята вовсе не логикой, а
+трассировкой и битами конфигурации, которые ею управляют. Поэтому ПЛИС
+медленнее и дороже ASIC той же сложности: за гибкость приходится платить.
+\end{infobox}
+
+\section{Специализированные блоки}
+
+Кроме универсальной логики, в ПЛИС есть готовые «кирпичи» для частых задач.
+Сделать то же самое на LUT можно, но получится медленнее и займёт много места.
+
+\begin{description}
+  \item[IOB (блоки ввода-вывода)] связывают внутреннюю логику с ножками
+    микросхемы. В IOB можно выбрать стандарт напряжения (LVCMOS 3,3~В,
+    1,8~В, LVDS\ldots), силу тока, подтяжку к питанию или земле.
+  \item[BSRAM (блочная память)] --- готовые блоки статической памяти по 18~Кбит.
+    В GW2AR-18 их 46, всего 828~Кбит. Используются для буферов, FIFO, таблиц.
+  \item[DSP (цифровая обработка сигналов)] --- аппаратные умножители
+    $18\times18$ бит с сумматорами. Их 48 штук; они умножают за один такт.
+  \item[PLL (фазовая автоподстройка частоты)] --- умеют из входной частоты
+    27~МГц получить почти любую другую: 50, 100, 126, 371~МГц\ldots\
+    В GW2AR-18 два PLL.
+  \item[Глобальная тактовая сеть] --- специальные провода, которые разносят
+    тактовый сигнал по всему кристаллу с минимальным разбросом по времени.
+\end{description}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  xbar, bar width=4.5mm, width=0.78\textwidth, height=6.5cm,
+  xmode=log, log origin=infty, xmin=1, xmax=2e5, xlabel={Количество (логарифмическая шкала)},
+  symbolic y coords={PLL, {Умножители 18x18}, {Блоки BSRAM}, {Триггеры (FF)}, {LUT4}},
+  ytick=data, y tick label style={font=\sffamily\small},
+  nodes near coords, nodes near coords style={font=\sffamily\small, anchor=west},
+  point meta=explicit symbolic,
+  label style={font=\sffamily\small}, x tick label style={font=\small, /pgf/number format/1000 sep={\,}},
+  axis lines*=left, grid=major, grid style={FpgaGray!20}, enlarge y limits=0.15,
+]
+  \addplot[fill=FpgaBlue!70, draw=FpgaBlue] coordinates {
+    (20736,{LUT4}) [20\,736] (15552,{Триггеры (FF)}) [15\,552]
+    (46,{Блоки BSRAM}) [46] (48,{Умножители 18x18}) [48] (2,PLL) [2]};
+\end{axis}
+\end{tikzpicture}
+\caption{Ресурсы ПЛИС GW2AR-18 на плате Tang Nano 20K}
+\end{figure}
+
+\section{Где хранится конфигурация}
+
+Память конфигурации ПЛИС Gowin сделана по технологии SRAM, как
+оперативная память компьютера: при выключении питания она стирается. Поэтому
+у ПЛИС два режима загрузки:
+\begin{itemize}
+  \item \textbf{в SRAM} --- быстро, удобно для отладки, но до выключения питания;
+  \item \textbf{во Flash} --- файл конфигурации записывается во флеш-память,
+        и при каждом включении ПЛИС сама загружает из неё свою схему за
+        десятки миллисекунд.
+\end{itemize}
+
+\begin{ideabox}
+Внутри ПЛИС: \textbf{LUT} (любая логическая функция), \textbf{триггеры}
+(память на 1 бит), \textbf{трассировка} (провода и ключи), \textbf{IOB}
+(ножки), а также готовые блоки \textbf{памяти}, \textbf{умножителей} и
+\textbf{PLL}. Конфигурация --- это миллионы битов, которые задают
+содержимое каждого LUT и состояние каждого ключа.
+\end{ideabox}

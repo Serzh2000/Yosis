@@ -1,0 +1,102 @@
+\chapter{Задания для самостоятельной работы}
+
+Задания расположены по возрастанию сложности. Звёздочками отмечена
+сложность: \textcolor{FpgaOrange}{$\star$} --- разминка,
+\textcolor{FpgaOrange}{$\star\star$} --- нужно подумать,
+\textcolor{FpgaOrange}{$\star\star\star$} --- мини-проект.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=5mm and 7mm,
+  t/.style={block, minimum width=24mm, minimum height=11mm, font=\sffamily\scriptsize}]
+  \node[t] (a) {1--3\\комбинационная\\логика};
+  \node[t, right=of a] (b) {4--6\\счётчики\\и регистры};
+  \node[t, right=of b] (c) {7--8\\автоматы};
+  \node[oblock, minimum width=24mm, minimum height=11mm, font=\sffamily\scriptsize, right=of c] (d) {9--10\\интерфейсы};
+  \node[hblock, minimum width=24mm, minimum height=11mm, font=\sffamily\scriptsize, right=of d] (e) {11--12\\проекты};
+  \draw[arr] (a) -- (b); \draw[arr] (b) -- (c); \draw[arr] (c) -- (d); \draw[arr] (d) -- (e);
+\end{tikzpicture}
+\caption{Карта заданий}
+\end{figure}
+
+\begin{taskbox}[Задание 1 \quad \textcolor{FpgaOrange}{$\star$}]
+Реализуйте на двух кнопках \textbf{полусумматор}: \code{led[0]} --- сумма,
+\code{led[1]} --- перенос. Составьте таблицу истинности и проверьте её на плате.
+\end{taskbox}
+
+\begin{taskbox}[Задание 2 \quad \textcolor{FpgaOrange}{$\star$}]
+Выразите функции И, ИЛИ и НЕ \textbf{только через И-НЕ} и опишите получившуюся
+схему операторами \code{\textasciitilde{}(... \& ...)}. Сколько LUT займёт
+результат по отчёту синтезатора? Объясните, почему.
+\end{taskbox}
+
+\begin{taskbox}[Задание 3 \quad \textcolor{FpgaOrange}{$\star\star$}]
+Сделайте \textbf{шифратор}: при нажатии одной кнопки на светодиодах
+отображается двоичный код 1, другой --- 2, обеих --- 3. Используйте
+\code{always @(*)} и \code{case}. Не забудьте \code{default}!
+\end{taskbox}
+
+\begin{taskbox}[Задание 4 \quad \textcolor{FpgaOrange}{$\star$}]
+Двоичный счётчик на 6 светодиодах, прибавляющий единицу 4 раза в секунду.
+Через сколько секунд он переполнится?
+\end{taskbox}
+
+\begin{taskbox}[Задание 5 \quad \textcolor{FpgaOrange}{$\star\star$}]
+Счётчик в \textbf{коде Грея}: соседние значения отличаются ровно одним битом.
+Подсказка: \code{gray = bin \^{} (bin >> 1)}. Сравните мигание со
+счётчиком из задания 4.
+\end{taskbox}
+
+\begin{taskbox}[Задание 6 \quad \textcolor{FpgaOrange}{$\star\star$}]
+Бегущий огонь, у которого кнопка S1 меняет направление, а S2 --- скорость
+(3 скорости по кругу).
+\end{taskbox}
+
+\begin{taskbox}[Задание 7 \quad \textcolor{FpgaOrange}{$\star\star$}]
+\textbf{Кодовый замок}. Правильная последовательность нажатий:
+S1, S1, S2, S1. После верного ввода загораются все светодиоды, после
+ошибки --- мигает \code{led[5]}, и ввод начинается заново. Нарисуйте граф
+переходов автомата.
+\end{taskbox}
+
+\begin{taskbox}[Задание 8 \quad \textcolor{FpgaOrange}{$\star\star$}]
+\textbf{Секундомер}: S1 --- старт/стоп, S2 --- сброс. На светодиодах ---
+число секунд в двоичном виде (до 63).
+\end{taskbox}
+
+\begin{taskbox}[Задание 9 \quad \textcolor{FpgaOrange}{$\star\star\star$}]
+\textbf{Передатчик UART}. Раз в секунду отправляйте в компьютер символ
+\code{'A'} на скорости 115\,200 бод (вывод 69). Кадр UART: стартовый бит (0),
+8 бит данных младшим битом вперёд, стоповый бит (1). Длительность бита ---
+$27\,000\,000 / 115\,200 \approx 234$ такта. Смотрите результат в любом
+терминале (PuTTY, \code{screen}, Arduino IDE).
+
+\centering
+\begin{tikztimingtable}[timing/slope=0.1, xscale=1.35, yscale=1.4, timing/font=\sffamily\small]
+  TX & 2H 2L 2H 2L 2L 2L 2L 2L 2H 2L 2H 2H \\
+\extracode
+  \foreach \x/\t in {3/старт, 5/D0, 7/D1, 9/D2, 11/D3, 13/D4, 15/D5, 17/D6, 19/D7, 21/стоп}
+    \node[font=\sffamily\tiny] at (\x,1.3) {\t};
+\end{tikztimingtable}
+\par\small Передача символа 'A' = \code{0x41} = \code{0100\,0001}$_2$
+\end{taskbox}
+
+\begin{taskbox}[Задание 10 \quad \textcolor{FpgaOrange}{$\star\star\star$}]
+\textbf{Приёмник UART}: принятый из компьютера байт показывайте на
+светодиодах (младшие 6 бит). Вход --- вывод 70. Не забудьте синхронизатор!
+\end{taskbox}
+
+\begin{taskbox}[Задание 11 \quad \textcolor{FpgaOrange}{$\star\star\star$}]
+\textbf{Игра «Реакция»}. Через случайное время (используйте
+сдвиговый регистр с линейной обратной связью, LFSR) загорается светодиод.
+Игрок должен как можно быстрее нажать S1. Время реакции в десятках миллисекунд
+выводится на светодиоды или отправляется по UART.
+\end{taskbox}
+
+\begin{taskbox}[Задание 12 \quad \textcolor{FpgaOrange}{$\star\star\star$}]
+\textbf{Генератор ШИМ для сервопривода}. Сервоприводы и регуляторы моторов
+дронов управляются импульсами длительностью 1--2~мс с периодом 20~мс.
+Сделайте генератор, в котором кнопки S1 и S2 меняют длительность импульса с
+шагом 0,1~мс, и выведите сигнал на любой свободный вывод GPIO. Проверьте
+осциллографом или с настоящим сервоприводом.
+\end{taskbox}

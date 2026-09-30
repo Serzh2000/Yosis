@@ -1,0 +1,94 @@
+% =============================================================================
+% ПЛИС на практике: Sipeed Tang Nano 20K
+% Сборка: xelatex main.tex  (запустить дважды)
+% =============================================================================
+\documentclass[
+    fontsize=12pt,
+    headings=big,
+    numbers=noenddot,
+    toc=listof,
+    headinclude=true,
+    footinclude=false,
+    open=any,
+    oneside
+]{scrreprt}
+
+\input{styles/preamble.tex}
+
+\begin{document}
+
+% ------------------------------ Титульный лист ------------------------------
+\begin{titlepage}
+\begin{tikzpicture}[remember picture, overlay]
+  \fill[FpgaDark] (current page.north west) rectangle ([yshift=-11cm]current page.north east);
+  % декоративная «матрица» логических блоков
+  \foreach \x in {0,...,15} \foreach \y in {0,...,5} {
+    \pgfmathsetmacro{\op}{mod(\x*7+\y*13,10)/12+0.1}
+    \fill[FpgaBlue, opacity=0.35*\op] ([xshift=\x*1.35cm+0.4cm, yshift=-\y*1.35cm-2.8cm]current page.north west)
+      rectangle ++(0.95,0.95);
+  }
+  \foreach \x in {0,...,14} \foreach \y in {0,...,5}
+    \draw[FpgaOrange!70, opacity=0.35] ([xshift=\x*1.35cm+1.35cm, yshift=-\y*1.35cm-2.33cm]current page.north west) -- ++(0.4,0);
+  \node[anchor=north west, text=white, font=\sffamily\bfseries\fontsize{34}{40}\selectfont, align=left]
+    at ([xshift=2cm, yshift=-3.4cm]current page.north west)
+    {ПЛИС на практике};
+  \node[anchor=north west, text=FpgaOrange, font=\sffamily\bfseries\LARGE, align=left]
+    at ([xshift=2cm, yshift=-5.4cm]current page.north west)
+    {Sipeed Tang Nano 20K};
+  \node[anchor=north west, text=white, font=\sffamily\large, align=left]
+    at ([xshift=2cm, yshift=-6.7cm]current page.north west)
+    {Учебное пособие для начинающих\\разработчиков цифровой аппаратуры};
+  \node[anchor=south west, text=white!80, font=\sffamily\small, align=left]
+    at ([xshift=2cm, yshift=-10.4cm]current page.north west)
+    {GW2AR-18 $\cdot$ 20\,736 LUT4 $\cdot$ 64 Мбит SDRAM $\cdot$ Verilog};
+\end{tikzpicture}
+
+\vspace*{11cm}
+\begin{center}
+\begin{tikzpicture}[scale=0.9]
+  % Упрощённое изображение платы
+  \fill[BoardGreen, rounded corners=3pt] (0,0) rectangle (9,3.4);
+  \foreach \i in {0,...,19} {
+    \fill[yellow!70!orange] (0.3+\i*0.42,0.12) circle (0.08);
+    \fill[yellow!70!orange] (0.3+\i*0.42,3.28) circle (0.08);
+  }
+  \fill[gray!70] (-0.35,1.2) rectangle (0.6,2.2);        % USB-C
+  \node[font=\tiny\sffamily, white] at (0.12,0.95) {USB-C};
+  \fill[ChipBlack] (3.2,0.8) rectangle (5.2,2.8);         % ПЛИС
+  \node[white, font=\tiny\sffamily, align=center] at (4.2,1.8) {GOWIN\\GW2AR-18};
+  \fill[ChipBlack] (1.2,1.2) rectangle (2.3,2.3);         % BL616
+  \node[white, font=\tiny\sffamily] at (1.75,1.75) {BL616};
+  \fill[gray!50] (8.1,1.0) rectangle (9.3,2.4);            % HDMI
+  \node[font=\tiny\sffamily] at (8.7,1.7) {HDMI};
+  \foreach \i in {0,...,5} \fill[FpgaOrange] (5.8+\i*0.28,2.7) rectangle ++(0.18,0.12);
+  \fill[gray!30] (6,0.6) rectangle (6.6,1.2); \fill[gray!30] (7,0.6) rectangle (7.6,1.2);
+  \node[font=\tiny\sffamily, white] at (6.3,0.4) {S1};
+  \node[font=\tiny\sffamily, white] at (7.3,0.4) {S2};
+\end{tikzpicture}
+\end{center}
+
+\vfill
+\begin{center}
+{\sffamily\large Корягин Сергей Андреевич}\\[2mm]
+{\sffamily\small асп. СПбГЭТУ «ЛЭТИ», педагог ЦО «Кудрово»}\\[8mm]
+{\sffamily г. Кудрово, \the\year}
+\end{center}
+\end{titlepage}
+
+\tableofcontents
+
+\input{chapters/00_preface.tex}
+\input{chapters/01_what_is_fpga.tex}
+\input{chapters/02_inside.tex}
+\input{chapters/03_board.tex}
+\input{chapters/04_flow.tex}
+\input{chapters/05_verilog.tex}
+\input{chapters/06_examples.tex}
+\input{chapters/07_simulation.tex}
+\input{chapters/08_sdram.tex}
+\input{chapters/09_tasks.tex}
+
+\appendix
+\input{chapters/a1_cheatsheet.tex}
+
+\end{document}

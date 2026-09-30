@@ -1,0 +1,494 @@
+\chapter{Практика: шесть проектов}
+\label{ch:examples}
+
+В этой главе мы шаг за шагом соберём шесть схем, от простых логических
+элементов до конечного автомата и ШИМ. Каждый проект лежит в своей папке
+внутри \code{code/}; файл ограничений для всех проектов общий:
+\code{code/common/tang\_nano\_20k.cst}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar stacked, bar width=10mm, width=0.9\textwidth, height=6.2cm,
+  symbolic x coords={Логика, Мигалка, {Бег. огонь}, Кнопка, Светофор, ШИМ},
+  xtick=data, ylabel={Число ячеек},
+  legend style={at={(0.5,1.03)}, anchor=south, legend columns=3, font=\sffamily\small, draw=none},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  axis lines*=left, ymin=0, grid=major, grid style={FpgaGray!20},
+]
+  \addplot[fill=FpgaBlue!70, draw=FpgaBlue] coordinates {(Логика,5) (Мигалка,114) ({Бег. огонь},60) (Кнопка,21) (Светофор,32) (ШИМ,70)};
+  \addplot[fill=FpgaGreen!60, draw=FpgaGreen] coordinates {(Логика,0) (Мигалка,26) ({Бег. огонь},29) (Кнопка,31) (Светофор,30) (ШИМ,34)};
+  \addplot[fill=FpgaOrange!60, draw=FpgaOrange] coordinates {(Логика,0) (Мигалка,25) ({Бег. огонь},22) (Кнопка,25) (Светофор,35) (ШИМ,49)};
+  \legend{LUT1--LUT4, триггеры, ячейки ALU (перенос)}
+\end{axis}
+\end{tikzpicture}
+\caption{Сколько ресурсов занимает каждый проект (по отчёту синтезатора Yosys).
+Даже самый «тяжёлый» пример использует меньше 1\,\% ПЛИС}
+\label{fig:usage}
+\end{figure}
+
+% =============================================================================
+\section{Проект 1. Логические элементы на кнопках}
+
+\textbf{Цель:} убедиться, что элементы И, ИЛИ, НЕ, И-НЕ, ИЛИ-НЕ и
+«Исключающее ИЛИ» действительно можно «собрать» кодом. Кнопки S1 и S2 будут
+входами $a$ и $b$, шесть светодиодов --- выходами шести функций.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[yscale=0.95]
+  \coordinate (A) at (0,0); \coordinate (B) at (0,-0.4);
+  \node[left, font=\sffamily\small] at (-0.1,-2.4) {\begin{tabular}{r}S1 $\to a$\\S2 $\to b$\end{tabular}};
+  \draw[very thick, FpgaBlue] (0,0.5) -- (0,-5.4) node[below, lbl] {$a$};
+  \draw[very thick, FpgaRed]  (0.4,0.5) -- (0.4,-5.4) node[below, lbl] {$b$};
+  \foreach \i/\g/\t in {0/gAND/И, 1/gOR/ИЛИ, 2/gNOT/НЕ, 3/gNAND/И-НЕ, 4/gNOR/ИЛИ-НЕ, 5/gXOR/Искл. ИЛИ} {
+    \pgfmathsetmacro{\y}{-\i*1.0}
+    \ifnum\i=2
+      \node[gNOT] (g\i) at (2.4,\y) {};
+      \draw[wire] (g\i.input) -- (0,\y); \fill[FpgaBlue] (0,\y) circle (1.5pt);
+    \else
+      \node[\g, minimum height=7mm, minimum width=10mm] (g\i) at (2.4,\y) {};
+      \draw[wire] (g\i.input 1) -- (0,{\y+0.12}); \fill[FpgaBlue] (0,{\y+0.12}) circle (1.5pt);
+      \draw[wire] (g\i.input 2) -- (0.4,{\y-0.12}); \fill[FpgaRed] (0.4,{\y-0.12}) circle (1.5pt);
+    \fi
+    \node[gNOT, minimum width=6mm, minimum height=4mm] (n\i) at (4.3,\y) {};
+    \draw[wire] (g\i.output) -- (n\i.input);
+    \draw[wire] (n\i.output) -- (5.4,\y) node[right, font=\sffamily\small] {led[\i]\quad (\t)};
+  }
+  \node[lbl, align=center] at (4.3,0.7) {инверсия\\для LED};
+\end{tikzpicture}
+\caption{Схема проекта 1}
+\end{figure}
+
+\vfile{\codepath/01_gates/gates.v}{code/01\_gates/gates.v}
+
+\begin{table}[H]
+\centering
+\caption{Какие светодиоды должны гореть ($\bullet$ --- горит)}
+\label{tab:gates}
+\begin{tabular}{cc|cccccc}
+\toprule
+S1 ($a$) & S2 ($b$) & led0 И & led1 ИЛИ & led2 НЕ $a$ & led3 И-НЕ & led4 ИЛИ-НЕ & led5 XOR \\
+\midrule
+0 & 0 &           &           & $\bullet$ & $\bullet$ & $\bullet$ &           \\
+0 & 1 &           & $\bullet$ & $\bullet$ & $\bullet$ &           & $\bullet$ \\
+1 & 0 &           & $\bullet$ &           & $\bullet$ &           & $\bullet$ \\
+1 & 1 & $\bullet$ & $\bullet$ &           &           &           &           \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{infobox}[Что получилось после синтеза]
+Yosys сообщает, что схема заняла всего \textbf{5 LUT2}, а не 6 элементов
+и ещё 6 инверторов. Синтезатор объединил каждую функцию с инверсией на выходе в
+один LUT (например, $\overline{a\cdot b}$ стало одной таблицей). А для
+\code{led[2]} получилось $\overline{\overline{a}} = a$ --- светодиод подключён
+к кнопке просто проводом, и LUT не понадобился вовсе!
+\end{infobox}
+
+\begin{taskbox}
+\begin{enumerate}
+  \item Загрузите проект и по очереди проверьте все строки
+        табл.~\ref{tab:gates}.
+  \item Замените функцию на \code{led[5]} мажоритарной функцией от трёх
+        сигналов: $a$, $b$ и $a \oplus b$. Что получится и почему?
+\end{enumerate}
+\end{taskbox}
+
+% =============================================================================
+\section{Проект 2. Мигающий светодиод}
+
+\textbf{Цель:} познакомиться с тактовым сигналом и счётчиком. Это
+«Hello, world!» мира ПЛИС.
+
+Генератор выдаёт \SI{27}{МГц}, то есть $27\,000\,000$ импульсов в секунду.
+Человеческий глаз такого мигания не увидит. Нужно \term{поделить частоту}:
+считаем такты и каждые $13\,500\,000$ тактов (0,5~с) переключаем
+светодиод. Какой разрядности нужен счётчик?
+\[
+  2^{23} = 8\,388\,608 < 13\,500\,000 < 2^{24} = 16\,777\,216
+  \quad\Rightarrow\quad \text{достаточно 24 бит (мы взяли 25 с запасом).}
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=10mm]
+  \node[hblock] (clk) {Генератор\\27 МГц};
+  \node[block, right=of clk, minimum width=30mm] (cnt) {Счётчик\\\scriptsize 0 \ldots 13\,499\,999};
+  \node[block, right=of cnt] (cmp) {Сравнение\\\scriptsize cnt == HALF$-$1};
+  \node[gblock, right=of cmp] (tff) {T-триггер\\\scriptsize state};
+  \node[oblock, below=8mm of tff] (led) {6 LED};
+  \draw[arr] (clk) -- (cnt); \draw[bus, -{Stealth}] (cnt) -- (cmp); \draw[arr] (cmp) -- (tff);
+  \draw[arr] (tff) -- node[right, lbl] {\textasciitilde state} (led);
+  \draw[arr, dashed] (cmp.south) |- node[pos=0.75, below, lbl] {сброс в 0} ($(cnt.south)+(0,-0.6)$) -- (cnt.south);
+\end{tikzpicture}
+\caption{Структура делителя частоты}
+\end{figure}
+
+\vfile{\codepath/02_blink/blink.v}{code/02\_blink/blink.v}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.05, xscale=1.6, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.3ex]
+  clk   & 6{1L 1H} 3S 6{1L 1H} \\
+  cnt   & 2D{0} 2D{1} 2D{2} 2D{\ldots} 2D{H$-$2} 2D{H$-$1} 3S 2D{0} 2D{1} 2D{2} 2D{\ldots} 2D{H$-$2} 2D{H$-$1} \\
+  state & 12L 3S 12H \\
+\extracode
+  \node[lbl, text=FpgaOrange] at (13.5,0.7) {$\approx$0,5 с};
+\end{tikztimingtable}
+\caption{Временная диаграмма мигалки (H = HALF)}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.85\textwidth, height=4.5cm, xlabel={Время, с}, ylabel={led},
+  ymin=-0.2, ymax=1.3, xmin=0, xmax=3, ytick={0,1}, yticklabels={горит (0), не горит (1)},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  grid=major, grid style={FpgaGray!20}, axis lines*=left,
+]
+  \addplot[very thick, FpgaBlue, const plot] coordinates {(0,0) (0.5,1) (1,0) (1.5,1) (2,0) (2.5,1) (3,1)};
+\end{axis}
+\end{tikzpicture}
+\caption{Сигнал на ножке светодиода: период 1 с, частота 1 Гц}
+\end{figure}
+
+\begin{taskbox}
+\begin{enumerate}
+  \item Сделайте, чтобы светодиод мигал 5 раз в секунду.
+  \item Сделайте, чтобы \code{led[0]} мигал с частотой 1 Гц, \code{led[1]} --- 2 Гц,
+        \code{led[2]} --- 4 Гц\ldots\ Подсказка: используйте разные биты одного
+        счётчика. Какой бит 25-разрядного счётчика меняется с частотой около 1 Гц?
+\end{enumerate}
+\end{taskbox}
+
+% =============================================================================
+\section{Проект 3. Бегущий огонь}
+
+\textbf{Цель:} изучить сдвиговый регистр и сигнал разрешения (\code{tick}).
+
+Шесть триггеров соединены в кольцо: по каждому импульсу \code{tick} значение
+каждого триггера переходит в соседний, а значение последнего --- в первый.
+Если в начале в кольце одна единица, она будет «бегать» по кругу.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[ffn/.style={draw=FpgaGreen, fill=green!8, thick, minimum width=13mm, minimum height=11mm, font=\sffamily\small, align=center}]
+  \foreach \i in {0,...,5} {
+    \node[ffn] (r\i) at (\i*2.2,0) {D\enskip Q\\[-1mm]\scriptsize ring[\i]};
+    \draw[wire] (r\i.north) -- ++(0,0.6) node[above, font=\sffamily\scriptsize] {led[\i]};
+  }
+  \foreach \i [evaluate=\i as \j using int(\i+1)] in {0,...,4}
+    \draw[arr] (r\i.east) -- (r\j.west);
+  \draw[arr] (r5.east) -- ++(0.4,0) |- ($(r0.south)+(0,-0.7)$) -| ($(r0.west)+(-0.4,0)$) -- (r0.west);
+  \draw[wire, FpgaBlue] ($(r0.south)+(0,-1.3)$) node[left, font=\sffamily\scriptsize] {clk, tick} -- ($(r5.south)+(0,-1.3)$);
+  \foreach \i in {0,...,5} \draw[wire, FpgaBlue] (r\i.south) -- ++(0,-1.3);
+\end{tikzpicture}
+\caption{Кольцевой сдвиговый регистр из шести D-триггеров}
+\end{figure}
+
+\vfile{\codepath/03_running_lights/running_lights.v}{code/03\_running\_lights/running\_lights.v}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.1, xscale=1.35, yscale=1.35, timing/font=\sffamily\small, timing/rowdist=3.1ex]
+  tick    & 2L 1H 3L 1H 3L 1H 3L 1H 3L 1H 3L 1H 3L 1H 1L \\
+  ring[0] & 3H 20L 4H 1L \\
+  ring[1] & 3L 4H 21L \\
+  ring[2] & 7L 4H 17L \\
+  ring[3] & 11L 4H 13L \\
+  ring[4] & 15L 4H 9L \\
+  ring[5] & 19L 4H 5L \\
+\end{tikztimingtable}
+\caption{Единица «переезжает» в соседний разряд после каждого импульса \code{tick}
+(масштаб по времени условный)}
+\end{figure}
+
+\begin{infobox}[Почему tick, а не отдельный медленный такт?]
+Можно было бы подать на триггеры самодельный медленный такт, взятый прямо с
+делителя. Но в ПЛИС так делать не принято: у такого сигнала нет доступа к
+глобальной тактовой сети, и схема может работать нестабильно. Правильный приём ---
+\textbf{все триггеры тактируются одним \code{clk}}, а редкие события
+задаются \term{сигналом разрешения} длиной в один такт.
+\end{infobox}
+
+\begin{taskbox}
+Сделайте огонь, который бегает туда и обратно («Кнайт Райдер»). Подсказка:
+нужен дополнительный регистр направления \code{dir}.
+\end{taskbox}
+
+% =============================================================================
+\section{Проект 4. Кнопка: синхронизация, дребезг, фронт}
+
+\textbf{Цель:} научиться правильно работать с кнопками. Задача простая:
+считать нажатия S1 и показывать число в двоичном виде на светодиодах. Но
+на пути три препятствия.
+
+\subsection{Препятствие 1: дребезг контактов}
+
+Механические контакты кнопки при нажатии несколько миллисекунд «прыгают», и
+вместо одного перехода $0\to1$ получается целая серия. Схема, работающая
+на частоте 27~МГц, посчитает каждый «прыжок» как отдельное нажатие.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.9\textwidth, height=4.6cm, xlabel={Время, мс}, ylabel={Уровень},
+  xmin=0, xmax=30, ymin=-0.2, ymax=1.5, ytick={0,1},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  legend style={font=\sffamily\small, at={(0.5,1.08)}, anchor=south, legend columns=2, draw=none},
+  axis lines*=left,
+]
+  \addplot[thick, FpgaRed, const plot] coordinates {
+    (0,0) (5,1) (5.4,0) (5.9,1) (6.2,0) (6.9,1) (7.1,0) (7.8,1) (8.4,0) (8.6,1)
+    (22,1) (22.3,0) (22.7,1) (23.2,0) (23.5,1) (24.0,0) (30,0)};
+  \addlegendentry{кнопка (сырой сигнал)}
+  \addplot[very thick, FpgaGreen, const plot] coordinates {(0,-0.05) (18.6,-0.05) (18.6,1.1) (30,1.1)};
+  \addlegendentry{после антидребезга}
+  \draw[FpgaOrange, <->, thick] (axis cs:8.6,1.25) -- (axis cs:18.6,1.25) node[midway, above, font=\sffamily\small] {10 мс стабильно};
+\end{axis}
+\end{tikzpicture}
+\caption{Дребезг контактов и его подавление: новое значение принимается, только
+если оно не меняется 10 мс}
+\end{figure}
+
+\subsection{Препятствие 2: метастабильность}
+
+Кнопка нажимается в случайный момент, никак не связанный с тактом \code{clk}.
+Если вход триггера меняется точно в момент фронта, триггер может на
+какое-то время «зависнуть» между 0 и 1 (\term{метастабильное состояние}). Защита
+--- \term{синхронизатор} из двух последовательно включённых триггеров: даже
+если первый «задумается», ко второму фронту он почти наверняка успокоится.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[ffn/.style={draw=FpgaGreen, fill=green!8, thick, minimum width=13mm, minimum height=11mm, font=\sffamily\small}]
+  \node[font=\sffamily\small] (in) at (0,0) {btn};
+  \node[ffn] (f1) at (2.2,0) {D\enskip Q};
+  \node[ffn] (f2) at (4.6,0) {D\enskip Q};
+  \node[block] (db) at (7.6,0) {антидребезг\\\scriptsize 10 мс};
+  \node[block] (ed) at (10.8,0) {детектор\\фронта};
+  \draw[arr] (in) -- (f1); \draw[arr] (f1) -- node[above, lbl] {sync0} (f2);
+  \draw[arr] (f2) -- node[above, lbl] {sync1} (db); \draw[arr] (db) -- node[above, lbl] {s1} (ed);
+  \draw[arr] (ed) -- ++(1.6,0) node[right, font=\sffamily\small] {press};
+  \draw[wire, FpgaBlue] (1.2,-1.2) node[left, font=\sffamily\scriptsize] {clk} -- (10.8,-1.2);
+  \foreach \n in {f1,f2,db,ed} \draw[wire, FpgaBlue] (\n.south) -- (\n.south |- 0,-1.2);
+\end{tikzpicture}
+\caption{Цепочка обработки сигнала кнопки}
+\end{figure}
+
+\subsection{Препятствие 3: нажатие длится миллионы тактов}
+
+Если писать \code{if (s1) count <= count + 1;}, счётчик будет прибавлять
+единицу \emph{каждый такт}, пока кнопка нажата, --- миллионы раз.
+Нужен \term{детектор переднего фронта}: сравниваем текущее значение с
+задержанным на такт. Импульс \code{press = s1 \& \textasciitilde{}s1\_prev} длится
+ровно один такт.
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.1, xscale=2.4, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  clk      & 8{1L 1H} \\
+  s1       & 3L 10H 3L \\
+  s1\_prev & 5L 10H 1L \\
+  press    & 3L 2H 11L \\
+  count    & 5D{5} 11D{6} \\
+\end{tikztimingtable}
+\caption{Детектор фронта: \code{press} равен 1 только один такт после нажатия}
+\end{figure}
+
+\vfile{\codepath/04_button_edge/button_counter.v}{code/04\_button\_edge/button\_counter.v}
+
+\begin{taskbox}
+\begin{enumerate}
+  \item Сделайте, чтобы S2 не сбрасывал счётчик, а вычитал единицу. Для этого
+        S2 тоже понадобятся антидребезг и детектор фронта. Удобно вынести их
+        в отдельный модуль \code{debounce} и создать два экземпляра.
+  \item Что будет, если убрать антидребезг? Попробуйте и посчитайте, сколько
+        лишних «нажатий» набегает.
+\end{enumerate}
+\end{taskbox}
+
+% =============================================================================
+\section{Проект 5. Светофор: конечный автомат}
+
+\textbf{Цель:} освоить главный инструмент проектирования управляющей логики ---
+\term{конечный автомат} (FSM, Finite State Machine).
+
+Автомат находится в одном из конечного числа \emph{состояний} и по
+определённым условиям \emph{переходит} в другие. Светофор --- классический
+пример:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  st/.style={circle, draw=FpgaDark, very thick, minimum size=22mm, font=\sffamily\small, align=center},
+  tr/.style={-{Stealth[length=3mm]}, very thick, FpgaDark},
+]
+  \node[st, fill=red!20]    (r)  at (0,2.6)  {RED\\\scriptsize 4 с};
+  \node[st, fill=orange!25] (ry) at (5.2,2.6) {RED\_YL\\\scriptsize 1 с};
+  \node[st, fill=green!20]  (g)  at (5.2,-1.6) {GREEN\\\scriptsize 4 с};
+  \node[st, fill=yellow!30] (y)  at (0,-1.6)  {YELLOW\\\scriptsize 1 с};
+  \draw[tr] (r)  -- node[above, lbl] {таймер истёк} (ry);
+  \draw[tr] (ry) -- node[right, lbl] {таймер истёк} (g);
+  \draw[tr] (g)  -- node[below, lbl] {таймер истёк} (y);
+  \draw[tr] (y)  -- node[left, lbl] {таймер истёк} (r);
+  \draw[tr, FpgaRed, dashed] (-2.6,4.2) node[left, lbl, text=FpgaRed] {btn[0] (сброс)} -- (r);
+  % Лампы
+  \foreach \s/\cr/\cy/\cg in {r/red/gray!30/gray!30, ry/red/yellow/gray!30, g/gray!30/gray!30/green!70!black, y/gray!30/yellow/gray!30} {
+    \begin{scope}[shift={($(\s)+(1.7,0.5)$)}]
+    \fill[ChipBlack, rounded corners=1pt] (-0.22,-1.0) rectangle (0.22,0.35);
+    \fill[\cr] (0,0.15) circle (0.13); \fill[\cy] (0,-0.3) circle (0.13); \fill[\cg] (0,-0.75) circle (0.13);
+    \end{scope}
+  }
+\end{tikzpicture}
+\caption{Граф переходов автомата «Светофор»}
+\end{figure}
+
+Автомат на Verilog описывается тремя частями:
+\begin{enumerate}
+  \item \textbf{регистр состояния} (\code{state}) --- триггеры, хранящие
+        номер текущего состояния;
+  \item \textbf{логика переходов} --- определяет следующее состояние;
+  \item \textbf{выходная логика} --- что зажигать в каждом состоянии.
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=12mm]
+  \node[block, minimum width=30mm, minimum height=14mm] (next) {Логика\\переходов};
+  \node[gblock, right=of next, minimum height=14mm] (st) {Регистр\\state};
+  \node[block, right=of st, minimum width=30mm, minimum height=14mm] (out) {Выходная\\логика};
+  \draw[arr] (next) -- (st); \draw[arr] (st) -- (out);
+  \draw[arr] (out.east) -- ++(1,0) node[right, font=\sffamily\small] {led};
+  \draw[arr] ($(st.east)+(0.5,0)$) -- ++(0,-1.2) -| (next.south);
+  \draw[arr] ($(next.west)+(-1.2,0)$) node[left, font=\sffamily\small] {timer, btn} -- (next.west);
+  \draw[wire, FpgaBlue] (st.north) -- ++(0,0.5) node[above, font=\sffamily\scriptsize] {clk};
+\end{tikzpicture}
+\caption{Структура автомата Мура: выход зависит только от состояния}
+\end{figure}
+
+\vfile{\codepath/05_traffic_light/traffic_light.v}{code/05\_traffic\_light/traffic\_light.v}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.05, xscale=1.2, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.3ex]
+  state   & 8D{RED} 2D{R+Y} 8D{GREEN} 2D{YEL} 8D{RED} 2D{R+Y} \\
+  красный & 10H 10L 10H \\
+  жёлтый  & 8L 2H 8L 2H 8L 2H \\
+  зелёный & 10L 8H 12L \\
+\extracode
+  \draw[FpgaGray] (0,-6.2) -- (30,-6.2);
+  \foreach \t/\l in {0/0, 8/4, 10/5, 18/9, 20/10, 28/14, 30/15} {
+    \draw[FpgaGray] (\t,-6.1) -- (\t,-6.3) node[below, font=\sffamily\scriptsize] {\l\,с};
+  }
+\end{tikztimingtable}
+\caption{Работа светофора во времени (1 = лампа горит)}
+\end{figure}
+
+\begin{taskbox}
+Добавьте состояние «мигающий зелёный» (3 раза по 0,5 с) между GREEN и
+YELLOW. Нарисуйте новый граф переходов перед тем, как писать код!
+\end{taskbox}
+
+% =============================================================================
+\section{Проект 6. «Дышащий» светодиод: ШИМ}
+
+\textbf{Цель:} научиться управлять яркостью. У цифровой ножки только два
+состояния: 0 и 1. Но если очень быстро переключать светодиод, глаз увидит
+\emph{среднюю} яркость. Это \term{широтно-импульсная модуляция} (ШИМ, англ. PWM):
+частота постоянна, а меняется доля времени, когда сигнал равен 1,
+--- \term{коэффициент заполнения} $D$:
+\[
+  D = \frac{t_\text{вкл}}{T}\cdot 100\,\%, \qquad
+  U_\text{ср} = D \cdot U_\text{пит}.
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=1 by 3, vertical sep=13mm, xticklabels at=edge bottom},
+  width=0.85\textwidth, height=3cm, xmin=0, xmax=4, ymin=-0.15, ymax=1.3,
+  ytick={0,1}, axis lines*=left, tick label style={font=\sffamily\small},
+  label style={font=\sffamily\small},
+]
+\nextgroupplot[title={$D=25\,\%$ --- тускло}, title style={font=\sffamily\small}]
+  \addplot[very thick, FpgaBlue, const plot] coordinates {(0,1) (0.25,0) (1,1) (1.25,0) (2,1) (2.25,0) (3,1) (3.25,0) (4,0)};
+  \addplot[thick, dashed, FpgaOrange, domain=0:4] {0.25};
+\nextgroupplot[title={$D=50\,\%$}, title style={font=\sffamily\small}]
+  \addplot[very thick, FpgaBlue, const plot] coordinates {(0,1) (0.5,0) (1,1) (1.5,0) (2,1) (2.5,0) (3,1) (3.5,0) (4,0)};
+  \addplot[thick, dashed, FpgaOrange, domain=0:4] {0.5};
+\nextgroupplot[title={$D=90\,\%$ --- ярко}, title style={font=\sffamily\small}, xlabel={Время, периоды ШИМ}]
+  \addplot[very thick, FpgaBlue, const plot] coordinates {(0,1) (0.9,0) (1,1) (1.9,0) (2,1) (2.9,0) (3,1) (3.9,0) (4,0)};
+  \addplot[thick, dashed, FpgaOrange, domain=0:4] {0.9};
+\end{groupplot}
+\end{tikzpicture}
+\caption{ШИМ с разным коэффициентом заполнения. Пунктир --- среднее значение,
+которое «видит» глаз}
+\end{figure}
+
+Как получить ШИМ на ПЛИС? Нужен свободно бегущий счётчик и компаратор:
+пока счётчик меньше заданного числа \code{duty}, выход равен 1.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.9\textwidth, height=5.2cm, xmin=0, xmax=768, ymin=0, ymax=300,
+  xlabel={Такты}, ylabel={Значение},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  legend style={font=\sffamily\small, at={(0.5,1.02)}, anchor=south, legend columns=3, draw=none},
+  axis lines*=left,
+]
+  \addplot[thick, FpgaBlue] coordinates {(0,0) (255,255) (256,0) (511,255) (512,0) (767,255)};
+  \addlegendentry{pwm\_cnt}
+  \addplot[thick, dashed, FpgaRed] coordinates {(0,96) (768,96)};
+  \addlegendentry{duty = 96}
+  \addplot[very thick, FpgaGreen, const plot] coordinates {(0,285) (96,265) (256,285) (352,265) (512,285) (608,265) (768,265)};
+  \addlegendentry{pwm (выход)}
+\end{axis}
+\end{tikzpicture}
+\caption{Счётчик-«пила» и компаратор: выход \code{pwm} равен 1, пока
+\code{pwm\_cnt < duty}}
+\end{figure}
+
+Чтобы светодиод «дышал», будем медленно увеличивать \code{duty} от 0 до 255,
+а затем уменьшать обратно.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.85\textwidth, height=4.6cm, xmin=0, xmax=6, ymin=0, ymax=270,
+  xlabel={Время, с}, ylabel={duty},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  axis lines*=left, grid=major, grid style={FpgaGray!20},
+]
+  \addplot[very thick, FpgaPurple] coordinates {(0,0) (1,255) (2,0) (3,255) (4,0) (5,255) (6,0)};
+\end{axis}
+\end{tikzpicture}
+\caption{Изменение коэффициента заполнения: «вдох» за 1 с и «выдох» за 1 с}
+\end{figure}
+
+\vfile{\codepath/06_pwm_breath/pwm_breath.v}{code/06\_pwm\_breath/pwm\_breath.v}
+
+\begin{infobox}[Почему светодиод кажется «неравномерным»]
+Глаз воспринимает яркость нелинейно: разница между $D=5\,\%$ и $10\,\%$ заметна
+гораздо сильнее, чем между $90\,\%$ и $95\,\%$. Чтобы «дыхание» выглядело
+плавным, в настоящих устройствах используют \term{гамма-коррекцию}: таблицу,
+которая переводит линейную яркость в нужное значение \code{duty}. Такую таблицу
+удобно хранить в блочной памяти BSRAM.
+\end{infobox}
+
+\begin{taskbox}
+\begin{enumerate}
+  \item Сделайте, чтобы шесть светодиодов «дышали» со сдвигом по фазе
+        («волна»).
+  \item Добавьте управление: кнопка S1 увеличивает яркость на 1/8, S2 ---
+        уменьшает (используйте модуль антидребезга из проекта 4).
+\end{enumerate}
+\end{taskbox}

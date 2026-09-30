@@ -1,0 +1,3 @@
+build/
+code/build/
+*.vcd

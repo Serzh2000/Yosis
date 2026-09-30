@@ -1,0 +1,241 @@
+\chapter{Память SDRAM на 64 Мбит}
+
+\section{Зачем ПЛИС внешняя память}
+
+Триггеры и блочная память BSRAM очень быстрые, но их мало. Для
+изображения, звука или большого массива данных нужна память большего объёма.
+Именно для этого в корпус GW2AR-18 встроена микросхема SDRAM на
+\textbf{64 Мбит = 8 Мбайт}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  xbar, bar width=5mm, width=0.8\textwidth, height=5.8cm,
+  xmode=log, log origin=infty, xmin=1e3, xmax=3e8,
+  xlabel={Объём, бит (логарифмическая шкала)},
+  symbolic y coords={Триггеры, SSRAM, BSRAM, SDRAM},
+  ytick=data, y tick label style={font=\sffamily\small},
+  nodes near coords, nodes near coords style={font=\sffamily\small, anchor=west},
+  point meta=explicit symbolic,
+  label style={font=\sffamily\small}, x tick label style={font=\small},
+  axis lines*=left, grid=major, grid style={FpgaGray!20}, enlarge y limits=0.2,
+]
+  \addplot[fill=FpgaOrange!70, draw=FpgaOrange] coordinates {
+    (15552,Триггеры) [$\approx$1,9 Кбайт] (41472,SSRAM) [$\approx$5 Кбайт]
+    (847872,BSRAM) [$\approx$103 Кбайт] (67108864,SDRAM) [8 Мбайт]};
+\end{axis}
+\end{tikzpicture}
+\caption{Сколько данных можно хранить в разных видах памяти Tang Nano 20K}
+\end{figure}
+
+Например, один кадр изображения $640\times480$ точек по 16 бит на точку
+занимает
+\[
+  640 \cdot 480 \cdot 16 = 4\,915\,200 \text{ бит} \approx 600 \text{ Кбайт},
+\]
+что в шесть раз больше всей блочной памяти ПЛИС, но легко помещается в
+SDRAM: туда влезает больше десятка таких кадров.
+
+\section{Как устроена DRAM}
+
+Ячейка динамической памяти (DRAM) состоит всего из \textbf{одного
+транзистора и одного конденсатора}. Заряженный конденсатор хранит 1,
+разряженный --- 0. Поэтому DRAM такая плотная и дешёвая. Но у неё есть два
+неудобства:
+\begin{itemize}
+  \item конденсатор постепенно \textbf{разряжается}, поэтому каждую строку
+        нужно периодически перезаписывать (\term{регенерация}, refresh) --- все
+        строки за 64~мс;
+  \item чтение разрушает заряд, поэтому строку сначала копируют в
+        быстрый буфер (\term{открывают}), а по окончании работы записывают
+        обратно (\term{закрывают}).
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.9, transform shape]
+  \draw (3,1.5) node[nmos] (T) {};
+  \draw (0,0 |- T.gate) node[left, font=\sffamily\small] {строка (WL)} -- (T.gate);
+  \draw (T.drain) -- (T.drain |- 0,3.4) node[above, font=\sffamily\small] {столбец (BL)};
+  \draw (T.source) to[C, l_=$C$] ++(0,-1.6) node[ground]{};
+  \node[font=\sffamily\small, align=left, anchor=west] at (4.6,1.2) {1 бит = 1 транзистор + 1 конденсатор\\[1mm]
+  \textcolor{FpgaRed}{заряд утекает} $\Rightarrow$ нужна регенерация};
+\end{circuitikz}
+\caption{Ячейка DRAM (упрощённо)}
+\end{figure}
+
+\section{Организация памяти}
+
+SDRAM в GW2AR-18 имеет 32-разрядную шину данных и организована как
+$4 \text{ банка} \times 2048 \text{ строк} \times 256 \text{ столбцов}
+\times 32 \text{ бита}$:
+\[
+  4 \cdot 2048 \cdot 256 \cdot 32 = 67\,108\,864 \text{ бит} = 64 \text{ Мбит}.
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \foreach \b/\c in {3/FpgaBlue!15, 2/FpgaBlue!25, 1/FpgaBlue!35, 0/FpgaBlue!50} {
+    \begin{scope}[shift={(\b*0.45,\b*0.45)}]
+      \fill[\c, draw=FpgaBlue] (0,0) rectangle (5,3.2);
+      \node[font=\sffamily\scriptsize, anchor=north east] at (5,3.2) {банк \b};
+    \end{scope}
+  }
+  \foreach \y in {0.4,0.8,...,3.0} \draw[FpgaBlue!40] (0,\y) -- (5,\y);
+  \foreach \x in {0.5,1.0,...,4.6} \draw[FpgaBlue!40] (\x,0) -- (\x,3.2);
+  \fill[FpgaOrange!80] (0,1.6) rectangle (5,2.0);
+  \fill[FpgaRed] (2.5,1.6) rectangle (3.0,2.0);
+  \draw[decorate, decoration={brace, amplitude=5pt}, thick] (-0.2,0) -- (-0.2,3.2) node[midway, left=6pt, font=\sffamily\small, align=right] {2048 строк\\\scriptsize адрес A[10:0]};
+  \draw[decorate, decoration={brace, amplitude=5pt, mirror}, thick] (0,-0.2) -- (5,-0.2) node[midway, below=6pt, font=\sffamily\small, align=center] {256 столбцов, адрес A[7:0]};
+  \node[font=\sffamily\small, align=left, anchor=west] at (7.4,2.6) {\textcolor{FpgaOrange}{\rule{3mm}{3mm}} открытая строка};
+  \node[font=\sffamily\small, align=left, anchor=west] at (7.4,1.9) {\textcolor{FpgaRed}{\rule{3mm}{3mm}} одно 32-битное слово};
+  \node[font=\sffamily\small, align=left, anchor=west] at (7.4,1.2) {банк выбирается BA[1:0]};
+\end{tikzpicture}
+\caption{Организация SDRAM: банк, строка, столбец}
+\end{figure}
+
+\section{Команды SDRAM}
+
+В отличие от BSRAM, в SDRAM нельзя просто подать адрес и получить данные.
+Микросхема управляется \term{командами}, которые кодируются комбинацией
+сигналов \code{CS\#}, \code{RAS\#}, \code{CAS\#}, \code{WE\#} (решётка
+означает активный низкий уровень) по фронту тактового сигнала.
+
+\begin{table}[H]
+\centering
+\caption{Основные команды SDRAM}
+\begin{tabular}{l c c c c l}
+\toprule
+\textbf{Команда} & \textbf{CS\#} & \textbf{RAS\#} & \textbf{CAS\#} & \textbf{WE\#} & \textbf{Действие} \\
+\midrule
+NOP        & 0 & 1 & 1 & 1 & ничего не делать \\
+ACTIVE     & 0 & 0 & 1 & 1 & открыть строку в банке \\
+READ       & 0 & 1 & 0 & 1 & прочитать из открытой строки \\
+WRITE      & 0 & 1 & 0 & 0 & записать в открытую строку \\
+PRECHARGE  & 0 & 0 & 1 & 0 & закрыть строку \\
+AUTO REFRESH & 0 & 0 & 0 & 1 & регенерация \\
+LOAD MODE  & 0 & 0 & 0 & 0 & настройка (CAS latency, длина пакета) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.1, xscale=1.9, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.3ex]
+  CLK      & 9{1L 1H} \\
+  Команда  & 2D{ACTIVE} 2D{NOP} 2D{READ} 2D{NOP} 2D{NOP} 2D{PRE} 6D{NOP} \\
+  Адрес    & 2D{строка} 2U 2D{столб.} 12U \\
+  DQ[31:0] & 10Z 2D{D0} 2D{D1} 4Z \\
+\extracode
+  \draw[FpgaOrange, <->, thick] (1,-6.6) -- (5,-6.6) node[midway, below, font=\sffamily\scriptsize] {$t_\text{RCD}$};
+  \draw[FpgaPurple, <->, thick] (5,-6.6) -- (9,-6.6) node[midway, below, font=\sffamily\scriptsize] {CAS latency = 2};
+\end{tikztimingtable}
+\caption{Чтение из SDRAM: открыть строку (ACTIVE), подождать $t_\text{RCD}$,
+выдать команду READ, через CAS latency тактов получить данные}
+\label{fig:sdram_read}
+\end{figure}
+
+\section{Контроллер SDRAM}
+
+Помнить обо всех командах и задержках при каждом обращении к памяти неудобно.
+Поэтому между логикой пользователя и SDRAM ставят \term{контроллер} ---
+модуль (обычно конечный автомат, как в проекте 5), который:
+\begin{itemize}
+  \item после включения питания инициализирует микросхему;
+  \item превращает простые запросы «прочитай слово по адресу X» в
+        последовательность команд ACTIVE $\to$ READ $\to$ PRECHARGE;
+  \item сам вовремя выполняет регенерацию.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=24mm]
+  \node[gblock, minimum height=24mm, minimum width=24mm] (user) {Ваша логика\\\scriptsize (видео, звук\ldots)};
+  \node[hblock, right=of user, minimum height=24mm, minimum width=26mm] (ctrl) {Контроллер\\SDRAM\\\scriptsize конечный автомат};
+  \node[oblock, right=of ctrl, minimum height=24mm, minimum width=20mm] (mem) {SDRAM\\64 Мбит};
+  \draw[arr] ([yshift=6mm]user.east) -- node[above, lbl] {addr, wr, rd} ([yshift=6mm]ctrl.west);
+  \draw[arr] ([yshift=0mm]user.east) -- node[above, lbl] {din[31:0]} ([yshift=0mm]ctrl.west);
+  \draw[arr] ([yshift=-6mm]ctrl.west) -- node[below, lbl] {dout, busy} ([yshift=-6mm]user.east);
+  \draw[arr] ([yshift=6mm]ctrl.east) -- node[above, lbl] {команды} ([yshift=6mm]mem.west);
+  \draw[arr] ([yshift=0mm]ctrl.east) -- node[above, lbl] {A, BA} ([yshift=0mm]mem.west);
+  \draw[arr, <->] ([yshift=-6mm]ctrl.east) -- node[below, lbl] {DQ[31:0]} ([yshift=-6mm]mem.west);
+  \node[lbl, below=2mm of user] {простые запросы};
+  \node[lbl, below=2mm of mem] {сложный протокол};
+\end{tikzpicture}
+\caption{Контроллер скрывает сложность протокола SDRAM}
+\end{figure}
+
+\subsection{Порты встроенной памяти}
+
+В проекте Gowin встроенная SDRAM подключается к модулю верхнего уровня через
+порты со специальными (зарезервированными) именами. Номера выводов в
+\code{.cst} для них указывать не нужно: соединение находится внутри корпуса.
+
+\begin{vcode}
+module top (
+    input  wire        clk,
+    // --- Встроенная SDRAM (имена изменять нельзя!) ---
+    output wire        O_sdram_clk,
+    output wire        O_sdram_cke,
+    output wire        O_sdram_cs_n,    // CS#
+    output wire        O_sdram_ras_n,   // RAS#
+    output wire        O_sdram_cas_n,   // CAS#
+    output wire        O_sdram_wen_n,   // WE#
+    output wire [3:0]  O_sdram_dqm,     // маска байтов
+    output wire [10:0] O_sdram_addr,    // адрес строки/столбца
+    output wire [1:0]  O_sdram_ba,      // номер банка
+    inout  wire [31:0] IO_sdram_dq      // данные
+);
+\end{vcode}
+
+\begin{infobox}[Где взять контроллер]
+\begin{itemize}
+  \item В Gowin EDA есть готовый IP-блок: \textbf{Tools $\to$ IP Core Generator
+        $\to$ Memory Interface $\to$ SDRAM Controller}. Мастер сам
+        сгенерирует модуль с простым интерфейсом.
+  \item Существуют открытые контроллеры, написанные для Tang Nano 20K
+        энтузиастами; их используют, например, проекты ретро-приставок NESTang и
+        SNESTang.
+  \item Хорошее упражнение повышенной сложности --- написать свой контроллер,
+        следуя рис.~\ref{fig:sdram_read} и документации на микросхему.
+\end{itemize}
+\end{infobox}
+
+\section{Пропускная способность}
+
+При тактовой частоте SDRAM, например, 100~МГц и шине 32 бита пиковая
+скорость передачи равна
+\[
+  B = 100 \cdot 10^6 \ \text{Гц} \cdot 32 \ \text{бит} = 3{,}2 \ \text{Гбит/с} = 400 \ \text{Мбайт/с}.
+\]
+Реальная скорость ниже из-за открытия и закрытия строк и регенерации.
+Чем длиннее пакеты последовательных адресов, тем ближе скорость к пиковой.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.82\textwidth, height=5.6cm,
+  xlabel={Длина пакета, слов}, ylabel={Эффективная скорость, Мбайт/с},
+  xmin=1, xmax=256, xmode=log, log basis x=2, ymin=0, ymax=420,
+  xtick={1,2,4,8,16,32,64,128,256}, xticklabels={1,2,4,8,16,32,64,128,256},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  grid=major, grid style={FpgaGray!20}, axis lines*=left,
+]
+  \addplot[very thick, FpgaBlue, samples at={1,2,4,8,16,32,64,128,256}, mark=*] {400*x/(x+6)};
+  \addplot[thick, dashed, FpgaRed, domain=1:256] {400};
+  \node[font=\sffamily\small, text=FpgaRed, anchor=north east] at (axis cs:256,395) {пиковая 400 Мбайт/с};
+\end{axis}
+\end{tikzpicture}
+\caption{Оценка скорости обмена при 100 МГц: на каждый пакет приходится около
+6 «служебных» тактов (ACTIVE, $t_\text{RCD}$, CAS latency, PRECHARGE)}
+\end{figure}
+
+\begin{ideabox}
+SDRAM даёт много памяти (8 Мбайт), но требует контроллера: строки нужно
+открывать и закрывать, а память регулярно регенерировать. Самая высокая
+скорость получается, когда данные читаются и пишутся длинными
+последовательными пакетами.
+\end{ideabox}

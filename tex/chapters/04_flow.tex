@@ -1,0 +1,183 @@
+\chapter{От текста до работающей схемы}
+
+\section{Маршрут проектирования}
+
+Для программиста путь от программы до работающей прошивки выглядит так:
+«исходный код $\to$ компилятор $\to$ машинные команды». У разработчика ПЛИС
+шагов больше, и каждый решает свою задачу.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=4mm and 11mm,
+  fstep/.style={block, minimum width=26mm, minimum height=15mm},
+  file/.style={draw=FpgaGray, fill=white, font=\ttfamily\scriptsize, minimum height=5mm, inner sep=2pt},
+]
+  \node[fstep] (hdl) {\textbf{1. Описание}\\\scriptsize Verilog (.v)};
+  \node[fstep, right=of hdl] (syn) {\textbf{2. Синтез}\\\scriptsize Yosys / GowinSynth};
+  \node[fstep, right=of syn] (pnr) {\textbf{3. Размещение}\\\textbf{и трассировка}\\\scriptsize nextpnr / Gowin PnR};
+  \node[fstep, right=of pnr] (bit) {\textbf{4. Битстрим}\\\scriptsize gowin\_pack};
+  \node[hblock, minimum width=26mm, minimum height=15mm, below=12mm of bit] (load) {\textbf{5. Загрузка}\\\scriptsize openFPGALoader\\\scriptsize Gowin Programmer};
+  \node[oblock, minimum width=26mm, minimum height=15mm, left=of load] (board) {\textbf{Tang Nano 20K}};
+  \node[gblock, minimum width=26mm, minimum height=15mm, below=12mm of hdl] (sim) {\textbf{Симуляция}\\\scriptsize Icarus Verilog\\\scriptsize GTKWave};
+  \node[file, above=7mm of pnr] (cst) {pins.cst};
+  \draw[arr] (hdl) -- (syn);
+  \draw[arr] (syn) -- node[below, lbl] {netlist} (pnr);
+  \draw[arr] (pnr) -- (bit);
+  \draw[arr] (bit) -- node[right, lbl] {.fs} (load);
+  \draw[arr] (load) -- node[above, lbl] {USB} (board);
+  \draw[arr, <->, dashed] (hdl) -- node[right, lbl] {проверка} (sim);
+  \draw[arr] (cst) -- (pnr);
+  \node[lbl, right=1mm of cst] {номера ножек};
+\end{tikzpicture}
+\caption{Маршрут проектирования для ПЛИС}
+\label{fig:flow}
+\end{figure}
+
+\begin{enumerate}
+  \item \textbf{Описание.} Вы пишете, \emph{какой должна быть схема}, на языке
+        описания аппаратуры (HDL, Hardware Description Language). Мы будем
+        использовать самый распространённый из них --- \textbf{Verilog}.
+  \item \textbf{Синтез.} Программа-синтезатор читает текст и превращает его в
+        \term{список соединений} (netlist): «вот такие LUT, вот такие триггеры,
+        вот так соединены». При этом логика упрощается, как при минимизации
+        по картам Карно, только автоматически.
+  \item \textbf{Размещение и трассировка} (Place \& Route). Каждый LUT и
+        триггер из списка получает конкретное место на кристалле, а соединения
+        прокладываются по трассировочным каналам. Здесь же используется файл
+        \code{.cst}, чтобы порты схемы попали на нужные ножки.
+  \item \textbf{Битстрим.} Результат упаковывается в файл конфигурации
+        \code{.fs}: те самые биты для каждого LUT и каждого ключа.
+  \item \textbf{Загрузка.} Файл по USB передаётся в ПЛИС (в SRAM) или во
+        Flash-память на плате.
+\end{enumerate}
+
+\section{Что делает синтезатор}
+
+Рассмотрим, как синтезатор превращает текст в «железо». Пусть мы написали:
+\begin{vcode}
+assign y = (a & b) | ~c;
+\end{vcode}
+
+Человек нарисовал бы схему из трёх элементов: И, НЕ и ИЛИ. Но у ПЛИС нет
+отдельных элементов --- есть LUT. Функция зависит от трёх переменных,
+поэтому синтезатор вычисляет её таблицу истинности и записывает её в
+\emph{один} LUT3 (или LUT4 с одним неиспользуемым входом).
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \begin{scope}
+    \node[gAND] (and) at (1.3,0.9) {};
+    \node[gNOT] (not) at (1.1,-0.5) {};
+    \node[gOR] (or) at (3.0,0.2) {};
+    \draw[wire] (and.input 1) -- ++(-0.7,0) node[left] {$a$};
+    \draw[wire] (and.input 2) -- ++(-0.7,0) node[left] {$b$};
+    \draw[wire] (not.input) -- ++(-0.5,0) node[left] {$c$};
+    \draw[wire] (and.output) -- ++(0.3,0) |- (or.input 1);
+    \draw[wire] (not.output) -- ++(0.5,0) |- (or.input 2);
+    \draw[wire] (or.output) -- ++(0.5,0) node[right] {$y$};
+    \node[lbl] at (1.8,-1.5) {как задумал человек};
+  \end{scope}
+  \draw[-{Stealth[length=4mm]}, line width=2pt, FpgaOrange] (4.9,0.2) -- (6.1,0.2) node[midway, above=1mm, lbl] {синтез};
+  \begin{scope}[xshift=7cm]
+    \node[draw=FpgaBlue, fill=FpgaLight, thick, minimum width=18mm, minimum height=20mm, font=\sffamily\small, align=center] (lut) at (1.5,0.2) {LUT3};
+    \draw[wire] ([yshift=5mm]lut.west) -- ++(-0.7,0) node[left] {$a$};
+    \draw[wire] (lut.west) -- ++(-0.7,0) node[left] {$b$};
+    \draw[wire] ([yshift=-5mm]lut.west) -- ++(-0.7,0) node[left] {$c$};
+    \draw[wire] (lut.east) -- ++(0.7,0) node[right] {$y$};
+    \node[lbl] at (1.5,-1.5) {как это реализует ПЛИС};
+  \end{scope}
+  \begin{scope}[xshift=11.2cm, yshift=1.6cm]
+    \matrix[matrix of nodes, nodes={font=\ttfamily\scriptsize, inner sep=1.2pt},
+            row 1/.style={nodes={font=\sffamily\bfseries\scriptsize}}] (tt) {
+      a & b & c & y \\ 0&0&0&1 \\ 0&0&1&0 \\ 0&1&0&1 \\ 0&1&1&0 \\ 1&0&0&1 \\ 1&0&1&0 \\ 1&1&0&1 \\ 1&1&1&1 \\};
+    \draw[FpgaGray] (tt-1-1.south west) -- (tt-1-4.south east);
+    \node[lbl, below=0mm of tt] {память LUT};
+  \end{scope}
+\end{tikzpicture}
+\caption{Синтез: три логических элемента превращаются в один LUT3 с
+таблицей истинности внутри}
+\end{figure}
+
+\begin{ideabox}
+Синтезатору всё равно, как вы нарисовали бы схему на бумаге. Важно лишь,
+\emph{какую функцию} вы описали. Поэтому на Verilog описывают
+\emph{поведение} схемы, а подбором элементов занимается программа.
+\end{ideabox}
+
+\section{Инструменты}
+
+Для Tang Nano 20K существуют два набора инструментов, и оба бесплатны.
+
+\subsection{Gowin EDA (официальная среда)}
+
+Среду разработки \textbf{Gowin EDA Education} можно скачать с сайта
+производителя (\url{https://www.gowinsemi.com}). Порядок работы:
+\begin{enumerate}
+  \item \textbf{File $\to$ New $\to$ FPGA Design Project}, указать имя проекта.
+  \item Выбрать микросхему: серия \textbf{GW2AR}, корпус \textbf{QFN88},
+        скорость \textbf{C8/I7}, устройство \textbf{GW2AR-18C}
+        (полное имя \code{GW2AR-LV18QN88C8/I7}).
+  \item \textbf{File $\to$ New $\to$ Verilog File} --- создать файл модуля
+        и написать код.
+  \item \textbf{File $\to$ New $\to$ Physical Constraints File} --- создать
+        файл \code{.cst} с номерами выводов.
+  \item Во вкладке \textbf{Process} запустить \textbf{Synthesize}, затем
+        \textbf{Place \& Route}.
+  \item Открыть \textbf{Programmer}, выбрать режим \textbf{SRAM Program}
+        (для проверки) или \textbf{External Flash Mode} (чтобы схема
+        сохранялась после выключения) и нажать \textbf{Program}.
+\end{enumerate}
+
+\subsection{Открытые инструменты}
+
+Существует полностью открытый набор программ, работающий в Linux, Windows и macOS
+(удобнее всего установить сборку \textbf{OSS CAD Suite}):
+\begin{itemize}
+  \item \textbf{Yosys} --- синтезатор;
+  \item \textbf{nextpnr-himbaechel} --- размещение и трассировка;
+  \item \textbf{Apicula} (\code{gowin\_pack}) --- упаковка битстрима для Gowin;
+  \item \textbf{openFPGALoader} --- загрузка в плату;
+  \item \textbf{Icarus Verilog} и \textbf{GTKWave} --- симуляция и
+        просмотр временных диаграмм.
+\end{itemize}
+
+Все команды собраны в файл \code{Makefile} в папке с примерами:
+\begin{vcode}[bash]
+# 1. Синтез
+yosys -p "read_verilog blink.v; synth_gowin -top blink -json blink.json"
+# 2. Размещение и трассировка
+nextpnr-himbaechel --json blink.json --write pnr.json \
+    --device GW2AR-LV18QN88C8/I7 --vopt family=GW2A-18C \
+    --vopt cst=tang_nano_20k.cst
+# 3. Битстрим
+gowin_pack -d GW2A-18C -o blink.fs pnr.json
+# 4. Загрузка: в SRAM ...
+openFPGALoader -b tangnano20k blink.fs
+# ... или во Flash
+openFPGALoader -b tangnano20k -f blink.fs
+
+# То же самое одной командой:
+make PROJECT=02_blink TOP=blink load
+\end{vcode}
+
+\section{Файл ограничений .cst}
+
+Код на Verilog ничего не знает о плате: в нём есть только имена портов.
+Файл \code{.cst} сообщает, к какой ножке подключить каждый порт и с какими
+электрическими параметрами.
+
+\begin{vcode}[c]
+IO_LOC  "led[0]" 15;                          // порт led[0] -> вывод 15
+IO_PORT "led[0]" IO_TYPE=LVCMOS33 DRIVE=8;    // 3,3 В, ток до 8 мА
+IO_LOC  "btn[0]" 88;
+IO_PORT "btn[0]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN; // подтяжка к земле
+\end{vcode}
+
+Полный файл для всех примеров лежит в \code{code/common/tang\_nano\_20k.cst}.
+
+\begin{warnbox}[Частая ошибка]
+Если в \code{.cst} указан порт, которого нет в модуле, или наоборот, порт
+модуля не описан в \code{.cst}, трассировщик выдаст ошибку или предупреждение
+и назначит ножку сам. Всегда проверяйте, что имена совпадают \emph{в точности}.
+\end{warnbox}
