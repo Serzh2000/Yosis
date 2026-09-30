@@ -4,8 +4,8 @@
 В этой главе мы шаг за шагом соберём семь схем, от простых логических
 элементов до конечного автомата и ШИМ. Каждая опирается на узлы из первой
 части книги. Каждый проект лежит в своей папке
-внутри \code{code/}; файл ограничений для всех проектов общий:
-\code{code/common/tang\_nano\_20k.cst}.
+внутри \code{code/}: файл \code{.v} с описанием схемы и файл \code{.cst} с
+выводами (о том, как он устроен, --- раздел~\ref{sec:cst}).
 
 \begin{figure}[H]
 \centering
@@ -63,6 +63,13 @@
 \end{figure}
 
 \vfile{\codepath/01_gates/gates.v}{code/01\_gates/gates.v}
+
+Файл выводов. Тактового сигнала здесь нет: схема чисто комбинационная, и
+в файле описаны только кнопки и светодиоды. Обратите внимание на
+\code{PULL\_MODE=DOWN} у кнопок: без него отпущенная кнопка давала бы
+случайный уровень, и светодиоды мерцали бы.
+
+\vfile[c]{\codepath/01_gates/gates.cst}{code/01\_gates/gates.cst}
 
 \begin{table}[H]
 \centering
@@ -129,6 +136,12 @@ Yosys сообщает, что схема заняла всего \textbf{5 LUT2
 
 \vfile{\codepath/02_blink/blink.v}{code/02\_blink/blink.v}
 
+Файл выводов: тактовый генератор на выводе 4 и шесть светодиодов. Кнопки
+в этом проекте не используются, поэтому их в файле нет --- лишние строки
+трассировщик пропустил бы, но в аккуратном проекте их быть не должно.
+
+\vfile[c]{\codepath/02_blink/blink.cst}{code/02\_blink/blink.cst}
+
 \begin{figure}[H]
 \centering
 \begin{tikztimingtable}[timing/slope=0.05, xscale=1.6, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.3ex]
@@ -191,6 +204,10 @@ Yosys сообщает, что схема заняла всего \textbf{5 LUT2
 \end{figure}
 
 \vfile{\codepath/03_running_lights/running_lights.v}{code/03\_running\_lights/running\_lights.v}
+
+Файл выводов --- такой же, как у мигалки: такт и светодиоды.
+
+\vfile[c]{\codepath/03_running_lights/running_lights.cst}{code/03\_running\_lights/running\_lights.cst}
 
 \begin{figure}[H]
 \centering
@@ -303,6 +320,12 @@ Yosys сообщает, что схема заняла всего \textbf{5 LUT2
 
 \vfile{\codepath/04_button_edge/button_counter.v}{code/04\_button\_edge/button\_counter.v}
 
+Файл выводов: такт, обе кнопки и светодиоды. Подтяжка \code{PULL\_MODE=DOWN}
+не спасает от дребезга --- она лишь задаёт уровень отпущенной кнопки. С
+дребезгом справляется схема антидребезга в коде.
+
+\vfile[c]{\codepath/04_button_edge/button_counter.cst}{code/04\_button\_edge/button\_counter.cst}
+
 \begin{taskbox}
 \begin{enumerate}
   \item Сделайте, чтобы S2 не сбрасывал счётчик, а вычитал единицу. Для этого
@@ -373,6 +396,12 @@ Yosys сообщает, что схема заняла всего \textbf{5 LUT2
 \end{figure}
 
 \vfile{\codepath/05_traffic_light/traffic_light.v}{code/05\_traffic\_light/traffic\_light.v}
+
+Файл выводов: такт, кнопки (используется S1 --- сброс) и светодиоды. Порт
+\code{btn} в модуле двухбитный, поэтому описаны оба бита, хотя \code{btn[1]}
+не используется: иначе трассировщик сообщит, что порт не описан.
+
+\vfile[c]{\codepath/05_traffic_light/traffic_light.cst}{code/05\_traffic\_light/traffic\_light.cst}
 
 \begin{figure}[H]
 \centering
@@ -477,6 +506,12 @@ YELLOW. Нарисуйте новый граф переходов перед т�
 
 \vfile{\codepath/06_pwm_breath/pwm_breath.v}{code/06\_pwm\_breath/pwm\_breath.v}
 
+Файл выводов: такт и светодиоды. \code{DRIVE=8} ограничивает ток выхода;
+яркость ШИМ от этого не зависит --- она задаётся долей времени, когда
+светодиод включён.
+
+\vfile[c]{\codepath/06_pwm_breath/pwm_breath.cst}{code/06\_pwm\_breath/pwm\_breath.cst}
+
 \begin{infobox}[Почему светодиод кажется «неравномерным»]
 Глаз воспринимает яркость нелинейно: разница между $D=5\,\%$ и $10\,\%$ заметна
 гораздо сильнее, чем между $90\,\%$ и $95\,\%$. Чтобы «дыхание» выглядело
@@ -540,6 +575,10 @@ YELLOW. Нарисуйте новый граф переходов перед т�
 \end{figure}
 
 \vfile{\codepath/07_mux_demux/mux_demux.v}{code/07\_mux\_demux/mux\_demux.v}
+
+Файл выводов: такт, обе кнопки (они образуют адрес $s$) и светодиоды.
+
+\vfile[c]{\codepath/07_mux_demux/mux_demux.cst}{code/07\_mux\_demux/mux\_demux.cst}
 
 Обратите внимание, что один и тот же узел можно описать по-разному:
 мультиплексор здесь записан как дерево операторов \code{?:} (как на

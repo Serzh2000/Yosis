@@ -115,6 +115,7 @@
 % --- Цветные блоки ---
 \usepackage[most]{tcolorbox}
 \tcbuselibrary{minted}
+\input{styles/codecopy.tex}
 \tcbset{codestyle/.style={enhanced, breakable, listing only, listing engine=minted,
   colback=CodeBack, colframe=FpgaBlue, boxrule=0pt, leftrule=2.2pt, arc=0pt,
   left=6pt, right=4pt, top=2pt, bottom=2pt, before skip=6pt, after skip=8pt,
@@ -123,10 +124,10 @@
 % Фрагмент кода: \begin{vcode} ... \end{vcode}, язык по умолчанию Verilog
 \newtcblisting{vcode}[1][verilog]{codestyle, minted language=#1,
   minted options={fontsize=\small, breaklines=true, tabsize=4}}
-% Файл целиком с номерами строк: \vfile{путь}{подпись}
-\newtcbinputlisting{\vfile}[2]{codestyle, minted language=verilog,
-  minted options={fontsize=\small, breaklines=true, tabsize=4, linenos, numbersep=5pt},
-  listing file={#1}, title={#2}, left=20pt}
+% Файл целиком: \vfile[язык]{путь}{подпись} (без номеров строк -- см. codecopy.tex)
+\newtcbinputlisting{\vfile}[3][verilog]{codestyle, minted language=#1,
+  minted options={fontsize=\small, breaklines=true, tabsize=4},
+  listing file={#2}, title={#3}}
 \newtcolorbox{infobox}[1][Справка]{
   enhanced, breakable, colback=FpgaLight, colframe=FpgaBlue,
   fonttitle=\sffamily\bfseries, title={#1}, arc=2mm, boxrule=0.8pt}

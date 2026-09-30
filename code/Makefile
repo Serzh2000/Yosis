@@ -8,7 +8,8 @@ PROJECT ?= 02_blink
 TOP     ?= blink
 DEVICE  := GW2AR-LV18QN88C8/I7
 FAMILY  := GW2A-18C
-CST     := common/tang_nano_20k.cst
+# У каждого проекта свой файл выводов рядом с .v
+CST     ?= $(PROJECT)/$(TOP).cst
 BUILD   := build/$(PROJECT)
 
 all: $(BUILD)/$(TOP).fs
@@ -19,7 +20,7 @@ $(BUILD)/$(TOP).json: $(PROJECT)/$(TOP).v
 
 $(BUILD)/$(TOP)_pnr.json: $(BUILD)/$(TOP).json $(CST)
 	nextpnr-himbaechel --json $< --write $@ --device $(DEVICE) \
-	    --vopt family=$(FAMILY) --vopt cst=$(CST)
+	    --vopt family=$(FAMILY) --vopt cst=$(CST) --freq 27
 
 $(BUILD)/$(TOP).fs: $(BUILD)/$(TOP)_pnr.json
 	gowin_pack -d $(FAMILY) -o $@ $<

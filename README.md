@@ -37,7 +37,7 @@
 
 ```
 tex/        исходники XeLaTeX (main.tex, chapters/, styles/)
-code/       примеры на Verilog, общий файл выводов common/tang_nano_20k.cst, Makefile
+code/       примеры: в каждой папке .v (схема) и .cst (выводы с комментариями); common/tang_nano_20k.cst — сводная распиновка; Makefile
 build.sh    сборка PDF в Linux/macOS
 build.bat   сборка PDF в Windows
 ```

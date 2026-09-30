@@ -149,7 +149,7 @@ yosys -p "read_verilog blink.v; synth_gowin -top blink -json blink.json"
 # 2. Размещение и трассировка
 nextpnr-himbaechel --json blink.json --write pnr.json \
     --device GW2AR-LV18QN88C8/I7 --vopt family=GW2A-18C \
-    --vopt cst=tang_nano_20k.cst
+    --vopt cst=blink.cst --freq 27
 # 3. Битстрим
 gowin_pack -d GW2A-18C -o blink.fs pnr.json
 # 4. Загрузка: в SRAM ...
@@ -162,22 +162,120 @@ make PROJECT=02_blink TOP=blink load
 \end{vcode}
 
 \section{Файл ограничений .cst}
+\label{sec:cst}
 
-Код на Verilog ничего не знает о плате: в нём есть только имена портов.
-Файл \code{.cst} сообщает, к какой ножке подключить каждый порт и с какими
-электрическими параметрами.
+Код на Verilog ничего не знает о плате: в нём есть только имена портов
+(\code{clk}, \code{led}, \code{btn}\ldots). Файл \code{.cst} (Physical
+Constraints, «физические ограничения») сообщает трассировщику, к какой ножке
+микросхемы подключить каждый порт и как эту ножку настроить.
 
-\begin{vcode}[c]
-IO_LOC  "led[0]" 15;                          // порт led[0] -> вывод 15
-IO_PORT "led[0]" IO_TYPE=LVCMOS33 DRIVE=8;    // 3,3 В, ток до 8 мА
-IO_LOC  "btn[0]" 88;
-IO_PORT "btn[0]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN; // подтяжка к земле
-\end{vcode}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=4mm and 20mm]
+  \node[block, minimum width=30mm, minimum height=22mm, align=left, font=\ttfamily\scriptsize] (v) {module blink (\\\ \ input\ \ clk,\\\ \ output [5:0] led\\);};
+  \node[oblock, right=of v, minimum width=36mm, minimum height=22mm, align=left, font=\ttfamily\scriptsize] (c) {IO\_LOC "clk" 4;\\IO\_LOC "led[0]" 15;\\\ldots\\IO\_LOC "led[5]" 20;};
+  \node[draw=FpgaDark, fill=ChipBlack, text=white, minimum width=24mm, minimum height=22mm, right=of c, font=\sffamily\small, align=center] (chip) {ПЛИС\\\scriptsize выводы 4, 15..20};
+  \draw[arr] (v) -- node[above, lbl] {имена} (c);
+  \draw[arr] (c) -- node[above, lbl] {номера ножек} (chip);
+  \node[lbl, below=1mm of v] {blink.v};
+  \node[lbl, below=1mm of c] {blink.cst};
+\end{tikzpicture}
+\caption{Файл \code{.cst} связывает имена портов модуля с ножками микросхемы}
+\end{figure}
 
-Полный файл для всех примеров лежит в \code{code/common/tang\_nano\_20k.cst}.
+В файле встречаются всего две команды:
+\begin{description}
+  \item[\code{IO\_LOC "порт" номер;}] --- подключить порт к выводу с указанным
+    номером. Номера выводов Tang Nano 20K приведены в табл.~\ref{tab:pins}.
+  \item[\code{IO\_PORT "порт" параметр=значение ...;}] --- задать
+    электрические параметры вывода.
+\end{description}
 
-\begin{warnbox}[Частая ошибка]
-Если в \code{.cst} указан порт, которого нет в модуле, или наоборот, порт
-модуля не описан в \code{.cst}, трассировщик выдаст ошибку или предупреждение
-и назначит ножку сам. Всегда проверяйте, что имена совпадают \emph{в точности}.
+\begin{table}[H]
+\centering
+\caption{Основные параметры команды \code{IO\_PORT}}
+\label{tab:ioport}
+\small
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Параметр} & \textbf{Значения} & \textbf{Смысл} \\
+\midrule
+\code{IO\_TYPE} & \code{LVCMOS33}, \code{LVCMOS18}, \ldots & стандарт логических уровней; на Tang Nano 20K почти везде \code{LVCMOS33} (3,3~В), см. главу~\ref{ch:signals} \\
+\code{PULL\_MODE} & \code{UP}, \code{DOWN}, \code{NONE}, \code{KEEPER} & встроенный резистор: подтяжка к питанию, к земле, без подтяжки или «удержание» последнего уровня \\
+\code{DRIVE} & \code{4}, \code{8}, \code{12}, \code{16}, \code{24} & максимальный выходной ток в миллиамперах (только для выходов) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Правила записи:
+\begin{itemize}
+  \item каждая команда заканчивается точкой с запятой;
+  \item комментарии начинаются с \code{//}, как в Verilog;
+  \item имена портов пишутся в кавычках и должны \emph{в точности} совпадать с
+        именами в модуле (регистр букв тоже важен);
+  \item у шины каждый бит описывается отдельной строкой: \code{"led[0]"},
+        \code{"led[1]"}, \ldots
+\end{itemize}
+
+Зачем нужна подтяжка? Вход, к которому ничего не подключено (например, вывод
+кнопки, пока она отпущена), «висит в воздухе» и ловит наводки: ПЛИС будет
+читать то 0, то 1. Резистор \code{PULL\_MODE=DOWN} слабо притягивает такой вход
+к земле, и пока кнопка отпущена, на нём гарантированно 0.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.85, transform shape]
+  \draw (0,3.2) node[vcc] {$+3{,}3$ В} -- (0,2.8) to[push button, l=S1] (0,1.4) -- (2.4,1.4);
+  \draw (1.3,1.4) to[R, l_=$R_\text{подтяжки}$, *-] (1.3,-0.2) node[ground] {};
+  \draw (2.4,0.8) rectangle (4.6,2.0);
+  \node[font=\sffamily\small] at (3.5,1.4) {ПЛИС};
+  \node[font=\sffamily\scriptsize, anchor=south west] at (2.4,1.4) {88};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5.2,1.9) {кнопка отпущена: резистор тянет вход к 0};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5.2,1.0) {кнопка нажата: вход соединён с 3,3~В $\to$ 1};
+\end{circuitikz}
+\caption{\code{PULL\_MODE=DOWN}: резистор подтяжки включается внутри ПЛИС,
+паять его не нужно}
+\end{figure}
+
+\subsection{Файлы .cst в примерах}
+
+У каждого проекта из главы~\ref{ch:examples} есть свой файл ограничений
+рядом с кодом, например \code{code/02\_blink/blink.cst}. В нём описаны ровно
+те порты, которые есть в модуле, и каждая группа строк прокомментирована.
+Вот полный файл для мигалки:
+
+\vfile[c]{\codepath/02_blink/blink.cst}{code/02\_blink/blink.cst}
+
+Кроме того, в \code{code/common/tang\_nano\_20k.cst} собрана сводная
+распиновка всех выводов, которые используются в книге. Это справочник: не
+подключайте его к проекту целиком, а копируйте из него нужные строки.
+
+\begin{warnbox}[Частые ошибки]
+Мы проверили поведение открытого трассировщика \code{nextpnr} на примерах:
+\begin{itemize}
+  \item \textbf{Порт модуля не описан в \code{.cst}} --- ошибка
+        \code{Unconstrained IO}, прошивка не собирается. Так даже лучше: ошибка
+        видна сразу.
+  \item \textbf{В \code{.cst} описан порт, которого нет в модуле} --- строка
+        просто пропускается с сообщением \code{Cell ... not found}, \emph{без
+        ошибки}. Обычно это опечатка в имени: тогда настоящий порт остаётся
+        неописанным, и срабатывает предыдущая ошибка. Увидев
+        \code{Unconstrained IO}, первым делом ищите опечатку в \code{.cst}.
+  \item \textbf{Неверный номер вывода} --- ошибка \code{Pin ... not found}.
+\end{itemize}
 \end{warnbox}
+
+\subsection{Тактовая частота}
+
+Трассировщику нужно знать, на какой частоте будет работать схема, чтобы
+проверить, успевают ли сигналы пройти критический путь
+(глава~\ref{ch:sync}). Для \code{nextpnr} частота задаётся ключом
+\code{--freq 27} (в мегагерцах), и в журнале появляется строка вида
+\begin{vcode}[text]
+Info: Max frequency for clock 'clk': 256.21 MHz (PASS at 27.00 MHz)
+\end{vcode}
+В Gowin EDA частоту задают в отдельном файле временных ограничений \code{.sdc}:
+\begin{vcode}[text]
+create_clock -name clk -period 37.037 [get_ports {clk}]
+\end{vcode}
+Здесь 37,037~нс --- период сигнала 27~МГц.
