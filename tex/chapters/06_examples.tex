@@ -1,8 +1,9 @@
-\chapter{Практика: шесть проектов}
+\chapter{Практика: семь проектов}
 \label{ch:examples}
 
-В этой главе мы шаг за шагом соберём шесть схем, от простых логических
-элементов до конечного автомата и ШИМ. Каждый проект лежит в своей папке
+В этой главе мы шаг за шагом соберём семь схем, от простых логических
+элементов до конечного автомата и ШИМ. Каждая опирается на узлы из первой
+части книги. Каждый проект лежит в своей папке
 внутри \code{code/}; файл ограничений для всех проектов общий:
 \code{code/common/tang\_nano\_20k.cst}.
 
@@ -10,16 +11,16 @@
 \centering
 \begin{tikzpicture}
 \begin{axis}[
-  ybar stacked, bar width=10mm, width=0.9\textwidth, height=6.2cm,
-  symbolic x coords={Логика, Мигалка, {Бег. огонь}, Кнопка, Светофор, ШИМ},
+  ybar stacked, bar width=9mm, width=\textwidth, height=6.2cm,
+  symbolic x coords={Логика, Мигалка, {Бег. огонь}, Кнопка, Светофор, ШИМ, MUX},
   xtick=data, ylabel={Число ячеек},
   legend style={at={(0.5,1.03)}, anchor=south, legend columns=3, font=\sffamily\small, draw=none},
   label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
   axis lines*=left, ymin=0, grid=major, grid style={FpgaGray!20},
 ]
-  \addplot[fill=FpgaBlue!70, draw=FpgaBlue] coordinates {(Логика,5) (Мигалка,114) ({Бег. огонь},60) (Кнопка,21) (Светофор,32) (ШИМ,70)};
-  \addplot[fill=FpgaGreen!60, draw=FpgaGreen] coordinates {(Логика,0) (Мигалка,26) ({Бег. огонь},29) (Кнопка,31) (Светофор,30) (ШИМ,34)};
-  \addplot[fill=FpgaOrange!60, draw=FpgaOrange] coordinates {(Логика,0) (Мигалка,25) ({Бег. огонь},22) (Кнопка,25) (Светофор,35) (ШИМ,49)};
+  \addplot[fill=FpgaBlue!70, draw=FpgaBlue] coordinates {(Логика,5) (Мигалка,114) ({Бег. огонь},60) (Кнопка,21) (Светофор,32) (ШИМ,70) (MUX,8)};
+  \addplot[fill=FpgaGreen!60, draw=FpgaGreen] coordinates {(Логика,0) (Мигалка,26) ({Бег. огонь},29) (Кнопка,31) (Светофор,30) (ШИМ,34) (MUX,25)};
+  \addplot[fill=FpgaOrange!60, draw=FpgaOrange] coordinates {(Логика,0) (Мигалка,25) ({Бег. огонь},22) (Кнопка,25) (Светофор,35) (ШИМ,49) (MUX,25)};
   \legend{LUT1--LUT4, триггеры, ячейки ALU (перенос)}
 \end{axis}
 \end{tikzpicture}
@@ -490,5 +491,76 @@ YELLOW. Нарисуйте новый граф переходов перед т�
         («волна»).
   \item Добавьте управление: кнопка S1 увеличивает яркость на 1/8, S2 ---
         уменьшает (используйте модуль антидребезга из проекта 4).
+\end{enumerate}
+\end{taskbox}
+
+% =============================================================================
+\section{Проект 7. Дешифратор, мультиплексор и демультиплексор}
+
+\textbf{Цель:} собрать в ПЛИС узлы из глав~\ref{ch:coders} и~\ref{ch:mux} и
+увидеть их работу на светодиодах.
+
+Кнопки S1 и S2 образуют двухбитный адрес $s$ (от 0 до 3). Счётчик-делитель
+выдаёт четыре сигнала разной частоты --- это его старшие разряды
+(рис.~\ref{fig:count_t}).
+\begin{itemize}
+  \item \textbf{Мультиплексор 4:1} выбирает по адресу один из четырёх сигналов
+        и подаёт его на \code{led[4]}: чем больше номер, тем быстрее мигание.
+  \item \textbf{Дешифратор 2$\to$4} превращает адрес в унитарный код.
+  \item \textbf{Демультиплексор 1:4} --- это тот же дешифратор, у которого
+        выходы «разрешаются» информационным сигналом. Мигание попадает только
+        на светодиод \code{led[s]}.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[hblock, minimum height=24mm, minimum width=18mm] (cnt) at (0,0) {Счётчик\\\scriptsize 25 бит};
+  \draw[thick, fill=orange!15] (2.6,1.4) -- (3.6,0.9) -- (3.6,-0.9) -- (2.6,-1.4) -- cycle;
+  \node[font=\sffamily\scriptsize] at (3.1,0) {MUX};
+  \foreach \i in {0,...,3} \draw[wire] (cnt.east |- 0,0.9-\i*0.6) -- node[above, font=\tiny, pos=0.4] {cnt[\the\numexpr21+\i\relax]} (2.6,0.9-\i*0.6);
+  \draw[wire] (3.6,0) -- (4.4,0) node[right, font=\sffamily\small] {led[4]};
+  \draw[thick, fill=FpgaLight] (6.4,-3.5) rectangle (7.4,-1.3);
+  \node[font=\sffamily\small\bfseries] at (6.9,-2.4) {DC};
+  \foreach \i in {0,...,3} {
+    \node[gAND, minimum width=8mm, minimum height=6mm] (g\i) at (8.8,-1.55-\i*0.55) {};
+    \draw[wire] (7.4,-1.48-\i*0.55) -- (g\i.input 1);
+    \draw[wire] (g\i.output) -- ++(0.4,0) node[right, font=\sffamily\small] {led[\i]};
+  }
+  \draw[wire, FpgaOrange] (cnt.south) -- ++(0,-2.4) node[below, font=\sffamily\scriptsize, text=FpgaDark] {cnt[23]} -| (8.0,-1.2);
+  \foreach \i in {0,...,3} { \draw[wire, FpgaOrange] (8.0,0 |- g\i.input 2) -- (g\i.input 2); \fill[FpgaOrange] (8.0,0 |- g\i.input 2) circle (1.2pt); }
+  \draw[wire, FpgaOrange] (8.0,-1.2) -- (8.0,0 |- g3.input 2);
+  \draw[wire, FpgaBlue] (4.9,-3.0) node[left, text=FpgaDark] {s = btn} -- (6.4,-3.0);
+  \draw[wire, FpgaBlue] (5.4,-3.0) |- (3.1,-2.0) -- (3.1,-1.15); \fill[FpgaBlue] (5.4,-3.0) circle (1.3pt);
+  \begin{scope}[on background layer]
+    \node[draw=FpgaGray, dashed, rounded corners, fit=(g0)(g3), inner sep=6mm, label={[lbl]above:демультиплексор}] {};
+  \end{scope}
+\end{tikzpicture}
+\caption{Схема проекта 7. Демультиплексор = дешифратор + элементы И}
+\end{figure}
+
+\vfile{\codepath/07_mux_demux/mux_demux.v}{code/07\_mux\_demux/mux\_demux.v}
+
+Обратите внимание, что один и тот же узел можно описать по-разному:
+мультиплексор здесь записан как дерево операторов \code{?:} (как на
+рис.~\ref{fig:muxtree}), а дешифратор --- как \code{case}. Короче всего
+мультиплексор записывается как \code{assign y = x[s];} --- синтезатор получит
+ту же схему.
+
+\begin{infobox}[Что получилось после синтеза]
+Yosys разместил мультиплексор не в обычных LUT, а в специальных
+мультиплексорах \code{MUX2\_LUT5} и \code{MUX2\_LUT6}, которые стоят в каждой
+логической ячейке рядом с LUT. Весь проект занял 8 LUT и 25 триггеров
+(триггеры --- это счётчик).
+\end{infobox}
+
+\begin{taskbox}
+\begin{enumerate}
+  \item Замените мультиплексор строкой \code{assign y = x[s];} и сравните
+        отчёты синтеза.
+  \item Добавьте приоритетный шифратор (глава~\ref{ch:coders}): выведите на
+        \code{led[5]} признак $V$ «нажата хотя бы одна кнопка».
+  \item Выведите номер $s$ на семисегментный индикатор, подключённый к
+        выводам GPIO, используя дешифратор из табл.~\ref{tab:7seg}.
 \end{enumerate}
 \end{taskbox}

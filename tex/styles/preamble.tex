@@ -62,11 +62,13 @@
 \definecolor{CodeString}{RGB}{170, 60, 0}
 
 % --- Графика ---
+\usepackage{etoolbox}
+\usepackage{xstring}
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, calc, positioning, shapes.geometric, shapes.misc,
-  shapes.gates.logic.US, shapes.gates.logic.IEC,
+  shapes.gates.logic.US, shapes.gates.logic.IEC, shapes.symbols,
   fit, backgrounds, decorations.pathreplacing, patterns, shadows, matrix}
 \usepackage{tikz-timing}
 \usepackage{pgfplots}
@@ -172,6 +174,17 @@
   gXOR/.style={xor gate US, gbase},
   gNAND/.style={nand gate US, gbase},
   gNOR/.style={nor gate US, gbase},
+  gXNOR/.style={xnor gate US, gbase},
+  ibase/.style={draw=FpgaDark, thick, fill=FpgaLight, logic gate inputs=nn,
+                minimum width=8mm, minimum height=10mm, font=\sffamily\small},
+  iAND/.style={and gate IEC, ibase},
+  iOR/.style={or gate IEC, ibase},
+  iXOR/.style={xor gate IEC, ibase},
+  iNAND/.style={nand gate IEC, ibase},
+  iNOR/.style={nor gate IEC, ibase},
+  iXNOR/.style={xnor gate IEC, ibase},
+  iNOT/.style={not gate IEC, draw=FpgaDark, thick, fill=FpgaLight,
+               minimum width=8mm, minimum height=7mm, font=\sffamily\small},
   gNOT/.style={not gate US, draw=FpgaDark, thick, fill=FpgaLight,
                minimum width=9mm, minimum height=6mm, inner sep=0pt},
 }

@@ -1,0 +1,345 @@
+\chapter{Синхронные схемы, автоматы и память}
+\label{ch:sync}
+
+\section{Синхронное проектирование}
+
+Мы уже знаем два «материала»: комбинационную логику (она вычисляет) и
+триггеры (они хранят). Как собрать из них большое надёжное устройство?
+Почти все современные цифровые схемы строятся по одному принципу ---
+\term{синхронному}:
+
+\begin{itemize}
+  \item все триггеры тактируются \textbf{одним} тактовым сигналом;
+  \item между регистрами находится только комбинационная логика;
+  \item результат вычислений записывается в регистры по фронту, когда все
+        переходные процессы и «иголки» уже закончились.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[rg/.style={draw=FpgaGreen, fill=green!8, thick, minimum width=10mm, minimum height=18mm, font=\sffamily\small},
+  cl/.style={draw=FpgaBlue, fill=FpgaLight, thick, cloud, cloud puffs=11, aspect=1.8, minimum width=26mm, minimum height=16mm, font=\sffamily\small, align=center}]
+  \node[rg] (r1) at (0,0) {RG};
+  \node[cl] (c1) at (2.6,0) {логика};
+  \node[rg] (r2) at (5.2,0) {RG};
+  \node[cl] (c2) at (7.8,0) {логика};
+  \node[rg] (r3) at (10.4,0) {RG};
+  \draw[bus, -{Stealth}] (-1.2,0) node[left, text=FpgaDark] {входы} -- (r1);
+  \draw[bus, -{Stealth}] (r1) -- (c1); \draw[bus, -{Stealth}] (c1) -- (r2);
+  \draw[bus, -{Stealth}] (r2) -- (c2); \draw[bus, -{Stealth}] (c2) -- (r3);
+  \draw[bus, -{Stealth}] (r3) -- ++(1.2,0) node[right, text=FpgaDark] {выходы};
+  \draw[wire, FpgaBlue] (-0.8,-1.6) node[left, text=FpgaDark] {CLK} -- (10.4,-1.6);
+  \foreach \r in {r1,r2,r3} { \draw[wire, FpgaBlue] (\r.south) -- (\r.south |- 0,-1.6); \fill[FpgaBlue] (\r.south |- 0,-1.6) circle (1.4pt); }
+\end{tikzpicture}
+\caption{Синхронная схема: регистры, разделённые комбинационной логикой, и
+один общий такт}
+\label{fig:sync}
+\end{figure}
+
+\subsection{Максимальная тактовая частота}
+
+За один такт сигнал должен пройти от выхода одного регистра через логику
+до входа следующего и успеть «установиться» до фронта. Отсюда главное
+уравнение синхронной схемы:
+\[
+  T_\text{CLK} \ \ge\ t_\text{co} + t_\text{логики} + t_\text{su},
+  \qquad
+  f_\text{max} = \frac{1}{t_\text{co} + t_\text{логики} + t_\text{su}}.
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \draw[very thick, FpgaBlue] (0,2.2) -- (1,2.2) -- (1.05,2.8) -- (5,2.8) -- (5.05,2.2) -- (9,2.2) -- (9.05,2.8) -- (11,2.8);
+  \node[font=\sffamily\small, anchor=east] at (-0.1,2.5) {CLK};
+  \fill[FpgaOrange!40] (1.05,1.2) rectangle (2.0,1.8); \node[font=\sffamily\scriptsize] at (1.52,1.5) {$t_\text{co}$};
+  \fill[FpgaBlue!25] (2.0,1.2) rectangle (7.6,1.8); \node[font=\sffamily\scriptsize] at (4.8,1.5) {$t_\text{логики}$ (критический путь)};
+  \fill[FpgaRed!30] (7.6,1.2) rectangle (8.6,1.8); \node[font=\sffamily\scriptsize] at (8.1,1.5) {$t_\text{su}$};
+  \fill[green!25] (8.6,1.2) rectangle (9.05,1.8);
+  \node[font=\sffamily\scriptsize, anchor=west] at (9.2,1.5) {запас};
+  \draw[dashed, FpgaGray] (1.05,3.0) -- (1.05,0.6); \draw[dashed, FpgaGray] (9.05,3.0) -- (9.05,0.6);
+  \draw[<->, thick] (1.05,0.8) -- (9.05,0.8) node[midway, below, font=\sffamily\small] {период $T_\text{CLK}$};
+\end{tikzpicture}
+\caption{Бюджет времени одного такта. Если сумма задержек больше периода,
+в регистр запишется неверное значение}
+\label{fig:budget}
+\end{figure}
+
+Пример: $t_\text{co} = 0{,}5$~нс, $t_\text{su} = 0{,}5$~нс, а сигнал проходит
+через 10 элементов по 0,5~нс. Тогда
+$T \ge 0{,}5 + 5 + 0{,}5 = 6$~нс и $f_\text{max} \approx 166$~МГц. Чем
+длиннее цепочка логики между регистрами, тем ниже допустимая частота.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.78\textwidth, height=5.2cm, xlabel={Число уровней логики на критическом пути}, ylabel={$f_\text{max}$, МГц},
+  xmin=1, xmax=20, ymin=0, ymax=520,
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  grid=major, grid style={FpgaGray!20}, axis lines*=left,
+]
+  \addplot[very thick, FpgaBlue, domain=1:20, samples=40] {1000/(1+0.5*x)};
+  \addplot[only marks, mark=*, FpgaRed] coordinates {(10,166.7)};
+  \node[font=\sffamily\small, text=FpgaRed, anchor=south west] at (axis cs:10,170) {пример: 166 МГц};
+\end{axis}
+\end{tikzpicture}
+\caption{Максимальная частота падает с ростом числа элементов между регистрами
+($t_\text{co}+t_\text{su} = 1$~нс, задержка элемента 0,5~нс)}
+\end{figure}
+
+\subsection{Конвейер}
+
+Что делать, если логика слишком длинная? Её можно разрезать на части и
+поставить между ними дополнительные регистры. Это \term{конвейер}
+(pipeline): каждая «станция» делает свою часть работы за один короткий такт,
+и хотя результат для одних данных появляется через несколько тактов, новые
+данные можно подавать \emph{каждый} такт. Так работает сборочный конвейер на
+заводе --- и все современные процессоры.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[c/.style={draw, minimum width=11mm, minimum height=6mm, font=\sffamily\scriptsize}]
+  \foreach \t in {1,...,6} \node[font=\sffamily\scriptsize] at (\t*1.15+0.9,0.55) {такт \t};
+  \foreach \s/\n [count=\r from 0] in {этап 1/A, этап 2/B, этап 3/C} {
+    \node[font=\sffamily\small, anchor=east] at (1.3,-\r*0.75) {\s};
+  }
+  \foreach \d/\col [count=\k from 0] in {1/FpgaBlue!30, 2/FpgaOrange!40, 3/FpgaGreen!35, 4/FpgaPurple!30} {
+    \foreach \r in {0,1,2} {
+      \pgfmathsetmacro{\x}{(\k+\r+1)*1.15+0.9}
+      \node[c, fill=\col] at (\x,-\r*0.75) {данные \d};
+    }
+  }
+\end{tikzpicture}
+\caption{Трёхэтапный конвейер: на такте 3 одновременно обрабатываются три
+порции данных, каждая на своём этапе}
+\end{figure}
+
+\section{Конечные автоматы}
+
+Многие устройства работают по сценарию: «ждать нажатия, потом сделать то, потом
+это, при ошибке вернуться в начало». Такое поведение описывают
+\term{конечным автоматом} (FSM, finite state machine). Автомат находится в
+одном из конечного числа \term{состояний}; по каждому такту, в зависимости от
+текущего состояния и входов, он \term{переходит} в следующее состояние.
+
+Схема любого автомата одинакова: регистр хранит номер текущего состояния,
+комбинационная логика вычисляет следующее состояние и выходы.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=12mm]
+  \node[block, minimum width=28mm, minimum height=14mm] (next) {Логика\\переходов};
+  \node[gblock, right=of next, minimum height=14mm] (st) {Регистр\\состояния};
+  \node[block, right=of st, minimum width=28mm, minimum height=14mm] (out) {Логика\\выходов};
+  \draw[bus, -{Stealth}] (next) -- node[above, lbl] {след.} (st);
+  \draw[bus, -{Stealth}] (st) -- node[above, lbl] {текущее} (out);
+  \draw[arr] (out.east) -- ++(1,0) node[right, font=\sffamily\small] {выходы};
+  \draw[bus, -{Stealth}] ($(st.east)+(0.6,0)$) -- ++(0,-1.3) -| (next.south);
+  \draw[arr] ($(next.west)+(-1.2,0)$) node[left, font=\sffamily\small] {входы} -- (next.west);
+  \draw[arr, dashed, FpgaPurple] ($(next.west)+(-0.6,0)$) -- ++(0,1.3) -| node[pos=0.25, above, lbl, text=FpgaPurple] {только у автомата Мили} (out.north);
+  \draw[wire, FpgaBlue] (st.south) ++(0,0) -- ++(0,-0.5) node[below, font=\sffamily\scriptsize, text=FpgaDark] {CLK};
+\end{tikzpicture}
+\caption{Структура конечного автомата. У автомата \textbf{Мура} выходы зависят
+только от состояния, у автомата \textbf{Мили} --- ещё и от входов (пунктир)}
+\label{fig:fsm_struct}
+\end{figure}
+
+\subsection{Пример: детектор последовательности}
+
+Построим автомат, который следит за входом $x$ (по одному биту за такт) и
+выдаёт $y=1$, когда последние три принятых бита равны \code{101}. Такие
+детекторы ищут стартовые метки в потоке данных.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  st/.style={circle, draw=FpgaDark, very thick, minimum size=17mm, font=\sffamily\small, align=center, fill=FpgaLight},
+  tr/.style={-{Stealth[length=3mm]}, thick, FpgaDark},
+  lb/.style={font=\sffamily\small, fill=white, inner sep=1pt}]
+  \node[st] (s0) at (0,0) {S0\\\scriptsize $y=0$};
+  \node[st] (s1) at (3.6,0) {S1\\\scriptsize «1»\\\scriptsize $y=0$};
+  \node[st] (s2) at (7.2,0) {S2\\\scriptsize «10»\\\scriptsize $y=0$};
+  \node[st, fill=green!20] (s3) at (10.8,0) {S3\\\scriptsize «101»\\\scriptsize $y=1$};
+  \draw[tr] (s0) -- node[lb, above] {1} (s1);
+  \draw[tr] (s1) -- node[lb, above] {0} (s2);
+  \draw[tr] (s2) -- node[lb, above] {1} (s3);
+  \draw[tr] (s0) edge[loop above, looseness=6] node[lb, above] {0} (s0);
+  \draw[tr] (s1) edge[loop above, looseness=6] node[lb, above] {1} (s1);
+  \draw[tr] (s2) to[bend left=35] node[lb, below] {0} (s0);
+  \draw[tr] (s3) to[bend left=32] node[lb, below] {0} (s2);
+  \draw[tr] (s3) to[bend right=40] node[lb, above] {1} (s1);
+  \draw[tr, FpgaRed] (-1.6,1.4) node[left, font=\sffamily\small, text=FpgaRed] {сброс} -- (s0);
+\end{tikzpicture}
+\caption{Граф переходов детектора \code{101} (автомат Мура). На стрелках ---
+значение входа $x$}
+\label{fig:fsm101}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Таблица переходов детектора}
+\begin{tabular}{l|cc|c}
+\toprule
+\textbf{Текущее состояние} & \multicolumn{2}{c|}{\textbf{Следующее состояние}} & \textbf{Выход} $y$ \\
+ & $x=0$ & $x=1$ & \\
+\midrule
+S0 (ничего не найдено) & S0 & S1 & 0 \\
+S1 (принято «1»)       & S2 & S1 & 0 \\
+S2 (принято «10»)      & S0 & S3 & 0 \\
+S3 (принято «101»)     & S2 & S1 & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.05, xscale=1.3, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  CLK     & 10{1L 1H} \\
+  $x$     & 2H 2L 2H 2L 2H 2H 2L 2L 2H 2L \\
+  state   & 1D{S0} 2D{S1} 2D{S2} 2D{S3} 2D{S2} 2D{S3} 2D{S1} 2D{S2} 2D{S0} 2D{S1} 1D{S2} \\
+  $y$     & 5L 2H 2L 2H 9L \\
+\end{tikztimingtable}
+\caption{Работа детектора: вход \code{1010110010}. Выход равен 1 после
+каждой найденной тройки \code{101}, в том числе перекрывающейся}
+\end{figure}
+
+Проверим по таблице: S0 --(1)$\to$ S1 --(0)$\to$ S2 --(1)$\to$ S3 ($y=1$)
+--(0)$\to$ S2 --(1)$\to$ S3 ($y=1$) --(1)$\to$ S1 --(0)$\to$ S2 --(0)$\to$ S0
+--(1)$\to$ S1.
+
+\subsection{Кодирование состояний}
+
+Состояния хранятся в регистре в виде двоичных кодов. Четыре состояния можно
+закодировать двумя битами (\code{00}, \code{01}, \code{10}, \code{11}) ---
+это \term{двоичное кодирование}. Можно взять четыре триггера и держать единицу
+только в одном из них (\code{0001}, \code{0010}, \ldots) --- это
+\term{унитарное кодирование} (one-hot). Оно требует больше триггеров, зато
+логика переходов проще и быстрее. В ПЛИС, где триггеров много, синтезатор
+часто выбирает именно его.
+
+\section{Память}
+
+Регистр из $n$ триггеров хранит одно число. Чтобы хранить много чисел,
+используют \term{память}: массив ячеек, каждая из которых имеет свой номер ---
+\term{адрес}. Память характеризуется \term{глубиной} (числом ячеек) и
+\term{шириной} (числом битов в ячейке), например $1024 \times 8$ ---
+1024 ячейки по 8 бит.
+
+\subsection{ПЗУ: память только для чтения}
+
+\term{ПЗУ} (постоянное запоминающее устройство, ROM) хранит данные, записанные
+заранее. По сути это комбинационная схема: адрес --- вход, данные --- выход,
+а содержимое --- большая таблица истинности. ПЗУ можно построить из
+дешифратора адреса и элементов ИЛИ: каждая ячейка --- это выход дешифратора,
+подключённый к тем элементам ИЛИ, где в данных стоит 1.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=FpgaLight] (0,-2.8) rectangle (1.4,0.6);
+  \node[font=\sffamily\bfseries] at (0.7,-1.1) {DC};
+  \draw[wire] (-0.7,-0.4) node[left] {$a_1$} -- (0,-0.4);
+  \draw[wire] (-0.7,-1.8) node[left] {$a_0$} -- (0,-1.8);
+  \foreach \i in {0,...,3} {
+    \pgfmathsetmacro{\y}{0.2-\i*0.9}
+    \draw[wire] (1.4,\y) -- (6.4,\y);
+    \node[font=\sffamily\scriptsize, anchor=east] at (1.35,\y) {\i};
+  }
+  \foreach \j in {0,...,3} \draw[very thick, FpgaBlue] (2.4+\j*1.1,0.5) -- (2.4+\j*1.1,-3.2);
+  % данные: ячейка0=1011, 1=0110, 2=1100, 3=0001 (d3..d0)
+  \foreach \i/\row in {0/1011, 1/0110, 2/1100, 3/0001} {
+    \pgfmathsetmacro{\y}{0.2-\i*0.9}
+    \foreach \j in {0,...,3} {
+      \StrChar{\row}{\numexpr\j+1\relax}[\bitv]
+      \ifnum\bitv=1 \fill[FpgaRed] (2.4+\j*1.1,\y) circle (2.4pt);\fi
+    }
+    \node[font=\ttfamily\small, anchor=west] at (6.6,\y) {\row};
+  }
+  \foreach \j/\n in {0/3,1/2,2/1,3/0} {
+    \node[gOR, rotate=-90, minimum width=9mm, minimum height=6mm] (o\j) at (2.4+\j*1.1,-3.8) {};
+    \draw[wire] (o\j.east) -- ++(0,-0.4) node[below] {$d_\n$};
+  }
+  \node[lbl, anchor=west] at (6.6,0.75) {содержимое};
+  \node[lbl, text=FpgaRed, align=left, anchor=west] at (6.6,-3.6) {точка --- соединение\\(в этом бите 1)};
+\end{tikzpicture}
+\caption{ПЗУ $4\times4$: дешифратор выбирает строку, элементы ИЛИ собирают
+биты. Тот же принцип --- «память как таблица истинности» --- лежит в основе LUT}
+\label{fig:rom}
+\end{figure}
+
+\subsection{ОЗУ: оперативная память}
+
+\term{ОЗУ} (оперативное запоминающее устройство, RAM) позволяет и читать, и
+записывать. Концептуально это набор регистров, дешифратор адреса, который при
+записи выбирает, в какой регистр записать данные, и мультиплексор, который
+при чтении выбирает, какой регистр подать на выход.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=FpgaLight] (0,-2.9) rectangle (1.3,0.7);
+  \node[font=\sffamily\bfseries] at (0.65,-1.1) {DC};
+  \foreach \i in {0,...,3} {
+    \pgfmathsetmacro{\y}{0.25-\i*0.95}
+    \node[draw=FpgaGreen, fill=green!8, thick, minimum width=22mm, minimum height=7mm, font=\sffamily\small] (r\i) at (3.6,\y) {ячейка \i};
+    \draw[arr] (1.3,\y) -- node[above, lbl] {CE} (r\i.west);
+    \draw[bus, -{Stealth}] (r\i.east) -- (5.9,\y);
+  }
+  \draw[thick, fill=orange!15] (5.9,0.7) -- (7.0,0.2) -- (7.0,-2.4) -- (5.9,-2.9) -- cycle;
+  \node[font=\sffamily\small] at (6.45,-1.1) {MUX};
+  \draw[bus, -{Stealth}] (7.0,-1.1) -- (8.2,-1.1) node[right, text=FpgaDark] {данные чтения};
+  \draw[bus] (3.6,1.6) node[above, text=FpgaDark] {данные записи} -- (3.6,0.6);
+  \draw[arr] (-0.8,0.3) node[left, font=\sffamily\small] {WE (запись)} -- (0,0.3);
+  \draw[bus, -{Stealth}] (-0.8,-1.1) node[left, text=FpgaDark] {адрес} -- (0,-1.1);
+  \draw[bus] (-0.4,-1.1) |- (6.45,-3.6) -- (6.45,-2.65); \fill[FpgaBlue] (-0.4,-1.1) circle (1.8pt);
+\end{tikzpicture}
+\caption{Устройство ОЗУ «на пальцах»: дешифратор адреса при записи,
+мультиплексор при чтении}
+\label{fig:ram}
+\end{figure}
+
+На практике ячейки памяти делают не из D-триггеров, а из более компактных
+ячеек:
+\begin{itemize}
+  \item \textbf{статическая память SRAM} --- 6 транзисторов на бит, быстрая,
+        не требует обслуживания; из неё сделаны блоки памяти внутри ПЛИС;
+  \item \textbf{динамическая память DRAM} --- 1 транзистор и 1 конденсатор на
+        бит, очень плотная, но требует периодической регенерации; такая
+        память --- SDRAM --- встроена в корпус ПЛИС на Tang Nano 20K
+        (глава~\ref{ch:sdram}).
+\end{itemize}
+
+\section{Что дальше}
+
+Мы прошли путь от сигнала до памяти и конечных автоматов. Этого достаточно,
+чтобы понять, как устроено практически любое цифровое устройство: процессор,
+контроллер дрона, видеокарта. Все эти узлы можно собрать и внутри ПЛИС ---
+причём не паяльником, а описав их текстом.
+
+\begin{table}[H]
+\centering
+\caption{Узлы из первой части и то, как они реализуются в ПЛИС}
+\small
+\begin{tabularx}{\textwidth}{X X}
+\toprule
+\textbf{Узел} & \textbf{Ресурс ПЛИС (часть II)} \\
+\midrule
+Логические элементы, дешифраторы, шифраторы, мультиплексоры & таблицы LUT (рис.~\ref{fig:mux_lut}) \\
+Сумматоры, счётчики & LUT + быстрые цепочки переноса (ALU) \\
+Умножители & аппаратные блоки DSP \\
+Триггеры, регистры, сдвиговые регистры & триггеры в каждой логической ячейке \\
+Конечные автоматы & LUT + триггеры \\
+ПЗУ и ОЗУ & блочная память BSRAM, распределённая память SSRAM \\
+Большая память & встроенная SDRAM 64 Мбит \\
+Тактовый сигнал & генератор 27 МГц, PLL, глобальная тактовая сеть \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{ideabox}
+Синхронная схема --- это регистры и комбинационная логика между ними с одним
+общим тактом. Её быстродействие определяется критическим путём. Конечный
+автомат --- регистр состояния плюс логика переходов. Память --- массив ячеек
+с дешифратором адреса. Во второй части мы соберём всё это в ПЛИС.
+\end{ideabox}
