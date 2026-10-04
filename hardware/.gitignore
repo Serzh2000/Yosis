@@ -1,0 +1,11 @@
+**/impl/
+**/*.fs
+**/*.bin
+**/*.binx
+**/*.vcd
+**/*.svf
+**/rtl.json
+**/technology.json
+**/placement.json
+**/timing.json
+**/__pycache__/

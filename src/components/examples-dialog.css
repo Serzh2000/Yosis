@@ -1,0 +1,418 @@
+.example-count {
+  min-width: 21px;
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 12px;
+}
+.examples-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #11140db3;
+  backdrop-filter: blur(5px);
+}
+.examples-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 1080px;
+  max-width: 100%;
+  height: min(760px, calc(100dvh - 48px));
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.examples-heading {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 18px 20px 15px;
+}
+.examples-heading > svg {
+  color: var(--accent-strong);
+  flex-shrink: 0;
+}
+.examples-heading h2 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 550;
+  letter-spacing: -0.4px;
+}
+.examples-heading h2 span {
+  display: inline-block;
+  vertical-align: middle;
+  padding: 3px 7px;
+  margin-left: 5px;
+  border-radius: 5px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 12px;
+}
+.examples-heading p {
+  margin: 6px 0 0;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+.examples-heading > button {
+  margin-left: auto;
+}
+.example-levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0 20px 12px;
+}
+.example-levels button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+.example-levels button:hover {
+  background: var(--surface);
+}
+.example-levels button[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.example-levels b {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  font-size: 12px;
+  border-radius: 3px;
+  background: var(--canvas);
+}
+.example-levels small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.examples-filters {
+  display: flex;
+  gap: 10px;
+  padding: 0 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.examples-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  color: var(--muted);
+}
+.examples-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+}
+.examples-topic {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.examples-topic select {
+  max-width: 240px;
+  padding: 7px 9px;
+  color: var(--text);
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.examples-results {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 20px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.examples-results strong {
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--text-soft);
+}
+.examples-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  border-top: 1px solid var(--border);
+}
+.examples-grid {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 9px;
+  padding: 14px 16px 18px 20px;
+}
+.example-card {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 12px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  min-height: 143px;
+  background: var(--panel);
+}
+.example-card:hover {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+.example-card[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.example-card-heading {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--accent-strong);
+}
+.example-card-heading span {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.example-card-heading .example-level-badge {
+  white-space: nowrap;
+  color: var(--accent-strong);
+}
+.example-card-heading > svg {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.example-card h3 {
+  margin: 10px 0 6px;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.4;
+}
+.example-card p {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+.example-card footer {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+.example-card footer code {
+  color: var(--accent-strong);
+}
+.example-lesson {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 290px;
+  flex-shrink: 0;
+  padding: 16px 19px;
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  background: var(--canvas);
+}
+.example-lesson-title > span {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--accent-strong);
+}
+.example-lesson-title {
+  position: sticky;
+  top: -16px;
+  z-index: 1;
+  background: var(--canvas);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+.example-lesson-title .example-open {
+  margin: 12px 0 6px;
+}
+.example-lesson-title small {
+  display: block;
+}
+.example-lesson h3 {
+  font-size: 17px;
+  line-height: 1.4;
+  margin: 7px 0 0;
+  font-weight: 550;
+}
+.example-lesson h4 {
+  margin: 0 0 5px;
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--text);
+}
+.example-lesson p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--text-soft);
+}
+.example-prerequisites {
+  margin-top: auto;
+}
+.example-prerequisites button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 7px;
+  text-align: left;
+  padding: 5px 0;
+  font-size: 12px;
+  color: var(--accent-strong);
+}
+.example-prerequisites button:hover {
+  text-decoration: underline;
+}
+.example-open {
+  width: 100%;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.example-lesson > small {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin-top: -9px;
+}
+.examples-footer {
+  padding: 11px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+.examples-no-results {
+  grid-column: 1 / -1;
+  padding: 25px 12px;
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+.examples-no-results p {
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+@media (max-width: 850px) {
+  .examples-grid {
+    grid-template-columns: 1fr;
+  }
+  .example-lesson {
+    width: 265px;
+    padding-inline: 14px;
+  }
+}
+@media (max-width: 620px) {
+  .examples-backdrop {
+    padding: 8px;
+  }
+  .examples-dialog {
+    height: calc(100dvh - 16px);
+  }
+  .examples-heading {
+    padding: 13px 12px;
+    gap: 8px;
+  }
+  .examples-heading h2 {
+    font-size: 17px;
+  }
+  .examples-heading p {
+    line-height: 1.5;
+  }
+  .example-levels {
+    margin-inline: 12px;
+  }
+  .example-levels button {
+    font-size: 12px;
+    padding: 6px;
+  }
+  .examples-filters {
+    padding-inline: 12px;
+    flex-wrap: wrap;
+  }
+  .examples-search {
+    flex-basis: 100%;
+  }
+  .examples-topic {
+    width: 100%;
+  }
+  .examples-topic select {
+    max-width: none;
+    width: 100%;
+  }
+  .examples-results,
+  .examples-footer {
+    padding-inline: 12px;
+  }
+  .examples-content {
+    overflow-y: auto;
+    display: block;
+  }
+  .examples-grid {
+    overflow: visible;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 12px;
+  }
+  .example-card {
+    min-height: 130px;
+    padding: 9px;
+  }
+  .example-lesson {
+    overflow: visible;
+    width: auto;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    padding: 16px;
+  }
+  .example-prerequisites {
+    margin-top: 0;
+  }
+}
+@media (max-width: 390px) {
+  .examples-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.example-card p,
+.example-lesson p,
+.examples-heading p {
+  font-size: 13px;
+  line-height: 1.65;
+}

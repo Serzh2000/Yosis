@@ -1,0 +1,405 @@
+{
+  "device": "GW2AR-LV18QN88C8/I7",
+  "package": "QFN88",
+  "source": "Apycula 0.32 GW2A-18C.msgpack.xz: pinout[GW2AR-18C][QFN88], pin_bank",
+  "sourceSha256": "e9be6e9e596ff2a9dfef94572061d05a8f59033e55f63d884cd10db91caa3c30",
+  "reference": "https://cdn.gowinsemi.com.cn/UG115E.pdf",
+  "pins": [
+    {
+      "number": 4,
+      "io": "IOL7A",
+      "bank": 7,
+      "functions": ["LPLL1_T_IN"]
+    },
+    {
+      "number": 5,
+      "io": "IOR25B",
+      "bank": 2,
+      "functions": ["TMS"]
+    },
+    {
+      "number": 6,
+      "io": "IOR26A",
+      "bank": 2,
+      "functions": ["TCK"]
+    },
+    {
+      "number": 7,
+      "io": "IOR26B",
+      "bank": 2,
+      "functions": ["TDI"]
+    },
+    {
+      "number": 8,
+      "io": "IOR25A",
+      "bank": 2,
+      "functions": ["TDO"]
+    },
+    {
+      "number": 9,
+      "io": "IOR31B",
+      "bank": 3,
+      "functions": ["RECONFIG_N"]
+    },
+    {
+      "number": 10,
+      "io": "IOL29A",
+      "bank": 6,
+      "functions": ["GCLKT_6"]
+    },
+    {
+      "number": 11,
+      "io": "IOL29B",
+      "bank": 6,
+      "functions": ["GCLKC_6"]
+    },
+    {
+      "number": 13,
+      "io": "IOL45A",
+      "bank": 6,
+      "functions": ["LPLL2_T_IN"]
+    },
+    {
+      "number": 15,
+      "io": "IOL47A",
+      "bank": 6,
+      "functions": ["LPLL2_T_FB"]
+    },
+    {
+      "number": 16,
+      "io": "IOL47B",
+      "bank": 6,
+      "functions": ["LPLL2_C_FB"]
+    },
+    {
+      "number": 17,
+      "io": "IOL49A",
+      "bank": 6,
+      "functions": []
+    },
+    {
+      "number": 18,
+      "io": "IOL49B",
+      "bank": 6,
+      "functions": []
+    },
+    {
+      "number": 19,
+      "io": "IOL51A",
+      "bank": 6,
+      "functions": []
+    },
+    {
+      "number": 20,
+      "io": "IOL51B",
+      "bank": 6,
+      "functions": []
+    },
+    {
+      "number": 25,
+      "io": "IOB6A",
+      "bank": 5,
+      "functions": []
+    },
+    {
+      "number": 26,
+      "io": "IOB6B",
+      "bank": 5,
+      "functions": []
+    },
+    {
+      "number": 27,
+      "io": "IOB8A",
+      "bank": 5,
+      "functions": []
+    },
+    {
+      "number": 28,
+      "io": "IOB8B",
+      "bank": 5,
+      "functions": []
+    },
+    {
+      "number": 29,
+      "io": "IOB14A",
+      "bank": 5,
+      "functions": []
+    },
+    {
+      "number": 30,
+      "io": "IOB14B",
+      "bank": 5,
+      "functions": []
+    },
+    {
+      "number": 31,
+      "io": "IOB18A",
+      "bank": 5,
+      "functions": []
+    },
+    {
+      "number": 32,
+      "io": "IOB18B",
+      "bank": 5,
+      "functions": []
+    },
+    {
+      "number": 33,
+      "io": "IOB24A",
+      "bank": 5,
+      "functions": []
+    },
+    {
+      "number": 34,
+      "io": "IOB24B",
+      "bank": 5,
+      "functions": []
+    },
+    {
+      "number": 35,
+      "io": "IOB30A",
+      "bank": 4,
+      "functions": ["GCLKT_4"]
+    },
+    {
+      "number": 36,
+      "io": "IOB30B",
+      "bank": 4,
+      "functions": ["GCLKC_4"]
+    },
+    {
+      "number": 37,
+      "io": "IOB34A",
+      "bank": 4,
+      "functions": []
+    },
+    {
+      "number": 38,
+      "io": "IOB34B",
+      "bank": 4,
+      "functions": []
+    },
+    {
+      "number": 39,
+      "io": "IOB40A",
+      "bank": 4,
+      "functions": []
+    },
+    {
+      "number": 40,
+      "io": "IOB40B",
+      "bank": 4,
+      "functions": []
+    },
+    {
+      "number": 41,
+      "io": "IOB43A",
+      "bank": 4,
+      "functions": []
+    },
+    {
+      "number": 42,
+      "io": "IOB42B",
+      "bank": 4,
+      "functions": []
+    },
+    {
+      "number": 48,
+      "io": "IOR49B",
+      "bank": 3,
+      "functions": []
+    },
+    {
+      "number": 49,
+      "io": "IOR49A",
+      "bank": 3,
+      "functions": []
+    },
+    {
+      "number": 51,
+      "io": "IOR45A",
+      "bank": 3,
+      "functions": ["RPLL2_T_IN"]
+    },
+    {
+      "number": 52,
+      "io": "IOR39A",
+      "bank": 3,
+      "functions": ["SCLK"]
+    },
+    {
+      "number": 53,
+      "io": "IOR38B",
+      "bank": 3,
+      "functions": ["DOUT", "WE_N"]
+    },
+    {
+      "number": 54,
+      "io": "IOR38A",
+      "bank": 3,
+      "functions": ["DIN", "CLKHOLD_N"]
+    },
+    {
+      "number": 55,
+      "io": "IOR36B",
+      "bank": 3,
+      "functions": ["SSPI_CS_N", "D0"]
+    },
+    {
+      "number": 56,
+      "io": "IOR36A",
+      "bank": 3,
+      "functions": ["SO", "D1"]
+    },
+    {
+      "number": 57,
+      "io": "IOR35A",
+      "bank": 3,
+      "functions": ["FASTRD_N", "D3"]
+    },
+    {
+      "number": 59,
+      "io": "IOR34B",
+      "bank": 3,
+      "functions": ["MCLK", "D4"]
+    },
+    {
+      "number": 60,
+      "io": "IOR34A",
+      "bank": 3,
+      "functions": ["MCS_N", "D5"]
+    },
+    {
+      "number": 61,
+      "io": "IOR33B",
+      "bank": 3,
+      "functions": ["MO", "D6"]
+    },
+    {
+      "number": 62,
+      "io": "IOR33A",
+      "bank": 3,
+      "functions": ["MI", "D7"]
+    },
+    {
+      "number": 63,
+      "io": "IOR29A",
+      "bank": 3,
+      "functions": ["GCLKT_3"]
+    },
+    {
+      "number": 69,
+      "io": "IOT50A",
+      "bank": 1,
+      "functions": []
+    },
+    {
+      "number": 70,
+      "io": "IOT44B",
+      "bank": 1,
+      "functions": []
+    },
+    {
+      "number": 71,
+      "io": "IOT44A",
+      "bank": 1,
+      "functions": []
+    },
+    {
+      "number": 72,
+      "io": "IOT40B",
+      "bank": 1,
+      "functions": []
+    },
+    {
+      "number": 73,
+      "io": "IOT40A",
+      "bank": 1,
+      "functions": []
+    },
+    {
+      "number": 74,
+      "io": "IOT34B",
+      "bank": 1,
+      "functions": []
+    },
+    {
+      "number": 75,
+      "io": "IOT34A",
+      "bank": 1,
+      "functions": []
+    },
+    {
+      "number": 76,
+      "io": "IOT30B",
+      "bank": 1,
+      "functions": ["GCLKC_1"]
+    },
+    {
+      "number": 77,
+      "io": "IOT30A",
+      "bank": 1,
+      "functions": ["GCLKT_1"]
+    },
+    {
+      "number": 79,
+      "io": "IOT27B",
+      "bank": 0,
+      "functions": ["GCLKC_0"]
+    },
+    {
+      "number": 80,
+      "io": "IOT27A",
+      "bank": 0,
+      "functions": ["GCLKT_0"]
+    },
+    {
+      "number": 81,
+      "io": "IOT17B",
+      "bank": 0,
+      "functions": []
+    },
+    {
+      "number": 82,
+      "io": "IOT17A",
+      "bank": 0,
+      "functions": []
+    },
+    {
+      "number": 83,
+      "io": "IOT6B",
+      "bank": 0,
+      "functions": []
+    },
+    {
+      "number": 84,
+      "io": "IOT6A",
+      "bank": 0,
+      "functions": []
+    },
+    {
+      "number": 85,
+      "io": "IOT4B",
+      "bank": 0,
+      "functions": []
+    },
+    {
+      "number": 86,
+      "io": "IOT4A",
+      "bank": 0,
+      "functions": []
+    },
+    {
+      "number": 87,
+      "io": "IOR30B",
+      "bank": 3,
+      "functions": ["MODE1"]
+    },
+    {
+      "number": 88,
+      "io": "IOR30A",
+      "bank": 3,
+      "functions": ["MODE0"]
+    }
+  ]
+}

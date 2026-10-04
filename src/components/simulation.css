@@ -1,0 +1,402 @@
+.simulation-tab {
+  flex: 1;
+  min-height: 0;
+}
+.simulation-tab[hidden] {
+  display: none;
+}
+.simulation-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--canvas);
+}
+.simulation-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.simulation-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 12px;
+}
+.simulation-title strong {
+  color: var(--text);
+  font-weight: 550;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.simulation-title span {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.simulation-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.simulation-actions .button {
+  height: 30px;
+  font-size: 12px;
+  padding: 0 9px;
+}
+.simulation-scenario-button.is-active {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.simulation-workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+.simulation-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+.simulation-view > .waveform-viewer {
+  flex: 1;
+  height: auto;
+}
+.simulation-configuration {
+  width: 360px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--border);
+  background: var(--panel);
+}
+.simulation-configuration-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 12px;
+  flex-shrink: 0;
+}
+.simulation-configuration-heading strong {
+  font-size: 12px;
+  font-weight: 550;
+}
+.simulation-configuration-heading > span {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+.simulation-configuration-heading .icon-button {
+  width: 26px;
+  height: 26px;
+}
+.simulation-settings-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.simulation-settings-tabs > button {
+  font-size: 12px;
+  color: var(--text-soft);
+  min-height: 34px;
+  padding: 0 8px;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.simulation-settings-tabs > button[aria-selected='true'] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.simulation-settings-tabs > button:hover {
+  color: var(--text);
+}
+.simulation-settings-content {
+  padding: 12px;
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+  font-size: 12px;
+}
+.simulation-settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 10px;
+  align-items: end;
+}
+.simulation-settings label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--text-soft);
+  font-size: 12px;
+  min-width: 0;
+}
+.simulation-settings select,
+.simulation-settings input:not([type='checkbox']),
+.simulation-input-values input,
+.simulation-stimuli-scroll input {
+  height: 30px;
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--canvas);
+  color: var(--text);
+  padding: 3px 7px;
+  font:
+    12px 'Cascadia Code',
+    Consolas,
+    monospace;
+}
+.simulation-settings .simulation-checkbox {
+  flex-direction: row;
+  align-items: center;
+  min-height: 30px;
+  gap: 5px;
+}
+.simulation-settings input[type='checkbox'] {
+  accent-color: var(--accent);
+}
+.simulation-settings-note {
+  font-size: 12px;
+  color: var(--text-soft);
+  line-height: 1.55;
+  margin: 0 0 12px;
+}
+.simulation-settings > .simulation-settings-note {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.simulation-input-modes {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.simulation-input-modes .button,
+.simulation-settings-content > .button {
+  font-size: 12px;
+  height: 30px;
+  padding: 0 9px;
+}
+.simulation-input-modes [aria-pressed='true'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.simulation-input-values {
+  display: flex;
+  flex-direction: column;
+}
+.simulation-input-values label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 108px;
+  gap: 10px;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.simulation-input-values label > span {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.simulation-input-values strong {
+  font-family: 'Cascadia Code', Consolas, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.simulation-input-values small {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.simulation-stimuli-scroll {
+  overflow-x: auto;
+  margin-bottom: 10px;
+}
+.simulation-stimuli-scroll table {
+  border-collapse: collapse;
+  min-width: 100%;
+  font-size: 12px;
+}
+.simulation-stimuli-scroll th {
+  font-weight: 500;
+  text-align: left;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+.simulation-stimuli-scroll td,
+.simulation-stimuli-scroll th {
+  padding: 3px 6px 3px 0;
+}
+.simulation-stimuli-scroll td:last-child,
+.simulation-stimuli-scroll th:last-child {
+  padding-right: 0;
+  width: 24px;
+}
+.simulation-stimuli-scroll input {
+  width: 68px;
+}
+.simulation-stimuli-scroll .icon-button {
+  width: 24px;
+  height: 28px;
+}
+.simulation-error,
+.simulation-stale {
+  padding: 6px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+.simulation-error {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.simulation-stale {
+  background: var(--panel);
+  color: var(--text-soft);
+}
+.simulation-empty {
+  flex: 1;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 24px;
+  text-align: center;
+  color: var(--text-soft);
+}
+.simulation-empty strong {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 550;
+}
+.simulation-empty span {
+  max-width: 500px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.simulation-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.simulation-footer button {
+  color: var(--accent);
+  white-space: nowrap;
+  font-size: 12px;
+}
+.simulation-log {
+  margin: 0;
+  padding: 8px 12px;
+  max-height: 105px;
+  overflow: auto;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--text-soft);
+  white-space: pre-wrap;
+}
+@media (max-width: 1000px) {
+  .simulation-title > span {
+    display: none;
+  }
+  .simulation-configuration {
+    width: 320px;
+  }
+}
+@media (max-width: 850px) {
+  .simulation-workspace {
+    flex-direction: column;
+  }
+  .simulation-configuration {
+    order: -1;
+    width: 100%;
+    max-height: 48%;
+    border-left: 0;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .simulation-settings-content {
+    flex: 0 1 auto;
+  }
+  .simulation-settings {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .simulation-toolbar {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .simulation-title {
+    flex: 1;
+  }
+  .simulation-footer > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 550px) {
+  .simulation-toolbar {
+    padding: 5px 8px;
+  }
+  .simulation-title {
+    display: none;
+  }
+  .simulation-actions {
+    flex: 1;
+    justify-content: space-between;
+    gap: 3px;
+  }
+  .simulation-actions .button {
+    padding: 0 6px;
+    font-size: 12px;
+  }
+  .simulation-actions .icon-button {
+    width: 24px;
+  }
+  .simulation-scenario-button span {
+    max-width: 105px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .simulation-settings {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .simulation-configuration {
+    max-height: 50%;
+  }
+  .simulation-settings-content {
+    padding: 10px;
+  }
+}
+
+.simulation-config p {
+  font-size: 13px;
+  line-height: 1.7;
+}

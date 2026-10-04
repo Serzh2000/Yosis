@@ -1,0 +1,48 @@
+{
+  "timestamp": "2026-10-02T05:19:23.060618+00:00",
+  "mode": "read-only",
+  "allowed_fpga_instructions": {
+    "17": "IDCODE",
+    "19": "USERCODE",
+    "65": "STATUS"
+  },
+  "trace": [
+    {
+      "api": "FT_CreateDeviceInfoList",
+      "status": 0
+    },
+    {
+      "api": "FT_GetDeviceInfoDetail",
+      "status": 0
+    },
+    {
+      "api": "FT_GetDeviceInfoDetail",
+      "status": 0
+    }
+  ],
+  "registers": [],
+  "dll": "C:\\Windows\\System32\\ftd2xx.dll",
+  "devices": [
+    {
+      "index": 0,
+      "flags": 2,
+      "type": 4,
+      "usb_id": "0x04036010",
+      "location": 529,
+      "serial": "2025030317A",
+      "description": "USB Debugger A"
+    },
+    {
+      "index": 1,
+      "flags": 2,
+      "type": 4,
+      "usb_id": "0x04036010",
+      "location": 530,
+      "serial": "2025030317B",
+      "description": "USB Debugger B"
+    }
+  ],
+  "cleanup_errors": [],
+  "tx_bytes": 0,
+  "rx_bytes": 0
+}

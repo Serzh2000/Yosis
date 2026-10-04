@@ -1,0 +1,7 @@
+# Set YOSIS_DOMAIN to the hostname in YOSIS_PUBLIC_ORIGIN.
+{$YOSIS_DOMAIN} {
+  request_body {
+    max_size 17MB
+  }
+  reverse_proxy 127.0.0.1:3001
+}

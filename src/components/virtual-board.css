@@ -1,0 +1,731 @@
+.virtual-workspace {
+  container: yosis-virtual / inline-size;
+  padding: 12px 14px;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  background: var(--canvas);
+  color: var(--text);
+}
+.virtual-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.virtual-heading-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.virtual-heading-label > svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.virtual-heading-label strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+.virtual-heading-label span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.virtual-primary {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  padding: 9px 12px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.virtual-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 268px;
+  gap: 12px;
+  align-items: start;
+}
+.virtual-lab-card,
+.virtual-control-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  min-width: 0;
+}
+.virtual-card-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.virtual-card-top > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.virtual-card-top code {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.virtual-card-top small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.virtual-status {
+  color: var(--muted);
+  font-size: 12px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.virtual-status.ready {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.virtual-pcb {
+  width: min(94%, 640px);
+  height: 236px;
+  margin: 14px auto;
+  position: relative;
+  border-radius: 10px;
+  background: #245637;
+  border: 1px solid #548066;
+  color: #d2e5c6;
+  box-shadow:
+    0 9px 18px #0002,
+    inset 0 0 50px #173b2380;
+  overflow: hidden;
+}
+.virtual-pcb:before {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 37px, #6c98611c 37px 38px),
+    repeating-linear-gradient(0deg, transparent 0 34px, #6c98611c 34px 35px);
+  border-radius: 7px;
+}
+.virtual-pcb-hole {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 3px solid #bdb798;
+  background: #1b2419;
+  z-index: 2;
+}
+.hole-a {
+  left: 13px;
+  top: 13px;
+}
+.hole-b {
+  right: 13px;
+  top: 13px;
+}
+.hole-c {
+  left: 13px;
+  bottom: 13px;
+}
+.hole-d {
+  right: 13px;
+  bottom: 13px;
+}
+.virtual-connector {
+  position: absolute;
+  left: 62px;
+  right: 38px;
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  height: 10px;
+  overflow: hidden;
+}
+.top-connector {
+  top: 14px;
+}
+.bottom-connector {
+  bottom: 14px;
+}
+.virtual-connector i {
+  width: 7px;
+  height: 7px;
+  border: 2px solid #c6b377;
+  background: #1e2b1c;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.virtual-usb {
+  position: absolute;
+  left: 0;
+  top: 79px;
+  width: 44px;
+  height: 64px;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(90deg, #a5a49a, #ddd8c7 45%, #b3b1a5);
+  box-shadow: 2px 3px 8px #10201770;
+  border: 2px solid #8e9183;
+  display: grid;
+  place-items: center;
+}
+.virtual-usb span {
+  width: 26px;
+  height: 39px;
+  border: 3px solid #8c8d80;
+  border-radius: 4px;
+  background: #333d30;
+}
+.virtual-chip {
+  position: absolute;
+  width: 112px;
+  height: 106px;
+  left: 22%;
+  top: 55px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 2px solid #494b40;
+  background: #22271f;
+  box-shadow:
+    0 0 0 5px #a5a894,
+    0 0 0 8px #142b1c,
+    3px 6px 10px #10201570;
+}
+.virtual-chip strong {
+  font-size: 17px;
+  letter-spacing: 1.5px;
+  color: #dddcc8;
+}
+.virtual-chip span {
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: #a0a896;
+}
+.virtual-chip small {
+  display: block;
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  color: #a0a896;
+}
+.virtual-chip-mark {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #7b8372;
+}
+.virtual-crystal {
+  position: absolute;
+  right: 24px;
+  top: 45px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 2px solid #adb093;
+  padding: 4px 7px;
+  background: #bbc0a9;
+  color: #304128;
+  border-radius: 4px;
+}
+.virtual-crystal span {
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.virtual-crystal strong {
+  font-family: monospace;
+  font-size: 13px;
+}
+.virtual-led-bank {
+  position: absolute;
+  left: 57%;
+  right: 14px;
+  top: 93px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px 5px;
+}
+.virtual-led-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+.virtual-led {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: #1d2a18;
+  border: 2px solid #798a67;
+  box-shadow: inset 1px 1px 4px #0008;
+  transition:
+    background 80ms,
+    box-shadow 80ms;
+}
+.virtual-led.lit {
+  background: #d4ff77;
+  border-color: #e2ffc5;
+  box-shadow:
+    0 0 7px #c8ff77,
+    0 0 20px #c8ff7766,
+    inset 1px 1px 2px #fff;
+}
+.virtual-led.unknown {
+  background: #d4a850;
+  border-color: #f1d38d;
+  box-shadow: 0 0 8px #e8bd5040;
+}
+.virtual-led-slot b {
+  font-size: 12px;
+  font-weight: 500;
+}
+.virtual-led-slot small {
+  font-size: 12px;
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #c3d6b9;
+}
+.virtual-silk {
+  position: absolute;
+  bottom: 39px;
+  left: 62px;
+  right: 20px;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 1.2px;
+}
+.virtual-silk span {
+  float: right;
+  font-size: 12px;
+  font-weight: 400;
+}
+.virtual-playback {
+  margin: 0 12px;
+  display: grid;
+  grid-template-columns: repeat(3, 28px) minmax(40px, 1fr) 72px;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.virtual-playback button {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  background: var(--panel-raised);
+  color: var(--text);
+}
+.virtual-playback input {
+  width: 100%;
+  min-width: 0;
+  accent-color: var(--accent);
+}
+.virtual-playback code {
+  font-size: 12px;
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.virtual-mapping {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding: 10px 12px 0;
+}
+.virtual-mapping label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 0;
+}
+.virtual-workspace input:not([type='range']):not([type='checkbox']),
+.virtual-workspace select {
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--canvas);
+  color: var(--text);
+  height: 30px;
+  padding: 4px 7px;
+  font-size: 12px;
+}
+.virtual-mapping select {
+  max-width: 230px;
+}
+.virtual-mapping input[type='number'] {
+  width: 60px;
+}
+.virtual-mapping .virtual-check {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-height: 30px;
+  gap: 5px;
+}
+.virtual-check input {
+  accent-color: var(--accent);
+}
+.virtual-footnote {
+  margin: 10px 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.virtual-footnote summary,
+.virtual-explanation summary {
+  cursor: pointer;
+}
+.virtual-footnote p {
+  margin: 7px 0 0;
+}
+.virtual-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.virtual-control-card {
+  padding: 12px;
+}
+.virtual-control-card h3 {
+  margin: 0 0 7px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.virtual-control-card p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0 0 9px;
+}
+.virtual-input-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin: 9px 0;
+}
+.virtual-input-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.virtual-input-row code {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.virtual-input-row small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.virtual-input-row > input {
+  width: 94px;
+}
+.virtual-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 28px;
+  width: 60px;
+  padding: 4px;
+  border-radius: 5px;
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.virtual-switch span {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  background: var(--muted);
+}
+.virtual-switch b {
+  font-size: 12px;
+  font-weight: 500;
+  padding-right: 4px;
+}
+.virtual-switch.on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  flex-direction: row-reverse;
+}
+.virtual-switch.on span {
+  background: var(--accent);
+}
+.virtual-switch.on b {
+  padding-left: 4px;
+  padding-right: 0;
+}
+.virtual-apply {
+  display: flex;
+  gap: 7px;
+  align-items: end;
+  margin: 12px 0 10px;
+}
+.virtual-apply label {
+  color: var(--muted);
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.virtual-apply input {
+  width: 83px;
+}
+.virtual-apply button {
+  flex: 1;
+  min-height: 30px;
+  border-radius: 5px;
+  padding: 6px;
+  background: var(--panel-raised);
+  border: 1px solid var(--border);
+  font-size: 12px;
+}
+.virtual-automatic {
+  display: flex;
+  justify-content: space-between;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 7px;
+}
+.virtual-automatic code {
+  font-size: 12px;
+}
+.virtual-readout {
+  display: flex;
+  justify-content: space-between;
+  gap: 9px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+}
+.virtual-readout:last-child {
+  border: 0;
+  padding-bottom: 0;
+}
+.virtual-readout code {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.virtual-readout strong {
+  font-family: monospace;
+  font-weight: 500;
+  color: var(--accent);
+  font-size: 12px;
+  word-break: break-all;
+}
+.virtual-explanation summary {
+  font-size: 12px;
+  font-weight: 550;
+}
+.virtual-explanation ol {
+  margin: 9px 0 0;
+  padding-left: 16px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.virtual-explanation > span {
+  display: block;
+  font-size: 12px;
+  margin-top: 9px;
+  color: var(--muted);
+}
+.virtual-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 9px 11px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--muted);
+}
+.virtual-notice button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  padding: 0;
+  color: var(--accent);
+  font-size: 12px;
+}
+.virtual-error {
+  border: 1px solid var(--danger, #dd8e77);
+  border-radius: 6px;
+  padding: 9px 11px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--danger, #dd8e77);
+}
+.virtual-empty {
+  font-size: 12px;
+  padding: 9px 0;
+  color: var(--muted);
+}
+.virtual-cancel {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 6px 9px;
+  font-size: 12px;
+  margin-top: 10px;
+}
+.virtual-run-summary {
+  display: flex;
+  gap: 9px;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.virtual-run-summary button {
+  background: transparent;
+  color: var(--muted);
+  text-decoration: underline;
+  padding: 0;
+  font-size: 12px;
+}
+.virtual-log {
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 11px;
+  max-height: 200px;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+@container yosis-virtual (max-width: 760px) {
+  .virtual-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .virtual-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .virtual-explanation {
+    grid-column: 1 / -1;
+  }
+  .virtual-pcb {
+    width: min(94%, 600px);
+  }
+}
+@container yosis-virtual (max-width: 480px) {
+  .virtual-heading {
+    align-items: start;
+  }
+  .virtual-heading-label span {
+    max-width: 190px;
+  }
+  .virtual-primary {
+    padding: 8px 9px;
+  }
+  .virtual-controls {
+    display: flex;
+  }
+  .virtual-chip {
+    width: 82px;
+    height: 88px;
+    left: 23%;
+    top: 65px;
+  }
+  .virtual-chip strong {
+    font-size: 13px;
+  }
+  .virtual-chip span {
+    font-size: 12px;
+  }
+  .virtual-chip small {
+    max-width: 70px;
+  }
+  .virtual-led-bank {
+    left: 57%;
+    top: 98px;
+    gap: 10px 4px;
+  }
+  .virtual-led-slot small {
+    max-width: 43px;
+  }
+  .virtual-silk {
+    left: 30px;
+    bottom: 37px;
+  }
+  .virtual-silk span {
+    display: none;
+  }
+  .virtual-usb {
+    width: 32px;
+    height: 58px;
+    top: 78px;
+  }
+  .virtual-usb span {
+    width: 20px;
+    height: 35px;
+  }
+  .virtual-crystal {
+    right: 18px;
+    top: 45px;
+  }
+  .virtual-playback {
+    grid-template-columns: repeat(3, 26px) minmax(20px, 1fr) 60px;
+    gap: 4px;
+    margin: 0 10px;
+  }
+  .virtual-playback button {
+    width: 26px;
+    height: 26px;
+  }
+  .virtual-playback code {
+    font-size: 12px;
+  }
+  .virtual-mapping {
+    padding: 9px 10px 0;
+  }
+  .virtual-mapping select {
+    max-width: 160px;
+  }
+}
+@media (max-width: 520px) {
+  .virtual-workspace {
+    padding: 10px;
+  }
+}

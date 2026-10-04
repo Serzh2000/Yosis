@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "sdk": "6ebf1d053287e0417bb37e2322dfda9665febf86",
+  "source": "tools/bflb_tools/bouffalo_flash_cube/chips/bl616/efuse_bootheader/flash_para.bin",
+  "gitBlob": "a49010c26d21ed9e336bbe569fff74f0b2e45c26",
+  "parameters": {
+    "c86016": {
+      "hex": "040100006699ff039f00b7e904c80001c72052d8060232000b010b013b01bb006b01eb02eb02025000010001010002010201ab01053500000101000038ffa0ff77030240770302f02c01b004b0040500e8801400",
+      "sha256": "002c41f38bb652bdaf89136183aaef70ae11abbf85f554a59d7242748f32e1e0"
+    }
+  }
+}

@@ -1,0 +1,258 @@
+/* Keep the inspector a flat reading surface; expand long data when needed. */
+.inspector-pane .lut-inspector {
+  padding: 12px;
+  font-size: 12px;
+}
+.inspector-pane .inspector-cell-heading {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding-bottom: 1px;
+}
+.inspector-pane .inspector-type {
+  flex-shrink: 0;
+  align-self: auto;
+  padding: 3px 5px;
+}
+.inspector-pane .inspector-cell-heading h3 {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.inspector-pane .inspector-section-title {
+  margin-top: 13px;
+  margin-bottom: 5px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.inspector-pane .inspector-ports {
+  gap: 0;
+}
+.inspector-pane .inspector-port-row {
+  display: grid;
+  grid-template-columns: minmax(30px, 1fr) auto auto minmax(35px, 1fr);
+  align-items: center;
+  gap: 7px;
+  min-height: 27px;
+  padding: 3px 0;
+}
+.inspector-pane .inspector-port-row strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.inspector-pane .inspector-port-row small {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.inspector-pane .inspector-port-row code {
+  min-width: 0;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inspector-pane .inspector-parameters > div {
+  display: grid;
+  grid-template-columns: minmax(95px, 1fr) minmax(0, 1fr);
+  align-items: center;
+  min-height: 27px;
+  gap: 8px;
+  padding: 3px 0;
+}
+.inspector-pane .inspector-parameters dt {
+  min-width: 0;
+}
+.inspector-pane .inspector-parameters dt .help-trigger {
+  max-width: 100%;
+  font-size: 12px;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}
+.inspector-pane .inspector-parameters dt .help-trigger-icon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+}
+.inspector-pane .inspector-parameters dd {
+  font-size: 12px;
+  line-height: 1.4;
+  max-height: 2.8em;
+  overflow: hidden;
+}
+
+.inspector-pane .inspector-details {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.inspector-pane .inspector-details > summary {
+  padding: 3px 0;
+  cursor: pointer;
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+.inspector-pane .inspector-details > summary:hover {
+  color: var(--accent);
+}
+.inspector-pane .inspector-details p {
+  margin: 5px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.inspector-pane .inspector-connections dl {
+  margin: 7px 0 0;
+}
+.inspector-pane .inspector-connections dl > div {
+  display: grid;
+  grid-template-columns: minmax(25px, auto) minmax(0, 1fr);
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.inspector-pane .inspector-connections dt {
+  color: var(--text-soft);
+  overflow-wrap: anywhere;
+}
+.inspector-pane .inspector-connections dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.inspector-pane .lut-init {
+  padding: 6px 7px;
+  gap: 4px 7px;
+  border-radius: 5px;
+}
+.inspector-pane .lut-init code {
+  font-size: 12px;
+}
+.inspector-pane .lut-init small {
+  width: auto;
+  margin-left: auto;
+  font-size: 12px;
+}
+.inspector-pane .lut-reading-help {
+  margin: 4px 0 7px;
+}
+.inspector-pane .lut-input-toggles button {
+  padding: 5px 2px;
+  gap: 3px;
+}
+.inspector-pane .lut-input-toggles button strong,
+.inspector-pane .lut-live-output > strong {
+  font-size: 13px;
+}
+.inspector-pane .lut-live-output {
+  padding: 5px 8px;
+  gap: 3px;
+}
+.inspector-pane .lut-address {
+  margin: 6px 0;
+  font-size: 12px;
+}
+.inspector-pane .inspector-lut-table {
+  margin-top: 2px;
+}
+.inspector-pane .lut-table-scroll {
+  margin-top: 5px;
+  max-height: 230px;
+  border-radius: 5px;
+}
+.inspector-pane .lut-truth-table th {
+  padding: 5px 2px;
+}
+.inspector-pane .lut-truth-table td {
+  padding: 3px 2px;
+}
+
+.inspector-pane .inspector-sources {
+  gap: 4px;
+}
+.inspector-pane .inspector-sources button {
+  padding: 5px 7px;
+  min-height: 26px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.inspector-pane .inspector-no-source {
+  margin: 5px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.inspector-pane .resource-section {
+  margin-top: 0;
+  padding: 10px 12px;
+}
+.inspector-pane .resource-section > .section-label {
+  padding: 0;
+  margin: 0 0 6px;
+  font-size: 12px;
+}
+.inspector-pane .resource-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0;
+}
+.inspector-pane .resource-grid > button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 10px;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 7px;
+  min-height: 28px;
+  border-radius: 4px;
+}
+.inspector-pane .resource-grid > button > span {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: 12px;
+  text-align: left;
+}
+.inspector-pane .resource-grid > button > strong {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 13px;
+  text-align: right;
+}
+.inspector-pane .resource-grid > button .help-trigger-icon {
+  position: static;
+  grid-column: 3;
+  grid-row: 1;
+  width: 10px;
+  height: 10px;
+}
+.inspector-pane .other-resources {
+  width: 100%;
+  margin: 7px 0 0;
+  font-size: 12px;
+  gap: 6px;
+}
+.inspector-pane .resource-note {
+  padding: 0;
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .inspector-pane .resource-section {
+    padding-top: 10px;
+  }
+  .inspector-pane .resource-section > .section-label {
+    padding-top: 0;
+  }
+}

@@ -1,0 +1,14 @@
+.git
+node_modules
+dist
+.server-dist
+.tools
+.builds
+.simulations
+.physical
+.debugger-backups
+.users
+hardware
+docs/screenshots
+*.log
+.env*

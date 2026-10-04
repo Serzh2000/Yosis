@@ -1,0 +1,569 @@
+.physical-workspace.board-workspace {
+  padding: 12px 14px;
+  max-width: none;
+  height: 100%;
+  overflow: auto;
+}
+.board-workspace .physical-heading {
+  margin-bottom: 12px;
+}
+.board-workspace .physical-heading h2 {
+  font-size: 18px;
+  margin: 4px 0;
+}
+.board-workspace .physical-heading p {
+  font-size: 12px;
+}
+.board-workspace .physical-heading > svg {
+  width: 28px;
+  height: 28px;
+}
+.board-workspace .board-columns {
+  grid-template-columns: minmax(340px, 1fr) minmax(380px, 0.9fr);
+  gap: 12px;
+}
+.board-workspace .physical-card {
+  padding: 13px;
+  border-radius: 8px;
+}
+.board-workspace .physical-card h3 {
+  font-size: 12px;
+}
+.board-workspace .physical-card p {
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 8px 0;
+}
+.board-workspace .board-sidebar {
+  gap: 12px;
+}
+.board-profile-card summary {
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.board-workspace .physical-controls {
+  margin-top: 10px;
+  gap: 9px;
+}
+.board-workspace .uart-terminal {
+  min-height: 230px;
+  height: clamp(230px, calc(100dvh - 435px), 470px);
+  margin: 12px 0;
+  padding: 11px;
+  font-size: 12px;
+}
+.board-workspace .board-profile {
+  margin: 7px 0;
+  font-size: 12px;
+}
+.board-workspace .board-profile > div {
+  padding: 5px 0;
+}
+.programming-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.programming-panel .programming-intro {
+  color: var(--muted);
+  margin: 0;
+}
+.programming-panel .connection-badge {
+  font-size: 12px;
+  padding: 3px 6px;
+}
+.programming-connect,
+.programming-device-row {
+  display: flex;
+  gap: 7px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.programming-connect label,
+.programming-device-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 135px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.programming-connect input,
+.programming-device-row select {
+  min-height: 31px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+.programming-panel .button {
+  min-height: 31px;
+  font-size: 12px;
+  padding-left: 9px;
+  padding-right: 9px;
+}
+.programming-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 31px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.programming-helper-detail {
+  display: flex;
+  gap: 6px 12px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.programming-source-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.programming-source-row .is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--panel));
+}
+.programming-artifact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  align-items: center;
+  padding: 9px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.programming-artifact > strong {
+  width: 100%;
+  font-size: 12px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.programming-artifact > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.programming-artifact code {
+  font-size: 12px;
+}
+.programming-artifact.is-ready {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+.programming-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.programming-action > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.programming-progress {
+  width: 100%;
+  height: 5px;
+  margin-top: 8px;
+  accent-color: var(--accent);
+}
+.programming-panel .physical-error {
+  margin-top: 0;
+  font-size: 12px;
+  padding: 8px 10px;
+}
+.programming-error-hint {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.programming-job {
+  border-top: 1px solid var(--border);
+  padding-top: 9px;
+  font-size: 12px;
+}
+.programming-job > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+}
+.programming-job strong {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.programming-job.status-success strong {
+  color: var(--accent);
+}
+.programming-job.status-error strong {
+  color: var(--orange);
+}
+.programming-job > small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.programming-job .physical-logs {
+  margin: 8px 0 0;
+  max-height: 170px;
+  padding: 9px;
+  font-size: 12px;
+}
+.programming-setup {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.programming-setup summary {
+  cursor: pointer;
+}
+.programming-setup code {
+  color: var(--text);
+}
+.programming-rom-probe {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+.programming-rom-probe > strong {
+  color: var(--text);
+  font-size: 12px;
+}
+.programming-rom-result {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 9px;
+}
+.programming-rom-result > small {
+  font-size: 12px;
+}
+.programming-rom-result code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.programming-panel .spin {
+  animation: programming-spin 1.2s linear infinite;
+}
+@keyframes programming-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 1050px) {
+  .board-workspace .board-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .board-workspace .board-sidebar {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(230px, 1fr);
+  }
+}
+@media (max-width: 730px) {
+  .board-workspace .board-sidebar {
+    display: flex;
+    flex-direction: column;
+  }
+  .board-workspace .uart-send {
+    flex-wrap: wrap;
+  }
+  .board-workspace .uart-send input {
+    flex-basis: 100%;
+  }
+}
+.debugger-installer {
+  padding: 14px 0;
+}
+.debugger-installer-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.debugger-installer-title > svg {
+  color: var(--accent);
+}
+.debugger-installer-title strong {
+  font-size: 13px;
+}
+.debugger-installer-title > span {
+  color: var(--muted);
+  font-size: 12px;
+  margin-left: auto;
+}
+.debugger-installer p,
+.debugger-installer li {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--text-soft);
+}
+.debugger-installer ol {
+  padding-left: 22px;
+  margin: 14px 0;
+}
+.debugger-installer li {
+  margin: 6px 0;
+}
+.debugger-installer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.debugger-install-review {
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 14px;
+  margin-top: 12px;
+}
+.debugger-install-review > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-size: 12px;
+}
+.debugger-install-review dl {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  font-size: 12px;
+  gap: 9px;
+}
+.debugger-install-review dt {
+  color: var(--muted);
+}
+.debugger-install-review dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.debugger-install-progress {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin: 15px 0;
+  font-size: 12px;
+}
+.debugger-install-progress progress {
+  flex: 1;
+  min-width: 130px;
+  accent-color: var(--accent);
+}
+.debugger-install-progress small {
+  color: var(--muted);
+}
+.debugger-install-done {
+  padding: 14px;
+  background: var(--accent-soft);
+  border-radius: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+.debugger-install-done > svg {
+  vertical-align: middle;
+  color: var(--accent);
+  margin-right: 7px;
+}
+.debugger-installer-details {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.debugger-installer-details a {
+  color: var(--accent);
+}
+
+.programming-panel p {
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* One task at a time: programming, UART or debugger maintenance. */
+.board-mode-nav {
+  display: flex;
+  gap: 5px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+}
+.board-mode-nav button {
+  padding: 9px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.board-mode-nav [aria-pressed='true'] {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+.board-single-workspace {
+  max-width: 960px;
+  margin: 0 auto;
+  min-height: 0;
+}
+.board-single-workspace [hidden],
+.programming-panel [hidden] {
+  display: none !important;
+}
+.board-single-workspace .programming-panel {
+  padding: 16px 20px;
+}
+.board-single-workspace .programming-panel .button {
+  font-size: 13px;
+  min-height: 34px;
+  padding: 7px 12px;
+}
+.programming-main-flow {
+  max-width: 760px;
+  margin: auto;
+}
+.programming-step-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+  font-weight: 550;
+  margin: 14px 0 8px;
+}
+.programming-step-heading > span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 13px;
+}
+.board-single-workspace .physical-error {
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.programming-error-hint summary,
+.programming-receipt-meta summary,
+.programming-artifact-hash summary,
+.programming-helper-detail summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-soft);
+  margin: 7px 0;
+}
+.programming-error-hint {
+  line-height: 1.6;
+}
+.programming-receipt-meta {
+  margin: 9px 0;
+}
+.programming-receipt-meta small,
+.programming-receipt-meta p {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.programming-artifact-hash {
+  width: 100%;
+}
+.programming-artifact-hash code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.programming-artifact-hash span {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+.board-profile-footer {
+  margin: 14px 0;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+.board-profile-footer summary {
+  cursor: pointer;
+}
+.board-profile-footer .board-profile {
+  max-width: 560px;
+}
+.board-single-workspace .uart-card {
+  height: min(650px, calc(100dvh - 265px));
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+.board-single-workspace .uart-terminal {
+  flex: 1;
+  min-height: 150px;
+}
+.board-single-workspace .programming-setup {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.board-single-workspace .debugger-installer-title strong {
+  font-size: 18px;
+}
+.board-single-workspace .debugger-installer-title {
+  flex-wrap: wrap;
+}
+.board-single-workspace .debugger-installer {
+  font-size: 14px;
+}
+.board-single-workspace .debugger-installer > ol {
+  font-size: 14px;
+  line-height: 1.7;
+  padding-left: 23px;
+}
+.board-single-workspace .debugger-installer > ol li {
+  margin: 13px 0;
+}
+.board-single-workspace .debugger-installer-actions {
+  gap: 10px;
+}
+.board-single-workspace .programming-rom-probe {
+  margin-top: 22px;
+  padding-top: 16px;
+}
+.programming-rom-probe > summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+@media (max-width: 650px) {
+  .board-single-workspace .programming-panel {
+    padding: 16px;
+  }
+  .board-mode-nav button {
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+  .board-single-workspace .uart-card {
+    height: 500px;
+  }
+  .board-single-workspace .uart-send {
+    flex-wrap: wrap;
+  }
+}

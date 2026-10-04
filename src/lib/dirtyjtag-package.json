@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "board": "tangnano20k",
+  "build": "dirtyjtag-v2-yosis-winusb-3",
+  "upstream": "64fe564b82e509e9aa0ff3372a95ca5e2edf9230",
+  "sdk": "6ebf1d053287e0417bb37e2322dfda9665febf86",
+  "usb": {
+    "vid": 4617,
+    "pid": 49354,
+    "interface": 0,
+    "bcdDevice": 515,
+    "msos20": true
+  },
+  "images": [
+    {
+      "name": "bootloader.bin",
+      "address": 0,
+      "size": 68976,
+      "sha256": "1b5d0ed698a3f2bf0b9d4f72d242868da993e737bbea0c8288267b69b73fbc12"
+    },
+    {
+      "name": "dirtyjtag.bin",
+      "address": 131072,
+      "size": 78656,
+      "sha256": "25279fc237c8c2b3b71aea3ee21364751f6c1ffc90450b895895b88e6b15870f"
+    }
+  ]
+}

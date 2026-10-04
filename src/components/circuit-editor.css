@@ -1,0 +1,212 @@
+.circuit-workspace {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+}
+.circuit-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.circuit-toolbar > span {
+  color: var(--muted);
+  margin-right: auto;
+}
+.circuit-instruction {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-soft);
+  border-bottom: 1px solid var(--border);
+}
+.circuit-columns {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 175px minmax(250px, 1fr) 260px;
+  min-height: 0;
+}
+.circuit-palette,
+.circuit-inspector {
+  padding: 12px;
+  overflow: auto;
+  min-height: 0;
+  background: var(--panel);
+}
+.circuit-palette {
+  border-right: 1px solid var(--border);
+}
+.circuit-palette h3 {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+.circuit-palette > button {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 4px;
+  font-size: 13px;
+  border-radius: 4px;
+}
+.circuit-palette > button:hover {
+  background: var(--accent-soft);
+}
+.circuit-inspector {
+  border-left: 1px solid var(--border);
+  font-size: 13px;
+}
+.circuit-inspector p {
+  line-height: 1.6;
+  color: var(--text-soft);
+}
+.circuit-properties {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.circuit-properties label,
+.circuit-connect label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.circuit-properties input,
+.circuit-connect select {
+  width: 100%;
+  padding: 7px;
+  min-width: 0;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  accent-color: var(--accent);
+}
+.circuit-properties .circuit-check {
+  display: flex;
+  align-items: center;
+}
+.circuit-check input {
+  width: auto;
+}
+.circuit-connect,
+.circuit-issues {
+  padding-top: 14px;
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.circuit-connect label,
+.circuit-connect > button {
+  margin-top: 10px;
+}
+.circuit-issues ul {
+  padding-left: 18px;
+}
+.circuit-issues li {
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.circuit-issues li button {
+  text-align: left;
+  font-size: 13px;
+}
+.circuit-error {
+  padding: 10px 12px;
+  margin: 0;
+  color: var(--error);
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+.circuit-code {
+  margin: 0;
+  padding: 22px;
+  flex: 1;
+  overflow: auto;
+  font-size: 14px;
+  line-height: 1.65;
+  background: var(--canvas);
+}
+.circuit-workspace .canvas-viewport {
+  background: var(--canvas);
+  background-image: radial-gradient(var(--border) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+.circuit-node-selection {
+  fill: transparent;
+  stroke: transparent;
+}
+.circuit-node.selected .circuit-node-selection {
+  stroke: var(--accent);
+  fill: var(--accent-soft);
+  stroke-dasharray: 3 4;
+}
+.circuit-generic-body {
+  fill: var(--panel);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.circuit-label {
+  fill: var(--text);
+  font-size: 13px;
+}
+.circuit-small-label {
+  fill: var(--text-soft);
+  font-size: 12px;
+}
+.circuit-node {
+  cursor: move;
+}
+.circuit-terminal {
+  cursor: crosshair;
+}
+.circuit-terminal circle {
+  fill: var(--panel);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.circuit-terminal .circuit-terminal-hit {
+  fill: transparent;
+  stroke: transparent;
+}
+.circuit-terminal[aria-pressed='true'] circle:last-of-type,
+.circuit-terminal:hover circle:last-of-type {
+  fill: var(--accent);
+}
+.circuit-wire {
+  cursor: pointer;
+}
+.circuit-wire path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.circuit-wire .circuit-wire-hit {
+  stroke: transparent;
+  stroke-width: 14;
+}
+.circuit-wire:hover path:last-child,
+.circuit-wire:focus path:last-child {
+  stroke: var(--error);
+  stroke-width: 3;
+}
+@media (max-width: 1280px) {
+  .circuit-columns {
+    grid-template-columns: 145px minmax(220px, 1fr) 220px;
+  }
+}
+@media (max-width: 760px) {
+  .circuit-columns {
+    grid-template-columns: 120px minmax(200px, 1fr);
+    overflow: auto;
+  }
+  .circuit-inspector {
+    grid-column: 1 / -1;
+    max-height: 260px;
+    border-top: 1px solid var(--border);
+  }
+}

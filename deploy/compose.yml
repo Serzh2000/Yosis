@@ -1,0 +1,35 @@
+services:
+  yosis:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    init: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3001"
+    environment:
+      YOSIS_LISTEN_HOST: "0.0.0.0"
+      YOSIS_PUBLIC_ORIGIN: "${YOSIS_PUBLIC_ORIGIN:?Set an HTTPS origin}"
+      YOSIS_USERS_JSON: "${YOSIS_USERS_JSON:?Set personal user access keys}"
+      YOSIS_BUILD_CONCURRENCY: "1"
+      YOSIS_SIMULATION_CONCURRENCY: "1"
+      YOSIS_PHYSICAL_CONCURRENCY: "1"
+      YOSIS_JOB_RETAIN_COUNT: "64"
+      YOSIS_JOB_RETAIN_DAYS: "7"
+      YOSIS_JOB_RETAIN_MB: "512"
+    volumes:
+      - data:/data
+      - cache:/cache
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,noexec,nosuid
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 6g
+    cpus: 2.0
+volumes:
+  data:
+  cache:

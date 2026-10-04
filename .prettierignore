@@ -1,0 +1,11 @@
+node_modules
+dist
+.server-dist
+.tools
+.builds
+.simulations
+.physical
+hardware
+public/firmware
+package-lock.json
+docs/screenshots

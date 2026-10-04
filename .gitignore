@@ -1,0 +1,35 @@
+node_modules/
+dist/
+.builds/
+.simulations/
+.physical/
+.programming-helper/
+.helper-dist/
+.tools/
+.npm-cache/
+*.log
+.env
+.env.*
+!.env.example
+playwright-output/
+.server-dist/
+coverage/
+test-results/
+playwright-report/
+.claude/
+.debugger-backups/
+.user-data/
+.users/
+__pycache__/
+*.pyc
+
+# Rebuildable vendor outputs and local board diagnostics. Source, constraints,
+# receipts and the small, pinned public firmware package remain in Git.
+hardware/*/impl/
+hardware/**/*.fs
+hardware/**/*.vvp
+hardware/**/merged.bin
+hardware/**/technology.json
+hardware/**/rtl.json
+hardware/**/placement.json
+hardware/**/timing.json

@@ -1,0 +1,838 @@
+.schematic-root {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  min-height: 280px;
+  overflow: hidden;
+  background: var(--bg, #0b1119);
+}
+.schematic-toolbar {
+  position: absolute;
+  z-index: 2;
+  left: 16px;
+  right: 16px;
+  top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  pointer-events: none;
+}
+.schematic-summary {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 4px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg, #0b1119) 93%, transparent);
+}
+.schematic-summary > span {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  color: var(--text, #dce5ef);
+  font-weight: 600;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.schematic-summary small {
+  color: var(--muted, #8496a9);
+  font-size: 12px;
+}
+.schematic-tools {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border, #233142);
+  border-radius: 8px;
+  background: var(--panel, #111a25);
+  pointer-events: auto;
+}
+.schematic-tools button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted, #8496a9);
+  cursor: pointer;
+}
+.schematic-tools button:hover:not(:disabled) {
+  background: var(--panel-raised, #16212e);
+  color: var(--accent, #61d4b3);
+}
+.schematic-tools button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.schematic-scale {
+  width: 38px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted, #8496a9);
+}
+.schematic-canvas {
+  display: block;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.schematic-canvas.is-dragging {
+  cursor: grabbing;
+}
+.schematic-node {
+  cursor: pointer;
+  outline: none;
+}
+.schematic-node-body {
+  fill: var(--panel-raised, #16212e);
+  stroke: #3c5065;
+  stroke-width: 1.4;
+}
+.schematic-node-divider {
+  stroke: #3c5065;
+  stroke-width: 0.8;
+}
+.schematic-node-type {
+  fill: #dce5ef;
+  font-size: 12px;
+  font-weight: 650;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.schematic-node-name {
+  fill: #8b9eaf;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.schematic-module-mark {
+  fill: #87baf2;
+  font-size: 15px;
+}
+.schematic-port-label {
+  fill: #a6b6c6;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.schematic-port {
+  fill: #718599;
+}
+.schematic-node.kind-lut .schematic-node-body {
+  fill: #15302b;
+  stroke: #3d8774;
+}
+.schematic-node.kind-lut .schematic-node-divider {
+  stroke: #3d8774;
+}
+.schematic-node.kind-lut .schematic-node-type {
+  fill: #7cdeba;
+}
+.schematic-node.kind-ff .schematic-node-body {
+  fill: #1d2d44;
+  stroke: #4f719b;
+}
+.schematic-node.kind-ff .schematic-node-type {
+  fill: #9bc4f1;
+}
+.schematic-node.kind-alu .schematic-node-body,
+.schematic-node.kind-dsp .schematic-node-body {
+  fill: #352b23;
+  stroke: #8b6848;
+}
+.schematic-node.kind-alu .schematic-node-type,
+.schematic-node.kind-dsp .schematic-node-type {
+  fill: #f0b36d;
+}
+.schematic-node.kind-bram .schematic-node-body {
+  fill: #2b2439;
+  stroke: #6b578c;
+}
+.schematic-node.kind-bram .schematic-node-type {
+  fill: #c4a9eb;
+}
+.schematic-node.kind-input .schematic-node-body,
+.schematic-node.kind-output .schematic-node-body,
+.schematic-node.kind-inout .schematic-node-body {
+  fill: #101b28;
+  stroke: #3f566d;
+}
+.schematic-node.kind-constant .schematic-node-body,
+.schematic-node.kind-undriven .schematic-node-body {
+  fill: #27231c;
+  stroke: #705f3f;
+}
+.schematic-node.kind-undriven .schematic-node-type {
+  fill: #f0b36d;
+}
+.schematic-node:hover .schematic-node-body,
+.schematic-node:focus-visible .schematic-node-body {
+  stroke: #b2cbdb;
+  stroke-width: 2;
+}
+.schematic-node.is-selected .schematic-node-body {
+  stroke: #b4f6df;
+  stroke-width: 2.8;
+}
+.schematic-node.source-highlighted .schematic-node-body {
+  stroke: #f0b36d;
+  stroke-width: 2.4;
+  stroke-dasharray: 5 3;
+}
+.rtl-hit-area {
+  fill: transparent;
+  stroke: none;
+}
+.rtl-symbol-body {
+  fill: #101f2c;
+  stroke: #a8c4d5;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+.rtl-symbol-detail,
+.rtl-pin-line,
+.rtl-clock-triangle {
+  fill: none;
+  stroke: #a8c4d5;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+.rtl-pin-line {
+  stroke-width: 1.4;
+}
+.rtl-inversion {
+  fill: var(--bg, #0b1119);
+  stroke: #a8c4d5;
+  stroke-width: 1.8;
+}
+.rtl-symbol-operation {
+  fill: #d6e7ef;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.rtl-adder-operation {
+  fill: #f0b36d;
+  font-size: 36px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.rtl-operator-operation {
+  fill: var(--text);
+  font-size: 25px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.rtl-symbol-caption {
+  fill: #a7bdce;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.rtl-instance-name {
+  font-size: 12px;
+}
+.rtl-pin-label {
+  fill: #a7bdce;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  paint-order: stroke;
+  stroke: var(--bg, #0b1119);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.rtl-dff-pin-label {
+  fill: #d6e7ef;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.rtl-reset-info {
+  fill: #a7bdce;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.rtl-mux-choice {
+  fill: #a7bdce;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.rtl-mux-detail {
+  font-size: 12px;
+}
+.rtl-dff .rtl-symbol-body {
+  fill: #162b42;
+  stroke: #9fc4e8;
+}
+.rtl-adder .rtl-symbol-body {
+  fill: #2c251e;
+  stroke: #d3ae7a;
+}
+.schematic-node:hover .rtl-symbol-body,
+.schematic-node:focus-visible .rtl-symbol-body {
+  stroke: #d1e4ef;
+  stroke-width: 2.4;
+}
+.schematic-node.is-selected .rtl-symbol-body {
+  stroke: #8ef0c9;
+  stroke-width: 2.8;
+}
+.schematic-node.is-selected .rtl-pin-line,
+.schematic-node.is-selected .rtl-clock-triangle {
+  stroke: #8ef0c9;
+}
+.schematic-node.source-highlighted .rtl-symbol-body {
+  stroke: #f0b36d;
+  stroke-width: 2.4;
+  stroke-dasharray: 5 3;
+}
+.schematic-edge {
+  cursor: pointer;
+}
+.schematic-edge-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+}
+.schematic-edge-line {
+  fill: none;
+  stroke: #4b6276;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+.schematic-edge.is-highlighted .schematic-edge-line,
+.schematic-edge:hover .schematic-edge-line {
+  stroke: #7cdeba;
+}
+.schematic-bus-width {
+  fill: #8b9eaf;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  paint-order: stroke;
+  stroke: #0b1119;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.schematic-bus-tap {
+  font-size: 12px;
+}
+.schematic-bus-terminal {
+  fill: none;
+  stroke: var(--text-soft);
+  stroke-width: 2;
+}
+.schematic-limit {
+  position: absolute;
+  z-index: 3;
+  left: 20px;
+  right: 20px;
+  top: 75px;
+  padding: 8px 12px;
+  color: var(--orange, #f0b36d);
+  background: #342719e8;
+  border: 1px solid #715231;
+  border-radius: 7px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.schematic-message {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  color: var(--muted, #8496a9);
+  font-size: 13px;
+}
+.schematic-error {
+  color: #ed9c94;
+}
+.schematic-hint {
+  position: absolute;
+  bottom: 15px;
+  left: 20px;
+  right: 20px;
+  text-align: center;
+  color: var(--muted, #8496a9);
+  font-size: 12px;
+  pointer-events: none;
+}
+.schematic-edge-info {
+  position: absolute;
+  z-index: 3;
+  bottom: 16px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border, #233142);
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: var(--panel, #111a25);
+  color: var(--text, #dce5ef);
+  font-size: 12px;
+}
+.schematic-edge-info span {
+  color: var(--muted, #8496a9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.schematic-edge-info button {
+  margin-left: auto;
+  background: none;
+  border: 0;
+  color: var(--muted, #8496a9);
+  cursor: pointer;
+  font-size: 18px;
+}
+.lut-inspector {
+  color: var(--text, #dce5ef);
+  padding: 16px;
+  font-size: 12px;
+}
+.lut-inspector.inspector-empty {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--muted, #8496a9);
+  text-align: center;
+}
+.inspector-empty strong {
+  color: var(--text, #dce5ef);
+  font-size: 13px;
+  font-weight: 500;
+}
+.inspector-empty span {
+  font-size: 12px;
+  line-height: 1.6;
+  max-width: 245px;
+}
+.inspector-cell-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 2px;
+}
+.inspector-type {
+  align-self: flex-start;
+  padding: 4px 7px;
+  color: var(--accent, #61d4b3);
+  background: #14332b;
+  border: 1px solid #28594a;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 650;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.inspector-cell-heading h3 {
+  font-size: 13px;
+  font-weight: 550;
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.inspector-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: var(--muted, #8496a9);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.lut-init {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 9px;
+  padding: 10px;
+  border: 1px solid var(--border, #233142);
+  border-radius: 7px;
+  background: var(--bg, #0b1119);
+}
+.lut-init > span {
+  color: var(--muted, #8496a9);
+  font-size: 12px;
+}
+.lut-init code {
+  font-size: 13px;
+  color: var(--accent, #61d4b3);
+  overflow-wrap: anywhere;
+}
+.lut-init small {
+  width: 100%;
+  color: var(--muted, #8496a9);
+  font-size: 12px;
+}
+.lut-explanation {
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--muted, #8496a9);
+  margin: 11px 0;
+}
+.lut-simulator {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.lut-input-toggles {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+}
+.lut-input-toggles button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  padding: 8px 2px;
+  gap: 6px;
+  border: 1px solid var(--border, #233142);
+  border-radius: 6px;
+  background: var(--panel-raised, #16212e);
+  color: var(--muted, #8496a9);
+  cursor: pointer;
+}
+.lut-input-toggles button span {
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.lut-input-toggles button strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.lut-input-toggles button.is-one {
+  border-color: #3e8973;
+  color: #7cdeba;
+  background: #15322a;
+}
+.lut-live-output {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 8px 12px;
+  border: 1px solid var(--border, #233142);
+  border-radius: 6px;
+  background: var(--bg, #0b1119);
+  gap: 6px;
+}
+.lut-live-output > span {
+  font-size: 12px;
+  color: var(--muted, #8496a9);
+}
+.lut-live-output > strong {
+  font-size: 14px;
+}
+.output-1 {
+  color: #7cdeba;
+}
+.output-x,
+.output-z,
+.output-\? {
+  color: #f0b36d;
+}
+.lut-address {
+  margin: 10px 0;
+  color: var(--muted, #8496a9);
+  font-size: 12px;
+}
+.lut-address strong {
+  font-weight: 500;
+  color: var(--text, #dce5ef);
+}
+.lut-table-scroll {
+  max-height: 272px;
+  overflow: auto;
+  border: 1px solid var(--border, #233142);
+  border-radius: 7px;
+}
+.lut-truth-table {
+  width: 100%;
+  border-spacing: 0;
+  font-size: 12px;
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.lut-truth-table th {
+  position: sticky;
+  top: 0;
+  padding: 7px 3px;
+  background: var(--panel-raised, #16212e);
+  color: var(--muted, #8496a9);
+  font-weight: 500;
+  z-index: 1;
+}
+.lut-truth-table td {
+  padding: 4px 3px;
+  border-top: 1px solid #23314280;
+}
+.lut-truth-table tr {
+  cursor: pointer;
+}
+.lut-truth-table tbody tr:hover {
+  background: #17262d;
+}
+.lut-truth-table tr.is-active {
+  background: #18352d;
+}
+.lut-truth-table td:first-child {
+  color: var(--muted, #8496a9);
+}
+.lut-truth-table td:last-child {
+  font-weight: 650;
+}
+.lut-truth-table td button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+}
+.inspector-ports {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.inspector-port-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border, #233142);
+}
+.inspector-port-row > span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.inspector-port-row strong {
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-weight: 500;
+}
+.inspector-port-row small {
+  color: var(--muted, #8496a9);
+  font-size: 12px;
+}
+.inspector-port-row code {
+  padding-top: 2px;
+  color: var(--muted, #8496a9);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+.inspector-parameters {
+  margin: 0;
+}
+.inspector-parameters > div {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border, #233142);
+  padding: 7px 0;
+}
+.inspector-parameters dt {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+  color: var(--muted, #8496a9);
+}
+.inspector-parameters dd {
+  margin: 0;
+  text-align: right;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+  color: var(--text, #dce5ef);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.inspector-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.inspector-sources button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  background: var(--bg, #0b1119);
+  border: 1px solid var(--border, #233142);
+  border-radius: 5px;
+  padding: 8px;
+  color: var(--accent, #61d4b3);
+  cursor: pointer;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+}
+.inspector-sources button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.inspector-sources button:disabled {
+  cursor: default;
+  color: var(--muted, #8496a9);
+}
+.inspector-no-source {
+  font-size: 12px;
+  color: var(--muted, #8496a9);
+  line-height: 1.6;
+}
+@media (max-width: 700px) {
+  .schematic-toolbar {
+    left: 8px;
+    right: 8px;
+    gap: 6px;
+  }
+  .schematic-summary {
+    max-width: 45%;
+  }
+  .schematic-hint {
+    font-size: 12px;
+  }
+}
+
+/* The same drawing palette remains readable in both workspace themes. */
+.schematic-root {
+  background: var(--canvas);
+}
+.schematic-summary {
+  background: color-mix(in srgb, var(--canvas) 93%, transparent);
+}
+.schematic-node-body,
+.rtl-symbol-body {
+  fill: var(--panel);
+  stroke: var(--text-soft);
+}
+.schematic-node-divider {
+  stroke: var(--border);
+}
+.schematic-node-type,
+.rtl-symbol-operation,
+.rtl-dff-pin-label {
+  fill: var(--text);
+}
+.schematic-node-name,
+.schematic-port-label,
+.rtl-symbol-caption,
+.rtl-pin-label,
+.rtl-reset-info,
+.rtl-mux-choice,
+.schematic-bus-width {
+  fill: var(--text-soft);
+}
+.schematic-port {
+  fill: var(--muted);
+}
+.schematic-module-mark {
+  fill: var(--accent);
+}
+.schematic-node.kind-lut .schematic-node-body {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+}
+.schematic-node.kind-lut .schematic-node-divider {
+  stroke: var(--accent);
+}
+.schematic-node.kind-lut .schematic-node-type {
+  fill: var(--accent);
+}
+.schematic-node.kind-ff .schematic-node-body,
+.rtl-dff .rtl-symbol-body {
+  fill: var(--panel);
+  stroke: var(--text-soft);
+}
+.schematic-node.kind-ff .schematic-node-type {
+  fill: var(--text);
+}
+.schematic-node.kind-alu .schematic-node-body,
+.schematic-node.kind-dsp .schematic-node-body,
+.schematic-node.kind-bram .schematic-node-body,
+.rtl-adder .rtl-symbol-body {
+  fill: var(--panel);
+  stroke: var(--muted);
+}
+.schematic-node.kind-alu .schematic-node-type,
+.schematic-node.kind-dsp .schematic-node-type,
+.schematic-node.kind-bram .schematic-node-type,
+.rtl-adder-operation {
+  fill: var(--text);
+}
+.schematic-node.kind-input .schematic-node-body,
+.schematic-node.kind-output .schematic-node-body,
+.schematic-node.kind-inout .schematic-node-body {
+  fill: var(--surface);
+  stroke: var(--muted);
+}
+.schematic-node.kind-constant .schematic-node-body,
+.schematic-node.kind-undriven .schematic-node-body {
+  fill: var(--panel);
+  stroke: var(--muted);
+}
+.rtl-symbol-detail,
+.rtl-pin-line,
+.rtl-clock-triangle {
+  stroke: var(--text-soft);
+}
+.rtl-inversion {
+  fill: var(--canvas);
+  stroke: var(--text-soft);
+}
+.rtl-pin-label,
+.schematic-bus-width {
+  stroke: var(--canvas);
+}
+.schematic-edge-line {
+  stroke: var(--muted);
+}
+.schematic-node:hover .schematic-node-body,
+.schematic-node:focus-visible .schematic-node-body,
+.schematic-node:hover .rtl-symbol-body,
+.schematic-node:focus-visible .rtl-symbol-body {
+  stroke: var(--text);
+}
+.schematic-node.is-selected .schematic-node-body,
+.schematic-node.is-selected .rtl-symbol-body,
+.schematic-node.is-selected .rtl-pin-line,
+.schematic-node.is-selected .rtl-clock-triangle,
+.schematic-edge.is-highlighted .schematic-edge-line,
+.schematic-edge:hover .schematic-edge-line {
+  stroke: var(--accent);
+}
+.schematic-error {
+  color: var(--danger);
+}
+.inspector-type,
+.lut-input-toggles button.is-one,
+.lut-truth-table tr.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.output-1 {
+  color: var(--accent);
+}
+.lut-truth-table td {
+  border-color: var(--border);
+}
+.lut-truth-table tbody tr:hover {
+  background: var(--surface);
+}

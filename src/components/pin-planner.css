@@ -1,0 +1,429 @@
+.pin-workspace,
+.pin-planner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+}
+.pin-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.pin-view-switch {
+  display: flex;
+  gap: 3px;
+}
+.pin-view-switch button {
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+.pin-view-switch [aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.pin-file {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+.pin-file select,
+.pin-map-tools select {
+  padding: 5px 8px;
+}
+.pin-workflow-note {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-soft);
+  border-bottom: 1px solid var(--border);
+}
+.pin-analysis-needed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--accent-soft);
+  font-size: 13px;
+}
+.pin-columns {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(270px, 0.9fr) minmax(340px, 1.6fr);
+}
+.pin-signal-panel {
+  min-height: 0;
+  min-width: 0;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+.pin-signal-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  padding: 12px;
+  font-size: 13px;
+}
+.pin-signal-heading span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.pin-search {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 0 12px 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.pin-search input {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  width: 100%;
+  font-size: 12px;
+}
+.pin-signal-scroll {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+.pin-signal-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+.pin-signal-table th {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  color: var(--text-soft);
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 500;
+}
+.pin-signal-table td {
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border);
+}
+.pin-signal-table td:first-child {
+  padding-left: 0;
+}
+.pin-signal-table button {
+  display: block;
+  width: 100%;
+  padding: 11px 12px;
+  text-align: left;
+}
+.pin-signal-table .selected {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.pin-map-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: 10px 14px;
+  background: var(--surface);
+}
+.pin-map-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+.pin-map-tools label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.pin-package-container {
+  flex: 1;
+  min-height: 240px;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+}
+.pin-package {
+  width: 100%;
+  height: auto;
+  max-height: none;
+  flex: 1;
+}
+.pin-chip-body {
+  fill: var(--panel);
+  stroke: var(--border);
+  stroke-width: 2;
+}
+.pin-one-mark {
+  fill: var(--accent);
+}
+.pin-chip-title {
+  font-size: 22px;
+  font-weight: 600;
+  fill: var(--text);
+}
+.pin-chip-subtitle {
+  font-size: 14px;
+  fill: var(--text-soft);
+}
+.pin-chip-signal {
+  font-size: 18px;
+  fill: var(--accent-strong);
+}
+.pin-selected-signal {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+}
+.pin-connection {
+  stroke: var(--accent-strong);
+  stroke-width: 2;
+  fill: none;
+  stroke-dasharray: 6 4;
+}
+.package-pin {
+  cursor: pointer;
+}
+.package-pin rect {
+  fill: var(--accent-soft);
+  stroke: var(--accent-strong);
+  stroke-width: 1;
+}
+.package-pin text {
+  font-size: 13px;
+  fill: var(--text-soft);
+}
+.package-pin circle {
+  fill: var(--accent-text);
+}
+.package-pin.bank-0 rect,
+.package-pin.bank-1 rect {
+  fill: #a8bfbd;
+}
+.package-pin.bank-3 rect {
+  fill: #c5b79f;
+}
+.package-pin.bank-4 rect,
+.package-pin.bank-5 rect {
+  fill: #b3bea0;
+}
+.package-pin.bank-6 rect,
+.package-pin.bank-7 rect {
+  fill: #c4b3c2;
+}
+.package-pin.unavailable {
+  cursor: default;
+}
+.package-pin.unavailable rect {
+  fill: var(--border);
+  stroke: var(--muted);
+}
+.package-pin.faded {
+  opacity: 0.25;
+}
+.package-pin.assigned rect {
+  fill: var(--accent);
+  stroke: var(--accent-strong);
+}
+.package-pin.chosen rect,
+.package-pin:focus rect {
+  stroke: var(--text);
+  stroke-width: 3;
+}
+.package-pin:focus {
+  outline: none;
+}
+.pin-legend {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  padding: 6px;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+.pin-legend span {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.pin-legend i {
+  width: 9px;
+  height: 9px;
+  display: inline-block;
+  border-radius: 2px;
+}
+.pin-legend-free {
+  background: #b3bea0;
+}
+.pin-legend-assigned {
+  background: var(--accent);
+}
+.pin-legend-reserved {
+  background: var(--border);
+}
+.pin-edit-card {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  font-size: 13px;
+}
+.pin-edit-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.pin-edit-title span {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+.pin-edit-fields {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.pin-edit-fields label {
+  display: grid;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-soft);
+  flex: 1;
+  min-width: 120px;
+}
+.pin-edit-fields select {
+  padding: 6px 8px;
+  max-width: 100%;
+  width: 100%;
+}
+.pin-voltage {
+  padding: 0;
+  font-size: 12px;
+  color: var(--text-soft);
+  width: 100%;
+}
+.pin-signal-panel .pin-edit-card {
+  padding: 10px 12px;
+  flex-shrink: 0;
+}
+.pin-signal-scroll {
+  min-height: 120px;
+}
+.pin-signal-panel {
+  overflow: auto;
+}
+.pin-board-label {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+.pin-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+.pin-empty {
+  padding: 15px;
+  color: var(--text-soft);
+  line-height: 1.6;
+  font-size: 13px;
+}
+.pin-edit-card .pin-empty {
+  padding: 0;
+}
+.pin-error {
+  color: var(--danger);
+  font-size: 13px;
+}
+.pin-message {
+  color: var(--accent-strong);
+  margin-bottom: 0;
+}
+.pin-issues {
+  flex-shrink: 0;
+  max-height: 180px;
+  overflow: auto;
+  border-top: 1px solid var(--border);
+  padding: 10px 12px;
+  font-size: 12px;
+}
+.pin-issues summary {
+  color: var(--danger);
+  cursor: pointer;
+}
+.pin-issues li {
+  margin: 7px 0;
+  line-height: 1.5;
+}
+.pin-issues ul {
+  padding-left: 18px;
+}
+.pin-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 7px 12px;
+  font-size: 12px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+.pin-footer a {
+  color: var(--accent-strong);
+}
+.pin-text-editor {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.pin-text-editor > .editor-pane {
+  flex: 1;
+}
+@media (max-width: 800px) {
+  .pin-columns {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+  }
+  .pin-signal-panel {
+    max-height: 300px;
+    min-height: 200px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .pin-map-panel {
+    overflow: visible;
+  }
+  .pin-package-container {
+    min-height: 330px;
+  }
+  .pin-package {
+    max-height: 420px;
+  }
+  .pin-workflow-note {
+    line-height: 1.5;
+  }
+}
