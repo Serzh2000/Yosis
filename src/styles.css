@@ -426,6 +426,20 @@ kbd {
   min-height: 0;
   overflow: hidden;
 }
+/* Every tab panel fills the free height, so the build-log strip stays docked at the bottom. */
+.main-workspace > [role='tabpanel'] {
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+}
+.main-workspace > .pin-workspace {
+  display: flex;
+  flex-direction: column;
+}
+.main-workspace > [role='tabpanel'] > .empty-workspace {
+  flex: 1;
+  min-height: 0;
+}
 .work-navigation {
   display: flex;
   min-width: 0;
