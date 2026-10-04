@@ -19,6 +19,8 @@ import {
   truthTableScenario,
 } from '../lib/virtual-board';
 import { WaveformViewer } from './WaveformViewer';
+import { SimulationChecks } from './SimulationChecks';
+import { simulationScenarioSnapshot } from '../../shared/simulation-scenario';
 import './simulation.css';
 
 const pluralRules = new Intl.PluralRules('ru');
@@ -69,6 +71,10 @@ export function SimulationPanel({
   const [scenario, setScenario] = useState<'prepared' | 'truth-table' | 'constant' | 'manual'>(
     'constant',
   );
+  const [timeMode, setTimeMode] = useState<'cycles' | 'ns'>('cycles');
+  const [expectations, setExpectations] = useState<NonNullable<SimulationConfig['expectations']>>(
+    [],
+  );
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [trace, setTrace] = useState<VcdTrace | null>(null);
   const [vcd, setVcd] = useState('');
@@ -77,7 +83,9 @@ export function SimulationPanel({
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<'run' | 'inputs' | 'sequence'>('inputs');
+  const [settingsTab, setSettingsTab] = useState<'run' | 'inputs' | 'sequence' | 'checks'>(
+    'inputs',
+  );
   const settingsId = useId();
   const [showLogs, setShowLogs] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
@@ -126,6 +134,8 @@ export function SimulationPanel({
     setReset('');
     setInputs({});
     setStimuli([]);
+    setTimeMode('cycles');
+    setExpectations([]);
     setScenario('constant');
     setCycles(32);
     setPeriodNs(10);
@@ -149,6 +159,7 @@ export function SimulationPanel({
       setResetCycles(defaults.resetCycles);
       setInputs(prepared?.inputs ?? defaults.inputs);
       setStimuli(prepared?.stimuli ?? []);
+      setTimeMode('cycles');
       setCycles(prepared?.cycles ?? 32);
       setScenario(prepared ? 'prepared' : 'constant');
     } else {
@@ -187,6 +198,7 @@ export function SimulationPanel({
     if (!next || busy) return;
     setInputs(next.inputs);
     setStimuli(next.stimuli);
+    setTimeMode('cycles');
     setCycles(next.cycles);
     setScenario('truth-table');
     setShowSettings(true);
@@ -203,27 +215,7 @@ export function SimulationPanel({
     setError('');
     try {
       const validated = validateProject(project);
-      const config: SimulationConfig = {
-        clock: clock || null,
-        reset: reset || null,
-        resetActiveLow,
-        cycles,
-        periodNs,
-        resetCycles,
-        inputs: Object.fromEntries(
-          inputPorts
-            .filter(([name]) => name !== clock && name !== reset)
-            .map(([name]) => [name, inputs[name] || '0']),
-        ),
-        stimuli: stimuli.map((event) => ({
-          cycle: event.cycle,
-          inputs: Object.fromEntries(
-            inputPorts
-              .filter(([name]) => name !== clock && name !== reset)
-              .map(([name]) => [name, event.inputs[name] ?? inputs[name] ?? '0']),
-          ),
-        })),
-      };
+      const config = scenarioConfig();
       inFlight.current = true;
       setSubmitting(true);
       let accepted = false;
@@ -242,7 +234,9 @@ export function SimulationPanel({
       setTrace(parseVcd(next.vcd!));
       setVcd(next.vcd!);
       setTraceName(`${next.top} · RTL`);
-      setShowSettings(false);
+      const failed = next.checks?.some((check) => !check.passed) ?? false;
+      setShowSettings(failed);
+      if (failed) setSettingsTab('checks');
     } catch (cause) {
       if (run === generation.current && !controller.signal.aborted)
         setError(cause instanceof Error ? cause.message : 'Не удалось запустить симуляцию.');
@@ -290,6 +284,45 @@ export function SimulationPanel({
 
   const singlePorts = inputPorts.filter(([, port]) => port.bits.length === 1);
   const controlledPorts = inputPorts.filter(([name]) => name !== clock && name !== reset);
+  function eventInputs(values: Record<string, string>) {
+    const names = new Set(controlledPorts.map(([name]) => name));
+    return Object.fromEntries(
+      Object.entries(values)
+        .filter(([name, value]) => names.has(name) && value.trim())
+        .map(([name, value]) => [name, value.trim()]),
+    );
+  }
+  function scenarioConfig(): SimulationConfig {
+    return {
+      clock: clock || null,
+      reset: reset || null,
+      resetActiveLow,
+      resetCycles,
+      cycles,
+      periodNs,
+      inputs: Object.fromEntries(
+        controlledPorts.map(([name]) => [name, inputs[name]?.trim() || '0']),
+      ),
+      ...(timeMode === 'cycles'
+        ? {
+            stimuli: stimuli.map((entry) => ({
+              cycle: entry.cycle,
+              inputs: eventInputs(entry.inputs),
+            })),
+          }
+        : {
+            timedStimuli: stimuli.map((entry) => ({
+              timeNs: entry.cycle,
+              inputs: eventInputs(entry.inputs),
+            })),
+          }),
+      expectations: expectations.map((entry) => ({ ...entry, value: entry.value.trim() })),
+    };
+  }
+  const scenarioStale =
+    !!result &&
+    simulationScenarioSnapshot(result.config) !== simulationScenarioSnapshot(scenarioConfig());
+  const checksCurrent = !stale && !scenarioStale ? result?.checks : undefined;
   const canEnumerate = !!truthTableScenario(
     controlledPorts.map(([name, port]) => ({ name, width: port.bits.length, direction: 'input' })),
     8,
@@ -310,7 +343,8 @@ export function SimulationPanel({
   const settingsTabs = [
     ['run', 'Запуск'],
     ['inputs', 'Входы'],
-    ['sequence', `Последовательность ${stimuli.length}`],
+    ['sequence', `События ${stimuli.length}`],
+    ['checks', `Проверки ${expectations.length}`],
   ] as const;
   return (
     <div className="simulation-panel">
@@ -380,7 +414,7 @@ export function SimulationPanel({
               title={
                 available
                   ? 'Запустить функциональную симуляцию'
-                  : 'Для запуска нужен локальный Icarus Verilog'
+                  : 'Для запуска нужен Icarus Verilog на сервере'
               }
               onClick={() => void start()}
             >
@@ -404,6 +438,20 @@ export function SimulationPanel({
         <div className="simulation-stale">
           Исходники изменены. Диаграмма относится к предыдущему запуску.
         </div>
+      )}
+      {!!result?.checks?.length && (
+        <button
+          className="simulation-check-summary"
+          onClick={() => {
+            setShowSettings(true);
+            setSettingsTab('checks');
+          }}
+        >
+          Проверки запуска: {result.checks.filter((check) => check.passed).length}/
+          {result.checks.length} совпало
+          {stale ? ' · предыдущие исходники' : ''}
+          {scenarioStale ? ' · предыдущий сценарий' : ''}
+        </button>
       )}
       <div className="simulation-workspace">
         <div className="simulation-view">
@@ -706,14 +754,55 @@ export function SimulationPanel({
               {settingsTab === 'sequence' && (
                 <>
                   <p className="simulation-settings-note">
-                    Изменение в начале периода. Первый период — 0. Начальные уровни заданы во
-                    «Входах».
+                    {timeMode === 'cycles'
+                      ? 'Первый период — 0. Изменение через 0,001 нс после начала периода.'
+                      : 'Время от начала запуска, точность 0,001 нс. На совпавшем фронте регистр прочитает прежний вход.'}{' '}
+                    Пустое поле сохраняет прежний уровень; начальные уровни заданы во «Входах».
                   </p>
+                  <label className="simulation-time-mode">
+                    Шкала событий
+                    <select
+                      aria-label="Шкала событий"
+                      value={timeMode}
+                      disabled={busy}
+                      onChange={(e) => {
+                        const mode = e.target.value as 'cycles' | 'ns';
+                        setStimuli((previous) =>
+                          previous.map((entry) => ({
+                            ...entry,
+                            cycle:
+                              mode === 'ns'
+                                ? entry.cycle * periodNs + 0.001
+                                : Math.round((entry.cycle - 0.001) / periodNs),
+                          })),
+                        );
+                        setTimeMode(mode);
+                        editScenario();
+                      }}
+                    >
+                      <option
+                        value="cycles"
+                        disabled={
+                          timeMode === 'ns' &&
+                          stimuli.some(
+                            (row) =>
+                              Math.abs(
+                                row.cycle -
+                                  (Math.round((row.cycle - 0.001) / periodNs) * periodNs + 0.001),
+                              ) > 1e-8,
+                          )
+                        }
+                      >
+                        По периодам
+                      </option>
+                      <option value="ns">В наносекундах</option>
+                    </select>
+                  </label>
                   <div className="simulation-stimuli-scroll">
                     <table>
                       <thead>
                         <tr>
-                          <th>Период</th>
+                          <th>{timeMode === 'cycles' ? 'Период' : 'Время, нс'}</th>
                           {controlledPorts.map(([name]) => (
                             <th key={name}>{name}</th>
                           ))}
@@ -725,10 +814,15 @@ export function SimulationPanel({
                           <tr key={index}>
                             <td>
                               <input
-                                aria-label={`Период шага ${index + 1}`}
+                                aria-label={
+                                  timeMode === 'cycles'
+                                    ? `Период шага ${index + 1}`
+                                    : `Время события ${index + 1}, нс`
+                                }
                                 type="number"
                                 min="0"
-                                max={cycles - 1}
+                                step={timeMode === 'cycles' ? 1 : 0.001}
+                                max={timeMode === 'cycles' ? cycles - 1 : cycles * periodNs - 0.001}
                                 value={event.cycle}
                                 disabled={busy}
                                 onChange={(e) => {
@@ -745,7 +839,13 @@ export function SimulationPanel({
                               <td key={name}>
                                 <input
                                   aria-label={`${name}, шаг ${index + 1}`}
-                                  value={event.inputs[name] ?? inputs[name] ?? '0'}
+                                  value={event.inputs[name] ?? ''}
+                                  placeholder={stimuli
+                                    .slice(0, index)
+                                    .reduce(
+                                      (value, row) => row.inputs[name]?.trim() || value,
+                                      inputs[name] ?? '0',
+                                    )}
                                   disabled={busy}
                                   onChange={(e) => {
                                     editScenario();
@@ -791,17 +891,37 @@ export function SimulationPanel({
                     disabled={busy || !controlledPorts.length || stimuli.length >= 2048}
                     onClick={() => {
                       editScenario();
-                      const cycle = stimuli.length ? stimuli[stimuli.length - 1].cycle + 1 : 0;
-                      setCycles((previous) => Math.max(previous, cycle + 1));
-                      setStimuli((previous) => [
-                        ...previous,
-                        { cycle, inputs: { ...(previous[previous.length - 1]?.inputs ?? inputs) } },
-                      ]);
+                      const cycle = stimuli.length
+                        ? stimuli[stimuli.length - 1].cycle + (timeMode === 'cycles' ? 1 : periodNs)
+                        : 0;
+                      setCycles((previous) =>
+                        Math.min(
+                          10000,
+                          Math.max(
+                            previous,
+                            timeMode === 'cycles' ? cycle + 1 : Math.floor(cycle / periodNs) + 1,
+                          ),
+                        ),
+                      );
+                      setStimuli((previous) => [...previous, { cycle, inputs: {} }]);
                     }}
                   >
                     Добавить шаг
                   </button>
                 </>
+              )}
+              {settingsTab === 'checks' && (
+                <SimulationChecks
+                  expectations={expectations}
+                  checks={checksCurrent}
+                  ports={rtl?.modules[project.top]?.ports ?? {}}
+                  durationNs={cycles * periodNs}
+                  busy={busy}
+                  onChange={(values) => {
+                    setExpectations(values);
+                    editScenario();
+                  }}
+                />
               )}
             </div>
           </aside>

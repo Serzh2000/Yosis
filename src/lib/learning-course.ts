@@ -73,7 +73,7 @@ export const courseLevels: CourseLevel[] = [
   {
     id: 'systems',
     title: '4. Устройство из блоков',
-    description: 'Автомат состояний и проверка небольшого законченного устройства.',
+    description: 'Автомат состояний, физические выводы, активные уровни и частота.',
   },
 ];
 export const courseRoadmap = [
@@ -82,9 +82,9 @@ export const courseRoadmap = [
     description: 'Произвольные задержки, проверки assert и самостоятельный поиск ошибок.',
   },
   {
-    title: 'Реальная плата',
+    title: 'Следующие миссии с платой',
     description:
-      'Частота 27 МГц, .cst, активные низкие LED, дребезг кнопок и безопасное подключение.',
+      'Дребезг кнопок, синхронизация и пошаговая аппаратная загрузка после проверки в симуляторе.',
   },
   {
     title: 'Память и интерфейсы',
@@ -139,6 +139,69 @@ function exerciseProject(name: string, content: string, cst?: string): Project {
 }
 const buttonCst =
   '// Tang Nano 20K: штатная кнопка S1 и LED0.\n// Кнопка даёт 1 при нажатии и 0 в покое; LED светится при 0.\nIO_LOC "button" 88;\nIO_PORT "button" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;\nIO_LOC "led_n" 15;\nIO_PORT "led_n" IO_TYPE=LVCMOS33;\n';
+const boardLedCases = combinationCases([{ button: '0' }, { button: '1' }], ['1', '0']);
+const boardLedExercise: Lesson = {
+  id: 'board-led',
+  number: '11',
+  title: 'Кнопка включает свет',
+  description: 'Свяжи логический уровень с поведением настоящего LED.',
+  concept: 'Активный уровень · CST · контакт корпуса',
+  minutes: 8,
+  level: 'Устройство из блоков',
+  question: 'Какой уровень включает LED Tang Nano 20K?',
+  choices: ['0', '1', 'Любое число'],
+  answer: 0,
+  explanation: 'Анод LED подключён к питанию; FPGA включает LED, опуская катод до 0.',
+  objective:
+    'Сделай led_n = 0 при button = 1 и led_n = 1 при button = 0. В pins.cst кнопка назначена на 88, LED0 на 15. Сначала проверь симуляцию.',
+  hint: 'Между кнопкой и активным низким выходом нужен инвертор.',
+  output: 'led_n',
+  cases: boardLedCases,
+  config: {
+    ...combinationConfig(boardLedCases),
+    expectations: [
+      { timeNs: 5, signal: 'led_n', value: '1' },
+      { timeNs: 15, signal: 'led_n', value: '0' },
+    ],
+  },
+  project: exerciseProject(
+    'learn-board-led',
+    'module top(input wire button, output wire led_n);\n    assign led_n = button; // TODO: LED должен загораться при нажатии\nendmodule\n',
+    buttonCst,
+  ),
+};
+const dividerCases: LessonCase[] = ['1', '1', '0', '0', '1', '1', '0', '0', '1'].map(
+  (expected, cycle) => ({
+    title: cycle === 0 ? 'Сброс' : `После фронта ${cycle}`,
+    cycle,
+    inputs: {},
+    expected,
+  }),
+);
+const dividerExercise: Lesson = {
+  id: 'divider',
+  number: '12',
+  title: 'Делитель частоты',
+  description: 'Сделай период выхода в четыре раза длиннее входного.',
+  concept: 'Частота · период · двоичный счётчик',
+  minutes: 10,
+  level: 'Устройство из блоков',
+  question: 'Входной такт 27 МГц разделён на 4. Какова выходная частота?',
+  choices: ['6,75 МГц', '108 МГц', '4 МГц'],
+  answer: 0,
+  explanation: 'При делении на 4 период увеличивается вчетверо, а частота уменьшается вчетверо.',
+  objective:
+    'Счётчик работает верно. Выбери бит count, который даёт led_n период в четыре входных такта. Старший из первых двух битов меняется раз в два фронта.',
+  hint: 'Бит count[0] делит частоту на 2; следующий бит делит на 4.',
+  output: 'led_n',
+  cases: dividerCases,
+  config: { ...baseConfig, clock: 'clk', reset: 'reset', resetCycles: 1, cycles: 10 },
+  project: exerciseProject(
+    'learn-divider',
+    "module top(input wire clk, reset, output wire led_n);\n    reg [2:0] count;\n    always @(posedge clk)\n        if (reset) count <= 3'd0;\n        else count <= count + 3'd1;\n    assign led_n = ~count[0]; // TODO: разделить частоту на 4\nendmodule\n",
+    '// Такт платы — 27 МГц; в симуляции период задаётся отдельно.\nIO_LOC "clk" 4;\nIO_PORT "clk" IO_TYPE=LVCMOS33;\nCLOCK_LOC "clk" BUFG;\nIO_LOC "reset" 88;\nIO_PORT "reset" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;\nIO_LOC "led_n" 15;\nIO_PORT "led_n" IO_TYPE=LVCMOS33;\n',
+  ),
+};
 const portCases = combinationCases([{ button: '0' }, { button: '1' }], ['0', '1']);
 const portExercise: Lesson = {
   id: 'ports',
@@ -522,7 +585,7 @@ export const guidedLessons: GuidedLesson[] = [
       explain(
         'assign',
         'Проведи связь',
-        'assign непрерывно связывает выход с выражением справа. У такого соединения нет памяти и ему не нужен тактовый сигнал. Суффикс _n напоминает: кнопка и LED платы активны уровнем 0. В .cst уже назначены S1 и LED0.',
+        'assign непрерывно связывает выход с выражением справа. У такого соединения нет памяти и ему не нужен тактовый сигнал. Суффикс _n у led_n напоминает: LED платы включается уровнем 0. Кнопка button даёт 1 при нажатии. В .cst уже назначены S1 и LED0.',
         'assign led_n = button;',
         'pins',
       ),
@@ -904,6 +967,101 @@ export const guidedLessons: GuidedLesson[] = [
     ],
   },
 ];
+
+// Board missions build on the logic, register and FSM laboratories above.
+guidedLessons.push(
+  {
+    id: 'board-led',
+    title: 'Кнопка на настоящей плате',
+    levelId: 'systems',
+    minutes: 8,
+    summary: 'Логическая 1, включённая лампа и контакт корпуса — разные вещи.',
+    exercise: boardLedExercise,
+    hints: [
+      'При нажатии button = 1. LED включается при led_n = 0.',
+      'Нужна таблица 0 → 1, 1 → 0.',
+      'Поставь инвертор: assign led_n = ~button;',
+    ],
+    steps: [
+      explain(
+        'polarity',
+        'Почему светится при нуле',
+        'На Tang Nano 20K кнопка даёт 1 при нажатии, а LED включается при 0. Поэтому прямой провод включает LED при отпущенной кнопке, а инвертор — при нажатой. Суффикс _n обозначает активный низкий смысл сигнала, сам по себе имя не меняет поведение.',
+        'assign led_n = ~button;',
+        'rtl',
+      ),
+      explain(
+        'pins',
+        'Свяжи имя с железом',
+        'Verilog описывает поведение button и led_n. CST связывает эти имена с контактами корпуса: S1 на 88, LED0 на 15. Открой «Выводы», выбери led_n в таблице и найди контакт 15. Масштаб и перемещение помогают рассмотреть карту. Назначения на ней записываются в CST.',
+        'IO_LOC "button" 88;\nIO_PORT "button" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;\nIO_LOC "led_n" 15;\nIO_PORT "led_n" IO_TYPE=LVCMOS33;',
+        'pins',
+      ),
+      quiz(
+        'board-polarity',
+        'Предскажи лампу',
+        'button = 1, led_n = ~button. Что происходит со штатным LED?',
+        [
+          ['Горит: led_n = 0', 'Верно: инвертор дал активный низкий уровень.'],
+          [
+            'Не горит: единица всегда означает свет',
+            'На этой плате ток через LED возникает при нуле на выводе FPGA.',
+          ],
+          [
+            'Имя led_n само инвертирует уровень',
+            'Суффикс — подсказка человеку. Инверсию задаёт операция ~.',
+          ],
+        ],
+      ),
+      practice(
+        'Замени прямую связь инвертором. Проверка подаст оба уровня кнопки. Затем открой RTL и назначения выводов. Симуляция подтверждает поведение логики; фактическое подключение к плате задаёт CST.',
+      ),
+    ],
+  },
+  {
+    id: 'divider',
+    title: 'Сколько длится один период?',
+    levelId: 'systems',
+    minutes: 10,
+    summary: 'Увеличь период выхода вчетверо с помощью бита счётчика.',
+    exercise: dividerExercise,
+    hints: [
+      'Полный период включает и высокий, и низкий уровень.',
+      'count[0] меняется каждый фронт: его полный период — два входных такта.',
+      'Для четырёх тактов выбери count[1]: assign led_n = ~count[1];',
+    ],
+    steps: [
+      explain(
+        'frequency',
+        'Период и частота',
+        'Период T — время одного полного повторения. Частота f = 1/T. Например, при 27 МГц период входа около 37,04 нс. В лаборатории симулятор задаёт 10 нс для удобства диаграммы; CST не меняет эту настройку симулятора.',
+      ),
+      explain(
+        'divide',
+        'Двоичный счётчик делит такт',
+        'count[0] проходит 0,1,0,1: полный период два такта. count[1] проходит 0,0,1,1: полный период четыре такта. Это сигналы для наблюдения, а регистры устройства продолжают работать от исходного clk.',
+        'assign led_n = ~count[1];',
+        'simulation',
+      ),
+      quiz(
+        'divider-period',
+        'Не перепутай фронт с периодом',
+        'Бит меняет уровень раз в два такта. Сколько тактов в его полном периоде?',
+        [
+          ['Четыре', 'Верно: два такта в 0 и два такта в 1.'],
+          [
+            'Два',
+            'Через два такта уровень только сменился. Для полного повторения нужна ещё одна смена.',
+          ],
+          ['Один', 'Один такт — период входного clk, а выход меняется реже.'],
+        ],
+      ),
+      practice(
+        'Выбери бит для деления на 4. Диаграмма должна показать два периода с высоким уровнем, затем два с низким. На настоящей плате 6,75 МГц глаз не различит: для медленной мигалки нужен более широкий счётчик и старший бит.',
+      ),
+    ],
+  },
+);
 
 export const LEARNING_PROGRESS_KEY = 'yosis.learning-course.v1';
 function lessonById(id: string): GuidedLesson {

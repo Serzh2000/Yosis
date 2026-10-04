@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { RequestError } from '../shared/errors';
 
-const payloadFields = new Set(['rtl', 'technology', 'vcd', 'placed', 'report']);
+const payloadFields = new Set(['rtl', 'technology', 'vcd', 'placed', 'report', 'checks']);
 export function incrementalStatus<T extends { logs: string; status: string }>(
   result: T,
   offset: number,

@@ -13,6 +13,7 @@ import { JobQueue, executorCount } from './job-queue';
 import { JobRetention, markJob } from './job-retention';
 import { workspace } from './paths';
 import { materializeCircuitProject } from '../shared/schematic';
+import { readSimulationChecks } from '../shared/simulation-scenario';
 
 const RUNNER = fileURLToPath(new URL('./yosys-runner.mjs', import.meta.url));
 const terminal = new Set(['success', 'error', 'cancelled']);
@@ -294,7 +295,7 @@ export class SimulationManager {
     this.stage(record, 'Компиляция Icarus Verilog');
     this.log(
       record,
-      '\nRTL: Yosys hierarchy/proc/opt → normalized Verilog. Icarus Verilog: 1ns/1ps, generated clock/reset, static inputs.\n',
+      '\nRTL: Yosys hierarchy/proc/opt → normalized Verilog. Icarus Verilog: 1ns/1ps, clock/reset, input timeline, settled port checks.\n',
     );
     await this.run(
       record,
@@ -326,6 +327,16 @@ export class SimulationManager {
     const vcd = await readFile(filename, 'utf8');
     if (!vcd.includes('$enddefinitions')) throw new Error('Симулятор не создал корректный VCD.');
     record.result.vcd = vcd;
+    if (record.result.config.expectations?.length) {
+      const checksFile = path.join(record.directory, 'checks.txt');
+      if ((await stat(checksFile)).size > MAX_VCD)
+        throw new Error('Отчёт проверок превышает 16 МБ.');
+      record.result.checks = readSimulationChecks(
+        await readFile(checksFile, 'utf8'),
+        record.result.config.expectations,
+        prepared.ports,
+      );
+    }
     await this.finish(record, 'success', 'Симуляция завершена');
   }
 

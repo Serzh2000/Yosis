@@ -26,6 +26,8 @@ const solutions: Record<string, (source: string) => string> = {
     source.replace("else if (enable) q <= 1'b0;", 'else if (enable) q <= data;'),
   counter: (source) => source.replace('count <= count;', "count <= count + 4'd1;"),
   'traffic-fsm': (source) => source.replace('GREEN: state <= GREEN;', 'GREEN: state <= YELLOW;'),
+  'board-led': (source) => source.replace('assign led_n = button;', 'assign led_n = ~button;'),
+  divider: (source) => source.replace('assign led_n = ~count[0];', 'assign led_n = ~count[1];'),
 };
 async function simulate(manager: SimulationManager, lesson: Lesson, project: Project) {
   let result: SimulationResult = await manager.create(
@@ -43,7 +45,7 @@ async function simulate(manager: SimulationManager, lesson: Lesson, project: Pro
   return checkLessonTrace(lesson, parseVcd(result.vcd));
 }
 test(
-  'all ten guided laboratories reject starters and pass real Yosys → Icarus reference behavior',
+  'all twelve guided laboratories reject starters and pass real Yosys → Icarus reference behavior',
   { timeout: 300_000 },
   async () => {
     const directory = await mkdtemp(path.join(tmpdir(), 'yosis-learning-course-'));

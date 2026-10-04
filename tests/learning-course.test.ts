@@ -43,10 +43,10 @@ function finishLesson(progress: CourseProgress, id: string): CourseProgress {
   return progress;
 }
 
-test('guided course contains a complete orientation and ten independent practical laboratories across four levels', () => {
+test('guided course contains orientation and twelve practical laboratories, including real-board polarity and frequency', () => {
   assert.equal(courseLevels.length, 4);
-  assert.equal(guidedLessons.length, 11);
-  assert.equal(guidedLessons.filter((lesson) => lesson.exercise).length, 10);
+  assert.equal(guidedLessons.length, 13);
+  assert.equal(guidedLessons.filter((lesson) => lesson.exercise).length, 12);
   assert.equal(new Set(guidedLessons.map((lesson) => lesson.id)).size, guidedLessons.length);
   for (const lesson of guidedLessons) {
     assert.ok(courseLevels.some((level) => level.id === lesson.levelId));

@@ -1,5 +1,6 @@
 import type { SimulationConfig, YosysPort } from '../shared/types';
 import { RequestError } from './validation';
+import { expectedValueBits, simulationTimePs } from '../shared/simulation-scenario';
 
 export const TESTBENCH_TOP = '__yosis_testbench';
 export function generateTestbench(
@@ -19,6 +20,7 @@ export function generateTestbench(
   for (const name of new Set([
     ...Object.keys(config.inputs),
     ...(config.stimuli ?? []).flatMap((event) => Object.keys(event.inputs)),
+    ...(config.timedStimuli ?? []).flatMap((event) => Object.keys(event.inputs)),
   ])) {
     if (!ports[name] || ports[name].direction !== 'input')
       throw new RequestError(`Вход ${name} отсутствует в верхнем модуле.`);
@@ -31,6 +33,7 @@ export function generateTestbench(
   let clockSignal: string | undefined;
   let resetSignal: string | undefined;
   const inputSignals: Record<string, { signal: string; width: number }> = Object.create(null);
+  const allSignals: Record<string, { signal: string; width: number }> = Object.create(null);
   function literal(name: string, value: string, width: number) {
     const number = BigInt(value);
     if (number >= 1n << BigInt(width))
@@ -48,6 +51,7 @@ export function generateTestbench(
     if (width < 1 || width > 4096)
       throw new RequestError(`Ширина порта ${name} выходит за пределы 1–4096 бит.`);
     const signal = `signal_${index}`;
+    allSignals[name] = { signal, width };
     declarations.push(
       `  ${port.direction === 'input' ? 'reg' : 'wire'} ${width > 1 ? `[${width - 1}:0] ` : ''}${signal};`,
     );
@@ -79,16 +83,35 @@ export function generateTestbench(
     }
     previousCycle = event.cycle;
   }
+  const timedLines: string[] = [];
+  let previousPs = 0;
+  for (const event of config.timedStimuli ?? []) {
+    const ps = simulationTimePs(event.timeNs);
+    if (ps > previousPs) timedLines.push(`    #${((ps - previousPs) / 1000).toFixed(3)};`);
+    for (const [name, value] of Object.entries(event.inputs)) {
+      const { signal, width } = inputSignals[name];
+      // NBA drives settle after registers have sampled the old input at a coincident edge.
+      timedLines.push(`    ${signal} <= ${literal(name, value, width)};`);
+    }
+    previousPs = ps;
+  }
+  const expectations = config.expectations ?? [];
+  for (const { signal, value } of expectations) {
+    if (!allSignals[signal]) throw new RequestError(`Проверяемый порт ${signal} отсутствует.`);
+    expectedValueBits(value, allSignals[signal].width);
+  }
   return [
     '`timescale 1ns/1ps',
     `module ${TESTBENCH_TOP};`,
     ...declarations,
     '  integer cycle;',
+    ...(expectations.length ? ['  integer checks_file;'] : []),
     `  \\${top} dut (`,
     connections.join(',\n'),
     '  );',
     '  initial begin',
     ...initialization,
+    ...(expectations.length ? ['    checks_file = $fopen("checks.txt", "w");'] : []),
     '    $dumpfile("wave.vcd");',
     '    $dumpvars(0, dut);',
     `    for (cycle = 0; cycle < ${config.cycles}; cycle = cycle + 1) begin`,
@@ -97,7 +120,8 @@ export function generateTestbench(
     `      #${halfPeriod};`,
     ...(clockSignal ? [`      ${clockSignal} = 1'b0;`] : []),
     '    end',
-    '    #0.001;',
+    '    #0.002;',
+    ...(expectations.length ? ['    $fclose(checks_file);'] : []),
     '    $finish;',
     '  end',
     ...(resetSignal && config.resetCycles
@@ -110,6 +134,13 @@ export function generateTestbench(
         ]
       : []),
     ...(stimulusLines.length ? ['  initial begin', '    #0.001;', ...stimulusLines, '  end'] : []),
+    ...(timedLines.length ? ['  initial begin', '    #0;', ...timedLines, '  end'] : []),
+    ...expectations.flatMap((event, index) => [
+      '  initial begin',
+      `    #${((simulationTimePs(event.timeNs) + 1) / 1000).toFixed(3)};`,
+      `    $fdisplay(checks_file, "${index} %b", ${allSignals[event.signal].signal});`,
+      '  end',
+    ]),
     'endmodule',
     '',
   ].join('\n');

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { Diagnostic, Project, SimulationConfig } from '../shared/types';
+import { expectedValueBits, simulationTimePs } from '../shared/simulation-scenario';
 
 import { RequestError } from '../shared/errors';
 export { RequestError } from '../shared/errors';
@@ -111,6 +112,45 @@ export function validateSimulationConfig(value: unknown): SimulationConfig {
       return { cycle: previous, inputs: validateInputs(entry.inputs as Record<string, unknown>) };
     });
   }
+  const durationPs = Number(config.cycles) * Number(config.periodNs) * 1000;
+  let timedStimuli: SimulationConfig['timedStimuli'];
+  if (config.timedStimuli !== undefined) {
+    if (!Array.isArray(config.timedStimuli) || config.timedStimuli.length > 2048)
+      throw new RequestError('Последовательность входов должна содержать до 2048 событий.');
+    if (stimuli?.length && config.timedStimuli.length)
+      throw new RequestError('Выберите одну шкалу событий: периоды или наносекунды.');
+    let previous = -1;
+    timedStimuli = config.timedStimuli.map((event: unknown) => {
+      if (!event || typeof event !== 'object') throw new RequestError('Некорректное событие.');
+      const entry = event as Record<string, unknown>;
+      const ps = simulationTimePs(entry.timeNs);
+      if (ps <= previous || ps >= durationPs)
+        throw new RequestError(
+          'Время событий должно возрастать и быть меньше длительности запуска.',
+        );
+      if (!entry.inputs || typeof entry.inputs !== 'object' || Array.isArray(entry.inputs))
+        throw new RequestError('Укажите значения входов для события.');
+      previous = ps;
+      return { timeNs: ps / 1000, inputs: validateInputs(entry.inputs as Record<string, unknown>) };
+    });
+  }
+  let expectations: SimulationConfig['expectations'];
+  if (config.expectations !== undefined) {
+    if (!Array.isArray(config.expectations) || config.expectations.length > 2048)
+      throw new RequestError('Разрешено до 2048 проверок за запуск.');
+    expectations = config.expectations.map((event: unknown) => {
+      if (!event || typeof event !== 'object') throw new RequestError('Некорректная проверка.');
+      const entry = event as Record<string, unknown>;
+      const ps = simulationTimePs(entry.timeNs);
+      if (ps > durationPs) throw new RequestError('Проверка выходит за длительность запуска.');
+      if (typeof entry.signal !== 'string' || !/^[A-Za-z_][A-Za-z0-9_$]{0,127}$/.test(entry.signal))
+        throw new RequestError('Укажите имя проверяемого порта.');
+      if (typeof entry.value !== 'string' || entry.value.length > 1024)
+        throw new RequestError('Некорректное ожидаемое значение.');
+      expectedValueBits(entry.value, 4096);
+      return { timeNs: ps / 1000, signal: entry.signal, value: entry.value };
+    });
+  }
   return {
     clock: config.clock as string | null,
     reset: config.reset as string | null,
@@ -120,5 +160,7 @@ export function validateSimulationConfig(value: unknown): SimulationConfig {
     periodNs: Number(config.periodNs),
     inputs,
     ...(stimuli ? { stimuli } : {}),
+    ...(timedStimuli ? { timedStimuli } : {}),
+    ...(expectations ? { expectations } : {}),
   };
 }

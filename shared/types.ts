@@ -88,6 +88,17 @@ export interface SimulationConfig {
   inputs: Record<string, string>;
   /** Input changes at the start of a zero-based clock period, after initial settling. */
   stimuli?: Array<{ cycle: number; inputs: Record<string, string> }>;
+  /** Exact input times, in ns, with 1 ps resolution. Mutually exclusive with stimuli. */
+  timedStimuli?: Array<{ timeNs: number; inputs: Record<string, string> }>;
+  /** Sample top-level ports 1 ps after this time, after RTL has settled. */
+  expectations?: Array<{ timeNs: number; signal: string; value: string }>;
+}
+export interface SimulationCheck {
+  timeNs: number;
+  signal: string;
+  expected: string;
+  actual: string | null;
+  passed: boolean;
 }
 export interface SimulationRequest {
   project: Project;
@@ -108,5 +119,6 @@ export interface SimulationResult {
   engine: string;
   toolVersion?: string;
   vcd?: string;
+  checks?: SimulationCheck[];
   error?: string;
 }
