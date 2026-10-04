@@ -83,9 +83,15 @@ import {
   cloneProject,
   examples,
   identifyProject,
+  loadExample,
   loadProject,
   validateProject,
 } from './lib/projects';
+import {
+  dismissStaleNotice,
+  findStaleExampleCopy,
+  isStaleNoticeDismissed,
+} from './lib/example-origin';
 
 type View = 'rtl' | 'technology';
 type FileDialog = { kind: 'add' | 'rename'; value: string; target?: string } | null;
@@ -139,6 +145,7 @@ export default function App() {
   const [lessonId, setLessonId] = useState(initialRoute.lessonId);
   const [visited, setVisited] = useState<Set<WorkTab>>(() => new Set([initialRoute.tab]));
   const [info, setInfo] = useState('');
+  const [staleNoticeVersion, setStaleNoticeVersion] = useState(0);
   const [learningGuide, setLearningGuide] = useState<LearningGuide | null>(null);
   const [missionOpen, setMissionOpen] = useState(false);
   const [missionPreview, setMissionPreview] = useState<{
@@ -220,6 +227,17 @@ export default function App() {
     () => [project.name, ...savedProjects.map((item) => item.name)],
     [project.name, savedProjects],
   );
+  const staleCandidate = useMemo(
+    () => (ready ? findStaleExampleCopy(project, examples) : null),
+    [project, ready],
+  );
+  // staleNoticeVersion заставляет перечитать признак скрытия после нажатия «Скрыть».
+  const staleExample =
+    staleNoticeVersion >= 0 &&
+    staleCandidate &&
+    !isStaleNoticeDismissed(project.id, staleCandidate.currentHash)
+      ? staleCandidate
+      : null;
   const view: View = workTab === 'technology' ? 'technology' : 'rtl';
   const netlist = view === 'rtl' ? build?.rtl : build?.technology;
   const moduleName = netlist?.modules[selectedModule]
@@ -705,6 +723,32 @@ export default function App() {
             className="notice-close"
             aria-label="Закрыть сообщение"
             onClick={() => setInfo('')}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+      {staleExample && (
+        <div className="notice" role="status" data-testid="stale-example-notice">
+          <span>
+            {staleExample.certainty === 'guess' ? 'Похоже, это копия' : 'Это копия'} примера «
+            {staleExample.example.title}», а в библиотеке пример с тех пор исправлен. Ваш проект не
+            изменён.
+          </span>
+          <button
+            onClick={() => {
+              void openProject(loadExample(staleExample.example, existingNames));
+            }}
+          >
+            Открыть свежую копию
+          </button>
+          <button
+            className="notice-close"
+            aria-label="Скрыть напоминание об обновлении примера"
+            onClick={() => {
+              dismissStaleNotice(project.id, staleExample.currentHash);
+              setStaleNoticeVersion((value) => value + 1);
+            }}
           >
             <X size={14} />
           </button>

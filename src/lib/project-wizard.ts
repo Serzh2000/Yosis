@@ -2,6 +2,7 @@ import { reservedWords } from '../../shared/verilog-identifiers';
 import type { Project } from '../../shared/types';
 import { examples } from './examples';
 import { cloneProject, validateProject } from './projects';
+import { markExampleOrigin } from './example-origin';
 import { starterCircuit } from '../../shared/schematic';
 
 export interface WizardSettings {
@@ -183,5 +184,6 @@ export function createWizardProject(
   }
   project.name = settings.name.trim();
   project.top = top;
-  return validateProject(project);
+  const example = examples.find((item) => item.id === settings.start);
+  return validateProject(example ? markExampleOrigin(project, example) : project);
 }

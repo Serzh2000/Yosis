@@ -3,6 +3,14 @@ export interface SourceFile {
   name: string;
   content: string;
 }
+/** Откуда создан проект: встроенный пример и отпечатки файлов на момент копирования. */
+export interface ProjectOrigin {
+  exampleId: string;
+  /** Отпечаток файлов примера из библиотеки в момент копирования. */
+  sourceHash: string;
+  /** Отпечаток файлов самой копии сразу после создания (с учётом переименования модуля). */
+  copyHash: string;
+}
 export interface Project {
   /** Stable storage identity; legacy imports can omit it. */
   id?: string;
@@ -10,6 +18,8 @@ export interface Project {
   top: string;
   board: 'tangnano20k';
   files: SourceFile[];
+  /** Задаётся для копий встроенных примеров; у старых проектов отсутствует. */
+  origin?: ProjectOrigin;
 }
 export interface YosysPort {
   direction: 'input' | 'output' | 'inout';
