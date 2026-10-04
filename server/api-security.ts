@@ -19,7 +19,35 @@ export function environmentApiOptions(): ApiOptions {
   const users = process.env.YOSIS_USERS_JSON
     ? (JSON.parse(process.env.YOSIS_USERS_JSON) as Record<string, string>)
     : undefined;
-  return { publicOrigin, users };
+  return {
+    publicOrigin,
+    users,
+    maxUserJobs: positiveIntegerEnv('YOSIS_MAX_USER_JOBS'),
+    maxJobsPerHour: positiveIntegerEnv('YOSIS_MAX_JOBS_PER_HOUR'),
+  };
+}
+
+function positiveIntegerEnv(name: string): number | undefined {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return undefined;
+  const value = Number(raw);
+  if (!/^\d+$/.test(raw.trim()) || !Number.isSafeInteger(value) || value < 1)
+    throw new Error(`${name} должен быть положительным целым числом.`);
+  return value;
+}
+
+export const DEFAULT_ACTIVE_JOB_LIMIT = 4;
+export const DEFAULT_HOURLY_JOB_LIMIT = 30;
+/** Локальный режим: один пользователь, часовой квоты нет, а число одновременных задач лишь ограничено сверху. */
+export const LOCAL_ACTIVE_JOB_LIMIT = 16;
+
+export function createJobLimits(options: ApiOptions, local: boolean) {
+  return local
+    ? new UserJobLimits(LOCAL_ACTIVE_JOB_LIMIT, Number.POSITIVE_INFINITY)
+    : new UserJobLimits(
+        options.maxUserJobs ?? DEFAULT_ACTIVE_JOB_LIMIT,
+        options.maxJobsPerHour ?? DEFAULT_HOURLY_JOB_LIMIT,
+      );
 }
 
 export class ApiSecurity {

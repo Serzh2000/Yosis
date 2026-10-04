@@ -17,6 +17,8 @@ services:
       YOSIS_JOB_RETAIN_COUNT: "64"
       YOSIS_JOB_RETAIN_DAYS: "7"
       YOSIS_JOB_RETAIN_MB: "512"
+      YOSIS_MAX_USER_JOBS: "4"
+      YOSIS_MAX_JOBS_PER_HOUR: "30"
     volumes:
       - data:/data
       - cache:/cache
