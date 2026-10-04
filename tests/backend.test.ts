@@ -159,6 +159,50 @@ test('production requires the exact server origin and rejects the development or
   }
 });
 
+test('local mode lets the localhost → 127.0.0.1 page redirect through but keeps the API closed to cross-site requests', async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'yosis-redirect-'));
+  const manager = new BuildManager(directory);
+  const server = createApp(manager, true).listen(0, '127.0.0.1');
+  await new Promise<void>((resolve) => server.once('listening', resolve));
+  const address = server.address();
+  assert.ok(address && typeof address === 'object');
+  // Node fetch подставляет собственный Sec-Fetch-Mode, поэтому заголовки браузера задаём через http.
+  const statusOf = (route: string, headers: Record<string, string>) =>
+    new Promise<number>((resolve, reject) => {
+      const request = httpRequest(
+        { host: '127.0.0.1', port: address.port, path: route, headers },
+        (response) => {
+          response.resume();
+          response.on('end', () => resolve(response.statusCode ?? 0));
+        },
+      );
+      request.on('error', reject);
+      request.end();
+    });
+  const navigation = {
+    'Sec-Fetch-Site': 'cross-site',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Dest': 'document',
+  };
+  try {
+    assert.notEqual(
+      await statusOf('/', navigation),
+      403,
+      'the document navigation must reach the static page',
+    );
+    assert.equal(await statusOf('/api/health', navigation), 403);
+    assert.equal(await statusOf('/', { ...navigation, 'Sec-Fetch-Dest': 'iframe' }), 403);
+    assert.equal(
+      await statusOf('/', { 'Sec-Fetch-Site': 'cross-site', 'Sec-Fetch-Mode': 'no-cors' }),
+      403,
+    );
+  } finally {
+    await manager.close();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test('active cancellation frees the queue and persists both source snapshots', async () => {
   const directory = await mkdtemp(path.join(tmpdir(), 'yosis-cancel-'));
   const manager = new BuildManager(directory);

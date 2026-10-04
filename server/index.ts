@@ -45,9 +45,17 @@ export function createApp(
       response.status(403).json({ error: 'Недопустимый адрес сервера.' });
       return;
     }
+    // Переход localhost → 127.0.0.1 (единый локальный адрес) приходит как cross-site навигация
+    // за страницей документа; API и вложенные кадры по-прежнему отклоняются.
+    const documentNavigation =
+      local &&
+      request.method === 'GET' &&
+      !request.path.startsWith('/api/') &&
+      request.get('sec-fetch-mode') === 'navigate' &&
+      request.get('sec-fetch-dest') === 'document';
     if (
       (local ? !LOOPBACK_HOSTS.has(hostname) : host !== security.publicOrigin!.host) ||
-      request.get('sec-fetch-site') === 'cross-site'
+      (request.get('sec-fetch-site') === 'cross-site' && !documentNavigation)
     ) {
       response.status(403).json({ error: 'Запрос должен поступать через разрешённый адрес IDE.' });
       return;
