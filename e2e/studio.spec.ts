@@ -203,3 +203,28 @@ test('graphical source is editable, reloadable and follows the real synthesis, s
   ).toBeVisible({ timeout: 120000 });
   expect(errors).toEqual([]);
 });
+
+test('constructor tab of a Verilog project explains the conflict and opens the element wizard', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/?tab=design');
+  const empty = page.getByTestId('no-schematic');
+  await expect(empty.getByRole('heading', { name: 'В этом проекте нет схемы' })).toBeVisible();
+  await expect(empty).toContainText('уже есть файл top.v');
+  await expect(empty.getByRole('button', { name: 'Добавить схему в этот проект' })).toHaveCount(0);
+  await empty.getByRole('button', { name: 'Новый проект из элементов' }).click();
+  const wizard = page.getByRole('dialog', { name: 'Проекты' });
+  await expect(wizard.getByLabel('Название проекта')).toBeVisible();
+  await wizard.getByLabel('Название проекта').fill(`from-elements-${Date.now()}`);
+  await wizard.getByRole('button', { name: 'Далее', exact: true }).click();
+  await wizard.getByRole('button', { name: 'Создать проект', exact: true }).click();
+  await expect(page.getByRole('tab', { name: /^Конструктор/ })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(page.getByTestId('no-schematic')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'AND', exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
+});
