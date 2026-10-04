@@ -160,35 +160,30 @@ test('graphical source is editable, reloadable and follows the real synthesis, s
     'aria-selected',
     'true',
   );
-  await page.getByRole('button', { name: 'AND', exact: true }).click();
-  await page.getByLabel('Имя элемента').fill('combine');
-  await page.getByRole('button', { name: 'Применить свойства', exact: true }).click();
-  await page.getByRole('button', { name: /^Удалить связь w2:/ }).click();
-  await page.getByRole('button', { name: /^button.Y: выход/ }).click();
-  await page.getByRole('button', { name: 'combine.A: вход, 1 бит', exact: true }).click();
-  await page.getByRole('button', { name: /^button.Y: выход/ }).click();
-  await page.getByRole('button', { name: 'combine.B: вход, 1 бит', exact: true }).click();
-  await page.getByRole('button', { name: /^combine.Y: выход/ }).click();
-  await page.getByRole('button', { name: 'led_n.A: вход, 1 бит', exact: true }).click();
-  await expect(page.getByText('Схема готова к сборке', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Отменить изменение схемы' }).click();
-  await expect(page.getByText('led_n.A: вход не соединён.', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Повторить изменение схемы' }).click();
-  await page.getByRole('button', { name: 'Созданный Verilog', exact: true }).click();
-  await expect(page.getByLabel('Verilog из схемы')).toContainText('button & button');
-  await page.getByRole('button', { name: 'Вернуться к схеме', exact: true }).click();
-  const zoom = page.getByRole('group', { name: 'Масштаб: Конструктор логической схемы' });
-  const initialScale = Number(
-    (await zoom.getByLabel('Текущий масштаб').innerText()).replace('%', ''),
-  );
-  await zoom.getByRole('button', { name: 'Увеличить масштаб' }).click();
-  expect(
-    Number((await zoom.getByLabel('Текущий масштаб').innerText()).replace('%', '')),
-  ).toBeGreaterThan(initialScale);
-  await zoom.getByRole('button', { name: 'Показать целиком' }).click();
+  // Стартовая схема: button → invert → led_n. Новый элемент без связей — это проблема на схеме.
+  const editor = page.getByRole('tabpanel');
+  await expect(editor.getByText(/3 элементов · 2 проводов/)).toBeVisible();
+  await expect(editor.getByText('Схема готова к сборке', { exact: true })).toBeVisible();
+  await editor.getByRole('button', { name: 'И (AND)', exact: true }).click();
+  await expect(editor.getByText(/4 элементов · 2 проводов/)).toBeVisible();
+  await expect(editor.getByText('Схема готова к сборке', { exact: true })).toHaveCount(0);
+  await editor.getByRole('button', { name: 'Отменить (Ctrl+Z)' }).click();
+  await expect(editor.getByText(/3 элементов · 2 проводов/)).toBeVisible();
+  await expect(editor.getByText('Схема готова к сборке', { exact: true })).toBeVisible();
+  await editor.getByRole('button', { name: 'Повторить (Ctrl+Y)' }).click();
+  await expect(editor.getByText(/4 элементов · 2 проводов/)).toBeVisible();
+  await editor.getByRole('button', { name: 'Отменить (Ctrl+Z)' }).click();
+  await editor.getByRole('button', { name: 'Verilog', exact: true }).click();
+  await expect(page.getByLabel('Verilog из схемы')).toContainText('module top');
+  await editor.getByRole('button', { name: 'Вернуться к схеме', exact: true }).click();
+  const scale = editor.getByLabel('Текущий масштаб');
+  const initialScale = Number((await scale.innerText()).replace('%', ''));
+  await editor.getByRole('button', { name: 'Увеличить масштаб (+)' }).click();
+  expect(Number((await scale.innerText()).replace('%', ''))).toBeGreaterThan(initialScale);
+  await editor.getByRole('button', { name: 'Показать всю схему (F)' }).click();
   await expect(page.getByText('Изменения сохранены в браузере', { exact: true })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('button', { name: /^Элемент combine:/ })).toBeVisible();
+  await expect(page.getByLabel(/^Элемент invert:/)).toBeVisible();
   await page.getByRole('button', { name: /^Синтезировать/ }).click();
   await expect(page.getByRole('tab', { name: /^RTL · Готово/ })).toBeVisible({ timeout: 90000 });
   await page.getByRole('tab', { name: /^Диаграммы/ }).click();
@@ -229,6 +224,6 @@ test('constructor tab of a Verilog project explains the conflict and opens the e
     'true',
   );
   await expect(page.getByTestId('no-schematic')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'AND', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'И (AND)', exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });

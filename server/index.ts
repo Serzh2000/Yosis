@@ -259,7 +259,9 @@ export function createApp(
   if (production) {
     app.use(express.static(path.join(workspace, 'dist')));
     app.get('/{*path}', (_request, response) =>
-      response.sendFile(path.join(workspace, 'dist', 'index.html')),
+      // `root` keeps the dotfile check relative to dist: an install path such as
+      // C:\Users\name\.apps\yosis must not turn every deep link into 404.
+      response.sendFile('index.html', { root: path.join(workspace, 'dist') }),
     );
   }
   const errors: ErrorRequestHandler = (error, _request, response, _next) => {
