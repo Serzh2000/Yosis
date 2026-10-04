@@ -1,80 +1,115 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { spawnSync } from 'node:child_process';
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
-import path from 'node:path';
-import os from 'node:os';
-import { fileURLToPath } from 'node:url';
-import {
-  compileCircuit,
-  circuitPins,
-  newCircuitNode,
-  type BlockKind,
-  type CircuitDocument,
-  type CircuitNode,
-} from '../shared/schematic';
+import { compileCircuit, parseCircuit, starterCircuit } from '../shared/schematic';
+import { runVerilog } from './circuit-harness';
 
-const workspace = fileURLToPath(new URL('../', import.meta.url)),
-  portable = path.join(workspace, '.tools/iverilog/mingw64');
-const compiler =
-  process.env.IVERILOG_PATH ??
-  (process.platform === 'win32' ? path.join(portable, 'bin/iverilog.exe') : 'iverilog');
-const runtime =
-  process.env.VVP_PATH ??
-  (process.platform === 'win32' ? path.join(portable, 'bin/vvp.exe') : 'vvp');
-const library =
-  process.env.IVERILOG_LIB ??
-  (process.platform === 'win32' ? path.join(portable, 'lib/ivl') : undefined);
-const env = { ...process.env },
-  pathKey = Object.keys(env).find((key) => key.toUpperCase() === 'PATH') ?? 'PATH';
-env[pathKey] = `${path.join(portable, 'bin')}${path.delimiter}${env[pathKey] ?? ''}`;
-function empty(): CircuitDocument {
-  return { format: 'yosis-schematic', version: 1, nodes: [], wires: [] };
+/**
+ * Эти проверки работают с документами версии 1 (формат до библиотеки блоков).
+ * Они доказывают, что старые схемы открываются, мигрируют в версию 2 и по-прежнему ведут себя так же в Icarus.
+ */
+interface V1Node {
+  id: string;
+  kind: string;
+  name: string;
+  width: number;
+  x: number;
+  y: number;
+  value: string;
+  inputWidth: number;
+  lo: number;
+  hi: number;
+  reset: boolean;
+  enable: boolean;
 }
-function append(doc: CircuitDocument, kind: BlockKind, properties: Partial<CircuitNode> = {}) {
-  const node = { ...newCircuitNode(doc, kind), ...properties };
+interface V1Doc {
+  format: 'yosis-schematic';
+  version: 1;
+  nodes: V1Node[];
+  wires: { id: string; from: { node: string; pin: string }; to: { node: string; pin: string } }[];
+}
+const v1Empty = (): V1Doc => ({ format: 'yosis-schematic', version: 1, nodes: [], wires: [] });
+function v1Append(doc: V1Doc, kind: string, properties: Partial<V1Node> = {}): V1Node {
+  const id = `n${doc.nodes.length + 1}`;
+  const node: V1Node = {
+    id,
+    kind,
+    name: `${kind}_${doc.nodes.length + 1}`,
+    width: 1,
+    x: 0,
+    y: 0,
+    value: '0',
+    inputWidth: 1,
+    lo: 0,
+    hi: 0,
+    reset: false,
+    enable: false,
+    ...properties,
+  };
   doc.nodes.push(node);
   return node;
 }
-function wire(
-  doc: CircuitDocument,
-  from: CircuitNode,
-  output: string,
-  to: CircuitNode,
-  input: string,
-) {
+function v1Pins(node: V1Node): { name: string; direction: 'input' | 'output'; width: number }[] {
+  const input = (name: string, width = node.width) => ({
+    name,
+    width,
+    direction: 'input' as const,
+  });
+  const output = (name = 'Y', width = node.width) => ({
+    name,
+    width,
+    direction: 'output' as const,
+  });
+  switch (node.kind) {
+    case 'input':
+    case 'constant':
+      return [output()];
+    case 'output':
+      return [input('A')];
+    case 'not':
+      return [input('A'), output()];
+    case 'mux':
+      return [input('A'), input('B'), input('S', 1), output()];
+    case 'eq':
+      return [input('A'), input('B'), output('Y', 1)];
+    case 'slice':
+      return [input('A', node.inputWidth), output('Y', node.hi - node.lo + 1)];
+    case 'concat':
+      return [input('A'), input('B', node.inputWidth), output('Y', node.width + node.inputWidth)];
+    case 'extend':
+      return [input('A', node.inputWidth), output()];
+    case 'register':
+      return [
+        input('D'),
+        input('CLK', 1),
+        ...(node.reset ? [input('RST', 1)] : []),
+        ...(node.enable ? [input('EN', 1)] : []),
+        output('Q'),
+      ];
+    default:
+      return [input('A'), input('B'), output()];
+  }
+}
+function v1Wire(doc: V1Doc, from: V1Node, output: string, to: V1Node, input: string) {
   doc.wires.push({
     id: `w${doc.wires.length + 1}`,
     from: { node: from.id, pin: output },
     to: { node: to.id, pin: input },
   });
 }
-async function runVerilog(source: string) {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'yosis-circuit-'));
-  try {
-    const filename = path.join(directory, 'test.v'),
-      output = path.join(directory, 'test.vvp');
-    await writeFile(filename, source);
-    const compiled = spawnSync(
-      compiler,
-      [...(library ? ['-B', library] : []), '-g2012', '-s', 'tb', '-o', output, filename],
-      { env, windowsHide: true, encoding: 'utf8', timeout: 30000 },
-    );
-    assert.equal(compiled.status, 0, String(compiled.error ?? compiled.stderr));
-    const result = spawnSync(runtime, [output], {
-      env,
-      windowsHide: true,
-      encoding: 'utf8',
-      timeout: 30000,
-    });
-    assert.equal(result.status, 0, String(result.error ?? result.stderr) + result.stdout);
-    assert.match(result.stdout, /PASS/);
-  } finally {
-    await rm(directory, { recursive: true, force: true });
-  }
-}
-test('generated Verilog matches independent integer models for 16 operators, six widths and 6144 vectors', async () => {
-  const kinds: BlockKind[] = [
+const migrated = (doc: V1Doc) => parseCircuit(JSON.stringify(doc));
+
+test('version 1 documents migrate to version 2 and the old starter circuit is unchanged in meaning', () => {
+  const doc = v1Empty();
+  const a = v1Append(doc, 'input', { name: 'button', x: 80, y: 220 }),
+    b = v1Append(doc, 'not', { name: 'invert', x: 340, y: 220 }),
+    c = v1Append(doc, 'output', { name: 'led_n', x: 600, y: 220 });
+  v1Wire(doc, a, 'Y', b, 'A');
+  v1Wire(doc, b, 'Y', c, 'A');
+  assert.deepEqual(migrated(doc), starterCircuit());
+  assert.match(compileCircuit(migrated(doc), 'top'), /assign invert = ~button;/);
+});
+test('migrated v1 circuits generate Verilog that matches independent integer models for 16 operators, six widths and 6144 vectors', async () => {
+  const kinds = [
     'constant',
     'not',
     'and',
@@ -98,14 +133,14 @@ test('generated Verilog matches independent integer models for 16 operators, six
   let count = 0;
   for (const width of [1, 2, 3, 8, 32, 64])
     for (const kind of kinds) {
-      const doc = empty(),
-        a = append(doc, 'input', { name: 'a', width }),
-        b = append(doc, 'input', { name: 'b', width: kind === 'concat' ? 1 : width }),
-        s = append(doc, 'input', { name: 's' });
+      const doc = v1Empty(),
+        a = v1Append(doc, 'input', { name: 'a', width }),
+        b = v1Append(doc, 'input', { name: 'b', width: kind === 'concat' ? 1 : width }),
+        s = v1Append(doc, 'input', { name: 's' });
       const operation =
         kind === 'input'
           ? a
-          : append(doc, kind, {
+          : v1Append(doc, kind, {
               name: 'operation',
               width: kind === 'extend' ? Math.min(width + 1, 64) : width,
               inputWidth: kind === 'concat' ? 1 : kind === 'extend' ? Math.min(width, 63) : width,
@@ -113,21 +148,20 @@ test('generated Verilog matches independent integer models for 16 operators, six
               hi: Math.max(0, width - 2),
               value: '1',
             });
-      // concat has a separate 1-bit B; keep the output within 64 bits.
       if (kind === 'concat' && width === 64) {
         a.width = 63;
         operation.width = 63;
       }
       if (kind === 'extend') a.width = operation.inputWidth;
-      for (const pin of circuitPins(operation).filter((pin) => pin.direction === 'input'))
-        wire(doc, pin.name === 'B' ? b : pin.name === 'S' ? s : a, 'Y', operation, pin.name);
-      const out = append(doc, 'output', {
+      for (const pin of v1Pins(operation).filter((pin) => pin.direction === 'input'))
+        v1Wire(doc, pin.name === 'B' ? b : pin.name === 'S' ? s : a, 'Y', operation, pin.name);
+      const out = v1Append(doc, 'output', {
         name: 'y',
-        width: circuitPins(operation).find((pin) => pin.direction === 'output')!.width,
+        width: v1Pins(operation).find((pin) => pin.direction === 'output')!.width,
       });
-      wire(doc, operation, 'Y', out, 'A');
+      v1Wire(doc, operation, 'Y', out, 'A');
       const id = `m${count++}`;
-      modules.push(compileCircuit(doc, id));
+      modules.push(compileCircuit(migrated(doc), id));
       declarations.push(
         `wire [${out.width - 1}:0] ${id}_y; ${id} ${id}_dut(.a(A[${a.width - 1}:0]), .b(B[${b.width - 1}:0]), .s(S), .y(${id}_y));`,
       );
@@ -163,32 +197,33 @@ test('generated Verilog matches independent integer models for 16 operators, six
         );
       }
     }
-  await runVerilog(
+  const output = await runVerilog(
     `${modules.join('\n')}\nmodule tb; ${declarations.join('\n')} initial begin ${assertions.join('\n')} $display("PASS 6144"); $finish; end endmodule`,
   );
+  assert.match(output, /PASS/);
 });
-test('register counter feedback wraps, holds on EN=0 and gives synchronous reset priority', async () => {
-  const doc = empty(),
-    clk = append(doc, 'input', { name: 'clk' }),
-    reset = append(doc, 'input', { name: 'reset' }),
-    enable = append(doc, 'input', { name: 'enable' });
-  const storage = append(doc, 'register', {
+test('a migrated v1 register counter wraps, holds on EN=0 and gives synchronous reset priority', async () => {
+  const doc = v1Empty(),
+    clk = v1Append(doc, 'input', { name: 'clk' }),
+    reset = v1Append(doc, 'input', { name: 'reset' }),
+    enable = v1Append(doc, 'input', { name: 'enable' });
+  const storage = v1Append(doc, 'register', {
       name: 'count',
       width: 3,
       reset: true,
       enable: true,
       value: '5',
     }),
-    add = append(doc, 'add', { width: 3 }),
-    one = append(doc, 'constant', { width: 3, value: '1' }),
-    out = append(doc, 'output', { name: 'q', width: 3 });
-  wire(doc, clk, 'Y', storage, 'CLK');
-  wire(doc, reset, 'Y', storage, 'RST');
-  wire(doc, enable, 'Y', storage, 'EN');
-  wire(doc, storage, 'Q', add, 'A');
-  wire(doc, one, 'Y', add, 'B');
-  wire(doc, add, 'Y', storage, 'D');
-  wire(doc, storage, 'Q', out, 'A');
+    add = v1Append(doc, 'add', { width: 3 }),
+    one = v1Append(doc, 'constant', { width: 3, value: '1' }),
+    out = v1Append(doc, 'output', { name: 'q', width: 3 });
+  v1Wire(doc, clk, 'Y', storage, 'CLK');
+  v1Wire(doc, reset, 'Y', storage, 'RST');
+  v1Wire(doc, enable, 'Y', storage, 'EN');
+  v1Wire(doc, storage, 'Q', add, 'A');
+  v1Wire(doc, one, 'Y', add, 'B');
+  v1Wire(doc, add, 'Y', storage, 'D');
+  v1Wire(doc, storage, 'Q', out, 'A');
   const program = [
     [1, 0, 5],
     [0, 1, 6],
@@ -204,7 +239,8 @@ test('register counter feedback wraps, holds on EN=0 and gives synchronous reset
         `clk=0; reset=${reset}; enable=${enable}; #1; clk=1; #1; if(q!==3'd${expected}) $fatal(1,"counter %d",q);`,
     )
     .join('\n');
-  await runVerilog(
-    `${compileCircuit(doc, 'counter')} module tb; reg clk,reset,enable; wire [2:0] q; counter dut(.*); initial begin clk=0; reset=0; enable=0; #1; if(q !== 3'bxxx) $fatal(1,"initial state must be X"); ${program} $display("PASS"); $finish; end endmodule`,
+  const output = await runVerilog(
+    `${compileCircuit(migrated(doc), 'counter')} module tb; reg clk,reset,enable; wire [2:0] q; counter dut(.*); initial begin clk=0; reset=0; enable=0; #1; if(q !== 3'bxxx) $fatal(1,"initial state must be X"); ${program} $display("PASS"); $finish; end endmodule`,
   );
+  assert.match(output, /PASS/);
 });
