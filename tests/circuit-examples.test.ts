@@ -4,6 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { BuildManager } from '../server/builds';
+import { PhysicalManager } from '../server/physical';
 import { circuitExamples } from '../shared/circuit-examples';
 import {
   boardAssignments,
@@ -186,5 +187,51 @@ for (const item of circuitExamples)
       const result = await synthesize(project);
       assert.equal(result.status, 'success', `${result.error}\n${result.logs.slice(-3000)}`);
       assert.ok(Object.keys(result.technology!.modules.top.cells).length > 0);
+    },
+  );
+
+for (const item of circuitExamples)
+  test(
+    `example "${item.title}" is placed and routed by nextpnr with the pins assigned by the editor`,
+    { timeout: 300_000 },
+    async (context) => {
+      const directory = await mkdtemp(path.join(tmpdir(), 'yosis-physical-circuit-'));
+      const builds = new BuildManager(path.join(directory, 'builds')),
+        physical = new PhysicalManager(path.join(directory, 'physical'), builds);
+      try {
+        if (!(await physical.health()).available) return context.skip('nextpnr недоступен');
+        const doc = item.build();
+        const base = createWizardProject({ start: 'schematic', name: item.title, top: 'top' });
+        const project: Project = syncBoardConstraints(
+          {
+            ...base,
+            files: base.files.map((file) =>
+              file.name.endsWith('.ysch') ? { ...file, content: JSON.stringify(doc) } : file,
+            ),
+          },
+          null,
+          doc,
+        ).project;
+        let build = await builds.create(project);
+        while (build.status === 'queued' || build.status === 'running') {
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          build = await builds.get(build.id);
+        }
+        assert.equal(build.status, 'success', build.error);
+        let job = await physical.create(project, build.id, {
+          cstFile: project.files.find((file) => file.name.endsWith('.cst'))!.name,
+          frequencyMHz: 27,
+        });
+        while (job.status === 'queued' || job.status === 'running') {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          job = await physical.get(job.id);
+        }
+        assert.equal(job.status, 'success', `${job.error}\n${job.logs.slice(-2000)}`);
+        assert.ok(job.placed);
+      } finally {
+        await physical.close();
+        await builds.close();
+        await rm(directory, { recursive: true, force: true });
+      }
     },
   );
