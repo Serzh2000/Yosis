@@ -207,27 +207,36 @@ endmodule
     'counter',
     'Счётчик',
     'Шесть регистров, сложение и пауза.',
-    `// Счётчик 0…63 увеличивается на каждом положительном фронте clk.
+    `// Счётчик 0…63 увеличивается на один шаг каждые STEP_TICKS тактов clk.
+// 27 МГц / 6 750 000 даёт 4 шага в секунду: на плате счёт виден глазом.
 // always @(posedge clk) описывает память, а <= обновляет регистры одновременно.
-// reset = 1 сбрасывает на ближайшем фронте; enable = 0 удерживает значение.
+// reset = 1 сбрасывает на ближайшем фронте; pause = 1 удерживает значение.
 // На плате кнопка 88 — сброс, кнопка 87 — пауза (считать, когда отпущена).
 // Выход count — обычное двоичное число, LED активны при 0 и показывают его инверсию.
 // Для виртуальных LED выберите «Активный 0». В диаграммах смотрите count как число.
-// При 27 МГц изменения слишком быстры для глаза: изучайте шаги в симуляции.
-// Замедленное воспроизведение не меняет число тактов или частоту схемы.
-module top (
+// Для короткой симуляции (32–64 такта) временно поставьте STEP_TICKS = 1: шаг на каждом такте.
+// Для платы верните 6_750_000. Замедленное воспроизведение не меняет STEP_TICKS.
+module top #(
+    parameter integer STEP_TICKS = 6_750_000
+) (
     input wire clk,
     input wire reset,
     input wire pause,
     output reg [5:0] count = 6'd0
 );
+    reg [22:0] ticks = 23'd0;
     // Кнопка паузы даёт 1 при нажатии: счёт разрешён, пока она отпущена.
     wire enable = ~pause;
     always @(posedge clk) begin
-        if (reset)
+        if (reset) begin
+            ticks <= 23'd0;
             count <= 6'd0;
-        else if (enable)
-            count <= count + 6'd1;
+        end else if (ticks == STEP_TICKS - 1) begin
+            ticks <= 23'd0;
+            if (enable) count <= count + 6'd1;
+        end else begin
+            ticks <= ticks + 23'd1;
+        end
     end
 endmodule
 `,
@@ -772,13 +781,17 @@ endmodule
     'updown',
     'Счётчик вверх / вниз',
     'Кнопка меняет направление счёта.',
-    `// Отпущенная кнопка: +1 на фронте clk. Нажатая: -1.
+    `// Отпущенная кнопка: +1 за шаг. Нажатая: -1. Шаг делается каждые STEP_TICKS тактов clk.
+// 27 МГц / 6 750 000 даёт 4 шага в секунду: на плате счёт виден глазом.
 // Шесть битов хранят 0…63: после 63 идёт 0, перед 0 — 63.
 // Два регистра синхронизируют direction_n; смена направления имеет задержку.
 // reset = 1 синхронно устанавливает 0. Внешний выход инвертирован для LED.
 // На диаграмме смотрите внутренний count, не инвертированное led_n.
-// При 27 МГц отдельные шаги не видны глазом; используйте виртуальные такты.
-module top (
+// Для короткой симуляции (32–64 такта) временно поставьте STEP_TICKS = 1: шаг на каждом такте.
+// Для платы верните 6_750_000. Замедленное воспроизведение не меняет STEP_TICKS.
+module top #(
+    parameter integer STEP_TICKS = 6_750_000
+) (
     input wire clk,
     input wire reset,
     input wire button_direction,
@@ -786,18 +799,25 @@ module top (
 );
     // Кнопки платы дают 1 при нажатии и 0 в покое; внутри схемы эти сигналы активны нулём.
     wire direction_n = ~button_direction;
+    reg [22:0] ticks = 23'd0;
     reg [5:0] count = 6'd0;
     reg direction_meta = 1'b1, direction_sync = 1'b1;
     always @(posedge clk) begin
         if (reset) begin
+            ticks <= 23'd0;
             count <= 6'd0;
             direction_meta <= 1'b1;
             direction_sync <= 1'b1;
         end else begin
             direction_meta <= direction_n;
             direction_sync <= direction_meta;
-            if (direction_sync) count <= count + 6'd1;
-            else count <= count - 6'd1;
+            if (ticks == STEP_TICKS - 1) begin
+                ticks <= 23'd0;
+                if (direction_sync) count <= count + 6'd1;
+                else count <= count - 6'd1;
+            end else begin
+                ticks <= ticks + 23'd1;
+            end
         end
     end
     assign led_n = ~count;
@@ -816,13 +836,17 @@ endmodule
     'Счётчик с насыщением',
     'Дойдите до 63 и остановитесь вместо переполнения.',
     `// Обычный шестибитный счётчик переходит 63 → 0; здесь проверяем предел.
+// Шаг делается каждые STEP_TICKS тактов clk; при 6 750 000 это 4 шага в секунду на 27 МГц.
 // enable = 1 разрешает +1 только пока count < 63. При 63 значение удерживается.
 // Нажатая кнопка даёт enable = 0 и ставит паузу. reset = 1 начинает заново.
 // Если ветка не выполняется, триггеры сохраняют значение — это разрешение FF.
-// Для полного опыта задайте 70 периодов и два периода сброса.
 // LED показывают биты через инверсию: на пределе все шесть светятся.
-// На плате 27 МГц предел достигается почти сразу; исследуйте шаги в симуляции.
-module top (
+// На плате предел достигается примерно за 16 секунд (63 шага по 0,25 с).
+// Для симуляции поставьте STEP_TICKS = 1, задайте 70 периодов и два периода сброса.
+// Для платы верните 6_750_000.
+module top #(
+    parameter integer STEP_TICKS = 6_750_000
+) (
     input wire clk,
     input wire reset,
     input wire pause,
@@ -830,10 +854,18 @@ module top (
 );
     // Кнопка паузы даёт 1 при нажатии: счёт разрешён, пока она отпущена.
     wire enable = ~pause;
+    reg [22:0] ticks = 23'd0;
     reg [5:0] count = 6'd0;
     always @(posedge clk) begin
-        if (reset) count <= 6'd0;
-        else if (enable && count != 6'd63) count <= count + 6'd1;
+        if (reset) begin
+            ticks <= 23'd0;
+            count <= 6'd0;
+        end else if (ticks == STEP_TICKS - 1) begin
+            ticks <= 23'd0;
+            if (enable && count != 6'd63) count <= count + 6'd1;
+        end else begin
+            ticks <= ticks + 23'd1;
+        end
     end
     assign led_n = ~count;
 endmodule
@@ -848,11 +880,15 @@ endmodule
     `// binary считает 0…63; gray = binary XOR (binary >> 1).
 // У двоичного 011111 → 100000 меняются все биты. В коде Грея — один.
 // Шестибитная последовательность циклическая, включая переход 63 → 0.
+// Шаг делается каждые STEP_TICKS тактов clk; при 6 750 000 это 4 шага в секунду на 27 МГц.
 // enable = 0 удерживает binary. reset = 1 устанавливает 0 на фронте clk.
 // На диаграммах сравните binary и gray; led_n — инверсия gray для платы.
 // Формула комбинационная: здесь не обещается отсутствие физических глитчей.
-// При 27 МГц изучайте отдельные переходы в симуляции.
-module top (
+// Для короткой симуляции (32–64 такта) временно поставьте STEP_TICKS = 1: шаг на каждом такте.
+// Для платы верните 6_750_000.
+module top #(
+    parameter integer STEP_TICKS = 6_750_000
+) (
     input wire clk,
     input wire reset,
     input wire pause,
@@ -860,11 +896,19 @@ module top (
 );
     // Кнопка паузы даёт 1 при нажатии: счёт разрешён, пока она отпущена.
     wire enable = ~pause;
+    reg [22:0] ticks = 23'd0;
     reg [5:0] binary = 6'd0;
     wire [5:0] gray = binary ^ (binary >> 1);
     always @(posedge clk) begin
-        if (reset) binary <= 6'd0;
-        else if (enable) binary <= binary + 6'd1;
+        if (reset) begin
+            ticks <= 23'd0;
+            binary <= 6'd0;
+        end else if (ticks == STEP_TICKS - 1) begin
+            ticks <= 23'd0;
+            if (enable) binary <= binary + 6'd1;
+        end else begin
+            ticks <= ticks + 23'd1;
+        end
     end
     assign led_n = ~gray;
 endmodule
@@ -883,12 +927,16 @@ endmodule
     'Заполнение и очистка цепочки из шести регистров.',
     `// Сдвигаем state, а в младший бит возвращаем ИНВЕРСИЮ старшего.
 // После сброса: 000000 → 000001 → 000011 → … → 111111 → 111110 → … → 000000.
-// Из состояния 0 последовательность занимает 12 тактов: 2 × число регистров.
+// Из состояния 0 последовательность занимает 12 шагов: 2 × число регистров.
+// Шаг делается каждые STEP_TICKS тактов clk; при 6 750 000 это 4 шага в секунду на 27 МГц.
 // Сброс нужен для известного начального состояния; не все 64 состояния входят в цикл.
 // enable = 0 удерживает цепочку. LED активны при 0, наружу идёт ~state.
 // Сравните с кольцевым сдвигом «Бегущий огонь»: здесь заполнение меняется.
-// На плате входные 27 МГц слишком быстры для глаза; смотрите в симуляции.
-module top (
+// Для короткой симуляции (32–64 такта) временно поставьте STEP_TICKS = 1: шаг на каждом такте.
+// Для платы верните 6_750_000.
+module top #(
+    parameter integer STEP_TICKS = 6_750_000
+) (
     input wire clk,
     input wire reset,
     input wire pause,
@@ -896,10 +944,18 @@ module top (
 );
     // Кнопка паузы даёт 1 при нажатии: счёт разрешён, пока она отпущена.
     wire enable = ~pause;
+    reg [22:0] ticks = 23'd0;
     reg [5:0] state = 6'd0;
     always @(posedge clk) begin
-        if (reset) state <= 6'd0;
-        else if (enable) state <= {state[4:0], ~state[5]};
+        if (reset) begin
+            ticks <= 23'd0;
+            state <= 6'd0;
+        end else if (ticks == STEP_TICKS - 1) begin
+            ticks <= 23'd0;
+            if (enable) state <= {state[4:0], ~state[5]};
+        end else begin
+            ticks <= ticks + 23'd1;
+        end
     end
     assign led_n = ~state;
 endmodule
