@@ -103,10 +103,14 @@ for (const width of [1024, 1366]) {
   test(`navigation and dialogs stay usable at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 768 });
     await page.goto('/?tab=lessons');
-    const files = page.getByRole('button', { name: 'Файлы проекта', exact: true });
-    const before = await files.boundingBox();
+    // The file panel is hidden on most tabs, but the tab bar must not shift when switching.
+    const firstTab = page.getByRole('tab', { name: /^Код/ });
+    const before = await firstTab.boundingBox();
     await page.getByRole('tab', { name: /^Подключение/ }).click();
-    expect((await files.boundingBox())?.x).toBe(before?.x);
+    expect((await firstTab.boundingBox())?.x).toBe(before?.x);
+    await page.getByRole('tab', { name: /^Код/ }).click();
+    expect((await firstTab.boundingBox())?.x).toBe(before?.x);
+    await expect(page.getByRole('button', { name: 'Файлы проекта', exact: true })).toBeVisible();
     await page.getByRole('tab', { name: /^Код/ }).focus();
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('tab', { name: /^Конструктор/ })).toHaveAttribute(

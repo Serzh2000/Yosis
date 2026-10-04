@@ -80,6 +80,8 @@ export interface StudioNavigationProps {
   tab: WorkTab;
   onChange: (tab: WorkTab) => void;
   fileManagerOpen: boolean;
+  /** The file panel is only relevant on source-text tabs; the toggle keeps its slot either way. */
+  filesAvailable?: boolean;
   onToggleFiles: () => void;
   constraintsCount: number;
   synthesisStatus?: WorkspaceStatus;
@@ -90,6 +92,7 @@ export function StudioNavigation({
   tab,
   onChange,
   fileManagerOpen,
+  filesAvailable = true,
   onToggleFiles,
   constraintsCount,
   synthesisStatus,
@@ -113,11 +116,14 @@ export function StudioNavigation({
     <div className="work-navigation">
       <button
         type="button"
-        className={`files-toggle ${fileManagerOpen ? 'active' : ''}`}
+        className={`files-toggle ${fileManagerOpen && filesAvailable ? 'active' : ''} ${filesAvailable ? '' : 'unavailable'}`}
         aria-label="Файлы проекта"
         title="Показать или скрыть файлы проекта"
-        aria-expanded={fileManagerOpen}
+        aria-expanded={fileManagerOpen && filesAvailable}
         aria-controls="project-files"
+        aria-hidden={filesAvailable ? undefined : true}
+        disabled={!filesAvailable}
+        tabIndex={filesAvailable ? undefined : -1}
         onClick={onToggleFiles}
       >
         <Folder size={17} aria-hidden="true" />

@@ -3,7 +3,6 @@ import type { FormEvent } from 'react';
 import type * as monaco from 'monaco-editor/editor/editor.api.js';
 import {
   ArrowRight,
-  Boxes,
   Braces,
   Circle,
   Cpu,
@@ -60,7 +59,7 @@ const CircuitEditor = lazy(() =>
 );
 import { HelpTrigger } from './components/HelpCard';
 import { getHierarchy, getResources } from './lib/netlist';
-import { HierarchyBranch } from './components/HierarchyBranch';
+import { ModuleHierarchyMenu } from './components/ModuleHierarchyMenu';
 import { StudioHeader } from './components/StudioHeader';
 import { BuildLogs } from './components/BuildLogs';
 import { StudioNavigation, type WorkTab } from './components/StudioNavigation';
@@ -246,7 +245,7 @@ export default function App() {
     project.files.find((file) => file.name === activeFile && file.name.endsWith('.ysch')) ??
     project.files.find((file) => file.name.endsWith('.ysch'));
   const hdlSource = project.files.find((file) => /\.(v|sv|vh|svh)$/.test(file.name));
-  const usesProjectFiles = true;
+  const usesProjectFiles = workTab === 'code' || workTab === 'constraints';
 
   useEffect(() => {
     if (loginRequired) setLoginOpen(true);
@@ -643,6 +642,7 @@ export default function App() {
         tab={workTab}
         onChange={setWorkTab}
         fileManagerOpen={fileManagerOpen}
+        filesAvailable={usesProjectFiles}
         onToggleFiles={() => setFileManagerOpen(!fileManagerOpen)}
         constraintsCount={constraintsFiles.length}
         synthesisStatus={
@@ -770,31 +770,7 @@ export default function App() {
               onDelete={deleteFile}
               onTopChange={(top) => setProject((previous) => ({ ...previous, top }))}
               onClose={() => setFileManagerOpen(false)}
-            >
-              {(workTab === 'rtl' || workTab === 'technology') && (
-                <div className="project-hierarchy">
-                  <div className="panel-label">
-                    <Boxes size={15} />
-                    <span>ИЕРАРХИЯ МОДУЛЕЙ</span>
-                  </div>
-                  {hierarchy ? (
-                    <HierarchyBranch
-                      node={hierarchy}
-                      selected={moduleName}
-                      onSelect={(name) => {
-                        setSelectedModule(name);
-                        setSelectedCell(null);
-                      }}
-                    />
-                  ) : (
-                    <div className="explorer-placeholder">
-                      <GitBranch size={25} />
-                      <p>Модули появятся после синтеза</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </ProjectFiles>
+            />
           </>
         )}
         <main className="main-workspace">
@@ -942,6 +918,14 @@ export default function App() {
                 <div className="pane-title">
                   <GitBranch size={16} />
                   <span>{view === 'rtl' ? 'RTL-схема' : 'Примитивы Gowin'}</span>
+                  <ModuleHierarchyMenu
+                    hierarchy={hierarchy}
+                    selected={moduleName}
+                    onSelect={(name) => {
+                      setSelectedModule(name);
+                      setSelectedCell(null);
+                    }}
+                  />
                   <span className="pane-meta">{moduleName || project.top}</span>
                 </div>
                 {stale && (
