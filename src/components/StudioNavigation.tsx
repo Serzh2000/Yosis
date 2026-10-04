@@ -31,6 +31,12 @@ export type WorkTab =
   | 'board';
 export type WorkspaceStatus = 'success' | 'error' | 'stale' | 'busy';
 export const workspaceTabs: { id: WorkTab; label: string; icon: LucideIcon; caption: string }[] = [
+  {
+    id: 'lessons',
+    label: 'Обучение',
+    icon: GraduationCap,
+    caption: 'От первого бита к своему устройству',
+  },
   { id: 'code', label: 'Код', icon: Code2, caption: 'Исходники проекта' },
   {
     id: 'design',
@@ -55,19 +61,13 @@ export const workspaceTabs: { id: WorkTab; label: string; icon: LucideIcon; capt
   { id: 'technology', label: 'Gowin', icon: Cpu, caption: 'LUT, регистры и ресурсы' },
   { id: 'chip', label: 'Кристалл', icon: Layers3, caption: 'Размещение и карта занятости' },
   { id: 'board', label: 'Подключение', icon: Usb, caption: 'Работа с настоящей платой' },
-  {
-    id: 'lessons',
-    label: 'Обучение',
-    icon: GraduationCap,
-    caption: 'От первого бита к своему устройству',
-  },
 ];
 const groups: { label: string; tabs: WorkTab[] }[] = [
+  { label: 'Узнать', tabs: ['lessons'] },
   { label: 'Создать', tabs: ['code', 'design', 'constraints'] },
   { label: 'Проверить', tabs: ['rtl', 'simulation', 'virtual'] },
   { label: 'Собрать', tabs: ['technology', 'chip'] },
   { label: 'Плата', tabs: ['board'] },
-  { label: 'Начать здесь', tabs: ['lessons'] },
 ];
 const statuses = {
   success: { label: 'Готово', icon: CircleCheck },
@@ -113,10 +113,10 @@ export function StudioNavigation({
     tabs.current?.querySelector<HTMLButtonElement>(`#tab-${destination}`)?.focus();
   }
   return (
-    <div className="work-navigation">
+    <div className="sh-nav">
       <button
         type="button"
-        className={`files-toggle ${fileManagerOpen && filesAvailable ? 'active' : ''} ${filesAvailable ? '' : 'unavailable'}`}
+        className={`sh-files ${fileManagerOpen && filesAvailable ? 'active' : ''} ${filesAvailable ? '' : 'unavailable'}`}
         aria-label="Файлы проекта"
         title="Показать или скрыть файлы проекта"
         aria-expanded={fileManagerOpen && filesAvailable}
@@ -126,65 +126,60 @@ export function StudioNavigation({
         tabIndex={filesAvailable ? undefined : -1}
         onClick={onToggleFiles}
       >
-        <Folder size={17} aria-hidden="true" />
-        <span>Файлы</span>
+        <Folder size={18} aria-hidden="true" />
       </button>
       <nav
-        className="work-tabs grouped-tabs"
+        className="sh-tabs"
         aria-label="Рабочие вкладки"
         role="tablist"
         aria-orientation="horizontal"
         ref={tabs}
       >
-        {groups.map((group) => (
-          <div className="work-tab-group" role="presentation" key={group.label}>
-            <span className="work-tab-group-label" aria-hidden="true">
-              {group.label}
-            </span>
-            <div className="work-tab-group-items" role="presentation">
-              {group.tabs.map((id) => {
-                const item = workspaceTabs.find((candidate) => candidate.id === id)!;
-                const status =
-                  id === 'chip'
-                    ? physicalStatus
-                    : id === 'rtl' || id === 'technology'
-                      ? synthesisStatus
-                      : undefined;
-                const state = status ? statuses[status] : null;
-                return (
-                  <button
-                    key={id}
-                    id={`tab-${id}`}
-                    data-tour={`tab-${id}`}
-                    type="button"
-                    role="tab"
-                    aria-selected={tab === id}
-                    aria-controls={`panel-${id}`}
-                    tabIndex={tab === id ? 0 : -1}
-                    aria-label={`${item.label}${state ? ` · ${state.label}` : ''}`}
-                    title={`${item.caption}${state ? ` · ${state.label}` : ''}`}
-                    className={tab === id ? 'active' : ''}
-                    onClick={() => onChange(id)}
-                    onKeyDown={(event) => handleKeys(event, id)}
-                  >
-                    <item.icon size={16} aria-hidden="true" />
-                    <span>{item.label}</span>
-                    {id === 'constraints' && constraintsCount > 0 && (
-                      <small aria-label={`${constraintsCount} файлов ограничений`}>
-                        {constraintsCount}
-                      </small>
-                    )}
-                    {state && (
-                      <state.icon
-                        className={`tab-state ${status} ${status === 'busy' ? 'spin' : ''}`}
-                        size={13}
-                        aria-hidden="true"
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+        {groups.map((group, index) => (
+          <div className="sh-tab-group" role="presentation" key={group.label} title={group.label}>
+            {index > 0 && <span className="sh-tab-sep" aria-hidden="true" />}
+            {group.tabs.map((id) => {
+              const item = workspaceTabs.find((candidate) => candidate.id === id)!;
+              const status =
+                id === 'chip'
+                  ? physicalStatus
+                  : id === 'rtl' || id === 'technology'
+                    ? synthesisStatus
+                    : undefined;
+              const state = status ? statuses[status] : null;
+              return (
+                <button
+                  key={id}
+                  id={`tab-${id}`}
+                  data-tour={`tab-${id}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === id}
+                  aria-controls={`panel-${id}`}
+                  tabIndex={tab === id ? 0 : -1}
+                  aria-label={`${item.label}${state ? ` · ${state.label}` : ''}`}
+                  title={`${group.label}: ${item.caption}${state ? ` · ${state.label}` : ''}`}
+                  className={`sh-tab ${tab === id ? 'active' : ''}`}
+                  onClick={() => onChange(id)}
+                  onKeyDown={(event) => handleKeys(event, id)}
+                >
+                  <item.icon size={16} aria-hidden="true" />
+                  <span>{item.label}</span>
+                  {id === 'constraints' && constraintsCount > 0 && (
+                    <small aria-label={`${constraintsCount} файлов ограничений`}>
+                      {constraintsCount}
+                    </small>
+                  )}
+                  {state && (
+                    <state.icon
+                      className={`tab-state ${status} ${status === 'busy' ? 'spin' : ''}`}
+                      size={13}
+                      aria-hidden="true"
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
         ))}
       </nav>

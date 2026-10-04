@@ -60,6 +60,7 @@ const CircuitEditor = lazy(() =>
 import { HelpTrigger } from './components/HelpCard';
 import { getHierarchy, getResources } from './lib/netlist';
 import { ModuleHierarchyMenu } from './components/ModuleHierarchyMenu';
+import './components/studio-header.css';
 import { StudioHeader } from './components/StudioHeader';
 import { BuildLogs } from './components/BuildLogs';
 import { StudioNavigation, type WorkTab } from './components/StudioNavigation';
