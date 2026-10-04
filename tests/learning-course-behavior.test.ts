@@ -54,7 +54,10 @@ test(
         true,
         'Prepare Icarus with npm run setup:iverilog',
       );
-      for (const guided of guidedLessons.filter((lesson) => lesson.exercise)) {
+      // The beginner strand has its own behavior test (beginner-course-behavior.test.ts).
+      for (const guided of guidedLessons.filter(
+        (lesson) => lesson.exercise && solutions[lesson.id],
+      )) {
         const lesson = guided.exercise!;
         const starter = await simulate(manager, lesson, lesson.project);
         assert.ok(

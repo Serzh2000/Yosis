@@ -1,0 +1,119 @@
+.glossary-term {
+  padding: 0;
+  border: 0;
+  border-bottom: 1.5px dotted var(--accent-strong);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: help;
+}
+.glossary-term:hover,
+.glossary-term[aria-expanded='true'] {
+  background: var(--accent-soft);
+}
+.glossary-term:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+.glossary-pop {
+  display: block;
+  position: relative;
+  margin: 10px 0;
+  padding: 10px 34px 10px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.glossary-pop em {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-soft);
+  font-style: normal;
+}
+.glossary-pop button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  color: var(--text-soft);
+}
+.glossary-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 12px;
+}
+.glossary-open:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.glossary-dialog {
+  width: min(640px, calc(100vw - 32px));
+  max-height: min(80vh, 720px);
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+}
+.glossary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.glossary-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.glossary-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.glossary-search input {
+  flex: 1;
+  height: 34px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-size: 13px;
+}
+.glossary-list {
+  margin: 0;
+  overflow: auto;
+}
+.glossary-list > div {
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+}
+.glossary-list dt {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 13px;
+}
+.glossary-list dd {
+  margin: 3px 0 0;
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.glossary-list dd em {
+  display: block;
+  font-style: normal;
+  color: var(--muted);
+}

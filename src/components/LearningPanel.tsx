@@ -56,6 +56,7 @@ import { runSimulation } from '../lib/simulation-client';
 import { parseVcd, type VcdTrace } from '../lib/vcd';
 import { LessonsPanel } from './LessonsPanel';
 import { WaveformViewer } from './WaveformViewer';
+import { GlossaryButton, GlossaryDialog, GlossaryText } from './GlossaryText';
 import './learning.css';
 
 export interface LearningGuide {
@@ -174,6 +175,7 @@ export function LearningPanel({
   onLessonChange,
 }: Props) {
   const [mode, setMode] = useState<'course' | 'practice'>('course');
+  const [glossaryOpen, setGlossaryOpen] = useState(false);
   const [progress, setProgress] = useState<CourseProgress>(() =>
     parseCourseProgress(stored(LEARNING_PROGRESS_KEY)),
   );
@@ -361,6 +363,7 @@ export function LearningPanel({
           <strong>Твоя мастерская</strong>
           <span>От первого бита к своему устройству</span>
         </div>
+        <GlossaryButton onClick={() => setGlossaryOpen(true)} />
         <div className="learning-mode" aria-label="Режим обучения">
           <button aria-pressed={mode === 'course'} onClick={() => setMode('course')}>
             С наставником
@@ -370,6 +373,7 @@ export function LearningPanel({
           </button>
         </div>
       </header>
+      {glossaryOpen && <GlossaryDialog onClose={() => setGlossaryOpen(false)} />}
       {storageError && (
         <div className="learning-storage-note" role="status">
           {storageError}
@@ -559,7 +563,9 @@ export function LearningPanel({
                             : 'РАЗБЕРЁМСЯ ВМЕСТЕ'}
                     </span>
                     <h1>{step.title}</h1>
-                    <p>{step.text}</p>
+                    <p>
+                      <GlossaryText key={step.id} text={step.text} />
+                    </p>
                   </div>
                   {step.kind === 'welcome' && (
                     <>
@@ -624,7 +630,9 @@ export function LearningPanel({
                   )}
                   {step.quiz && (
                     <section className="learning-question">
-                      <h2>{step.quiz.question}</h2>
+                      <h2>
+                        <GlossaryText key={step.id} text={step.quiz.question} />
+                      </h2>
                       <div>
                         {step.quiz.options.map((option, index) => (
                           <button

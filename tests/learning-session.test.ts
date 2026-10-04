@@ -161,18 +161,17 @@ test('learning panel renders its introductory playground and locked route withou
     }),
   );
   assert.match(markup, /Твоя мастерская/);
-  assert.match(markup, /Ты в мастерской цифровых схем/);
-  assert.match(markup, /Куда ты попал/);
-  assert.match(markup, /aria-label="Попробуй логический элемент"/);
-  assert.match(markup, /aria-label="Вход a: 0\. Переключить"/);
-  assert.match(markup, /aria-label="Вход b: 1\. Переключить"/);
-  assert.match(markup, /Элемент AND/);
+  // The course now opens with the no-code beginner strand; the logic playground belongs to the
+  // later orientation lesson and is checked in the browser.
+  assert.match(markup, /Что у нас в руках/);
+  assert.match(markup, /Привет!/);
+  assert.match(markup, /Словарь/);
   assert.match(markup, /С наставником/);
   assert.match(markup, /Свободные задания/);
   assert.match(markup, /Маршрут обучения/);
   const picker = markup.match(/<select aria-label="Выбрать урок"[\s\S]*?<\/select>/)?.[0];
   assert.ok(picker, 'compact screens retain a route selector');
-  assert.equal((picker.match(/<optgroup /g) ?? []).length, 4);
+  assert.equal((picker.match(/<optgroup /g) ?? []).length, 6);
   assert.equal((picker.match(/<option /g) ?? []).length, guidedLessons.length);
   assert.equal(
     (picker.match(/<option[^>]*disabled=""/g) ?? []).length,
