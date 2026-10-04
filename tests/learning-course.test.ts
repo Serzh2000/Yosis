@@ -21,6 +21,7 @@ import {
   type CourseProgress,
 } from '../src/lib/learning-course';
 import type { LessonVerdict } from '../src/lib/lessons';
+import { beginnerExercises, beginnerLessons } from '../src/lib/beginner-course';
 import { validateProject, validateSimulationConfig } from '../server/validation';
 
 const hash = 'ab'.repeat(32);
@@ -43,10 +44,20 @@ function finishLesson(progress: CourseProgress, id: string): CourseProgress {
   return progress;
 }
 
-test('guided course contains orientation and twelve practical laboratories, including real-board polarity and frequency', () => {
-  assert.equal(courseLevels.length, 4);
-  assert.equal(guidedLessons.length, 13);
-  assert.equal(guidedLessons.filter((lesson) => lesson.exercise).length, 12);
+/** The beginner strand comes first; the older labs start after it is finished. */
+function atCore(): CourseProgress {
+  let progress = createCourseProgress();
+  for (const lesson of beginnerLessons) progress = finishLesson(progress, lesson.id);
+  return progress;
+}
+
+test('guided course contains the beginner strand, an orientation and twelve practical laboratories, including real-board polarity and frequency', () => {
+  assert.equal(courseLevels.length, 6);
+  assert.equal(guidedLessons.length, 13 + beginnerLessons.length);
+  assert.equal(
+    guidedLessons.filter((lesson) => lesson.exercise).length,
+    12 + beginnerExercises.length,
+  );
   assert.equal(new Set(guidedLessons.map((lesson) => lesson.id)).size, guidedLessons.length);
   for (const lesson of guidedLessons) {
     assert.ok(courseLevels.some((level) => level.id === lesson.levelId));
@@ -71,11 +82,20 @@ test('guided course contains orientation and twelve practical laboratories, incl
       assert.match(lesson.exercise.project.files[0].content, /Учебная лаборатория/);
     }
   }
-  assert.ok(guidedLessons[0].steps.some((step) => step.id === 'bit-quiz'));
+  assert.ok(
+    guidedLessons
+      .find((lesson) => lesson.id === 'welcome')!
+      .steps.some((step) => step.id === 'bit-quiz'),
+  );
+  assert.equal(
+    guidedLessons[0].id,
+    beginnerLessons[0].id,
+    'the course starts with the beginner strand',
+  );
 });
 
 test('wrong quiz answer gives its own explanation and cannot advance or complete the lesson', () => {
-  let progress = createCourseProgress();
+  let progress = selectCourseLesson(atCore(), 'welcome');
   for (let index = 0; index < 3; index++) progress = advanceCourseStep(progress);
   assert.equal(getCourseStep(progress).id, 'hardware-quiz');
   const wrong = answerCourseQuiz(progress, 'welcome', 'hardware-quiz', '1');
@@ -91,7 +111,7 @@ test('wrong quiz answer gives its own explanation and cannot advance or complete
 });
 
 test('completion needs every quiz and a complete successful VCD verdict rather than next button alone', () => {
-  let progress = finishLesson(createCourseProgress(), 'welcome');
+  let progress = finishLesson(atCore(), 'welcome');
   assert.equal(isCourseLessonUnlocked(progress, 'ports'), true);
   assert.equal(isCourseLessonUnlocked(progress, 'not'), false);
   assert.throws(() => selectCourseLesson(progress, 'not'), /предыдущий/);
@@ -175,9 +195,9 @@ test('review, progressive hints, reset and full course completion preserve expli
 });
 
 test('local storage rejects unknown lesson IDs, unsupported versions, invented results and impossible step skips', () => {
-  const fresh = createCourseProgress();
   for (const value of [null, [], 'bad json', { version: 2, lessons: {} }])
-    assert.deepEqual(parseCourseProgress(value), fresh);
+    assert.deepEqual(parseCourseProgress(value), createCourseProgress());
+  const fresh = atCore();
   const fake = structuredClone(fresh);
   fake.activeLessonId = 'mystery';
   fake.lessons.mystery = { ...fake.lessons.welcome, completed: true };
@@ -196,7 +216,7 @@ test('local storage rejects unknown lesson IDs, unsupported versions, invented r
     exercise: { passed: true, projectHash: hash },
   };
   const parsed = parseCourseProgress(fake);
-  assert.equal(parsed.activeLessonId, 'welcome');
+  assert.equal(parsed.activeLessonId, guidedLessons[0].id);
   assert.equal(parsed.lessons.mystery, undefined);
   assert.equal(parsed.lessons.welcome.completed, false);
   assert.equal(parsed.lessons.welcome.stepId, 'hardware-quiz');

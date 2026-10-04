@@ -97,230 +97,6 @@
   color: var(--accent);
   border-color: var(--accent);
 }
-.virtual-pcb {
-  width: min(94%, 640px);
-  height: 236px;
-  margin: 14px auto;
-  position: relative;
-  border-radius: 10px;
-  background: #245637;
-  border: 1px solid #548066;
-  color: #d2e5c6;
-  box-shadow:
-    0 9px 18px #0002,
-    inset 0 0 50px #173b2380;
-  overflow: hidden;
-}
-.virtual-pcb:before {
-  content: '';
-  position: absolute;
-  inset: 16px;
-  background:
-    repeating-linear-gradient(90deg, transparent 0 37px, #6c98611c 37px 38px),
-    repeating-linear-gradient(0deg, transparent 0 34px, #6c98611c 34px 35px);
-  border-radius: 7px;
-}
-.virtual-pcb-hole {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 3px solid #bdb798;
-  background: #1b2419;
-  z-index: 2;
-}
-.hole-a {
-  left: 13px;
-  top: 13px;
-}
-.hole-b {
-  right: 13px;
-  top: 13px;
-}
-.hole-c {
-  left: 13px;
-  bottom: 13px;
-}
-.hole-d {
-  right: 13px;
-  bottom: 13px;
-}
-.virtual-connector {
-  position: absolute;
-  left: 62px;
-  right: 38px;
-  display: flex;
-  justify-content: space-between;
-  gap: 4px;
-  height: 10px;
-  overflow: hidden;
-}
-.top-connector {
-  top: 14px;
-}
-.bottom-connector {
-  bottom: 14px;
-}
-.virtual-connector i {
-  width: 7px;
-  height: 7px;
-  border: 2px solid #c6b377;
-  background: #1e2b1c;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.virtual-usb {
-  position: absolute;
-  left: 0;
-  top: 79px;
-  width: 44px;
-  height: 64px;
-  border-radius: 0 4px 4px 0;
-  background: linear-gradient(90deg, #a5a49a, #ddd8c7 45%, #b3b1a5);
-  box-shadow: 2px 3px 8px #10201770;
-  border: 2px solid #8e9183;
-  display: grid;
-  place-items: center;
-}
-.virtual-usb span {
-  width: 26px;
-  height: 39px;
-  border: 3px solid #8c8d80;
-  border-radius: 4px;
-  background: #333d30;
-}
-.virtual-chip {
-  position: absolute;
-  width: 112px;
-  height: 106px;
-  left: 22%;
-  top: 55px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  border: 2px solid #494b40;
-  background: #22271f;
-  box-shadow:
-    0 0 0 5px #a5a894,
-    0 0 0 8px #142b1c,
-    3px 6px 10px #10201570;
-}
-.virtual-chip strong {
-  font-size: 17px;
-  letter-spacing: 1.5px;
-  color: #dddcc8;
-}
-.virtual-chip span {
-  font-size: 12px;
-  letter-spacing: 0.5px;
-  color: #a0a896;
-}
-.virtual-chip small {
-  display: block;
-  max-width: 96px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 12px;
-  color: #a0a896;
-}
-.virtual-chip-mark {
-  position: absolute;
-  left: 8px;
-  top: 8px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #7b8372;
-}
-.virtual-crystal {
-  position: absolute;
-  right: 24px;
-  top: 45px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  border: 2px solid #adb093;
-  padding: 4px 7px;
-  background: #bbc0a9;
-  color: #304128;
-  border-radius: 4px;
-}
-.virtual-crystal span {
-  font-size: 12px;
-  letter-spacing: 1px;
-}
-.virtual-crystal strong {
-  font-family: monospace;
-  font-size: 13px;
-}
-.virtual-led-bank {
-  position: absolute;
-  left: 57%;
-  right: 14px;
-  top: 93px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px 5px;
-}
-.virtual-led-slot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  min-width: 0;
-}
-.virtual-led {
-  height: 14px;
-  width: 14px;
-  border-radius: 50%;
-  background: #1d2a18;
-  border: 2px solid #798a67;
-  box-shadow: inset 1px 1px 4px #0008;
-  transition:
-    background 80ms,
-    box-shadow 80ms;
-}
-.virtual-led.lit {
-  background: #d4ff77;
-  border-color: #e2ffc5;
-  box-shadow:
-    0 0 7px #c8ff77,
-    0 0 20px #c8ff7766,
-    inset 1px 1px 2px #fff;
-}
-.virtual-led.unknown {
-  background: #d4a850;
-  border-color: #f1d38d;
-  box-shadow: 0 0 8px #e8bd5040;
-}
-.virtual-led-slot b {
-  font-size: 12px;
-  font-weight: 500;
-}
-.virtual-led-slot small {
-  font-size: 12px;
-  max-width: 70px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: #c3d6b9;
-}
-.virtual-silk {
-  position: absolute;
-  bottom: 39px;
-  left: 62px;
-  right: 20px;
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 1.2px;
-}
-.virtual-silk span {
-  float: right;
-  font-size: 12px;
-  font-weight: 400;
-}
 .virtual-playback {
   margin: 0 12px;
   display: grid;
@@ -645,9 +421,6 @@
   .virtual-explanation {
     grid-column: 1 / -1;
   }
-  .virtual-pcb {
-    width: min(94%, 600px);
-  }
 }
 @container yosis-virtual (max-width: 480px) {
   .virtual-heading {
@@ -661,49 +434,6 @@
   }
   .virtual-controls {
     display: flex;
-  }
-  .virtual-chip {
-    width: 82px;
-    height: 88px;
-    left: 23%;
-    top: 65px;
-  }
-  .virtual-chip strong {
-    font-size: 13px;
-  }
-  .virtual-chip span {
-    font-size: 12px;
-  }
-  .virtual-chip small {
-    max-width: 70px;
-  }
-  .virtual-led-bank {
-    left: 57%;
-    top: 98px;
-    gap: 10px 4px;
-  }
-  .virtual-led-slot small {
-    max-width: 43px;
-  }
-  .virtual-silk {
-    left: 30px;
-    bottom: 37px;
-  }
-  .virtual-silk span {
-    display: none;
-  }
-  .virtual-usb {
-    width: 32px;
-    height: 58px;
-    top: 78px;
-  }
-  .virtual-usb span {
-    width: 20px;
-    height: 35px;
-  }
-  .virtual-crystal {
-    right: 18px;
-    top: 45px;
   }
   .virtual-playback {
     grid-template-columns: repeat(3, 26px) minmax(20px, 1fr) 60px;
@@ -728,4 +458,352 @@
   .virtual-workspace {
     padding: 10px;
   }
+}
+
+/* Board drawing. The PCB keeps the same dark colours in both themes, like a real board. */
+.vb-scroll {
+  overflow-x: auto;
+  padding: 14px 12px 6px;
+}
+.vb-board {
+  --vb-pcb: #17352b;
+  --vb-pcb-edge: #3f7a63;
+  --vb-silk: #eef4ea;
+  --vb-silk-soft: #b9cfc0;
+  position: relative;
+  width: 640px;
+  height: 292px;
+  margin: 0 auto;
+  border-radius: 12px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 31px, #ffffff08 31px 32px),
+    repeating-linear-gradient(0deg, transparent 0 31px, #ffffff08 31px 32px), var(--vb-pcb);
+  border: 1px solid var(--vb-pcb-edge);
+  color: var(--vb-silk);
+  box-shadow: 0 8px 20px #0003;
+}
+.vb-board small,
+.vb-board b,
+.vb-board strong,
+.vb-board span {
+  font-size: 12px;
+  line-height: 1.25;
+}
+.vb-header {
+  position: absolute;
+  left: 70px;
+  right: 22px;
+  height: 14px;
+  display: flex;
+  justify-content: space-between;
+}
+.vb-header i {
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  background: #d8c27a;
+  box-shadow: inset 0 0 0 3px #2b2415;
+}
+.vb-header-top {
+  top: 10px;
+}
+.vb-header-bottom {
+  bottom: 10px;
+}
+.vb-usb {
+  position: absolute;
+  left: -8px;
+  top: 108px;
+  width: 58px;
+  height: 66px;
+  border-radius: 6px;
+  background: linear-gradient(#cfd3d6, #8f969b);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 5px #0005;
+}
+.vb-usb span {
+  width: 34px;
+  height: 14px;
+  border-radius: 7px;
+  background: #1b1f22;
+  box-shadow: inset 0 0 0 3px #4a5258;
+}
+.vb-usb b {
+  position: absolute;
+  bottom: -20px;
+  left: 14px;
+  color: var(--vb-silk-soft);
+  font-weight: 500;
+}
+.vb-bl616 {
+  position: absolute;
+  left: 66px;
+  top: 118px;
+  width: 54px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  background: #101614;
+  border: 1px solid #3d4a44;
+  color: var(--vb-silk-soft);
+  font-size: 12px;
+}
+.vb-fpga {
+  position: absolute;
+  left: 142px;
+  top: 74px;
+  width: 112px;
+  height: 112px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: 6px;
+  background: #0d1210;
+  border: 3px solid #5e6a64;
+  text-align: center;
+}
+.vb-fpga i {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #5e6a64;
+}
+.vb-fpga strong {
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+.vb-fpga span,
+.vb-fpga small {
+  color: var(--vb-silk-soft);
+}
+.vb-fpga small {
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: Consolas, monospace;
+}
+.vb-crystal {
+  position: absolute;
+  left: 142px;
+  top: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px;
+  border-radius: 5px;
+  background: #cfd3d6;
+  color: #1c2420;
+}
+.vb-crystal span,
+.vb-crystal b {
+  color: #1c2420;
+  font-weight: 600;
+}
+.vb-crystal b {
+  min-width: 18px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #aab1b5;
+  text-align: center;
+  font-family: Consolas, monospace;
+}
+.vb-crystal b.high {
+  background: #2a2a1a;
+  color: #ffe27a;
+}
+.vb-leds {
+  position: absolute;
+  left: 272px;
+  top: 100px;
+  display: flex;
+  gap: 2px;
+}
+.vb-led-slot,
+.vb-button-slot {
+  width: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.vb-led-slot b {
+  font-weight: 600;
+  color: var(--vb-silk);
+}
+.vb-led-slot small,
+.vb-button-slot small {
+  max-width: 58px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--vb-silk-soft);
+  font-family: Consolas, monospace;
+}
+.vb-led-slot.free small {
+  font-family: inherit;
+  opacity: 0.8;
+}
+.vb-led {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: Consolas, monospace;
+}
+.vb-led.on {
+  background: radial-gradient(circle at 35% 30%, #fff9d0, #ffd23f 55%, #d99a00);
+  border: 2px solid #fff3b0;
+  box-shadow:
+    0 0 0 3px #ffd23f55,
+    0 0 16px 4px #ffd23fa6;
+}
+.vb-led.off {
+  background: #2a1416;
+  border: 2px solid #7a5558;
+}
+.vb-led.idle {
+  background: transparent;
+  border: 2px dotted #7b8f84;
+}
+.vb-led.unknown {
+  background: repeating-linear-gradient(45deg, #3a2f12 0 4px, #5a4515 4px 8px);
+  border: 2px dashed #f0b84a;
+  color: #ffdf9a;
+}
+.vb-silk {
+  position: absolute;
+  left: 142px;
+  top: 202px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.vb-silk strong {
+  font-size: 14px;
+}
+.vb-silk span {
+  color: var(--vb-silk-soft);
+}
+.vb-buttons {
+  position: absolute;
+  right: 28px;
+  bottom: 28px;
+  display: flex;
+  gap: 18px;
+}
+.vb-button-slot {
+  width: 72px;
+}
+.vb-button-slot small {
+  max-width: 72px;
+}
+.vb-button {
+  width: 64px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 8px;
+  background: linear-gradient(#e7eae8, #b9c0bd);
+  color: #17201b;
+  font-weight: 700;
+  border: 2px solid #55605b;
+  box-shadow:
+    0 4px 0 #3e4743,
+    0 5px 6px #0006;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+.vb-button span,
+.vb-button b {
+  color: inherit;
+  font-size: 13px;
+}
+.vb-button b {
+  min-width: 18px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: #17201b;
+  color: #eef4ea;
+  font-family: Consolas, monospace;
+}
+.vb-button.pressed {
+  transform: translateY(4px);
+  background: linear-gradient(#fff0a8, #ffd23f);
+  border-color: #fff3b0;
+  box-shadow:
+    0 0 0 3px #ffd23f66,
+    0 1px 0 #3e4743;
+}
+.vb-button.pressed b {
+  background: #5a3c00;
+  color: #fff3b0;
+}
+.vb-button.unwired {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.vb-button:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+.vb-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+.vb-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.vb-legend .vb-led {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+  box-shadow: none;
+}
+.vb-legend .vb-led.on {
+  box-shadow: 0 0 6px #ffd23f99;
+}
+.vb-press-mode {
+  margin-left: auto;
+}
+.vb-press-mode button {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 12px;
+}
+.vb-press-mode button.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.vb-wiring-note {
+  margin: 0;
+  padding: 0 14px 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
 }

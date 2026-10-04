@@ -1,5 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
+import { isIP } from 'node:net';
 import path from 'node:path';
 import type { Request, Response } from 'express';
 import { RequestError } from './validation';
@@ -9,6 +10,8 @@ export interface ApiOptions {
   users?: Record<string, string>;
   maxUserJobs?: number;
   maxJobsPerHour?: number;
+  /** Сколько reverse proxy стоит перед сервером; без значения заголовок X-Forwarded-For игнорируется. */
+  trustedProxyHops?: number;
 }
 const identity = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 const jobId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -19,7 +22,56 @@ export function environmentApiOptions(): ApiOptions {
   const users = process.env.YOSIS_USERS_JSON
     ? (JSON.parse(process.env.YOSIS_USERS_JSON) as Record<string, string>)
     : undefined;
-  return { publicOrigin, users };
+  return {
+    publicOrigin,
+    users,
+    maxUserJobs: positiveIntegerEnv('YOSIS_MAX_USER_JOBS'),
+    maxJobsPerHour: positiveIntegerEnv('YOSIS_MAX_JOBS_PER_HOUR'),
+    trustedProxyHops: positiveIntegerEnv('YOSIS_TRUSTED_PROXY_HOPS'),
+  };
+}
+
+/**
+ * Адрес клиента для ограничения попыток входа. Заголовок X-Forwarded-For доверяется только при
+ * явной настройке числа доверенных proxy: берётся запись, добавленная ближайшим к клиенту доверенным
+ * proxy (отсчёт справа), левые записи может подделать сам клиент. При любом сомнении используется
+ * адрес сокета.
+ */
+export function clientAddress(
+  request: Pick<Request, 'socket' | 'get'>,
+  trustedProxyHops?: number,
+): string {
+  const socket = request.socket.remoteAddress ?? 'unknown';
+  if (!trustedProxyHops) return socket;
+  const entries = (request.get('x-forwarded-for') ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const entry = entries[entries.length - trustedProxyHops];
+  return entry && isIP(entry) ? entry : socket;
+}
+
+function positiveIntegerEnv(name: string): number | undefined {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return undefined;
+  const value = Number(raw);
+  if (!/^\d+$/.test(raw.trim()) || !Number.isSafeInteger(value) || value < 1)
+    throw new Error(`${name} должен быть положительным целым числом.`);
+  return value;
+}
+
+export const DEFAULT_ACTIVE_JOB_LIMIT = 4;
+export const DEFAULT_HOURLY_JOB_LIMIT = 30;
+/** Локальный режим: один пользователь, часовой квоты нет, а число одновременных задач лишь ограничено сверху. */
+export const LOCAL_ACTIVE_JOB_LIMIT = 16;
+
+export function createJobLimits(options: ApiOptions, local: boolean) {
+  return local
+    ? new UserJobLimits(LOCAL_ACTIVE_JOB_LIMIT, Number.POSITIVE_INFINITY)
+    : new UserJobLimits(
+        options.maxUserJobs ?? DEFAULT_ACTIVE_JOB_LIMIT,
+        options.maxJobsPerHour ?? DEFAULT_HOURLY_JOB_LIMIT,
+      );
 }
 
 export class ApiSecurity {
@@ -27,7 +79,9 @@ export class ApiSecurity {
   private tokens: Array<{ user: string; hash: Buffer }> = [];
   private sessions = new Map<string, { user: string; expires: number }>();
   private attempts = new Map<string, { count: number; until: number }>();
+  private trustedProxyHops?: number;
   constructor(options: ApiOptions) {
+    this.trustedProxyHops = options.trustedProxyHops;
     if (options.publicOrigin) {
       this.publicOrigin = new URL(options.publicOrigin);
       if (
@@ -86,7 +140,7 @@ export class ApiSecurity {
   }
   login(request: Request, response: Response) {
     if (!this.publicOrigin) return response.json({ user: 'local', local: true });
-    const address = request.socket.remoteAddress ?? 'unknown';
+    const address = clientAddress(request, this.trustedProxyHops);
     let attempts = this.attempts.get(address);
     if (attempts && attempts.until < Date.now()) {
       this.attempts.delete(address);

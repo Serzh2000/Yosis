@@ -7,7 +7,7 @@ import { PhysicalManager } from './physical';
 import { RequestError, validateProject, validateSimulationConfig } from './validation';
 import {
   ApiSecurity,
-  UserJobLimits,
+  createJobLimits,
   claimJob,
   requireJobOwner,
   environmentApiOptions,
@@ -30,11 +30,11 @@ export function createApp(
 ) {
   const app = express();
   const security = new ApiSecurity(options);
-  const limits = new UserJobLimits(options.maxUserJobs ?? 4, options.maxJobsPerHour ?? 30);
+  const local = !security.publicOrigin;
+  const limits = createJobLimits(options, local);
   const userStore = new UserStore(path.join(path.dirname(manager.root), '.users'));
   const syntax = new SyntaxManager();
   app.locals.close = () => syntax.close();
-  const local = !security.publicOrigin;
   app.disable('x-powered-by');
   app.use((request, response, next) => {
     const host = request.get('host');
@@ -45,9 +45,17 @@ export function createApp(
       response.status(403).json({ error: 'Недопустимый адрес сервера.' });
       return;
     }
+    // Переход localhost → 127.0.0.1 (единый локальный адрес) приходит как cross-site навигация
+    // за страницей документа; API и вложенные кадры по-прежнему отклоняются.
+    const documentNavigation =
+      local &&
+      request.method === 'GET' &&
+      !request.path.startsWith('/api/') &&
+      request.get('sec-fetch-mode') === 'navigate' &&
+      request.get('sec-fetch-dest') === 'document';
     if (
       (local ? !LOOPBACK_HOSTS.has(hostname) : host !== security.publicOrigin!.host) ||
-      request.get('sec-fetch-site') === 'cross-site'
+      (request.get('sec-fetch-site') === 'cross-site' && !documentNavigation)
     ) {
       response.status(403).json({ error: 'Запрос должен поступать через разрешённый адрес IDE.' });
       return;
@@ -251,7 +259,9 @@ export function createApp(
   if (production) {
     app.use(express.static(path.join(workspace, 'dist')));
     app.get('/{*path}', (_request, response) =>
-      response.sendFile(path.join(workspace, 'dist', 'index.html')),
+      // `root` keeps the dotfile check relative to dist: an install path such as
+      // C:\Users\name\.apps\yosis must not turn every deep link into 404.
+      response.sendFile('index.html', { root: path.join(workspace, 'dist') }),
     );
   }
   const errors: ErrorRequestHandler = (error, _request, response, _next) => {

@@ -3,7 +3,6 @@ import type { FormEvent } from 'react';
 import type * as monaco from 'monaco-editor/editor/editor.api.js';
 import {
   ArrowRight,
-  Boxes,
   Braces,
   Circle,
   Cpu,
@@ -60,7 +59,8 @@ const CircuitEditor = lazy(() =>
 );
 import { HelpTrigger } from './components/HelpCard';
 import { getHierarchy, getResources } from './lib/netlist';
-import { HierarchyBranch } from './components/HierarchyBranch';
+import { ModuleHierarchyMenu } from './components/ModuleHierarchyMenu';
+import './components/studio-header.css';
 import { StudioHeader } from './components/StudioHeader';
 import { BuildLogs } from './components/BuildLogs';
 import { StudioNavigation, type WorkTab } from './components/StudioNavigation';
@@ -83,9 +83,16 @@ import {
   cloneProject,
   examples,
   identifyProject,
+  loadExample,
   loadProject,
   validateProject,
 } from './lib/projects';
+import { planSchematicAddition } from './lib/circuit-add';
+import {
+  dismissStaleNotice,
+  findStaleExampleCopy,
+  isStaleNoticeDismissed,
+} from './lib/example-origin';
 
 type View = 'rtl' | 'technology';
 type FileDialog = { kind: 'add' | 'rename'; value: string; target?: string } | null;
@@ -139,6 +146,7 @@ export default function App() {
   const [lessonId, setLessonId] = useState(initialRoute.lessonId);
   const [visited, setVisited] = useState<Set<WorkTab>>(() => new Set([initialRoute.tab]));
   const [info, setInfo] = useState('');
+  const [staleNoticeVersion, setStaleNoticeVersion] = useState(0);
   const [learningGuide, setLearningGuide] = useState<LearningGuide | null>(null);
   const [missionOpen, setMissionOpen] = useState(false);
   const [missionPreview, setMissionPreview] = useState<{
@@ -169,6 +177,7 @@ export default function App() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
   const [projectHubOpen, setProjectHubOpen] = useState(false);
+  const [projectHubStart, setProjectHubStart] = useState<string | undefined>();
   const [plannerSignal, setPlannerSignal] = useState('');
   const [fileManagerOpen, setFileManagerOpen] = useState(
     () => !window.matchMedia('(max-width: 900px)').matches,
@@ -220,6 +229,17 @@ export default function App() {
     () => [project.name, ...savedProjects.map((item) => item.name)],
     [project.name, savedProjects],
   );
+  const staleCandidate = useMemo(
+    () => (ready ? findStaleExampleCopy(project, examples) : null),
+    [project, ready],
+  );
+  // staleNoticeVersion заставляет перечитать признак скрытия после нажатия «Скрыть».
+  const staleExample =
+    staleNoticeVersion >= 0 &&
+    staleCandidate &&
+    !isStaleNoticeDismissed(project.id, staleCandidate.currentHash)
+      ? staleCandidate
+      : null;
   const view: View = workTab === 'technology' ? 'technology' : 'rtl';
   const netlist = view === 'rtl' ? build?.rtl : build?.technology;
   const moduleName = netlist?.modules[selectedModule]
@@ -246,7 +266,7 @@ export default function App() {
     project.files.find((file) => file.name === activeFile && file.name.endsWith('.ysch')) ??
     project.files.find((file) => file.name.endsWith('.ysch'));
   const hdlSource = project.files.find((file) => /\.(v|sv|vh|svh)$/.test(file.name));
-  const usesProjectFiles = true;
+  const usesProjectFiles = workTab === 'code' || workTab === 'constraints';
 
   useEffect(() => {
     if (loginRequired) setLoginOpen(true);
@@ -475,6 +495,26 @@ export default function App() {
     setFileError('');
   };
 
+  useEffect(() => {
+    if (!projectHubOpen) setProjectHubStart(undefined);
+  }, [projectHubOpen]);
+  const schematicPlan = useMemo(() => planSchematicAddition(project), [project]);
+  const addSchematic = () => {
+    const plan = planSchematicAddition(project);
+    if (!plan.ok) return;
+    const next = cloneProject(project);
+    next.files.push({ name: plan.fileName, content: JSON.stringify(starterCircuit(), null, 2) });
+    try {
+      validateProject(next);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Не удалось добавить схему.');
+      return;
+    }
+    setProject(next);
+    setActiveFile(plan.fileName);
+    setWorkTab('design');
+  };
+
   const deleteFile = (target = activeSource) => {
     if (
       project.files.length <= 1 ||
@@ -643,6 +683,7 @@ export default function App() {
         tab={workTab}
         onChange={setWorkTab}
         fileManagerOpen={fileManagerOpen}
+        filesAvailable={usesProjectFiles}
         onToggleFiles={() => setFileManagerOpen(!fileManagerOpen)}
         constraintsCount={constraintsFiles.length}
         synthesisStatus={
@@ -710,6 +751,32 @@ export default function App() {
           </button>
         </div>
       )}
+      {staleExample && (
+        <div className="notice" role="status" data-testid="stale-example-notice">
+          <span>
+            {staleExample.certainty === 'guess' ? 'Похоже, это копия' : 'Это копия'} примера «
+            {staleExample.example.title}», а в библиотеке пример с тех пор исправлен. Ваш проект не
+            изменён.
+          </span>
+          <button
+            onClick={() => {
+              void openProject(loadExample(staleExample.example, existingNames));
+            }}
+          >
+            Открыть свежую копию
+          </button>
+          <button
+            className="notice-close"
+            aria-label="Скрыть напоминание об обновлении примера"
+            onClick={() => {
+              dismissStaleNotice(project.id, staleExample.currentHash);
+              setStaleNoticeVersion((value) => value + 1);
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
       {deletedFile && (
         <div className="notice undo-notice">
           <span>Файл {deletedFile.name} удалён.</span>
@@ -770,31 +837,7 @@ export default function App() {
               onDelete={deleteFile}
               onTopChange={(top) => setProject((previous) => ({ ...previous, top }))}
               onClose={() => setFileManagerOpen(false)}
-            >
-              {(workTab === 'rtl' || workTab === 'technology') && (
-                <div className="project-hierarchy">
-                  <div className="panel-label">
-                    <Boxes size={15} />
-                    <span>ИЕРАРХИЯ МОДУЛЕЙ</span>
-                  </div>
-                  {hierarchy ? (
-                    <HierarchyBranch
-                      node={hierarchy}
-                      selected={moduleName}
-                      onSelect={(name) => {
-                        setSelectedModule(name);
-                        setSelectedCell(null);
-                      }}
-                    />
-                  ) : (
-                    <div className="explorer-placeholder">
-                      <GitBranch size={25} />
-                      <p>Модули появятся после синтеза</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </ProjectFiles>
+            />
           </>
         )}
         <main className="main-workspace">
@@ -894,11 +937,35 @@ export default function App() {
                       }}
                     />
                   ) : (
-                    <div className="empty-workspace">
-                      <h2>Соберите устройство из элементов</h2>
-                      <p>Выберите «Из логических элементов» в мастере создания проекта.</p>
-                      <button className="button primary" onClick={() => setProjectHubOpen(true)}>
-                        Выбрать способ создания
+                    <div className="empty-workspace" data-testid="no-schematic">
+                      <h2>В этом проекте нет схемы</h2>
+                      {schematicPlan.ok ? (
+                        <>
+                          <p>
+                            Проект описан на Verilog. Можно добавить в него схему из элементов: файл{' '}
+                            {schematicPlan.fileName} станет модулем «{project.top}».
+                          </p>
+                          <button className="button primary" onClick={addSchematic}>
+                            Добавить схему в этот проект
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <p>{schematicPlan.reason}</p>
+                          <p>
+                            Безопасный выбор — новый проект из логических элементов: текущий проект
+                            останется в библиотеке без изменений.
+                          </p>
+                        </>
+                      )}
+                      <button
+                        className={schematicPlan.ok ? 'button subtle' : 'button primary'}
+                        onClick={() => {
+                          setProjectHubStart('schematic');
+                          setProjectHubOpen(true);
+                        }}
+                      >
+                        Новый проект из элементов
                       </button>
                     </div>
                   )}
@@ -942,6 +1009,14 @@ export default function App() {
                 <div className="pane-title">
                   <GitBranch size={16} />
                   <span>{view === 'rtl' ? 'RTL-схема' : 'Примитивы Gowin'}</span>
+                  <ModuleHierarchyMenu
+                    hierarchy={hierarchy}
+                    selected={moduleName}
+                    onSelect={(name) => {
+                      setSelectedModule(name);
+                      setSelectedCell(null);
+                    }}
+                  />
                   <span className="pane-meta">{moduleName || project.top}</span>
                 </div>
                 {stale && (
@@ -1333,6 +1408,7 @@ export default function App() {
             projects={savedProjects}
             build={build}
             buildFresh={!stale}
+            initialStart={projectHubStart}
             onClose={() => setProjectHubOpen(false)}
             onCreate={submitNewProject}
             onOpen={async (id) => {

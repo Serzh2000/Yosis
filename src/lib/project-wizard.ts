@@ -2,6 +2,7 @@ import { reservedWords } from '../../shared/verilog-identifiers';
 import type { Project } from '../../shared/types';
 import { examples } from './examples';
 import { cloneProject, validateProject } from './projects';
+import { markExampleOrigin } from './example-origin';
 import { starterCircuit } from '../../shared/schematic';
 
 export interface WizardSettings {
@@ -102,7 +103,7 @@ export const wizardStartingPoints = [
 ];
 
 /** Keep source offsets so that only a real declaration, never an explanation, is renamed. */
-function declarationLocations(source: string): Array<{ name: string; start: number }> {
+export function moduleDeclarations(source: string): Array<{ name: string; start: number }> {
   const masked = source.replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*|"(?:\\.|[^"\\])*"/g, (token) =>
     token.replace(/[^\r\n]/g, ' '),
   );
@@ -136,7 +137,7 @@ export function validateWizardFields(
     start.project.files.some(
       (file) =>
         /\.(?:v|sv)$/.test(file.name) &&
-        declarationLocations(file.content).some((item) => item.name === top),
+        moduleDeclarations(file.content).some((item) => item.name === top),
     )
   ) {
     errors.top = `Модуль «${top}» уже есть внутри примера. Выберите другое имя верхнего модуля.`;
@@ -170,7 +171,7 @@ export function createWizardProject(
   if (top !== project.top && !project.files.some((file) => file.name.endsWith('.ysch'))) {
     const declarations = project.files.flatMap((file, fileIndex) =>
       /\.(?:v|sv)$/.test(file.name)
-        ? declarationLocations(file.content)
+        ? moduleDeclarations(file.content)
             .filter((item) => item.name === project.top)
             .map((item) => ({ ...item, fileIndex }))
         : [],
@@ -183,5 +184,6 @@ export function createWizardProject(
   }
   project.name = settings.name.trim();
   project.top = top;
-  return validateProject(project);
+  const example = examples.find((item) => item.id === settings.start);
+  return validateProject(example ? markExampleOrigin(project, example) : project);
 }

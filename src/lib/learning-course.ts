@@ -1,5 +1,6 @@
 import type { Project, SimulationConfig } from '../../shared/types';
 import { lessons, type Lesson, type LessonCase, type LessonVerdict } from './lessons';
+import { beginnerLessons, beginnerLevels } from './beginner-course';
 
 export interface CourseLevel {
   id: string;
@@ -54,7 +55,7 @@ export interface CourseAnswerResult {
   feedback: string;
 }
 
-export const courseLevels: CourseLevel[] = [
+const coreLevels: CourseLevel[] = [
   {
     id: 'orientation',
     title: '1. Осмотр мастерской',
@@ -76,6 +77,8 @@ export const courseLevels: CourseLevel[] = [
     description: 'Автомат состояний, физические выводы, активные уровни и частота.',
   },
 ];
+/** The beginner strand (no-code intro and Verilog from scratch) comes before the labs. */
+export const courseLevels: CourseLevel[] = [...beginnerLevels, ...coreLevels];
 export const courseRoadmap = [
   {
     title: 'Свои testbench',
@@ -496,7 +499,7 @@ function legacy(id: string): Lesson {
   return { ...found, project: exerciseProject(`learn-${id}`, found.project.files[0].content) };
 }
 
-export const guidedLessons: GuidedLesson[] = [
+const coreLessons: GuidedLesson[] = [
   {
     id: 'welcome',
     title: 'Ты в мастерской цифровых схем',
@@ -967,6 +970,7 @@ export const guidedLessons: GuidedLesson[] = [
     ],
   },
 ];
+export const guidedLessons: GuidedLesson[] = [...beginnerLessons, ...coreLessons];
 
 // Board missions build on the logic, register and FSM laboratories above.
 guidedLessons.push(

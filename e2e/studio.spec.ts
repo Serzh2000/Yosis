@@ -103,10 +103,14 @@ for (const width of [1024, 1366]) {
   test(`navigation and dialogs stay usable at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 768 });
     await page.goto('/?tab=lessons');
-    const files = page.getByRole('button', { name: 'Файлы проекта', exact: true });
-    const before = await files.boundingBox();
+    // The file panel is hidden on most tabs, but the tab bar must not shift when switching.
+    const firstTab = page.getByRole('tab', { name: /^Код/ });
+    const before = await firstTab.boundingBox();
     await page.getByRole('tab', { name: /^Подключение/ }).click();
-    expect((await files.boundingBox())?.x).toBe(before?.x);
+    expect((await firstTab.boundingBox())?.x).toBe(before?.x);
+    await page.getByRole('tab', { name: /^Код/ }).click();
+    expect((await firstTab.boundingBox())?.x).toBe(before?.x);
+    await expect(page.getByRole('button', { name: 'Файлы проекта', exact: true })).toBeVisible();
     await page.getByRole('tab', { name: /^Код/ }).focus();
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('tab', { name: /^Конструктор/ })).toHaveAttribute(
@@ -156,35 +160,30 @@ test('graphical source is editable, reloadable and follows the real synthesis, s
     'aria-selected',
     'true',
   );
-  await page.getByRole('button', { name: 'AND', exact: true }).click();
-  await page.getByLabel('Имя элемента').fill('combine');
-  await page.getByRole('button', { name: 'Применить свойства', exact: true }).click();
-  await page.getByRole('button', { name: /^Удалить связь w2:/ }).click();
-  await page.getByRole('button', { name: /^button.Y: выход/ }).click();
-  await page.getByRole('button', { name: 'combine.A: вход, 1 бит', exact: true }).click();
-  await page.getByRole('button', { name: /^button.Y: выход/ }).click();
-  await page.getByRole('button', { name: 'combine.B: вход, 1 бит', exact: true }).click();
-  await page.getByRole('button', { name: /^combine.Y: выход/ }).click();
-  await page.getByRole('button', { name: 'led_n.A: вход, 1 бит', exact: true }).click();
-  await expect(page.getByText('Схема готова к сборке', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Отменить изменение схемы' }).click();
-  await expect(page.getByText('led_n.A: вход не соединён.', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Повторить изменение схемы' }).click();
-  await page.getByRole('button', { name: 'Созданный Verilog', exact: true }).click();
-  await expect(page.getByLabel('Verilog из схемы')).toContainText('button & button');
-  await page.getByRole('button', { name: 'Вернуться к схеме', exact: true }).click();
-  const zoom = page.getByRole('group', { name: 'Масштаб: Конструктор логической схемы' });
-  const initialScale = Number(
-    (await zoom.getByLabel('Текущий масштаб').innerText()).replace('%', ''),
-  );
-  await zoom.getByRole('button', { name: 'Увеличить масштаб' }).click();
-  expect(
-    Number((await zoom.getByLabel('Текущий масштаб').innerText()).replace('%', '')),
-  ).toBeGreaterThan(initialScale);
-  await zoom.getByRole('button', { name: 'Показать целиком' }).click();
+  // Стартовая схема: button → invert → led_n. Новый элемент без связей — это проблема на схеме.
+  const editor = page.getByRole('tabpanel');
+  await expect(editor.getByText(/3 элементов · 2 проводов/)).toBeVisible();
+  await expect(editor.getByText('Схема готова к сборке', { exact: true })).toBeVisible();
+  await editor.getByRole('button', { name: 'И (AND)', exact: true }).click();
+  await expect(editor.getByText(/4 элементов · 2 проводов/)).toBeVisible();
+  await expect(editor.getByText('Схема готова к сборке', { exact: true })).toHaveCount(0);
+  await editor.getByRole('button', { name: 'Отменить (Ctrl+Z)' }).click();
+  await expect(editor.getByText(/3 элементов · 2 проводов/)).toBeVisible();
+  await expect(editor.getByText('Схема готова к сборке', { exact: true })).toBeVisible();
+  await editor.getByRole('button', { name: 'Повторить (Ctrl+Y)' }).click();
+  await expect(editor.getByText(/4 элементов · 2 проводов/)).toBeVisible();
+  await editor.getByRole('button', { name: 'Отменить (Ctrl+Z)' }).click();
+  await editor.getByRole('button', { name: 'Verilog', exact: true }).click();
+  await expect(page.getByLabel('Verilog из схемы')).toContainText('module top');
+  await editor.getByRole('button', { name: 'Вернуться к схеме', exact: true }).click();
+  const scale = editor.getByLabel('Текущий масштаб');
+  const initialScale = Number((await scale.innerText()).replace('%', ''));
+  await editor.getByRole('button', { name: 'Увеличить масштаб (+)' }).click();
+  expect(Number((await scale.innerText()).replace('%', ''))).toBeGreaterThan(initialScale);
+  await editor.getByRole('button', { name: 'Показать всю схему (F)' }).click();
   await expect(page.getByText('Изменения сохранены в браузере', { exact: true })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('button', { name: /^Элемент combine:/ })).toBeVisible();
+  await expect(page.getByLabel(/^Элемент invert:/)).toBeVisible();
   await page.getByRole('button', { name: /^Синтезировать/ }).click();
   await expect(page.getByRole('tab', { name: /^RTL · Готово/ })).toBeVisible({ timeout: 90000 });
   await page.getByRole('tab', { name: /^Диаграммы/ }).click();
@@ -201,5 +200,30 @@ test('graphical source is editable, reloadable and follows the real synthesis, s
   await expect(
     page.getByRole('img', { name: 'Тепловая карта размещённых элементов FPGA' }),
   ).toBeVisible({ timeout: 120000 });
+  expect(errors).toEqual([]);
+});
+
+test('constructor tab of a Verilog project explains the conflict and opens the element wizard', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/?tab=design');
+  const empty = page.getByTestId('no-schematic');
+  await expect(empty.getByRole('heading', { name: 'В этом проекте нет схемы' })).toBeVisible();
+  await expect(empty).toContainText('уже есть файл top.v');
+  await expect(empty.getByRole('button', { name: 'Добавить схему в этот проект' })).toHaveCount(0);
+  await empty.getByRole('button', { name: 'Новый проект из элементов' }).click();
+  const wizard = page.getByRole('dialog', { name: 'Проекты' });
+  await expect(wizard.getByLabel('Название проекта')).toBeVisible();
+  await wizard.getByLabel('Название проекта').fill(`from-elements-${Date.now()}`);
+  await wizard.getByRole('button', { name: 'Далее', exact: true }).click();
+  await wizard.getByRole('button', { name: 'Создать проект', exact: true }).click();
+  await expect(page.getByRole('tab', { name: /^Конструктор/ })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(page.getByTestId('no-schematic')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'И (AND)', exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });

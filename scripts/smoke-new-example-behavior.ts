@@ -8,7 +8,8 @@ import { valueAt } from '../src/lib/waveform';
 import type { SimulationConfig, SimulationResult } from '../shared/types';
 
 // Verify the example contracts through the app's real Yosys → Icarus → VCD
-// pipeline. No sources or hardware parameters are changed for these checks.
+// pipeline. Hardware parameters stay at their board values except the step divider of the
+// counters (STEP_TICKS), which is set to 1 as each example's comments describe for short simulations.
 const origin = process.env.YOSIS_API ?? 'http://127.0.0.1:3001';
 const selectedIds = process.argv.find(argument => argument.startsWith('--only='))?.slice(7).split(',');
 const active = new Set<string>();
@@ -23,12 +24,18 @@ async function request<T>(route: string, init?: RequestInit): Promise<T> {
   return result as T;
 }
 
-async function simulate(id: string, config: SimulationConfig) {
+async function simulate(id: string, config: SimulationConfig, parameters: Record<string, number> = {}) {
   const example = examples.find(item => item.id === id);
   assert.ok(example, `Missing example ${id}`);
+  const project = structuredClone(example.project);
+  for (const [name, value] of Object.entries(parameters)) {
+    const replacement = new RegExp(`(parameter integer ${name} = )[\\d_]+`);
+    assert.match(project.files[0].content, replacement, `${id}: parameter ${name} is missing`);
+    project.files[0].content = project.files[0].content.replace(replacement, (_match, prefix: string) => `${prefix}${value}`);
+  }
   let result = await request<SimulationResult>('/api/simulations', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ project: example.project, config }),
+    body: JSON.stringify({ project, config }),
   });
   active.add(result.id);
   const deadline = Date.now() + 90_000;
@@ -154,7 +161,7 @@ jobs.updown = async () => {
   const cycles = 18;
   const { trace, simulationId } = await simulate('updown', sequential(cycles, { button_direction: '0' }, [
     { cycle: 4, inputs: { button_direction: '1' } }, { cycle: 10, inputs: { button_direction: '0' } },
-  ]));
+  ]), { STEP_TICKS: 1 });
   const samples = clockSamples(trace, 'led_n', cycles).map(value => value ^ 63);
   assert.deepEqual(samples, [0, 0, 1, 2, 3, 4, 3, 2, 1, 0, 63, 62, 63, 0, 1, 2, 3, 4],
     'updown: delayed direction changes and both 0→63 / 63→0 wraps');
@@ -165,7 +172,7 @@ jobs.saturating = async () => {
   const cycles = 78;
   const { trace, simulationId } = await simulate('saturating', sequential(cycles, { pause: '0' }, [
     { cycle: 10, inputs: { pause: '1' } }, { cycle: 13, inputs: { pause: '0' } },
-  ]));
+  ]), { STEP_TICKS: 1 });
   const samples = clockSamples(trace, 'led_n', cycles).map(value => value ^ 63);
   assert.deepEqual(samples.slice(0, 2), [0, 0], 'saturating: reset clears count');
   assert.deepEqual(samples.slice(9, 14), [8, 8, 8, 8, 9], 'saturating: pause before saturation');
@@ -179,7 +186,7 @@ jobs.gray = async () => {
   const cycles = 72;
   const { trace, simulationId } = await simulate('gray', sequential(cycles, { pause: '0' }, [
     { cycle: 20, inputs: { pause: '1' } }, { cycle: 23, inputs: { pause: '0' } },
-  ]));
+  ]), { STEP_TICKS: 1 });
   const samples = clockSamples(trace, 'led_n', cycles).map(value => value ^ 63);
   const visited = new Set<number>();
   samples.forEach((gray, index) => {
@@ -201,7 +208,7 @@ jobs.johnson = async () => {
   const sequence = [0, 1, 3, 7, 15, 31, 63, 62, 60, 56, 48, 32];
   const { trace, simulationId } = await simulate('johnson', sequential(cycles, { pause: '0' }, [
     { cycle: 14, inputs: { pause: '1' } }, { cycle: 17, inputs: { pause: '0' } },
-  ]));
+  ]), { STEP_TICKS: 1 });
   const samples = clockSamples(trace, 'led_n', cycles).map(value => value ^ 63);
   samples.forEach((state, index) => assert.equal(state, sequence[enabledCount(index, 14, 17, 12)], `johnson: known state at edge ${index}`));
   assert.deepEqual(samples.slice(2, 14), [...sequence.slice(1), 0], 'johnson: full 12-state cycle returns to zero');
