@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, Upload, Download, Play, Square, Layers, Map, ChevronRight } from 'lucide-react';
 import type { Project, YosysNetlist } from '../../shared/types';
-import type { PhysicalResult, PhysicalToolStatus, PlacementTile } from '../../shared/physical';
+import type { PhysicalResult, PhysicalToolStatus } from '../../shared/physical';
 import { parsePlacement } from '../lib/physical';
 import { getResources } from '../lib/netlist';
 import { pollJob } from '../lib/job-client';
 import { getProjectSnapshot } from '../lib/projects';
 import { HelpTrigger } from './HelpCard';
+import { ChipMap } from './ChipMap';
 import './physical.css';
 
 interface Props {
@@ -17,7 +18,6 @@ interface Props {
   onSynthesize?: () => void;
   onResult?: (result: PhysicalResult | null, sourceSnapshot: string) => void;
 }
-type MapMode = 'density' | 'routing' | 'category' | 'hierarchy';
 const COLORS = ['#db9550', '#7fa47d', '#ca7777', '#a58abd', '#bba36d', '#7caaa2', '#b99a8d'];
 const CATEGORIES = ['LUT', 'FF', 'ALU', 'BRAM', 'DSP', 'IO', 'other'] as const;
 const STORAGE_KEY = 'yosis.physical.v1';
@@ -26,16 +26,6 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const result = await response.json();
   if (!response.ok) throw new Error(result.error ?? `HTTP ${response.status}`);
   return result as T;
-}
-function colorFor(label: string): string {
-  let hash = 0;
-  for (const code of label) hash = (hash * 31 + code.charCodeAt(0)) | 0;
-  return COLORS[Math.abs(hash) % COLORS.length];
-}
-function dominant(values: string[]): string {
-  const counts = new globalThis.Map<string, number>();
-  for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1);
-  return [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'other';
 }
 function timingRows(report: unknown): { name: string; achieved: number; requested: number }[] {
   if (!report || typeof report !== 'object') return [];
@@ -67,7 +57,6 @@ export function ChipPanel({
   const [snapshot, setSnapshot] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [mode, setMode] = useState<MapMode>('density');
   const [selected, setSelected] = useState<string | null>(null);
   const [showLogs, setShowLogs] = useState(false);
   const [frequency, setFrequency] = useState(27);
@@ -244,29 +233,9 @@ export function ChipPanel({
     () => (technology ? getResources(technology, project.top) : null),
     [technology, project.top],
   );
-  const maxDensity =
-    map?.tiles.reduce(
-      (maximum, tile) =>
-        Math.max(maximum, mode === 'routing' ? tile.routingPips : tile.cells.length),
-      1,
-    ) ?? 1;
-  const tileSize = 13,
-    mapWidth = map ? (map.maxX + 1) * tileSize : 0,
-    mapHeight = map ? (map.maxY + 1) * tileSize : 0;
   const selectedTile = map?.tiles.find((tile) => `${tile.x},${tile.y}` === selected);
   const timings = timingRows(job?.report);
   const stale = snapshot && snapshot !== getProjectSnapshot(project);
-  function tileColor(tile: PlacementTile): string {
-    if (mode === 'category')
-      return COLORS[
-        CATEGORIES.indexOf(
-          dominant(tile.cells.map((cell) => cell.category)) as (typeof CATEGORIES)[number],
-        )
-      ];
-    if (mode === 'hierarchy') return colorFor(dominant(tile.cells.map((cell) => cell.hierarchy)));
-    const count = mode === 'routing' ? tile.routingPips : tile.cells.length;
-    return `hsl(${75 - 65 * Math.sqrt(count / maxDensity)} 58% ${66 - (25 * count) / maxDensity}%)`;
-  }
   return (
     <section className="physical-workspace chip-workspace">
       <section className="physical-card physical-build-card">
@@ -432,119 +401,21 @@ export function ChipPanel({
           <section className="physical-card chip-map-card">
             <div className="physical-card-title">
               <Map size={18} />
-              <h3>Тепловая карта</h3>
-              <select
-                aria-label="Режим карты кристалла"
-                value={mode}
-                onChange={(event) => setMode(event.target.value as MapMode)}
-              >
-                <option value="density">Плотность ячеек</option>
-                <option value="routing">Плотность трассировки</option>
-                <option value="category">Тип ресурсов</option>
-                <option value="hierarchy">Модули</option>
-              </select>
+              <h3>Карта размещения на кристалле</h3>
             </div>
-            <div className="chip-map-subtitle">
-              <span>
-                {map.family ?? 'Gowin'} · {artifactName}
-              </span>
-              <span>
-                X: 0–{map.maxX} · Y: 0–{map.maxY}
-              </span>
-            </div>
-            <div className="chip-map-viewport">
-              <svg
-                role="img"
-                aria-label="Тепловая карта размещённых элементов FPGA"
-                viewBox={`-16 -16 ${mapWidth + 32} ${mapHeight + 32}`}
-                preserveAspectRatio="xMidYMid meet"
-              >
-                <defs>
-                  <pattern
-                    id="chip-grid"
-                    width={tileSize}
-                    height={tileSize}
-                    patternUnits="userSpaceOnUse"
-                  >
-                    <rect
-                      width={tileSize - 1}
-                      height={tileSize - 1}
-                      rx="1"
-                      fill="var(--chip-empty)"
-                    />
-                  </pattern>
-                </defs>
-                <rect width={mapWidth} height={mapHeight} fill="url(#chip-grid)" />
-                <text className="chip-axis" x={0} y={-5}>
-                  X →
-                </text>
-                <text className="chip-axis" x={-12} y={8}>
-                  Y
-                </text>
-                {map.tiles.map((tile) => {
-                  const count = mode === 'routing' ? tile.routingPips : tile.cells.length;
-                  if (!count && (mode === 'density' || mode === 'category' || mode === 'hierarchy'))
-                    return null;
-                  if (!count && mode === 'routing') return null;
-                  return (
-                    <rect
-                      key={`${tile.x},${tile.y}`}
-                      x={tile.x * tileSize}
-                      y={tile.y * tileSize}
-                      width={tileSize - 1}
-                      height={tileSize - 1}
-                      rx={1}
-                      fill={tileColor(tile)}
-                      stroke={selected === `${tile.x},${tile.y}` ? 'var(--text)' : 'none'}
-                      strokeWidth={2}
-                      tabIndex={0}
-                      role="button"
-                      aria-label={`X${tile.x} Y${tile.y}: ${tile.cells.length} ячеек, ${tile.routingPips} переходов`}
-                      onClick={() => setSelected(`${tile.x},${tile.y}`)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          setSelected(`${tile.x},${tile.y}`);
-                        }
-                      }}
-                    >
-                      <title>{`X${tile.x} Y${tile.y} · ${tile.cells.length} ячеек · ${tile.routingPips} переходов`}</title>
-                    </rect>
-                  );
-                })}
-              </svg>
-            </div>
-            <div className="chip-map-legend">
-              {mode === 'density' || mode === 'routing' ? (
-                <>
-                  <span className="heat-gradient" />
-                  <span>
-                    1 → {maxDensity} {mode === 'routing' ? 'переходов' : 'ячеек'} на тайл
-                  </span>
-                </>
-              ) : mode === 'category' ? (
-                CATEGORIES.map((category, index) => (
-                  <span key={category}>
-                    <i style={{ background: COLORS[index] }} />
-                    {category}
-                  </span>
-                ))
-              ) : (
-                [...new Set(map.cells.map((cell) => cell.hierarchy))]
-                  .slice(0, 10)
-                  .map((hierarchy) => (
-                    <span key={hierarchy}>
-                      <i style={{ background: colorFor(hierarchy) }} />
-                      {hierarchy}
-                    </span>
-                  ))
-              )}
-            </div>
+            <ChipMap
+              map={map}
+              artifactName={artifactName}
+              selected={selected}
+              onSelect={setSelected}
+            />
             <details className="physical-muted chip-map-caption">
               <summary>Как читать карту?</summary>
               <p>
-                Цвет показывает количество элементов или переходов в тайле. Это карта занятости по
-                координатам nextpnr. Температура и процент ёмкости тайла не рассчитываются.{' '}
+                Кристалл разбит на тайлы, у каждого есть координаты X и Y из nextpnr. Цвет тайла
+                показывает, какого ресурса в нём больше всего, а полоска внизу тайла: сколько связей
+                проходит через него. Это карта занятости по координатам. Температура, мощность и
+                процент ёмкости тайла не рассчитываются.{' '}
                 {map.fullChipBounds
                   ? 'Границы 56 × 55 тайлов взяты из базы GW2A-18C Apicula.'
                   : 'Граница показана по максимальным координатам артефакта.'}

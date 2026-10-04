@@ -1,0 +1,231 @@
+.chip-map {
+  --chip-bg: var(--panel);
+  --chip-empty: color-mix(in srgb, var(--muted) 20%, var(--panel));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 270px;
+  gap: 12px;
+}
+.chip-map-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chip-map-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.chip-map-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 12px;
+}
+.chip-map-toolbar button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.chip-map-toolbar button:disabled {
+  opacity: 0.5;
+}
+.chip-zoom-buttons {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.chip-zoom-buttons output {
+  min-width: 84px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+.chip-map-frame {
+  position: relative;
+  height: clamp(320px, 58vh, 640px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--chip-bg);
+}
+.chip-map-frame canvas:first-child {
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+.chip-map-frame canvas:first-child:active {
+  cursor: grabbing;
+}
+.chip-map-frame canvas:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: -2px;
+}
+.chip-tooltip {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 220px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+.chip-tooltip strong {
+  color: var(--text);
+}
+.chip-minimap {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+.chip-minimap canvas {
+  display: block;
+  border-radius: 3px;
+}
+.chip-map-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  font-size: 12px;
+}
+.chip-map-side small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.chip-layers {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.chip-layers legend {
+  padding: 0 4px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+.chip-layers label {
+  display: grid;
+  grid-template-columns: auto 12px minmax(0, 1fr);
+  align-items: start;
+  gap: 7px;
+  padding: 5px 0;
+}
+.chip-layers label i {
+  width: 12px;
+  height: 12px;
+  margin-top: 2px;
+  border-radius: 3px;
+}
+.chip-layers label strong {
+  display: block;
+  color: var(--text);
+}
+.chip-modules ul {
+  list-style: none;
+  margin: 6px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 170px;
+  overflow: auto;
+}
+.chip-modules li button,
+.chip-module-cells button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 12px;
+  text-align: left;
+}
+.chip-modules li button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: Consolas, monospace;
+}
+.chip-modules li button.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.chip-module-cells {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 150px;
+  overflow: auto;
+}
+.chip-module-cells button b {
+  font-weight: 600;
+  color: var(--text);
+}
+.chip-module-cells button span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: Consolas, monospace;
+}
+.chip-gradient {
+  display: block;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, transparent, #c9bd5c);
+  border: 1px solid var(--border);
+}
+.chip-gradient-labels {
+  display: flex;
+  justify-content: space-between;
+}
+@container yosis-chip (max-width: 1180px) {
+  .chip-map {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .chip-map-side {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.physical-workspace.chip-workspace .chip-layout {
+  flex: none;
+}
+.physical-workspace.chip-workspace .chip-map-card {
+  min-height: auto;
+}
+.physical-workspace.chip-workspace > * {
+  flex-shrink: 0;
+}

@@ -1,0 +1,286 @@
+/* Header: one bar for brand, project and actions, one bar for the workflow tabs. */
+.sh-header {
+  --sh-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 20px;
+  background: var(--panel);
+  flex-shrink: 0;
+}
+.sh-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--text);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.sh-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.sh-brand strong {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.sh-brand strong > span {
+  color: var(--accent);
+}
+.sh-brand:focus-visible,
+.sh-btn:focus-visible,
+.sh-tab:focus-visible,
+.sh-files:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+.sh-project {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 280px;
+  height: var(--sh-height);
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 13px;
+}
+.sh-project svg {
+  flex: none;
+  color: var(--muted);
+}
+.sh-project span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-weight: 500;
+}
+.sh-primary {
+  display: flex;
+  align-items: center;
+  margin-right: auto;
+}
+.sh-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.sh-divider {
+  width: 1px;
+  height: 22px;
+  margin: 0 4px;
+  background: var(--border);
+}
+.sh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: var(--sh-height);
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.14s;
+}
+.sh-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.sh-btn.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.sh-btn.primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+.sh-btn.primary kbd {
+  margin-left: 4px;
+  padding: 0 0 0 9px;
+  border: 0;
+  border-left: 1px solid currentColor;
+  background: none;
+  color: inherit;
+  font-size: 12px;
+  opacity: 0.75;
+  font-weight: 400;
+}
+.sh-btn.danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 30%, var(--border));
+}
+.sh-btn.outline {
+  border-color: var(--border);
+  background: var(--panel);
+  color: var(--text);
+}
+.sh-btn.outline:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.sh-btn.quiet {
+  background: transparent;
+  color: var(--text-soft);
+}
+.sh-btn.quiet:hover:not(:disabled) {
+  background: var(--surface);
+  color: var(--text);
+}
+.sh-btn.icon {
+  width: var(--sh-height);
+  padding: 0;
+}
+.sh-sync span {
+  font-weight: 400;
+}
+
+.sh-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px 8px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  min-width: 0;
+}
+.sh-files {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-soft);
+}
+.sh-files.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.sh-files.unavailable {
+  visibility: hidden;
+}
+.sh-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--surface);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.sh-tabs::-webkit-scrollbar {
+  display: none;
+}
+.sh-tab-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.sh-tab-sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 6px;
+  background: var(--border);
+}
+.sh-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 7px;
+  color: var(--text-soft);
+  font-size: 13px;
+  white-space: nowrap;
+  flex: none;
+}
+.sh-tab:hover {
+  background: var(--panel);
+  color: var(--text);
+}
+.sh-tab.active {
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow:
+    0 0 0 1px var(--border),
+    0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.sh-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.sh-tab small {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 12px;
+}
+
+@media (max-width: 1279px) {
+  .sh-tab svg:first-child {
+    display: none;
+  }
+  .sh-tab {
+    padding: 0 10px;
+  }
+}
+@media (max-width: 1179px) {
+  .sh-sync span,
+  .sh-btn.primary kbd {
+    display: none;
+  }
+  .sh-sync {
+    width: var(--sh-height);
+    padding: 0;
+  }
+  .sh-header {
+    padding: 8px 14px;
+    gap: 8px;
+  }
+  .sh-nav {
+    padding: 0 14px 8px;
+  }
+}
+@media (max-width: 899px) {
+  .sh-btn.outline span {
+    display: none;
+  }
+  .sh-btn.outline {
+    width: var(--sh-height);
+    padding: 0;
+  }
+  .sh-project {
+    max-width: 150px;
+  }
+}
