@@ -1,4 +1,4 @@
-import type { Project } from './types';
+import type { Project, ProjectOrigin } from './types';
 import { RequestError } from './errors';
 import { parseCircuit } from './schematic';
 
@@ -69,11 +69,34 @@ export function validateProject(value: unknown): Project {
       !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(project.id))
   )
     throw new RequestError('Некорректный идентификатор проекта.');
+  const origin = validateOrigin(project.origin);
   return {
     ...(project.id ? { id: project.id as string } : {}),
     name: project.name.trim(),
     top: project.top,
     board: 'tangnano20k',
     files,
+    ...(origin ? { origin } : {}),
+  };
+}
+
+/** Происхождение необязательно: повреждённое значение отбрасывается, а не отклоняет проект. */
+function validateOrigin(value: unknown): ProjectOrigin | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const origin = value as Record<string, unknown>;
+  const hash = /^[0-9a-f]{16}$/;
+  if (
+    typeof origin.exampleId !== 'string' ||
+    !/^[a-z0-9][a-z0-9-]{0,63}$/.test(origin.exampleId) ||
+    typeof origin.sourceHash !== 'string' ||
+    !hash.test(origin.sourceHash) ||
+    typeof origin.copyHash !== 'string' ||
+    !hash.test(origin.copyHash)
+  )
+    return undefined;
+  return {
+    exampleId: origin.exampleId,
+    sourceHash: origin.sourceHash,
+    copyHash: origin.copyHash,
   };
 }

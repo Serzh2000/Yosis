@@ -23,6 +23,8 @@ export interface ProjectHubProps {
   project: Project;
   projects: ProjectSummary[];
   build: BuildResult | null;
+  /** Сразу открыть мастер с этой заготовкой, например `schematic`. */
+  initialStart?: string;
   buildFresh: boolean;
   onClose: () => void;
   onCreate: (project: Project) => Promise<void>;
@@ -37,7 +39,7 @@ export interface ProjectHubProps {
 /** One project window owns creation, examples, the library and current-project actions. */
 export function ProjectHub(props: ProjectHubProps) {
   const [page, setPage] = useState<'create' | 'library' | 'current'>('create');
-  const [start, setStart] = useState<string | null>(null);
+  const [start, setStart] = useState<string | null>(props.initialStart ?? null);
   const [catalog, setCatalog] = useState(false);
   const [busy, setBusy] = useState(false);
   const [name, setName] = useState(props.project.name);

@@ -2,6 +2,7 @@ import type { Project } from '../../shared/types';
 import { validateProject } from '../../shared/project-validation';
 import { examples } from './examples';
 import type { Example } from './examples';
+import { markExampleOrigin } from './example-origin';
 export { examples, validateProject };
 export type { Example };
 
@@ -316,7 +317,7 @@ export function loadExample(
   const copy = identifyProject(example.project, true);
   let suffix = 2;
   while (names.has(copy.name)) copy.name = `${example.project.name}-${suffix++}`;
-  return copy;
+  return markExampleOrigin(copy, example);
 }
 export type ProjectTemplate = 'blank' | 'logic' | 'counter';
 export function createProject(name: string, template: ProjectTemplate): Project {

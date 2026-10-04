@@ -29,6 +29,22 @@ export function retentionPolicy(): RetentionPolicy {
     maxBytes: envNumber('YOSIS_JOB_RETAIN_MB', 512) * 1024 * 1024,
   };
 }
+interface Candidate {
+  id: string;
+  directory: string;
+  owner: string;
+  date: number;
+  bytes: number;
+}
+/** Владелец задания из `.owner.json` (см. claimJob); у локальных и старых заданий его нет. */
+async function readOwner(directory: string): Promise<string> {
+  try {
+    const saved = JSON.parse(await readFile(path.join(directory, '.owner.json'), 'utf8'));
+    return typeof saved.owner === 'string' ? saved.owner : '';
+  } catch {
+    return '';
+  }
+}
 export async function markJob(directory: string, id: string) {
   await writeFile(path.join(directory, '.yosis-job'), id, { flag: 'wx' });
 }
@@ -69,7 +85,7 @@ export class JobRetention {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
       throw error;
     }
-    const eligible: Array<{ id: string; directory: string; date: number; bytes: number }> = [];
+    const eligible: Candidate[] = [];
     const protectedAtStart = this.protectedIds();
     for (const id of names) {
       if (!UUID.test(id) || protectedAtStart.has(id)) continue;
@@ -109,6 +125,7 @@ export class JobRetention {
         eligible.push({
           id,
           directory,
+          owner: await readOwner(directory),
           date: Date.parse(metadata.finishedAt ?? metadata.startedAt!),
           bytes: await directoryBytes(directory),
         });
@@ -119,14 +136,15 @@ export class JobRetention {
     eligible.sort((a, b) => a.date - b.date);
     let count = eligible.length,
       bytes = eligible.reduce((sum, item) => sum + item.bytes, 0);
+    // Очереди владельцев: в каждой самое старое задание первым.
+    const queues = new Map<string, Candidate[]>();
     for (const item of eligible) {
-      if (
-        count <= this.policy.maxCount &&
-        bytes <= this.policy.maxBytes &&
-        now - item.date <= this.policy.maxAgeMs
-      )
-        break;
-      if (this.protectedIds().has(item.id)) continue;
+      const queue = queues.get(item.owner) ?? [];
+      queue.push(item);
+      queues.set(item.owner, queue);
+    }
+    const evict = async (item: Candidate) => {
+      if (this.protectedIds().has(item.id)) return;
       // Recheck identity and link status immediately before the recursive operation.
       const info = await lstat(item.directory);
       if (
@@ -134,11 +152,34 @@ export class JobRetention {
         !info.isDirectory() ||
         info.isSymbolicLink()
       )
-        continue;
+        return;
       await rm(item.directory, { recursive: true, force: true, maxRetries: 4, retryDelay: 100 });
       this.removed(item.id);
       count--;
       bytes -= item.bytes;
+    };
+    // Возраст — свойство самого задания, поэтому устаревшие удаляются у всех одинаково.
+    for (const item of eligible) {
+      if (now - item.date <= this.policy.maxAgeMs) break;
+      queues.get(item.owner)!.shift();
+      await evict(item);
+    }
+    // Общий предел по числу и объёму сохраняется, но освобождает место тот, у кого больше всего
+    // заданий (или байт): готовая сборка тихого ученика не удаляется из-за чужих запусков.
+    while (count > this.policy.maxCount || bytes > this.policy.maxBytes) {
+      const byCount = count > this.policy.maxCount;
+      let chosen: Candidate[] | undefined,
+        chosenWeight = -1;
+      for (const queue of queues.values()) {
+        if (!queue.length) continue;
+        const weight = byCount ? queue.length : queue.reduce((sum, item) => sum + item.bytes, 0);
+        if (weight > chosenWeight || (weight === chosenWeight && queue[0].date < chosen![0].date)) {
+          chosen = queue;
+          chosenWeight = weight;
+        }
+      }
+      if (!chosen) break;
+      await evict(chosen.shift()!);
     }
   }
 }
