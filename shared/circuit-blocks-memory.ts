@@ -31,6 +31,9 @@ const flagged = (ctx: EvalContext, key: string, pin: string) =>
   flag(ctx.p, key) && read(ctx, pin) === 1n;
 const asyncAll = ['ACLR', 'APRE'];
 
+/** Значение при включении: у триггеров Gowin оно обязано совпадать с уровнем асинхронного сброса/установки. */
+const powerOn = (p: Params): bigint =>
+  flag(p, 'aclr') ? 0n : flag(p, 'apre') ? mask(num(p, 'width')) : big(p, 'resetValue');
 const reg: BlockDef = {
   kind: 'reg',
   title: 'Регистр (D-триггер)',
@@ -72,7 +75,7 @@ const reg: BlockDef = {
       ? [`значение сброса ${p.resetValue} не помещается в ${p.width} бит`]
       : [],
   regs: (p) => [
-    { key: 'Q', width: num(p, 'width'), init: flag(p, 'init') ? big(p, 'resetValue') : undefined },
+    { key: 'Q', width: num(p, 'width'), init: flag(p, 'init') ? powerOn(p) : undefined },
   ],
   symbol: (p) => ({
     shape: 'ff',
@@ -100,7 +103,7 @@ const reg: BlockDef = {
       'end',
     ];
   },
-  init: (p) => ({ q: flag(p, 'init') ? big(p, 'resetValue') : null }),
+  init: (p) => ({ q: flag(p, 'init') ? powerOn(p) : null }),
   outputs: (c) => ({ Q: c.state.q ?? null }),
   async: (c) =>
     guarded(['q'], () => {

@@ -15,6 +15,8 @@ import {
   FlipHorizontal2,
   Hand,
   HelpCircle,
+  PanelLeft,
+  PanelRight,
   LayoutTemplate,
   Maximize,
   Minus,
@@ -87,6 +89,20 @@ import './circuit-editor.css';
 
 type Selection = { nodes: string[]; wires: string[] };
 const noSelection: Selection = { nodes: [], wires: [] };
+function boardNotice(sync: { assigned: string[]; problems: string[] }) {
+  const more = (list: string[], limit: number) =>
+    list.length > limit
+      ? `${list.slice(0, limit).join('; ')} и ещё ${list.length - limit}`
+      : list.join('; ');
+  return [
+    sync.assigned.length ? `Выводы платы назначены: ${more(sync.assigned, 4)}.` : '',
+    sync.problems.length
+      ? `Выводы платы не назначены (${sync.problems.length}): ${more(sync.problems, 1)}`
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
 const kindTitle = (node: CircuitNode) => blocks[node.kind].title;
 
 const shortcuts: [string, string][] = [
@@ -260,14 +276,12 @@ interface WireViewProps {
   live: 'high' | 'low' | 'unknown' | 'bus' | null;
   label: string;
   labelAt: Point;
-  ends: [Point, Point];
   title: string;
   onPointerDown(event: ReactPointerEvent, id: string): void;
-  onEndPointerDown(event: ReactPointerEvent, id: string): void;
   onKeyDown(event: ReactKeyboardEvent, id: string): void;
 }
 const WireView = memo(function WireView(props: WireViewProps) {
-  const { id, d, bus, selected, bad, live, label, labelAt, ends } = props;
+  const { id, d, bus, selected, bad, live, label, labelAt } = props;
   return (
     <g
       className={`circuit-wire ${bus ? 'bus' : ''} ${selected ? 'selected' : ''} ${bad ? 'bad' : ''} ${props.related ? 'related' : ''} ${live ? `live-${live}` : ''}`}
@@ -298,17 +312,6 @@ const WireView = memo(function WireView(props: WireViewProps) {
           </text>
         </g>
       )}
-      {selected &&
-        ends.map((end, index) => (
-          <circle
-            key={index}
-            className="wire-handle"
-            cx={end.x}
-            cy={end.y}
-            r={6}
-            onPointerDown={(event) => props.onEndPointerDown(event, `${id}:${index}`)}
-          />
-        ))}
     </g>
   );
 });
@@ -372,6 +375,7 @@ export function CircuitEditor({
     [gallery, setGallery] = useState(false),
     [menu, setMenu] = useState<MenuState | null>(null),
     [tool, setTool] = useState<'select' | 'hand'>('select'),
+    [panels, setPanels] = useState({ palette: true, inspector: true }),
     [find, setFind] = useState(''),
     [rename, setRename] = useState<{ id: string; field: 'name' | 'text'; value: string } | null>(
       null,
@@ -407,6 +411,11 @@ export function CircuitEditor({
     findIndex = useRef(0),
     fitted = useRef(false);
 
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(''), 9000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
   const problems = useMemo(() => circuitProblems(doc), [doc]);
   const nodesById = useMemo(() => new Map(doc.nodes.map((node) => [node.id, node])), [doc.nodes]);
   const selectedNodes = useMemo(() => new Set(selection.nodes), [selection.nodes]);
@@ -485,21 +494,22 @@ export function CircuitEditor({
   const save = useCallback(
     (next: CircuitDocument, track = true) => {
       if (busy) return false;
-      const content = JSON.stringify(parseCircuit(JSON.stringify(next)), null, 2);
+      const clean = parseCircuit(JSON.stringify(next)),
+        content = JSON.stringify(clean, null, 2);
       if (content === source.content) return false;
       if (track)
         setHistory((previous) => ({
           undo: [...previous.undo.slice(-99), source.content],
           redo: [],
         }));
-      const synced = syncBoardConstraints(project, doc, parseCircuit(content));
+      const synced = syncBoardConstraints(project, doc, clean);
       onChange({
         ...synced.project,
         files: synced.project.files.map((file) =>
           file.name === source.name ? { ...file, content } : file,
         ),
       });
-      setNotice(synced.messages.length ? `Вывод платы: ${synced.messages.join('; ')}` : '');
+      setNotice(boardNotice(synced));
       setMessage('');
       return true;
     },
@@ -722,6 +732,7 @@ export function CircuitEditor({
       save(next);
       setSelection(noSelection);
       setPending(null);
+      svgRef.current?.focus({ preventScroll: true });
     });
   }
   function transform(action: (ids: string[]) => CircuitDocument) {
@@ -1418,6 +1429,20 @@ export function CircuitEditor({
           <Code2 size={14} />
           {code ? 'Вернуться к схеме' : 'Verilog'}
         </button>
+        {toolbarButton(
+          'Библиотека элементов',
+          <PanelLeft size={16} />,
+          () => setPanels((value) => ({ ...value, palette: !value.palette })),
+          false,
+          panels.palette,
+        )}
+        {toolbarButton(
+          'Свойства и проблемы',
+          <PanelRight size={16} />,
+          () => setPanels((value) => ({ ...value, inspector: !value.inspector })),
+          false,
+          panels.inspector,
+        )}
         {toolbarButton('Горячие клавиши (?)', <HelpCircle size={16} />, () => setHelp(true))}
       </header>
       <div className="circuit-instruction">
@@ -1441,8 +1466,10 @@ export function CircuitEditor({
             : `Сначала исправьте схему:\n${errors.map((issue) => issue.message).join('\n')}`}
         </pre>
       ) : (
-        <div className="circuit-columns">
-          <CircuitPalette disabled={busy} onAdd={(id) => addFromLibrary(id)} />
+        <div
+          className={`circuit-columns ${panels.palette ? '' : 'no-palette'} ${panels.inspector ? '' : 'no-inspector'}`}
+        >
+          {panels.palette && <CircuitPalette disabled={busy} onAdd={(id) => addFromLibrary(id)} />}
           <div
             className={`circuit-canvas ${tool === 'hand' ? 'hand' : ''}`}
             ref={wrapRef}
@@ -1501,10 +1528,8 @@ export function CircuitEditor({
                         live={item.liveClass}
                         label={item.label}
                         labelAt={item.labelAt}
-                        ends={item.ends}
                         title={item.title}
                         onPointerDown={wireApi.pointerDown}
-                        onEndPointerDown={wireApi.endPointerDown}
                         onKeyDown={wireApi.keyDown}
                       />
                     ),
@@ -1549,6 +1574,22 @@ export function CircuitEditor({
                     />
                   );
                 })}
+                {wireViews.map((item) =>
+                  item && selectedWires.has(item.wire.id)
+                    ? item.ends.map((end, index) => (
+                        <circle
+                          key={`${item.wire.id}:${index}`}
+                          className="wire-handle"
+                          cx={end.x}
+                          cy={end.y}
+                          r={7}
+                          onPointerDown={(event) =>
+                            wireApi.endPointerDown(event, `${item.wire.id}:${index}`)
+                          }
+                        />
+                      ))
+                    : null,
+                )}
                 {wireDrag &&
                   (() => {
                     const from = endpointPoint(displayMap, wireDrag.from);
@@ -1656,6 +1697,7 @@ export function CircuitEditor({
                       disabled={(disabled as boolean) || busy}
                       onClick={() => {
                         setMenu(null);
+                        svgRef.current?.focus({ preventScroll: true });
                         (action as () => void)();
                       }}
                     >
@@ -1669,173 +1711,178 @@ export function CircuitEditor({
               Рамка — выделение · колесо — масштаб · пробел + мышь — сдвиг
             </span>
           </div>
-          <aside className="circuit-inspector" aria-label="Свойства и проверка схемы">
-            {preview.on && (
-              <section className="preview-panel" aria-label="Предпросмотр значений">
-                <h3>Предпросмотр</h3>
-                <p>
-                  Быстрая проверка в браузере: показывает значения на проводах. Точное моделирование
-                  выполняют вкладки «Диаграммы» и «Виртуальная».
-                </p>
-                <div className="preview-actions">
-                  <button type="button" className="button subtle" onClick={() => stepClock(1)}>
-                    <StepForward size={14} />
-                    Такт
-                  </button>
-                  <button type="button" className="button subtle" onClick={() => stepClock(10)}>
-                    ×10
-                  </button>
-                  <button
-                    type="button"
-                    className="button subtle"
-                    aria-pressed={preview.running}
-                    onClick={() => setPreview({ ...preview, running: !preview.running })}
-                  >
-                    <Play size={14} />
-                    {preview.running ? 'Стоп' : 'Ход'}
-                  </button>
-                  <button
-                    type="button"
-                    className="button subtle"
-                    onClick={() =>
-                      setPreview({
-                        ...preview,
-                        running: false,
-                        cycles: 0,
-                        state: previewSettle(doc, previewInit(doc, previewOptions), previewOptions)
-                          .state,
-                      })
-                    }
-                  >
-                    Сброс
-                  </button>
-                </div>
-                <label className="prop-check">
-                  <input
-                    type="checkbox"
-                    checked={preview.fast}
-                    onChange={(event) => setPreview({ ...preview, fast: event.target.checked })}
-                  />
-                  <span>Ускорить делители частоты (период — несколько тактов)</span>
-                </label>
-                <p>
-                  Выполнено тактов: {preview.cycles}. «?» — значение неизвестно до сброса или
-                  загрузки.
-                </p>
-                {doc.nodes
-                  .filter(
-                    (node) =>
-                      blocks[node.kind].port?.direction === 'input' && node.kind !== 'clock27',
-                  )
-                  .map((node) => {
-                    const width = circuitPins(node)[0].width;
-                    return (
-                      <label key={node.id} className="prop-field">
-                        <span>
-                          {node.name} ({width} бит)
-                        </span>
-                        <input
-                          type="number"
-                          min={0}
-                          max={Number(2n ** BigInt(Math.min(width, 52)) - 1n)}
-                          value={Number(inputValue(node))}
-                          onChange={(event) =>
-                            setInputValue(
-                              node,
-                              BigInt(Math.max(0, Math.floor(Number(event.target.value) || 0))),
-                            )
-                          }
-                        />
-                      </label>
-                    );
-                  })}
-              </section>
-            )}
-            {selection.nodes.length > 1 && (
-              <section className="multi-panel">
-                <h3>Выбрано элементов: {selection.nodes.length}</h3>
-                <div className="preview-actions">
-                  {(
-                    [
-                      ['left', 'По левому краю'],
-                      ['top', 'По верху'],
-                      ['hcenter', 'По центру ↔'],
-                      ['vcenter', 'По центру ↕'],
-                      ['hdistribute', 'Распределить ↔'],
-                      ['vdistribute', 'Распределить ↕'],
-                    ] as [AlignMode, string][]
-                  ).map(([mode, label]) => (
+          {panels.inspector && (
+            <aside className="circuit-inspector" aria-label="Свойства и проверка схемы">
+              {preview.on && (
+                <section className="preview-panel" aria-label="Предпросмотр значений">
+                  <h3>Предпросмотр</h3>
+                  <p>
+                    Быстрая проверка в браузере: показывает значения на проводах. Точное
+                    моделирование выполняют вкладки «Диаграммы» и «Виртуальная».
+                  </p>
+                  <div className="preview-actions">
+                    <button type="button" className="button subtle" onClick={() => stepClock(1)}>
+                      <StepForward size={14} />
+                      Такт
+                    </button>
+                    <button type="button" className="button subtle" onClick={() => stepClock(10)}>
+                      ×10
+                    </button>
                     <button
-                      key={mode}
                       type="button"
                       className="button subtle"
-                      disabled={busy}
-                      onClick={() => align(mode)}
+                      aria-pressed={preview.running}
+                      onClick={() => setPreview({ ...preview, running: !preview.running })}
                     >
-                      {label}
+                      <Play size={14} />
+                      {preview.running ? 'Стоп' : 'Ход'}
                     </button>
-                  ))}
-                </div>
-              </section>
-            )}
-            {single ? (
-              <CircuitProperties
-                key={`${single.id}:${JSON.stringify(single.params)}:${single.name}`}
-                node={single}
-                disabled={busy}
-                problems={problems
-                  .filter((issue) => issue.node === single.id)
-                  .map((issue) => issue.message)}
-                onApply={({ name, params }) => save(updateNode(doc, single.id, { name, params }))}
-                onDelete={deleteSelection}
-                onPins={() => onPins(single.name)}
-              />
-            ) : (
-              !selection.nodes.length && (
-                <p>Выберите элемент, чтобы изменить имя, ширину и другие свойства.</p>
-              )
-            )}
-            {single && (single.kind === 'tag_in' || single.kind === 'tag_out') && (
-              <p className="prop-note">
-                Связанные метки «{single.name}»:{' '}
-                {doc.nodes
-                  .filter(
-                    (node) =>
-                      (node.kind === 'tag_in' || node.kind === 'tag_out') &&
-                      node.name === single.name,
-                  )
-                  .map((node) => (node.kind === 'tag_out' ? 'передаёт' : 'принимает'))
-                  .join(', ')}
-                .
-              </p>
-            )}
-            <details className="circuit-issues" open>
-              <summary>
-                {errors.length
-                  ? `Исправьте перед сборкой · ${errors.length}`
-                  : warnings.length
-                    ? `Схема готова · замечаний ${warnings.length}`
-                    : 'Схема готова к сборке'}
-              </summary>
-              {problems.length ? (
-                <ul>
-                  {problems.map((issue, i) => (
-                    <li key={i} className={issue.severity === 'warning' ? 'warning' : 'error'}>
-                      <button onClick={() => selectProblem(issue)}>
-                        <b aria-hidden="true">{issue.severity === 'warning' ? '⚠' : '✖'}</b>{' '}
-                        {issue.message}
+                    <button
+                      type="button"
+                      className="button subtle"
+                      onClick={() =>
+                        setPreview({
+                          ...preview,
+                          running: false,
+                          cycles: 0,
+                          state: previewSettle(
+                            doc,
+                            previewInit(doc, previewOptions),
+                            previewOptions,
+                          ).state,
+                        })
+                      }
+                    >
+                      Сброс
+                    </button>
+                  </div>
+                  <label className="prop-check">
+                    <input
+                      type="checkbox"
+                      checked={preview.fast}
+                      onChange={(event) => setPreview({ ...preview, fast: event.target.checked })}
+                    />
+                    <span>Ускорить делители частоты (период — несколько тактов)</span>
+                  </label>
+                  <p>
+                    Выполнено тактов: {preview.cycles}. «?» — значение неизвестно до сброса или
+                    загрузки.
+                  </p>
+                  {doc.nodes
+                    .filter(
+                      (node) =>
+                        blocks[node.kind].port?.direction === 'input' && node.kind !== 'clock27',
+                    )
+                    .map((node) => {
+                      const width = circuitPins(node)[0].width;
+                      return (
+                        <label key={node.id} className="prop-field">
+                          <span>
+                            {node.name} ({width} бит)
+                          </span>
+                          <input
+                            type="number"
+                            min={0}
+                            max={Number(2n ** BigInt(Math.min(width, 52)) - 1n)}
+                            value={Number(inputValue(node))}
+                            onChange={(event) =>
+                              setInputValue(
+                                node,
+                                BigInt(Math.max(0, Math.floor(Number(event.target.value) || 0))),
+                              )
+                            }
+                          />
+                        </label>
+                      );
+                    })}
+                </section>
+              )}
+              {selection.nodes.length > 1 && (
+                <section className="multi-panel">
+                  <h3>Выбрано элементов: {selection.nodes.length}</h3>
+                  <div className="preview-actions">
+                    {(
+                      [
+                        ['left', 'По левому краю'],
+                        ['top', 'По верху'],
+                        ['hcenter', 'По центру ↔'],
+                        ['vcenter', 'По центру ↕'],
+                        ['hdistribute', 'Распределить ↔'],
+                        ['vdistribute', 'Распределить ↕'],
+                      ] as [AlignMode, string][]
+                    ).map(([mode, label]) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        className="button subtle"
+                        disabled={busy}
+                        onClick={() => align(mode)}
+                      >
+                        {label}
                       </button>
-                    </li>
-                  ))}
-                </ul>
+                    ))}
+                  </div>
+                </section>
+              )}
+              {single ? (
+                <CircuitProperties
+                  key={`${single.id}:${JSON.stringify(single.params)}:${single.name}`}
+                  node={single}
+                  disabled={busy}
+                  problems={problems
+                    .filter((issue) => issue.node === single.id)
+                    .map((issue) => issue.message)}
+                  onApply={({ name, params }) => save(updateNode(doc, single.id, { name, params }))}
+                  onDelete={deleteSelection}
+                  onPins={() => onPins(single.name)}
+                />
               ) : (
-                <p>
-                  Можно синтезировать и проверить диаграммы. Выводы платы для кнопок и светодиодов
-                  назначаются автоматически.
+                !selection.nodes.length && (
+                  <p>Выберите элемент, чтобы изменить имя, ширину и другие свойства.</p>
+                )
+              )}
+              {single && (single.kind === 'tag_in' || single.kind === 'tag_out') && (
+                <p className="prop-note">
+                  Связанные метки «{single.name}»:{' '}
+                  {doc.nodes
+                    .filter(
+                      (node) =>
+                        (node.kind === 'tag_in' || node.kind === 'tag_out') &&
+                        node.name === single.name,
+                    )
+                    .map((node) => (node.kind === 'tag_out' ? 'передаёт' : 'принимает'))
+                    .join(', ')}
+                  .
                 </p>
               )}
-            </details>
-          </aside>
+              <details className="circuit-issues" open>
+                <summary>
+                  {errors.length
+                    ? `Исправьте перед сборкой · ${errors.length}`
+                    : warnings.length
+                      ? `Схема готова · замечаний ${warnings.length}`
+                      : 'Схема готова к сборке'}
+                </summary>
+                {problems.length ? (
+                  <ul>
+                    {problems.map((issue, i) => (
+                      <li key={i} className={issue.severity === 'warning' ? 'warning' : 'error'}>
+                        <button onClick={() => selectProblem(issue)}>
+                          <b aria-hidden="true">{issue.severity === 'warning' ? '⚠' : '✖'}</b>{' '}
+                          {issue.message}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>
+                    Можно синтезировать и проверить диаграммы. Выводы платы для кнопок и светодиодов
+                    назначаются автоматически.
+                  </p>
+                )}
+              </details>
+            </aside>
+          )}
         </div>
       )}
       {help && (

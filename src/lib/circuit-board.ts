@@ -8,8 +8,10 @@ import { applyPinEdit, assignedPins, readCst, type PlannerSignal } from './pin-p
 
 export interface BoardSync {
   project: Project;
-  /** Сообщения для ученика: что назначено автоматически и что не удалось. */
-  messages: string[];
+  /** Что назначено автоматически: «сигнал → вывод». */
+  assigned: string[];
+  /** Что назначить не удалось и почему. */
+  problems: string[];
 }
 const cstName = (project: Project) =>
   project.files.find((file) => file.name.endsWith('.cst'))?.name ?? 'board.cst';
@@ -53,7 +55,8 @@ export function syncBoardConstraints(
     const assignments = boardAssignments({ ...next, nodes: [node] });
     return assignments.map((item) => ({ name: item.signal, direction: item.direction }));
   });
-  const messages: string[] = [];
+  const assigned: string[] = [],
+    problems: string[] = [];
   let current = project;
   const file = cstName(project);
   const pinOf = (signal: string) =>
@@ -76,7 +79,7 @@ export function syncBoardConstraints(
         assignedPins([value]).includes(item.pin),
     );
     if (holder && signals.some((signal) => signal.name === holder.signal)) {
-      messages.push(
+      problems.push(
         `Вывод ${item.pin} уже занят портом ${holder.signal}. Для ${item.signal} назначение не добавлено.`,
       );
       continue;
@@ -95,12 +98,12 @@ export function syncBoardConstraints(
         file,
         pull: 'NONE',
       });
-      messages.push(`${item.signal} → вывод ${item.pin}`);
+      assigned.push(`${item.signal} → ${item.pin}`);
     } catch (error) {
-      messages.push(
+      problems.push(
         error instanceof Error ? error.message : `${item.signal}: назначение не удалось.`,
       );
     }
   }
-  return { project: current, messages };
+  return { project: current, assigned, problems };
 }

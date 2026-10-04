@@ -252,6 +252,17 @@ export function CircuitProperties({
     <form className="circuit-properties" onSubmit={submit} aria-label={`Свойства: ${def.title}`}>
       <strong>{def.title}</strong>
       <p>{def.help}</p>
+      <div className="prop-preview" aria-live="polite">
+        <b>Что получится</b>
+        {previewText(draft).map((line) => (
+          <p key={line}>{line}</p>
+        ))}
+        {problems.map((line) => (
+          <p key={line} className="prop-problem">
+            {line}
+          </p>
+        ))}
+      </div>
       <label className="prop-field" htmlFor="prop-name">
         <span>Имя в схеме и в Verilog</span>
         <input
@@ -269,17 +280,7 @@ export function CircuitProperties({
         .map((spec) => (
           <Field key={spec.key} spec={spec} params={params} setParams={change} />
         ))}
-      <div className="prop-preview" aria-live="polite">
-        <b>Что получится</b>
-        {previewText(draft).map((line) => (
-          <p key={line}>{line}</p>
-        ))}
-        {problems.map((line) => (
-          <p key={line} className="prop-problem">
-            {line}
-          </p>
-        ))}
-      </div>
+
       <button className="button primary" disabled={disabled || !dirty}>
         Применить
       </button>

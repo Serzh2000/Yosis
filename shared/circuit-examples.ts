@@ -142,8 +142,8 @@ export const circuitExamples: CircuitExample[] = [
           ['clock27', 'clk', 40, 80],
           ['pulse', 'tick', 200, 60, { mode: 'pulse', hz: 3 }],
           ['shreg', 'ring', 420, 80, { width: 6, dir: 'left', enable: true, init: true }],
-          ['slice', 'low_bits', 420, 300, { inWidth: 6, lo: 0, hi: 4 }],
-          ['reduce-or', 'all_zero', 200, 300, { invert: true, width: 5 }],
+          ['slice', 'low_bits', 600, 280, { inWidth: 6, lo: 0, hi: 4 }],
+          ['reduce-or', 'all_zero', 820, 280, { invert: true, width: 5 }],
           ['ledbank', 'leds', 680, 100],
         ],
         [
