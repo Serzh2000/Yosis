@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { HEADER_PINS } from '../src/lib/board-parts';
 import assert from 'node:assert/strict';
 import { examples, loadExample, validateProject } from '../src/lib/projects';
 import { parseCstPins } from '../src/lib/physical';
@@ -26,12 +27,16 @@ function topPortBits(source: string, top: string): string[] {
 }
 
 test('every built-in experiment fully constrains its actual top ports without pin conflicts', () => {
-  assert.equal(examples.length, 108);
+  assert.equal(examples.length, 243);
   assert.equal(new Set(examples.map((example) => example.id)).size, examples.length);
   for (const id of ['logic', 'counter', 'alu'])
     assert.ok(examples.some((example) => example.id === id));
   // These connections were checked against Apicula's Tang Nano 20K profile.
-  const boardPins = new Set(['4', '15', '16', '17', '18', '19', '20', '69', '70', '87', '88']);
+  // Laboratory examples also use the two headers, where the peripherals are wired.
+  const boardPins = new Set([
+    ...['4', '15', '16', '17', '18', '19', '20', '69', '70', '87', '88'],
+    ...[...HEADER_PINS.J5, ...HEADER_PINS.J6].filter((pin) => pin !== null).map(String),
+  ]);
   for (const example of examples) {
     const project = example.project;
     assert.deepEqual(validateProject(project), validateServerProject(project), example.id);

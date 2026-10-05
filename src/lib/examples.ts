@@ -2,6 +2,7 @@ import type { Project } from '../../shared/types';
 import { logicExamples } from './examples-logic';
 import { systemExamples } from './examples-systems';
 import { applicationExamples } from './examples-applications';
+import { labExamples } from './examples-lab';
 
 export interface Example {
   id: string;
@@ -1010,4 +1011,5 @@ endmodule
   ...logicExamples,
   ...systemExamples,
   ...applicationExamples,
+  ...labExamples,
 ];

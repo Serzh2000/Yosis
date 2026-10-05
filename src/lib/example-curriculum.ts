@@ -1,3 +1,5 @@
+import { labLessons } from './examples-lab-lessons';
+
 /** Educational metadata is independent of HDL and project loading. */
 export type CurriculumLevel = 1 | 2 | 3 | 4;
 export type CurriculumTopic =
@@ -990,6 +992,7 @@ const lessons = {
     'send/receive равны valid И ready; полный буфер удерживает payload при остановленном приёмнике.',
     'Остановите приёмник кнопкой на восемь тактов, затем отпустите. Проверьте порядок и одновременную передачу/замену слова.',
   ),
+  ...labLessons,
 } satisfies Record<string, Omit<ExampleLesson, 'order'>>;
 
 export type CurriculumExampleId = keyof typeof lessons;

@@ -1,0 +1,313 @@
+/* Pictures of the protocol parts: screens, memories, sensors, remotes.
+   They sit on the dark card of the bench, so the colours below do not change with the theme. */
+.lab-part-body
+  :is(
+    .bus-card,
+    .bus-oled,
+    .bus-lcd,
+    .bus-eeprom,
+    .bus-expander,
+    .bus-matrix,
+    .bus-tm,
+    .bus-remote,
+    .bus-ps2
+  ) {
+  --bus-text: var(--lab-part-text, #e8ebe6);
+  --bus-soft: var(--lab-part-soft, #a9b0aa);
+  --bus-edge: var(--lab-part-edge, #3a4046);
+  --bus-hot: #ffb347;
+  color: var(--bus-text);
+  font-size: 12px;
+}
+.bus-card,
+.bus-oled,
+.bus-lcd,
+.bus-eeprom,
+.bus-matrix,
+.bus-tm,
+.bus-remote,
+.bus-ps2 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  padding: 6px 10px;
+  box-sizing: border-box;
+}
+.bus-card > span,
+.bus-card > small,
+.bus-oled small,
+.bus-lcd small,
+.bus-eeprom small,
+.bus-matrix small,
+.bus-tm small,
+.bus-remote small,
+.bus-ps2 small {
+  color: var(--bus-soft, #a9b0aa);
+  font-size: 11px;
+  text-align: center;
+  line-height: 1.3;
+}
+.bus-warn,
+.bus-card .bus-warn {
+  color: var(--bus-hot, #ffb347) !important;
+}
+.bus-hot {
+  color: var(--bus-hot, #ffb347) !important;
+  font-weight: 600;
+}
+.bus-big {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* OLED */
+.bus-oled-glass {
+  width: 256px;
+  height: 128px;
+  border: 3px solid #14181c;
+  border-radius: 4px;
+  background: #04070c;
+  image-rendering: pixelated;
+  box-shadow: inset 0 0 0 1px #2a3138;
+}
+/* Character LCD */
+.bus-lcd-glass {
+  padding: 8px 10px;
+  border: 3px solid #2d3a22;
+  border-radius: 4px;
+  background: #9bc53d;
+  box-shadow: inset 0 0 14px rgba(20, 40, 0, 0.45);
+  max-width: 100%;
+  height: auto;
+}
+.bus-lcd-glass.dark {
+  background: #4d5b30;
+}
+
+/* Sliders */
+.bus-slider {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  color: var(--bus-soft, #a9b0aa);
+}
+.bus-slider input {
+  min-width: 0;
+  accent-color: var(--pad, #e8b93a);
+}
+.bus-slider output {
+  min-width: 3.2em;
+  color: var(--bus-text, #e8ebe6);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* EEPROM hex dump */
+.bus-eeprom pre {
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #101316;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.bus-eeprom pre b {
+  color: var(--bus-soft, #a9b0aa);
+  font-weight: 400;
+}
+.bus-eeprom pre i {
+  margin-right: 0.4em;
+  font-style: normal;
+}
+.bus-eeprom pre i.blank {
+  color: #5d666e;
+}
+.bus-eeprom pre i.fresh {
+  background: var(--pad, #e8b93a);
+  color: var(--pad-text, #1e1803);
+}
+.bus-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+.bus-button {
+  min-height: 24px;
+  padding: 2px 10px;
+  border: 1px solid var(--bus-edge, #3a4046);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--bus-text, #e8ebe6);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.bus-button:hover {
+  border-color: var(--pad, #e8b93a);
+}
+
+/* PCF8574 */
+.bus-expander {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 10px;
+}
+.bus-expander-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--lab-part-soft, #a9b0aa);
+}
+.bus-led {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #3a2b0f;
+  border: 1px solid #5a4417;
+}
+.bus-led.on {
+  background: #ffd23f;
+  border-color: #ffe48a;
+  box-shadow: 0 0 9px 2px #ffd23f;
+}
+.bus-toggle {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 16px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid var(--lab-part-edge, #3a4046);
+  border-radius: 8px;
+  background: #15181b;
+  cursor: pointer;
+}
+.bus-toggle i {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #8c949a;
+  transition: transform 0.12s;
+}
+.bus-toggle.on i {
+  background: var(--pad, #e8b93a);
+  transform: translateY(14px);
+}
+
+/* Seven-segment digits and the matrix */
+.bus-digits {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #0e1012;
+}
+.bus-digit {
+  width: 30px;
+  height: 44px;
+}
+.bus-tm-cell {
+  position: relative;
+  display: inline-flex;
+}
+.bus-colon {
+  position: absolute;
+  right: -7px;
+  top: 14px;
+  width: 4px;
+  height: 18px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(#ff4a3d 0 4px, transparent 4px 10px);
+  opacity: 0.12;
+}
+.bus-colon.on {
+  opacity: 1;
+  filter: drop-shadow(0 0 3px #ff4a3d);
+}
+.bus-matrix canvas {
+  width: 136px;
+  height: 136px;
+  border-radius: 6px;
+  background: #0e1012;
+}
+
+/* LED strip */
+.bus-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 10px;
+}
+.bus-strip i {
+  flex: 0 0 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid #3a4046;
+  background: #1a1d20;
+}
+
+/* Remote and keyboard */
+.bus-remote-keys,
+.bus-ps2-keys {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+.bus-remote-keys {
+  width: 176px;
+}
+.bus-ps2-keys {
+  width: 340px;
+}
+.bus-key {
+  min-width: 36px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--bus-edge, #3a4046);
+  border-bottom-width: 3px;
+  border-radius: 5px;
+  background: #2c3237;
+  color: var(--bus-text, #e8ebe6);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  touch-action: none;
+}
+.bus-key:hover {
+  border-color: var(--pad, #e8b93a);
+}
+.bus-key:active {
+  border-bottom-width: 1px;
+  transform: translateY(2px);
+  background: var(--pad, #e8b93a);
+  color: var(--pad-text, #1e1803);
+}
+.bus-key.wide {
+  min-width: 56px;
+}
+.lab-pin.dir-io {
+  --pin-dir: var(--pad, #e8b93a);
+}

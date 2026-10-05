@@ -47,7 +47,7 @@ test('catalog starts with authored novice progression and does not mutate projec
   );
   assert.ok(novice.every((example) => getExampleLesson(example.id)?.level === 1));
   const all = filterExampleCatalog(examples, { level: 'all', topic: 'all', query: ' \n ' });
-  assert.equal(all.length, 108);
+  assert.equal(all.length, 243);
   assert.deepEqual(all, [...examples].sort(compareCurriculumExamples));
   assert.deepEqual(
     examples.map((example) => example.id),
