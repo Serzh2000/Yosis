@@ -17,6 +17,7 @@ import { UserStore } from './user-store';
 import { workspace, dataDirectory } from './paths';
 import { DebuggerBackupStore, createDebuggerBackupRouter } from './debugger-backup-store';
 import { SyntaxManager } from './syntax';
+import { LabManager } from './lab';
 
 const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 const DEVELOPMENT_ORIGINS = new Set(['http://127.0.0.1:5173', 'http://localhost:5173']);
@@ -30,17 +31,31 @@ export function createApp(
 ) {
   const app = express();
   const security = new ApiSecurity(options);
-  const local = !security.publicOrigin;
+  const local = !security.publicOrigin && !security.standalone;
   const limits = createJobLimits(options, local);
   const userStore = new UserStore(path.join(path.dirname(manager.root), '.users'));
   const syntax = new SyntaxManager();
-  app.locals.close = () => syntax.close();
+  const lab = new LabManager();
+  app.locals.close = () => {
+    syntax.close();
+    lab.close();
+  };
   app.disable('x-powered-by');
   app.use((request, response, next) => {
     const host = request.get('host');
-    let hostname: string;
+    let requestAddress: URL;
     try {
-      hostname = new URL(`http://${host}`).hostname;
+      if (!host || /[\\/?#@\s]/.test(host)) throw new Error('Invalid host');
+      requestAddress = new URL(`http://${host}`);
+      if (
+        !requestAddress.hostname ||
+        requestAddress.username ||
+        requestAddress.password ||
+        requestAddress.pathname !== '/' ||
+        requestAddress.search ||
+        requestAddress.hash
+      )
+        throw new Error('Invalid host authority');
     } catch {
       response.status(403).json({ error: 'Недопустимый адрес сервера.' });
       return;
@@ -54,7 +69,9 @@ export function createApp(
       request.get('sec-fetch-mode') === 'navigate' &&
       request.get('sec-fetch-dest') === 'document';
     if (
-      (local ? !LOOPBACK_HOSTS.has(hostname) : host !== security.publicOrigin!.host) ||
+      (local
+        ? !LOOPBACK_HOSTS.has(requestAddress.hostname)
+        : !security.standalone && host !== security.publicOrigin!.host) ||
       (request.get('sec-fetch-site') === 'cross-site' && !documentNavigation)
     ) {
       response.status(403).json({ error: 'Запрос должен поступать через разрешённый адрес IDE.' });
@@ -63,7 +80,19 @@ export function createApp(
     const origin = request.get('origin');
     const developmentOrigin = local && !production && origin && DEVELOPMENT_ORIGINS.has(origin);
     const expectedOrigin = security.publicOrigin?.origin ?? `http://${host}`;
-    if (origin && origin !== expectedOrigin && !developmentOrigin) {
+    let standaloneOrigin = false;
+    if (security.standalone && origin) {
+      try {
+        const address = new URL(origin);
+        standaloneOrigin =
+          ['http:', 'https:'].includes(address.protocol) &&
+          address.origin === origin &&
+          address.host === requestAddress.host;
+      } catch {
+        /* Malformed Origin remains forbidden. */
+      }
+    }
+    if (origin && origin !== expectedOrigin && !developmentOrigin && !standaloneOrigin) {
       response
         .status(403)
         .json({ error: 'Запрос должен поступать с того же адреса, что и интерфейс IDE.' });
@@ -76,7 +105,14 @@ export function createApp(
   app.use(express.json({ limit: '3mb', strict: true }));
   app.post('/api/session', (request, response) => security.login(request, response));
   app.use('/api', (request, response, next) => {
-    const user = security.user(request);
+    // Only the session endpoint may issue a guest cookie. Parallel, slow health
+    // requests must not overwrite the browser's newly established identity.
+    const sessionRequest = request.method === 'GET' && request.path === '/session';
+    const user =
+      security.user(request, !security.standalone || sessionRequest ? response : undefined) ??
+      (security.standalone && request.method === 'GET' && request.path === '/health'
+        ? 'guest_health'
+        : undefined);
     if (!user) {
       response.status(401).json({ error: 'Войдите с персональным ключом доступа.' });
       return;
@@ -85,7 +121,11 @@ export function createApp(
     next();
   });
   app.get('/api/session', (_request, response) =>
-    response.json({ user: response.locals.user, local }),
+    response.json({
+      user: response.locals.user,
+      local,
+      ...(security.standalone ? { guest: true } : {}),
+    }),
   );
   app.delete('/api/session', (request, response) => security.logout(request, response));
   app.use(
@@ -131,6 +171,17 @@ export function createApp(
       if (!response.writableFinished) abort.abort();
     });
     const result = await syntax.check(response.locals.user, project, abort.signal);
+    if (!response.destroyed) response.json(result);
+  });
+  app.post('/api/lab', async (request, response) => {
+    if (!request.is('application/json'))
+      throw new RequestError('Ожидается Content-Type: application/json.', 415);
+    const project = validateProject(request.body?.project),
+      abort = new AbortController();
+    response.once('close', () => {
+      if (!response.writableFinished) abort.abort();
+    });
+    const result = await lab.compile(response.locals.user, project, abort.signal);
     if (!response.destroyed) response.json(result);
   });
   for (const [route, jobs] of [
@@ -289,33 +340,69 @@ export function createApp(
 }
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-if (isMain) {
-  const port = Number(process.env.YOSIS_API_PORT ?? 3001);
+export function startServer() {
+  const port = Number(process.env.YOSIS_API_PORT ?? process.env.PORT ?? 3001);
   if (!Number.isInteger(port) || port < 1 || port > 65535)
-    throw new Error('YOSIS_API_PORT должен быть числом от 1 до 65535.');
+    throw new Error('YOSIS_API_PORT / PORT должен быть числом от 1 до 65535.');
+  const options = environmentApiOptions();
+  const production = process.argv.includes('--production') || process.env.NODE_ENV === 'production';
+  const host = process.env.YOSIS_LISTEN_HOST ?? '127.0.0.1';
+  if (!LOOPBACK_HOSTS.has(host) && !options.publicOrigin && !options.standalone)
+    throw new Error(
+      'Публичный listen host требует YOSIS_STANDALONE=1 или HTTPS Origin и авторизацию.',
+    );
+  // Fail invalid security configuration before any worker is started.
+  new ApiSecurity(options);
   const manager = new BuildManager(path.join(dataDirectory, '.builds'));
   const simulations = new SimulationManager(path.join(dataDirectory, '.simulations'));
   const physical = new PhysicalManager(path.join(dataDirectory, '.physical'), manager);
-  const production = process.argv.includes('--production');
-  void Promise.all([manager.prune(), simulations.prune(), physical.prune()]);
-  const host = process.env.YOSIS_LISTEN_HOST ?? '127.0.0.1';
-  if (!LOOPBACK_HOSTS.has(host) && !process.env.YOSIS_PUBLIC_ORIGIN)
-    throw new Error('Публичный listen host требует YOSIS_PUBLIC_ORIGIN и авторизации.');
-  const app = createApp(manager, production, simulations, physical);
+  if (process.env.YOSIS_PREWARM !== '0') manager.prewarm();
+  void Promise.all([manager.prune(), simulations.prune(), physical.prune()]).catch((error) =>
+    console.error('Не удалось очистить завершённые задания:', error),
+  );
+  const app = createApp(manager, production, simulations, physical, options);
   const server = app.listen(port, host, (error?: Error) => {
     if (error) {
       console.error(`Не удалось запустить API на порту ${port}: ${error.message}`);
-      process.exitCode = 1;
+      // PM2's open IPC channel keeps Node alive even when listen failed. Stop
+      // workers and release that channel so PM2 receives an actual failed exit.
+      void stop().then(() => {
+        process.exitCode = 1;
+        if (process.connected) process.disconnect();
+      });
       return;
     }
-    console.log(`Yosis: http://127.0.0.1:${port} · ${production ? 'production' : 'API'}`);
+    if (stopping) return;
+    const address = host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
+    console.log(`Yosis: http://${address}:${port} · ${production ? 'production' : 'API'}`);
+    if (process.send && process.connected) process.send('ready');
   });
-  const stop = async () => {
-    server.close();
-    app.locals.close();
-    await Promise.all([manager.close(), simulations.close(), physical.close()]);
-    process.exit(0);
+  let stopping: Promise<void> | undefined;
+  const stop = () => {
+    if (stopping) return stopping;
+    stopping = (async () => {
+      const closed = new Promise<void>((resolve) => server.close(() => resolve()));
+      const timeout = setTimeout(() => server.closeAllConnections(), 10000);
+      timeout.unref();
+      app.locals.close();
+      await Promise.allSettled([manager.close(), simulations.close(), physical.close()]);
+      await closed;
+      clearTimeout(timeout);
+      process.removeListener('SIGINT', shutdown);
+      process.removeListener('SIGTERM', shutdown);
+      process.removeListener('message', onMessage);
+    })();
+    return stopping;
   };
-  process.once('SIGINT', stop);
-  process.once('SIGTERM', stop);
+  const shutdown = () => {
+    void stop().then(() => process.exit(0));
+  };
+  process.once('SIGINT', shutdown);
+  process.once('SIGTERM', shutdown);
+  const onMessage = (message: unknown) => {
+    if (message === 'shutdown') shutdown();
+  };
+  process.on('message', onMessage);
+  return { app, server, stop };
 }
+if (isMain) startServer();

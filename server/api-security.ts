@@ -6,6 +6,8 @@ import type { Request, Response } from 'express';
 import { RequestError } from './validation';
 
 export interface ApiOptions {
+  /** Standalone installation: same-origin guests, each with a separate storage namespace. */
+  standalone?: boolean;
   publicOrigin?: string;
   users?: Record<string, string>;
   maxUserJobs?: number;
@@ -23,6 +25,7 @@ export function environmentApiOptions(): ApiOptions {
     ? (JSON.parse(process.env.YOSIS_USERS_JSON) as Record<string, string>)
     : undefined;
   return {
+    standalone: process.env.YOSIS_STANDALONE === '1',
     publicOrigin,
     users,
     maxUserJobs: positiveIntegerEnv('YOSIS_MAX_USER_JOBS'),
@@ -76,11 +79,14 @@ export function createJobLimits(options: ApiOptions, local: boolean) {
 
 export class ApiSecurity {
   readonly publicOrigin?: URL;
+  readonly standalone: boolean;
   private tokens: Array<{ user: string; hash: Buffer }> = [];
   private sessions = new Map<string, { user: string; expires: number }>();
   private attempts = new Map<string, { count: number; until: number }>();
   private trustedProxyHops?: number;
   constructor(options: ApiOptions) {
+    // Explicit classroom credentials take precedence over the simple PM2 profile.
+    this.standalone = Boolean(options.standalone && !options.publicOrigin);
     this.trustedProxyHops = options.trustedProxyHops;
     if (options.publicOrigin) {
       this.publicOrigin = new URL(options.publicOrigin);
@@ -119,7 +125,23 @@ export class ApiSecurity {
       }
     }
   }
-  user(request: Request): string | undefined {
+  user(request: Request, response?: Response): string | undefined {
+    if (this.standalone) {
+      let secret = this.guestSecret(request);
+      if (!secret && response) {
+        secret = randomBytes(32).toString('hex');
+        response.cookie('yosis_guest', secret, {
+          httpOnly: true,
+          secure: this.guestSecure(request),
+          sameSite: 'strict',
+          maxAge: 365 * 24 * 3600000,
+          path: '/api',
+        });
+      }
+      // Only possession of the HttpOnly secret grants access. The public user ID
+      // cannot be replayed as a cookie, and survives a PM2 restart without a key file.
+      return secret ? `guest_${digest(secret).toString('hex').slice(0, 58)}` : undefined;
+    }
     if (!this.publicOrigin) return 'local';
     const bearer = request.get('authorization')?.match(/^Bearer (.{32,512})$/)?.[1];
     if (bearer) return this.matchToken(bearer);
@@ -139,6 +161,8 @@ export class ApiSecurity {
     return session.user;
   }
   login(request: Request, response: Response) {
+    if (this.standalone)
+      return response.json({ user: this.user(request, response), local: false, guest: true });
     if (!this.publicOrigin) return response.json({ user: 'local', local: true });
     const address = clientAddress(request, this.trustedProxyHops);
     let attempts = this.attempts.get(address);
@@ -178,6 +202,16 @@ export class ApiSecurity {
     response.json({ user, local: false });
   }
   logout(request: Request, response: Response) {
+    if (this.standalone) {
+      response.clearCookie('yosis_guest', {
+        httpOnly: true,
+        secure: this.guestSecure(request),
+        sameSite: 'strict',
+        path: '/api',
+      });
+      response.status(204).end();
+      return;
+    }
     const cookie = request
       .get('cookie')
       ?.split(';')
@@ -196,6 +230,30 @@ export class ApiSecurity {
   private matchToken(token: string) {
     const hash = digest(token);
     return this.tokens.find((item) => timingSafeEqual(item.hash, hash))?.user;
+  }
+  private guestSecret(request: Request) {
+    const value = request
+      .get('cookie')
+      ?.split(';')
+      .map((part) => part.trim())
+      .find((part) => part.startsWith('yosis_guest='))
+      ?.slice(12);
+    return value && /^[0-9a-f]{64}$/.test(value) ? value : undefined;
+  }
+  private guestSecure(request: Request) {
+    if (request.secure) return true;
+    // HTTPS reverse proxies need no forwarded-host trust. Only a browser header
+    // for the same authority can request a Secure cookie.
+    const address = request.get('origin') ?? request.get('referer');
+    if (!address) return false;
+    try {
+      const url = new URL(address);
+      return (
+        url.protocol === 'https:' && url.host === new URL(`http://${request.get('host')}`).host
+      );
+    } catch {
+      return false;
+    }
   }
 }
 

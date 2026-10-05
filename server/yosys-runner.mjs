@@ -52,7 +52,132 @@ function virtualSources(project) {
   return result;
 }
 
-process.once('message', async (request) => {
+// A spare worker is started before any job exists. It loads Yosys and runs a small design
+// through the same passes, so V8 has already optimised the hot WebAssembly code when the
+// real project arrives. Nothing from the warm-up reaches the job's log.
+const WARMUP = `module warm(input clk, input rst, input [7:0] a, input [7:0] b, output reg [7:0] q);
+  reg [15:0] count;
+  reg [1:0] state;
+  always @(posedge clk)
+    if (rst) begin count <= 0; state <= 0; q <= 0; end
+    else begin
+      count <= count + 1;
+      case (state)
+        0: if (count[3]) state <= 1;
+        1: begin q <= a + b; state <= 2; end
+        2: begin q <= {q[6:0], q[7]} ^ a; state <= 3; end
+        default: begin q <= (a > b) ? a - b : b - a; state <= 0; end
+      endcase
+    end
+endmodule`;
+async function warmUp() {
+  const { runYosys } = await import('@yowasp/yosys');
+  const quiet = { stdout: () => {}, stderr: () => {}, decodeASCII: true, fetchProgress: () => {} };
+  const rtl = await runYosys(
+    ['-T', '-p', 'read_verilog warm.v; hierarchy -check -top warm; proc; opt; write_json rtl.json'],
+    { 'warm.v': WARMUP },
+    quiet,
+  );
+  await runYosys(
+    [
+      '-T',
+      '-p',
+      'read_json rtl.json; synth_gowin -family gw2a -noflatten -noiopads -top warm; write_json technology.json',
+    ],
+    { 'rtl.json': rtl['rtl.json'] },
+    quiet,
+  );
+}
+
+// The laboratory simulates the design in the browser, so it needs nothing but two-input
+// gates and plain rising-edge flip-flops. Numbers keep the message small.
+const LAB_OPS = {
+  $_NOT_: 0,
+  $_AND_: 1,
+  $_NAND_: 2,
+  $_OR_: 3,
+  $_NOR_: 4,
+  $_XOR_: 5,
+  $_XNOR_: 6,
+  $_ANDNOT_: 7,
+  $_ORNOT_: 8,
+  $_MUX_: 9,
+  $_BUF_: 10,
+};
+// A tri-state buffer on a top-level pad: Y = E ? A : whatever the outside world drives.
+const LAB_TRI = 11;
+function labDesign(netlist, top) {
+  const module = netlist.modules?.[top];
+  if (!module) throw new Error(`Модуль ${top} не найден после подготовки.`);
+  let nets = 2;
+  const net = (bit) => {
+    if (typeof bit !== 'number') return bit === '1' ? 1 : 0;
+    if (bit + 1 > nets) nets = bit + 1;
+    return bit;
+  };
+  const init = new Map();
+  for (const name of Object.values(module.netnames ?? {})) {
+    const value = name.attributes?.init;
+    if (typeof value !== 'string') continue;
+    // Yosys writes the initial value most significant bit first.
+    name.bits.forEach((bit, index) => {
+      const digit = value[value.length - 1 - index];
+      if (typeof bit === 'number' && (digit === '0' || digit === '1')) init.set(bit, Number(digit));
+    });
+  }
+  const padBits = new Set(
+    Object.values(module.ports ?? {})
+      .filter((port) => port.direction !== 'input')
+      .flatMap((port) => port.bits.filter((bit) => typeof bit === 'number')),
+  );
+  const gates = [];
+  const dffs = [];
+  for (const cell of Object.values(module.cells ?? {})) {
+    const pin = (name) => net(cell.connections[name]?.[0]);
+    if (cell.type === '$_DFF_P_') dffs.push(pin('C'), pin('D'), pin('Q'), init.get(pin('Q')) ?? 0);
+    else if (cell.type in LAB_OPS)
+      gates.push(LAB_OPS[cell.type], pin('A'), pin('B'), pin('S'), pin('Y'));
+    else if (/DLATCH|\$_SR_|\$dlatch/.test(cell.type))
+      throw new Error(
+        'В схеме есть защёлка (latch). Лаборатория работает только с регистрами по фронту: допишите else или значение по умолчанию в always.',
+      );
+    else if (cell.type === '$_TBUF_') {
+      const pad = pin('Y');
+      if (!padBits.has(pad))
+        throw new Error(
+          'Третье состояние (z) в лаборатории работает только на выводах верхнего модуля (inout). Внутренние шины с z замените мультиплексором.',
+        );
+      gates.push(LAB_TRI, pin('A'), pin('E'), 0, pad);
+    } else if (/tribuf|TBUF/.test(cell.type))
+      throw new Error('Выводы с третьим состоянием (z) в лаборатории пока не поддерживаются.');
+    else throw new Error(`Элемент ${cell.type} не поддерживается лабораторией.`);
+  }
+  if (gates.length / 5 > 250000)
+    throw new Error('Схема слишком велика для лаборатории: больше 250 000 вентилей.');
+  const ports = Object.entries(module.ports ?? {}).map(([name, port]) => ({
+    name,
+    direction: port.direction,
+    bits: port.bits.map(net),
+    offset: port.offset ?? 0,
+    upto: !!port.upto,
+  }));
+  return { top, nets, ports, gates, dffs };
+}
+
+let warming = Promise.resolve();
+process.on('message', (request) => {
+  if (request?.warm) {
+    // A failed warm-up only costs speed; the job itself reports real errors.
+    warming = warmUp().then(
+      () => send({ type: 'warm' }),
+      () => {},
+    );
+    return;
+  }
+  void warming.then(() => handle(request));
+});
+
+async function handle(request) {
   try {
     send({ type: 'stage', stage: 'Загрузка Yosys WebAssembly' });
     const { runYosys } = await import('@yowasp/yosys');
@@ -68,6 +193,28 @@ process.once('message', async (request) => {
     const sourceCommands = project.files
       .filter((file) => /\.(v|sv)$/.test(file.name))
       .map((file) => `read_verilog ${file.name.endsWith('.sv') ? '-sv ' : ''}-I. ${file.name}`);
+    if (request.lab) {
+      files['lab.ys'] = [
+        ...sourceCommands,
+        `hierarchy -check -top ${project.top}`,
+        'proc',
+        // Keep tri-state drivers of top-level pads; everything inside becomes plain logic.
+        'tribuf -logic',
+        `synth -flatten -noabc -top ${project.top}`,
+        'async2sync',
+        'dfflegalize -cell $_DFF_P_ 01',
+        'abc -g AND,NAND,OR,NOR,XOR,XNOR,ANDNOT,ORNOT,MUX',
+        'opt_clean -purge',
+        'write_json lab.json',
+      ].join('\n');
+      send({ type: 'stage', stage: 'Подготовка схемы для лаборатории' });
+      const labFiles = await runYosys(['-T', '-s', 'lab.ys'], files, options);
+      flush();
+      send({ type: 'lab', design: labDesign(textFile(labFiles, 'lab.json'), project.top) });
+      send({ type: 'success' });
+      await disconnect();
+      return;
+    }
     files['rtl.ys'] = [
       ...sourceCommands,
       `hierarchy -check -top ${project.top}`,
@@ -134,4 +281,4 @@ process.once('message', async (request) => {
     }
     process.exitCode = 1;
   }
-});
+}

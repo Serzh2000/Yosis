@@ -18,7 +18,7 @@ const ARTIFACTS = new Set(['rtl.json', 'technology.json', 'logs.txt']);
 const MAX_LOG_BYTES = 4 * 1024 * 1024;
 
 interface WorkerMessage {
-  type: 'log' | 'stage' | 'netlist' | 'success' | 'failure' | 'probe-success';
+  type: 'log' | 'stage' | 'netlist' | 'success' | 'failure' | 'probe-success' | 'warm';
   text?: string;
   stage?: string;
   name?: 'rtl' | 'technology';
@@ -55,6 +55,10 @@ export class BuildManager {
   private retention: JobRetention;
   private probeChild?: ChildProcess;
   private probePromise: Promise<ToolchainStatus> | undefined;
+  /** A worker that has already loaded and exercised Yosys; the next job takes it. */
+  private spare?: ChildProcess;
+  private spareReady = false;
+  private prewarmEnabled = false;
 
   constructor(
     public root: string,
@@ -247,7 +251,58 @@ export class BuildManager {
     }
   }
 
+  /** Keep a warm Yosys worker ready. The server calls this once; tests and tools do not. */
+  prewarm() {
+    this.prewarmEnabled = true;
+    this.prepareSpare();
+  }
+
+  private prepareSpare() {
+    if (!this.prewarmEnabled || this.spare) return;
+    let child: ChildProcess;
+    try {
+      child = fork(RUNNER, [], {
+        execArgv: ['--max-old-space-size=2048'],
+        stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+        windowsHide: true,
+      });
+    } catch {
+      return;
+    }
+    this.spare = child;
+    this.spareReady = false;
+    const drop = () => {
+      if (this.spare === child) this.spare = undefined;
+    };
+    child.once('error', drop);
+    child.once('exit', drop);
+    child.once('message', (value) => {
+      if (this.spare === child && (value as WorkerMessage).type === 'warm') this.spareReady = true;
+    });
+    child.send({ warm: true }, (error) => {
+      if (error) {
+        drop();
+        child.kill();
+      }
+    });
+  }
+
+  private takeSpare(): ChildProcess | undefined {
+    const child = this.spare;
+    // A worker that is still warming up would make the job wait for it: start a fresh one
+    // instead and keep the spare for the next job.
+    if (!child || !this.spareReady) return undefined;
+    this.spare = undefined;
+    child.removeAllListeners('error');
+    child.removeAllListeners('exit');
+    child.removeAllListeners('message');
+    return child.connected && child.exitCode === null ? child : undefined;
+  }
+
   async close(): Promise<void> {
+    this.prewarmEnabled = false;
+    this.spare?.kill();
+    this.spare = undefined;
     this.scheduler.stop();
     this.probeChild?.kill();
     await Promise.all(
@@ -273,11 +328,13 @@ export class BuildManager {
     void this.save(record);
     let child: ChildProcess;
     try {
-      child = fork(RUNNER, [], {
-        execArgv: ['--max-old-space-size=2048'],
-        stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-        windowsHide: true,
-      });
+      child =
+        this.takeSpare() ??
+        fork(RUNNER, [], {
+          execArgv: ['--max-old-space-size=2048'],
+          stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+          windowsHide: true,
+        });
     } catch (error) {
       void this.finish(
         record,
@@ -316,6 +373,8 @@ export class BuildManager {
     // after those channels drain; only then can a complete result be accepted.
     child.on('close', (code, signal) => {
       if (record.child === child) record.child = undefined;
+      // The job is over and the CPU is free: get the next worker ready.
+      this.prepareSpare();
       if (TERMINAL.has(record.result.status)) return;
       if (code === 0 && succeeded && record.result.rtl && record.result.technology)
         void this.finish(record, 'success', 'Синтез завершён');

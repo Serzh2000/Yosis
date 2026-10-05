@@ -8,7 +8,17 @@ export { validateProject } from '../shared/project-validation';
 
 export function projectHash(project: Project): string {
   // Source order matters to Verilog macro definitions, so keep it in the hash.
-  return createHash('sha256').update(JSON.stringify(project)).digest('hex');
+  // Only what is built goes in, in the same shape as the client's getProjectSnapshot: the
+  // browser compares this hash with its own. `origin` (which example a project came from)
+  // is not a source; hashing it made every build of an example look stale.
+  const sources = {
+    ...(project.id ? { id: project.id } : {}),
+    name: project.name.trim(),
+    top: project.top,
+    board: project.board,
+    files: project.files.map((file) => ({ name: file.name, content: file.content })),
+  };
+  return createHash('sha256').update(JSON.stringify(sources)).digest('hex');
 }
 
 export function parseDiagnostics(logs: string): Diagnostic[] {
