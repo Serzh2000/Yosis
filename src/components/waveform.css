@@ -118,7 +118,7 @@
   padding: 6px;
   border-radius: 3px;
   color: #afc3d7;
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   cursor: pointer;
 }
@@ -187,7 +187,7 @@
 }
 .waveform-cursor-readout strong {
   color: #edbb80;
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 500;
 }
@@ -229,7 +229,7 @@
 .waveform-axis text {
   fill: #7394ae;
   font-size: 12px;
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .waveform-axis line {
   stroke: #3c5368;
@@ -305,7 +305,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 500;
   color: #c1d4e5;
@@ -362,7 +362,7 @@
 }
 .waveform-bus text {
   fill: #a8d7cb;
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   user-select: none;
 }
@@ -385,7 +385,7 @@
   stroke-dasharray: 4 3;
 }
 .waveform-unknown text {
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
   fill: #a0acb7;
   font-size: 12px;
 }
@@ -450,7 +450,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   padding: 0 10px;
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
   color: #7799b0;
   font-size: 12px;
   white-space: nowrap;

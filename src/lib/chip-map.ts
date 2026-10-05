@@ -222,3 +222,31 @@ export function logicBounds(map: PlacementMap): TileBounds | null {
     maxY: Math.max(...tiles.map((tile) => tile.y)),
   };
 }
+
+/** Bounds of the largest group of neighbouring logic tiles. A clock buffer or an oscillator
+ * sits at a fixed site far from the logic; fitting the view to everything would show an
+ * almost empty die. Tiles closer than `gap` tiles (Chebyshev distance) belong together;
+ * the group holding the most cells wins. */
+export function mainClusterBounds(map: PlacementMap, gap = 3): TileBounds | null {
+  const tiles = map.tiles.filter((tile) => tile.cells.some((cell) => cell.category !== 'IO'));
+  if (!tiles.length) return usedBounds(map);
+  const group = tiles.map((_, index) => index);
+  const find = (index: number): number =>
+    group[index] === index ? index : (group[index] = find(group[index]));
+  for (let a = 0; a < tiles.length; a++)
+    for (let b = a + 1; b < tiles.length; b++)
+      if (Math.max(Math.abs(tiles[a].x - tiles[b].x), Math.abs(tiles[a].y - tiles[b].y)) <= gap)
+        group[find(a)] = find(b);
+  const weight = new Map<number, number>();
+  tiles.forEach((tile, index) =>
+    weight.set(find(index), (weight.get(find(index)) ?? 0) + tile.cells.length),
+  );
+  const best = [...weight.entries()].sort((a, b) => b[1] - a[1])[0][0];
+  const members = tiles.filter((_, index) => find(index) === best);
+  return {
+    minX: Math.min(...members.map((tile) => tile.x)),
+    maxX: Math.max(...members.map((tile) => tile.x)),
+    minY: Math.min(...members.map((tile) => tile.y)),
+    maxY: Math.max(...members.map((tile) => tile.y)),
+  };
+}

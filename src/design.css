@@ -1,0 +1,160 @@
+/* Shared component layer of the "board and datasheet" language. Loaded after styles.css;
+   the doubled :root keeps these rules above the per-panel stylesheets that load lazily. */
+
+/* Labels read as sentences. Tracked-out capitals are silk-screen noise, not information. */
+:root:root * {
+  text-transform: none !important;
+  letter-spacing: 0;
+}
+:root:root .sh-brand strong {
+  letter-spacing: -0.02em;
+}
+
+/* One focus treatment everywhere: the pad colour on chrome, the accent on work surfaces. */
+:root:root :where(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent-strong) !important;
+  outline-offset: 2px;
+}
+
+/* Buttons. Gold means "this runs something"; everything else stays quiet. */
+:root:root .button {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--radius-control);
+  font-size: 14px;
+  font-weight: 500;
+}
+:root:root .button.primary {
+  background: var(--pad);
+  color: var(--pad-text);
+  font-weight: 600;
+  box-shadow: none;
+}
+:root:root .button.primary:hover:not(:disabled) {
+  background: var(--pad-strong);
+}
+:root:root .button.subtle {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+:root:root .button.subtle:hover:not(:disabled),
+:root:root .button.subtle.active {
+  background: var(--panel-raised);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+:root:root .button:disabled {
+  opacity: 0.5;
+}
+:root:root .icon-button,
+:root:root .mini-button {
+  border-radius: var(--radius-control);
+}
+
+/* Fields. */
+:root:root :where(input:not([type='checkbox'], [type='radio'], [type='range']), select, textarea) {
+  border-radius: var(--radius-control);
+}
+
+/* The status bar belongs to the chrome: it is the bottom edge of the board. */
+:root:root .app-statusbar {
+  min-height: 28px;
+  background: var(--chrome);
+  border-top: 1px solid var(--chrome-border);
+  color: var(--chrome-soft);
+  font-size: 12px;
+}
+:root:root .app-statusbar .statusbar-separator {
+  background: var(--chrome-border);
+}
+:root:root .app-statusbar .status-dot.online {
+  background: var(--pad);
+}
+
+/* Panel headings: plain sentence-case titles. */
+:root:root .panel-label,
+:root:root .pane-title,
+:root:root .section-label,
+:root:root .workspace-eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+/* Empty states invite one action. */
+:root:root .empty-workspace h2 {
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+:root:root .empty-workspace p {
+  max-width: 62ch;
+  color: var(--text-soft);
+  font-size: 14px;
+}
+
+/* Dialogs. */
+:root:root .dialog {
+  border-radius: var(--radius-panel);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+:root:root .dialog-heading h2 {
+  font-size: 18px;
+  font-weight: 650;
+}
+
+/* Build log: the tab that is open carries the trace colour, like the main tabs. */
+:root:root .logs-header {
+  background: var(--panel);
+}
+:root:root .log-tabs button.active {
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+:root:root .logs-body pre {
+  font-size: 13px;
+}
+
+/* Scrollbars follow the surface they sit on. */
+:root:root ::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--muted) 40%, transparent);
+}
+
+/* Waveform labels: two tight lines must fit the fixed 36px row. */
+:root:root .waveform-signal-label strong,
+:root:root .waveform-signal-label small {
+  line-height: 1.2;
+}
+:root:root .waveform-signal-label small {
+  margin-top: 1px;
+}
+
+/* The project name sits on the chrome, so it takes the silk-screen colour in both themes. */
+:root:root .sh-project span {
+  flex: none;
+  max-width: 100%;
+  color: var(--chrome-text);
+}
+
+/* Room for a signal's scope and width on one line. */
+:root:root .waveform-viewer {
+  --wave-label-width: 236px;
+}
+
+/* Run buttons that predate the shared .button classes: the same gold pad. */
+:root:root .virtual-primary {
+  background: var(--pad);
+  color: var(--pad-text);
+  border-radius: var(--radius-control);
+  font-weight: 600;
+}
+:root:root .virtual-primary:hover:not(:disabled) {
+  background: var(--pad-strong);
+}
+
+/* The code tab is the editor and nothing else. */
+:root:root .code-workspace {
+  grid-template-columns: minmax(0, 1fr);
+}

@@ -4,6 +4,7 @@ import { ApiError, request } from '../lib/api';
 export interface ServerSession {
   user: string;
   local: boolean;
+  guest?: boolean;
 }
 export function useServerSession() {
   const [session, setSession] = useState<ServerSession | null>(null);
@@ -44,8 +45,12 @@ export function useServerSession() {
   const logout = useCallback(async () => {
     const response = await fetch('/api/session', { method: 'DELETE' });
     if (!response.ok) throw new Error('Не удалось завершить сеанс.');
+    if (session?.guest) {
+      await refresh();
+      return;
+    }
     setSession(null);
     setLoginRequired(true);
-  }, []);
+  }, [session?.guest, refresh]);
   return { session, loginRequired, loading, error, login, logout, refresh };
 }

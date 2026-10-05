@@ -1,8 +1,6 @@
 import { useRef, type KeyboardEvent } from 'react';
 import {
   Activity,
-  CircleAlert,
-  CircleCheck,
   CircuitBoard,
   Code2,
   Cpu,
@@ -10,8 +8,6 @@ import {
   GitBranch,
   GraduationCap,
   Layers3,
-  LoaderCircle,
-  RefreshCw,
   SlidersHorizontal,
   Usb,
   type LucideIcon,
@@ -54,9 +50,9 @@ export const workspaceTabs: { id: WorkTab; label: string; icon: LucideIcon; capt
   { id: 'simulation', label: 'Диаграммы', icon: Activity, caption: 'Сигналы во времени' },
   {
     id: 'virtual',
-    label: 'Виртуальная',
+    label: 'Лаборатория',
     icon: CircuitBoard,
-    caption: 'Виртуальная плата: кнопки, светодиоды и Verilog',
+    caption: 'Плата на столе: детали, провода и схема в работе',
   },
   { id: 'technology', label: 'Gowin', icon: Cpu, caption: 'LUT, регистры и ресурсы' },
   { id: 'chip', label: 'Кристалл', icon: Layers3, caption: 'Размещение и карта занятости' },
@@ -70,10 +66,10 @@ const groups: { label: string; tabs: WorkTab[] }[] = [
   { label: 'Плата', tabs: ['board'] },
 ];
 const statuses = {
-  success: { label: 'Готово', icon: CircleCheck },
-  error: { label: 'Ошибка', icon: CircleAlert },
-  stale: { label: 'Нужна новая сборка', icon: RefreshCw },
-  busy: { label: 'Выполняется', icon: LoaderCircle },
+  success: { label: 'Готово' },
+  error: { label: 'Ошибка' },
+  stale: { label: 'Нужна новая сборка' },
+  busy: { label: 'Выполняется' },
 } as const;
 
 export interface StudioNavigationProps {
@@ -86,6 +82,8 @@ export interface StudioNavigationProps {
   constraintsCount: number;
   synthesisStatus?: WorkspaceStatus;
   physicalStatus?: WorkspaceStatus;
+  /** The schematic editor is offered only to projects that have a schematic. */
+  schematicAvailable?: boolean;
 }
 
 export function StudioNavigation({
@@ -97,23 +95,80 @@ export function StudioNavigation({
   constraintsCount,
   synthesisStatus,
   physicalStatus,
+  schematicAvailable = true,
 }: StudioNavigationProps) {
+  const visible = workspaceTabs.filter((item) => item.id !== 'design' || schematicAvailable);
   const tabs = useRef<HTMLElement>(null);
   function handleKeys(event: KeyboardEvent<HTMLButtonElement>, id: WorkTab) {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     const next = getTabDestination(
       event.key,
-      workspaceTabs.findIndex((item) => item.id === id),
-      workspaceTabs.length,
+      visible.findIndex((item) => item.id === id),
+      visible.length,
     );
     if (next === null) return;
     event.preventDefault();
-    const destination = workspaceTabs[next].id;
+    const destination = visible[next].id;
     onChange(destination);
     tabs.current?.querySelector<HTMLButtonElement>(`#tab-${destination}`)?.focus();
   }
   return (
     <div className="sh-nav">
+      <nav
+        className="sh-tabs"
+        aria-label="Рабочие вкладки"
+        role="tablist"
+        aria-orientation="vertical"
+        ref={tabs}
+      >
+        {groups.map((group) => {
+          const items = group.tabs.filter((id) => visible.some((item) => item.id === id));
+          if (!items.length) return null;
+          return (
+            <div className="sh-tab-group" role="presentation" key={group.label}>
+              <span className="sh-tab-group-label" aria-hidden="true">
+                {group.label}
+              </span>
+              {items.map((id) => {
+                const item = workspaceTabs.find((candidate) => candidate.id === id)!;
+                const status =
+                  id === 'chip'
+                    ? physicalStatus
+                    : id === 'rtl' || id === 'technology'
+                      ? synthesisStatus
+                      : undefined;
+                const state = status ? statuses[status] : null;
+                return (
+                  <button
+                    key={id}
+                    id={`tab-${id}`}
+                    data-tour={`tab-${id}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === id}
+                    aria-controls={`panel-${id}`}
+                    tabIndex={tab === id ? 0 : -1}
+                    aria-label={`${item.label}${state ? ` · ${state.label}` : ''}`}
+                    title={`${item.caption}${state ? ` · ${state.label}` : ''}`}
+                    className={`sh-tab ${tab === id ? 'active' : ''}`}
+                    onClick={() => onChange(id)}
+                    onKeyDown={(event) => handleKeys(event, id)}
+                  >
+                    <item.icon size={17} aria-hidden="true" />
+                    <span>{item.label}</span>
+                    {id === 'constraints' && constraintsCount > 0 && (
+                      <small aria-label={`${constraintsCount} файлов ограничений`}>
+                        {constraintsCount}
+                      </small>
+                    )}
+                    {status && <i className={`sh-via ${status}`} aria-hidden="true" />}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+      </nav>
       <button
         type="button"
         className={`sh-files ${fileManagerOpen && filesAvailable ? 'active' : ''} ${filesAvailable ? '' : 'unavailable'}`}
@@ -126,63 +181,9 @@ export function StudioNavigation({
         tabIndex={filesAvailable ? undefined : -1}
         onClick={onToggleFiles}
       >
-        <Folder size={18} aria-hidden="true" />
+        <Folder size={17} aria-hidden="true" />
+        <span>Файлы</span>
       </button>
-      <nav
-        className="sh-tabs"
-        aria-label="Рабочие вкладки"
-        role="tablist"
-        aria-orientation="horizontal"
-        ref={tabs}
-      >
-        {groups.map((group, index) => (
-          <div className="sh-tab-group" role="presentation" key={group.label} title={group.label}>
-            {index > 0 && <span className="sh-tab-sep" aria-hidden="true" />}
-            {group.tabs.map((id) => {
-              const item = workspaceTabs.find((candidate) => candidate.id === id)!;
-              const status =
-                id === 'chip'
-                  ? physicalStatus
-                  : id === 'rtl' || id === 'technology'
-                    ? synthesisStatus
-                    : undefined;
-              const state = status ? statuses[status] : null;
-              return (
-                <button
-                  key={id}
-                  id={`tab-${id}`}
-                  data-tour={`tab-${id}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === id}
-                  aria-controls={`panel-${id}`}
-                  tabIndex={tab === id ? 0 : -1}
-                  aria-label={`${item.label}${state ? ` · ${state.label}` : ''}`}
-                  title={`${group.label}: ${item.caption}${state ? ` · ${state.label}` : ''}`}
-                  className={`sh-tab ${tab === id ? 'active' : ''}`}
-                  onClick={() => onChange(id)}
-                  onKeyDown={(event) => handleKeys(event, id)}
-                >
-                  <item.icon size={16} aria-hidden="true" />
-                  <span>{item.label}</span>
-                  {id === 'constraints' && constraintsCount > 0 && (
-                    <small aria-label={`${constraintsCount} файлов ограничений`}>
-                      {constraintsCount}
-                    </small>
-                  )}
-                  {state && (
-                    <state.icon
-                      className={`tab-state ${status} ${status === 'busy' ? 'spin' : ''}`}
-                      size={13}
-                      aria-hidden="true"
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        ))}
-      </nav>
     </div>
   );
 }

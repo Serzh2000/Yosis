@@ -314,7 +314,7 @@
   text-overflow: ellipsis;
 }
 .virtual-readout strong {
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-weight: 500;
   color: var(--accent);
   font-size: 12px;
@@ -588,7 +588,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .vb-crystal {
   position: absolute;
@@ -613,7 +613,7 @@
   border-radius: 3px;
   background: #aab1b5;
   text-align: center;
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .vb-crystal b.high {
   background: #2a2a1a;
@@ -645,7 +645,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--vb-silk-soft);
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .vb-led-slot.free small {
   font-family: inherit;
@@ -660,7 +660,7 @@
   box-sizing: border-box;
   font-size: 12px;
   font-weight: 700;
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .vb-led.on {
   background: radial-gradient(circle at 35% 30%, #fff9d0, #ffd23f 55%, #d99a00);
@@ -739,7 +739,7 @@
   border-radius: 3px;
   background: #17201b;
   color: #eef4ea;
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .vb-button.pressed {
   transform: translateY(4px);
@@ -805,5 +805,451 @@
   padding: 0 14px 8px;
   font-size: 12px;
   line-height: 1.6;
+  color: var(--muted);
+}
+
+/* Real header pinout: every pad carries its FPGA pin number, as on a pinout card.
+   The board is the black Tang Nano PCB with gold pads and white silk-screen. */
+.vb-board {
+  --vb-pcb: #121512;
+  --vb-pcb-edge: #3a3f39;
+  width: 700px;
+  height: 320px;
+}
+.vb-header {
+  left: 74px;
+  right: 20px;
+  height: auto;
+  align-items: flex-start;
+}
+.vb-header-top {
+  top: 8px;
+}
+.vb-header-bottom {
+  bottom: 8px;
+  align-items: flex-end;
+}
+.vb-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 26px;
+  cursor: help;
+}
+.vb-header-bottom .vb-pin {
+  flex-direction: column-reverse;
+}
+.vb-pin i {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #d8c27a;
+  box-shadow: inset 0 0 0 4px #1a1a14;
+}
+.vb-board .vb-pin b {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: #c9d0c8;
+}
+.vb-pin.power b {
+  color: #7f877d;
+}
+.vb-pin.assigned i {
+  background: #ffd23f;
+  box-shadow:
+    inset 0 0 0 4px #1a1a14,
+    0 0 0 2px #ffd23f55;
+}
+.vb-board .vb-pin.assigned b {
+  color: #ffd23f;
+  font-weight: 700;
+}
+
+/* Room for the two labelled header rows: every component moves into the middle band. */
+.vb-board {
+  height: 372px;
+}
+.vb-usb {
+  top: 148px;
+}
+.vb-bl616 {
+  top: 158px;
+}
+.vb-fpga {
+  top: 114px;
+}
+.vb-crystal {
+  top: 70px;
+}
+.vb-leds {
+  top: 132px;
+  left: 300px;
+}
+.vb-silk {
+  top: 242px;
+}
+.vb-buttons {
+  bottom: 62px;
+}
+
+/* ---- Digital twin: geometry taken from the top-view render of the Tang Nano 20K ----
+   The board is 740x340 units; USB-C sticks out on the left, HDMI on the right. Header
+   numbers are printed outside the board, the way pinout cards show them. */
+.vb-scroll {
+  padding: 34px 40px 30px;
+}
+.vb-board {
+  --vb-pcb: #2b2d31;
+  --vb-pcb-edge: #45484d;
+  --vb-silk: #f2f3f1;
+  width: 740px;
+  height: 340px;
+  border-radius: 26px;
+  background: var(--vb-pcb);
+  border: 1px solid var(--vb-pcb-edge);
+  box-shadow: 0 6px 18px #0006;
+}
+/* Headers: gold rings on the board, FPGA pin numbers outside it. */
+.vb-header {
+  left: 24px;
+  right: 32px;
+}
+.vb-header-top {
+  top: -20px;
+}
+.vb-header-bottom {
+  bottom: -20px;
+}
+.vb-pin {
+  gap: 27px;
+}
+.vb-header-top .vb-pin {
+  flex-direction: column-reverse;
+}
+.vb-header-bottom .vb-pin {
+  flex-direction: column;
+}
+.vb-pin i {
+  width: 15px;
+  height: 15px;
+  background: #d9a441;
+  box-shadow: inset 0 0 0 4px #17181a;
+}
+.vb-board .vb-pin b {
+  color: var(--text-soft);
+  line-height: 1.2;
+}
+.vb-board .vb-pin.assigned b {
+  color: var(--accent-strong);
+}
+.vb-pin.power b {
+  color: var(--muted);
+}
+/* Connectors. */
+.vb-usb {
+  left: -26px;
+  top: 110px;
+  width: 112px;
+  height: 126px;
+  border-radius: 20px 6px 6px 20px;
+  background: linear-gradient(90deg, #a9a7c4, #c9c8dc 55%, #b5b3cc);
+  box-shadow: 0 2px 6px #0007;
+}
+.vb-usb span,
+.vb-usb b {
+  display: none;
+}
+.vb-hdmi {
+  position: absolute;
+  right: -26px;
+  top: 66px;
+  width: 160px;
+  height: 214px;
+  border-radius: 6px;
+  background:
+    linear-gradient(#9c9da3, #9c9da3) 78px 44px / 62px 6px no-repeat,
+    linear-gradient(#9c9da3, #9c9da3) 78px 164px / 62px 6px no-repeat,
+    linear-gradient(90deg, #c4c5ca, #dfe0e4 40%, #cfd0d5);
+  box-shadow: 0 2px 6px #0007;
+}
+.vb-fpc {
+  position: absolute;
+  left: 266px;
+  top: 210px;
+  width: 320px;
+  height: 76px;
+  border-radius: 3px;
+  background: linear-gradient(#17181a 0 18%, #e6e7ea 18% 86%, #b9babf 86%);
+  box-shadow: 0 1px 3px #0008;
+}
+/* Chips. */
+.vb-fpga {
+  left: 115px;
+  top: 88px;
+  width: 146px;
+  height: 148px;
+  border-radius: 3px;
+  background: #0b0c0d;
+  border: 0;
+  box-shadow: 0 0 0 4px #3b3d42;
+  gap: 2px;
+}
+.vb-fpga i {
+  left: 10px;
+  top: auto;
+  bottom: 10px;
+  width: 9px;
+  height: 9px;
+  background: #f2f3f1;
+}
+.vb-bl616,
+.vb-chip-b {
+  position: absolute;
+  top: 132px;
+  width: 70px;
+  height: 70px;
+  border-radius: 2px;
+  background: #0b0c0d;
+  border: 0;
+  box-shadow: 0 0 0 3px #3b3d42;
+}
+.vb-bl616 {
+  left: 296px;
+}
+.vb-chip-b {
+  left: 406px;
+  width: 88px;
+}
+.vb-update {
+  position: absolute;
+  left: 503px;
+  top: 144px;
+  width: 34px;
+  height: 42px;
+  border-radius: 3px;
+  background: #b9babf;
+  display: grid;
+  place-items: center;
+}
+.vb-update i {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #6d6e73;
+}
+.vb-board .vb-update b {
+  position: absolute;
+  left: 44px;
+  top: 12px;
+  transform: rotate(-90deg);
+  transform-origin: left top;
+  translate: 0 40px;
+  color: var(--vb-silk);
+  font-size: 12px;
+  font-weight: 700;
+}
+.vb-rgb {
+  position: absolute;
+  left: 355px;
+  top: 96px;
+  width: 24px;
+  height: 24px;
+  border-radius: 2px;
+  background: #f4f4f2;
+  box-shadow: 156px -4px 0 #f4f4f2;
+}
+.vb-pads {
+  position: absolute;
+  left: 404px;
+  top: 94px;
+  display: flex;
+  gap: 12px;
+}
+.vb-pads i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d9a441;
+}
+/* The 27 MHz oscillator with its live level. */
+.vb-crystal {
+  left: 266px;
+  top: 92px;
+  padding: 3px 7px;
+  gap: 6px;
+  border-radius: 3px;
+  background: #0b0c0d;
+  box-shadow: 0 0 0 2px #3b3d42;
+}
+.vb-board .vb-crystal span {
+  color: #d5d7d3;
+  font-weight: 500;
+}
+.vb-crystal b {
+  background: #3b3d42;
+  color: #f2f3f1;
+}
+/* Silk-screen title. */
+.vb-silk {
+  left: 116px;
+  top: 52px;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+.vb-board .vb-silk strong,
+.vb-board .vb-silk em {
+  color: var(--vb-silk);
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+}
+.vb-board .vb-silk em {
+  padding: 0 6px;
+  border-left: 3px solid var(--vb-silk);
+  border-right: 3px solid var(--vb-silk);
+}
+.vb-silk i {
+  width: 24px;
+  height: 12px;
+  margin-inline: -4px;
+  border: 3px solid #d9a441;
+  border-radius: 8px;
+}
+/* Six real-size LEDs in a row by the bottom edge. */
+.vb-leds {
+  left: 128px;
+  top: 262px;
+  gap: 7px;
+}
+.vb-led-slot {
+  width: 11px;
+  gap: 0;
+}
+.vb-led-slot b,
+.vb-led-slot small {
+  display: none;
+}
+.vb-leds::after {
+  content: 'LED5';
+  position: absolute;
+  left: 110px;
+  top: -14px;
+  transform: rotate(-90deg);
+  transform-origin: left bottom;
+  translate: 16px 26px;
+  color: var(--vb-silk);
+  font-size: 12px;
+  font-weight: 700;
+}
+.vb-led {
+  width: 11px;
+  height: 24px;
+  border-radius: 2px;
+  font-size: 0;
+}
+.vb-led.on {
+  background: #fff6c9;
+  border: 0;
+  box-shadow:
+    0 0 6px 2px #ffd23f,
+    0 0 18px 8px #ffb30080;
+}
+.vb-led.off {
+  background: #8f9094;
+  border: 0;
+}
+.vb-led.idle {
+  background: #55575c;
+  border: 0;
+}
+.vb-led.unknown {
+  border: 0;
+  background: repeating-linear-gradient(45deg, #8a6a12 0 3px, #d9a441 3px 6px);
+}
+/* Buttons S2 (top) and S1 (bottom) at the USB end. */
+.vb-buttons {
+  position: static;
+  display: block;
+}
+.vb-button-slot {
+  position: absolute;
+  left: 18px;
+  width: auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.vb-button-slot:nth-child(1) {
+  top: 250px;
+}
+.vb-button-slot:nth-child(2) {
+  top: 54px;
+}
+.vb-button-slot small {
+  display: none;
+}
+.vb-button {
+  width: 56px;
+  height: 40px;
+  gap: 4px;
+  border-radius: 5px;
+  background: #d2d3d7;
+  border: 0;
+  box-shadow:
+    inset 0 0 0 9px #b4b5ba,
+    0 2px 0 #17181a;
+}
+.vb-button span {
+  position: absolute;
+  left: 66px;
+  color: var(--vb-silk);
+  font-size: 15px;
+  font-weight: 700;
+}
+.vb-button-slot {
+  position: absolute;
+}
+.vb-button b {
+  background: #f4f4f2;
+  color: #17181a;
+  border-radius: 8px;
+  min-width: 22px;
+}
+.vb-button.pressed {
+  transform: translateY(2px);
+  background: #ffd23f;
+  box-shadow:
+    inset 0 0 0 9px #e2b420,
+    0 0 0 3px #ffd23f66;
+}
+/* Names of what the LEDs and buttons carry. */
+.vb-map {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin: 0 12px 10px;
+}
+.vb-map > div {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  font-size: 13px;
+}
+.vb-map dt {
+  font-weight: 600;
+}
+.vb-map dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  color: var(--accent-strong);
+}
+.vb-map > div.free dd {
   color: var(--muted);
 }

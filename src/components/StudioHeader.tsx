@@ -1,4 +1,4 @@
-import { CloudUpload, Cpu, Folder, HelpCircle, Moon, Play, Plus, Square, Sun } from 'lucide-react';
+import { CloudUpload, Folder, HelpCircle, Moon, Play, Plus, Square, Sun } from 'lucide-react';
 import type { Project } from '../../shared/types';
 
 export function StudioHeader({
@@ -10,6 +10,7 @@ export function StudioHeader({
   synthesisAvailable,
   healthLoading,
   serverLabel,
+  showServer,
   onServer,
   onCode,
   onProjectHub,
@@ -26,6 +27,8 @@ export function StudioHeader({
   synthesisAvailable: boolean;
   healthLoading: boolean;
   serverLabel: string;
+  /** Server sync is offered only when the app runs against a shared server. */
+  showServer: boolean;
   onServer: () => void;
   onCode: () => void;
   onProjectHub: () => void;
@@ -45,18 +48,53 @@ export function StudioHeader({
           onCode();
         }}
       >
-        <span className="sh-brand-mark">
-          <Cpu size={20} />
-        </span>
-        <strong>
-          yosis<span>.</span>
-        </strong>
+        <span className="sh-brand-mark" aria-hidden="true" />
+        <strong>yosis</strong>
       </a>
       <div className="project-switcher sh-project" title={project.name || 'Без имени'}>
         <Folder size={16} aria-hidden="true" />
         <span>{project.name || 'Без имени'}</span>
       </div>
-      <div className="sh-primary">
+      <div className="sh-actions">
+        <button
+          className="sh-btn outline"
+          disabled={busy}
+          onClick={onProjectHub}
+          data-tour="new-project"
+          aria-label="Создать проект"
+          title="Создание, примеры и сохранённые проекты"
+        >
+          <Plus size={16} aria-hidden="true" />
+          <span>Создать проект</span>
+        </button>
+        {showServer && (
+          <button
+            className="sh-btn quiet sh-sync"
+            title="Сохранение проектов и учебного прогресса на сервере"
+            aria-label={serverLabel}
+            disabled={busy}
+            onClick={onServer}
+          >
+            <CloudUpload size={16} aria-hidden="true" />
+            <span>{serverLabel}</span>
+          </button>
+        )}
+        <button
+          className="sh-btn quiet icon"
+          title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+          aria-label={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+          onClick={() => onToggleTheme()}
+        >
+          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+        <button
+          className="sh-btn quiet icon"
+          title="Как пользоваться IDE"
+          aria-label="Как пользоваться IDE"
+          onClick={() => onGuide()}
+        >
+          <HelpCircle size={18} />
+        </button>
         {showSynthesis &&
           (busy ? (
             <button className="sh-btn danger" disabled={submitting} onClick={onCancel}>
@@ -75,46 +113,6 @@ export function StudioHeader({
               Синтезировать<kbd>Ctrl ↵</kbd>
             </button>
           ))}
-      </div>
-      <div className="sh-actions">
-        <button
-          className="sh-btn outline"
-          disabled={busy}
-          onClick={onProjectHub}
-          data-tour="new-project"
-          aria-label="Создать проект"
-          title="Создание, примеры и сохранённые проекты"
-        >
-          <Plus size={16} aria-hidden="true" />
-          <span>Создать проект</span>
-        </button>
-        <span className="sh-divider" aria-hidden="true" />
-        <button
-          className="sh-btn quiet sh-sync"
-          title="Сохранение проектов и учебного прогресса на сервере"
-          aria-label={serverLabel}
-          disabled={busy}
-          onClick={onServer}
-        >
-          <CloudUpload size={16} aria-hidden="true" />
-          <span>{serverLabel}</span>
-        </button>
-        <button
-          className="sh-btn quiet icon"
-          title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
-          aria-label={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
-          onClick={() => onToggleTheme()}
-        >
-          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-        <button
-          className="sh-btn quiet icon"
-          title="Как пользоваться IDE"
-          aria-label="Как пользоваться IDE"
-          onClick={() => onGuide()}
-        >
-          <HelpCircle size={18} />
-        </button>
       </div>
     </header>
   );

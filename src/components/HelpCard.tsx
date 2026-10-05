@@ -303,7 +303,7 @@ export function HelpCard({ article, onClose }: { article: HelpArticle; onClose: 
     >
       <header className="help-card-header">
         <div>
-          <span className="help-card-eyebrow">СПРАВКА ПО СХЕМЕ</span>
+          <span className="help-card-eyebrow">Справка по схеме</span>
           <code className="help-card-subtitle">{article.subtitle}</code>
           <h2 id={titleId}>{article.title}</h2>
         </div>

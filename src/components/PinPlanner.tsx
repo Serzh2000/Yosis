@@ -1,15 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import {
-  Check,
-  Code2,
-  Info,
-  Lightbulb,
-  MapPin,
-  Play,
-  Search,
-  TriangleAlert,
-  X,
-} from 'lucide-react';
+import { Check, Code2, Lightbulb, MapPin, Play, Search, X } from 'lucide-react';
 import type { Project, SourceFile, YosysNetlist } from '../../shared/types';
 import {
   applyPinEdit,
@@ -27,12 +17,13 @@ import {
   applySuggestions,
   ledBusPlan,
   parsePortsFromSource,
-  pinDetails,
   quickSuggestions,
 } from '../lib/pin-hints';
 import { partForPin } from '../lib/board-parts';
 import './pin-planner.css';
 import { CanvasViewport } from './CanvasViewport';
+import { Dialog } from './Dialog';
+import { explainPin } from '../lib/pin-glossary';
 
 const directionLabels = { input: 'Вход', output: 'Выход', inout: 'I/O' };
 export function PinPlanner({
@@ -65,6 +56,12 @@ export function PinPlanner({
   const [bank, setBank] = useState<number | null>(null);
   const [hoverPin, setHoverPin] = useState<number | null>(null);
   const [hoverSignal, setHoverSignal] = useState<string | null>(null);
+  // The pin whose printed names are being explained.
+  const [explained, setExplained] = useState<{
+    number: number;
+    role: string;
+    signal?: string;
+  } | null>(null);
   // Before the first synthesis the ports are read from the Verilog text (marked as preliminary).
   const sourcePorts = useMemo(() => (rtl ? null : parsePortsFromSource(project)), [project, rtl]);
   const preliminary = !rtl && !!sourcePorts?.length;
@@ -95,7 +92,6 @@ export function PinPlanner({
   );
   const suggestions = useMemo(() => quickSuggestions(signals, directives), [signals, directives]);
   const ledPlan = useMemo(() => ledBusPlan(signals, directives), [signals, directives]);
-  const details = selectedPin ? pinDetails(selectedPin, directives, current) : null;
   const hoverPinInfo = hoverPin ? packagePins.find((value) => value.number === hoverPin) : null;
   const signalOfPin = (number: number) =>
     assigned.find((value) => assignedPins([value]).includes(number))?.signal;
@@ -112,13 +108,59 @@ export function PinPlanner({
     current && selectedPin
       ? (pinCompatibility(current, selectedPin) ??
         (() => {
-          const occupant = assigned.find(
-            (value) =>
-              value.signal !== current.name && assignedPins([value]).includes(selectedPin.number),
-          );
-          return occupant ? `Занят: ${occupant.signal}. Сначала освободите этот вывод.` : null;
+          return null;
         })())
       : null;
+  const occupantOf = (number: number, signal: string) =>
+    assigned.find((value) => value.signal !== signal && assignedPins([value]).includes(number))
+      ?.signal;
+  const swapWith =
+    current && selectedPin ? occupantOf(selectedPin.number, current.name) : undefined;
+  /**
+   * Put a signal on a pin, whoever holds that pin now. The previous holder moves to the pin
+   * this signal leaves when it may stand there, and is left without a pin otherwise.
+   */
+  function place(signal: PlannerSignal, number: number | null, pullMode: typeof pull) {
+    const pullOf = (name: string): typeof pull => {
+      const mode = readPinProperties(directives, name).PULL_MODE;
+      return mode === 'UP' ? 'UP' : mode === 'DOWN' ? 'DOWN' : 'NONE';
+    };
+    const before = signalAssignments(signal.name)[0];
+    const old = before && /^\d+$/.test(before.value) ? Number(before.value) : null;
+    const other = number === null ? undefined : occupantOf(number, signal.name);
+    let next = project;
+    let note = '';
+    if (other)
+      next = applyPinEdit(next, signals, {
+        signal: other,
+        pin: null,
+        file: fileName,
+        pull: 'NONE',
+      });
+    next = applyPinEdit(next, signals, {
+      signal: signal.name,
+      pin: number,
+      file: fileName,
+      pull: pullMode,
+    });
+    if (other) {
+      note = ` Сигнал ${other} остался без вывода.`;
+      if (old !== null)
+        try {
+          next = applyPinEdit(next, signals, {
+            signal: other,
+            pin: old,
+            file: fileName,
+            pull: pullOf(other),
+          });
+          note = ` Сигнал ${other} переехал на вывод ${old}.`;
+        } catch {
+          /* The freed pin does not suit the other signal: it stays unassigned. */
+        }
+    }
+    onChange(next);
+    return note;
+  }
   function choose(signal: PlannerSignal) {
     setSelected(signal.name);
     const location = signalAssignments(signal.name)[0];
@@ -140,21 +182,35 @@ export function PinPlanner({
   function commit(unassign = false) {
     if (!current) return;
     try {
-      onChange(
-        applyPinEdit(project, signals, {
-          signal: current.name,
-          pin: unassign ? null : pin,
-          file: fileName,
-          pull,
-        }),
-      );
+      const note = place(current, unassign ? null : pin, pull);
       setMessage(
         unassign
           ? `${current.name}: вывод освобождён.`
-          : `${current.name} → ${pin}. Назначение записано в ${fileName}.`,
+          : `${current.name} → ${pin}. Назначение записано в ${fileName}.${note}`,
       );
       setError('');
       if (unassign) setPin(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Не удалось сохранить назначение.');
+    }
+  }
+  function changeInTable(signal: PlannerSignal, value: string) {
+    const number = value === '' ? null : Number(value);
+    choose(signal);
+    setPin(number);
+    try {
+      const mode = readPinProperties(directives, signal.name).PULL_MODE;
+      const note = place(
+        signal,
+        number,
+        mode === 'UP' ? 'UP' : mode === 'DOWN' || [87, 88].includes(number ?? 0) ? 'DOWN' : 'NONE',
+      );
+      setMessage(
+        number === null
+          ? `${signal.name}: вывод освобождён.`
+          : `${signal.name} → ${number}. Назначение записано в ${fileName}.${note}`,
+      );
+      setError('');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Не удалось сохранить назначение.');
     }
@@ -173,6 +229,12 @@ export function PinPlanner({
       ],
     });
   }
+  // Where the pupil is in the three-step routine; the strip above the planner follows it.
+  const stepState = [
+    current ? 'done' : 'now',
+    pin ? 'done' : current ? 'now' : '',
+    current && pin ? 'now' : '',
+  ];
   return (
     <section className="pin-planner">
       <header className="pin-toolbar">
@@ -217,22 +279,22 @@ export function PinPlanner({
       ) : (
         <>
           <ol className="pin-steps" aria-label="Как назначить вывод">
-            <li className={current ? 'done' : 'now'}>
-              <b>1</b>
+            <li className={stepState[0]}>
+              <b>{stepState[0] === 'done' ? <Check size={16} aria-label="готово" /> : 1}</b>
               <span>
                 <strong>Выберите сигнал</strong>
                 <em>Порт вашей схемы в таблице слева</em>
               </span>
             </li>
-            <li className={pin ? 'done' : current ? 'now' : ''}>
-              <b>2</b>
+            <li className={stepState[1]}>
+              <b>{stepState[1] === 'done' ? <Check size={16} aria-label="готово" /> : 2}</b>
               <span>
                 <strong>Выберите контакт</strong>
                 <em>Нажмите на рисунке микросхемы или в списке</em>
               </span>
             </li>
-            <li className={current && pin ? 'now' : ''}>
-              <b>3</b>
+            <li className={stepState[2]}>
+              <b>{stepState[2] === 'done' ? <Check size={16} aria-label="готово" /> : 3}</b>
               <span>
                 <strong>Нажмите «Назначить»</strong>
                 <em>Запись появится в файле .cst</em>
@@ -289,6 +351,11 @@ export function PinPlanner({
                           className={`${current?.name === signal.name ? 'selected' : ''} ${linked || hoverSignal === signal.name ? 'linked' : ''}`}
                           onMouseEnter={() => setHoverSignal(signal.name)}
                           onMouseLeave={() => setHoverSignal(null)}
+                          onClick={(event) => {
+                            // The whole row picks the port; its own controls do their own job.
+                            if (!(event.target as Element).closest('button, select'))
+                              choose(signal);
+                          }}
                         >
                           <td>
                             <button
@@ -301,7 +368,34 @@ export function PinPlanner({
                           </td>
                           <td>{directionLabels[signal.direction]}</td>
                           <td>
-                            {locations.map((value) => value.value).join(', ') || '—'}
+                            {locations.length <= 1 && file ? (
+                              <select
+                                className="pin-row-select"
+                                aria-label={`Вывод для ${signal.name}`}
+                                value={locations[0]?.value ?? ''}
+                                disabled={busy}
+                                onChange={(event) => changeInTable(signal, event.target.value)}
+                              >
+                                <option value="">— нет</option>
+                                {packagePins
+                                  .filter(
+                                    (value) =>
+                                      !value.reserved &&
+                                      (!value.direction || value.direction === signal.direction),
+                                  )
+                                  .map((value) => {
+                                    const holder = occupantOf(value.number, signal.name);
+                                    return (
+                                      <option value={value.number} key={value.number}>
+                                        {value.number}
+                                        {holder ? ` · занят: ${holder}` : ''}
+                                      </option>
+                                    );
+                                  })}
+                              </select>
+                            ) : (
+                              locations.map((value) => value.value).join(', ') || '—'
+                            )}
                             {locations.length === 1 && partForPin(Number(locations[0].value)) && (
                               <small className="pin-part-tag">
                                 {partForPin(Number(locations[0].value))!.caption}
@@ -365,7 +459,7 @@ export function PinPlanner({
               <section className="pin-edit-card" aria-label="Назначение выбранного порта">
                 {current ? (
                   <>
-                    <div className="pin-edit-title">
+                    <div className="pin-edit-title pin-arrive" key={current.name}>
                       <strong>{current.name}</strong>
                       <span>
                         {directionLabels[current.direction]}
@@ -408,38 +502,15 @@ export function PinPlanner({
                       </label>
                       <span className="pin-voltage">LVCMOS33 · 3,3 В</span>
                     </div>
-                    {details && (
-                      <div className="pin-details" aria-label={`Вывод ${details.pin.number}`}>
-                        <div className="pin-details-head">
-                          <b>{details.pin.number}</b>
-                          <span>
-                            <strong>{details.title}</strong>
-                            <small>
-                              {details.pin.bank !== undefined
-                                ? `Банк ${details.pin.bank} · ${details.pin.io}`
-                                : 'Не относится к банкам ввода-вывода'}
-                              {details.pin.functions.length
-                                ? ` · ${details.pin.functions.join(', ')}`
-                                : ''}
-                            </small>
-                          </span>
-                        </div>
-                        <p>
-                          <Info size={13} aria-hidden="true" /> {details.effect}
-                        </p>
-                        {selectedPin && selectedPin.number >= 15 && selectedPin.number <= 20 && (
-                          <p>Светодиод горит при 0: в Verilog выдавайте инвертированный сигнал.</p>
-                        )}
-                        {details.warnings.map((warning) => (
-                          <p className="pin-warning" key={warning}>
-                            <TriangleAlert size={13} aria-hidden="true" /> {warning}
-                          </p>
-                        ))}
-                      </div>
-                    )}
                     {conflict && (
                       <p className="pin-error" role="alert">
                         {conflict}
+                      </p>
+                    )}
+                    {!conflict && swapWith && (
+                      <p className="pin-swap" role="status">
+                        Вывод {pin} сейчас у сигнала {swapWith}. При назначении они поменяются
+                        местами.
                       </p>
                     )}
                     <div className="pin-edit-actions">
@@ -473,7 +544,8 @@ export function PinPlanner({
                   </p>
                 )}
                 {message && (
-                  <p className="pin-message" role="status">
+                  <p className="pin-message pin-arrive" key={message} role="status">
+                    <Check size={15} aria-hidden="true" />
                     {message}
                   </p>
                 )}
@@ -513,12 +585,12 @@ export function PinPlanner({
               <div className="pin-package-container">
                 <CanvasViewport
                   className="pin-package"
-                  width={780}
-                  height={820}
+                  width={1010}
+                  height={850}
                   label="Назначение портов на корпус QN88, вид сверху"
                 >
                   {() => (
-                    <g transform="translate(95 125)">
+                    <g transform="translate(172 82)">
                       <rect
                         x="138"
                         y="138"
@@ -591,9 +663,32 @@ export function PinPlanner({
                             assignments.some((item) => item.signal === hoverSignal)) ||
                           (!!current && assignments.some((item) => item.signal === current.name));
                         const label = `Вывод ${value.number}${value.bank !== undefined ? ` · Bank ${value.bank}` : ''} · ${value.label}${assignments.length ? ` · ${assignments.map((command) => command.signal).join(', ')}` : ''}`;
-                        const tag = [caption, signalName ? `→ ${signalName}` : '']
-                          .filter(Boolean)
-                          .join(' ');
+                        // Datasheet naming: the FPGA pad and its special function, then what
+                        // the board wires to it, then the project signal assigned here.
+                        const padName = value.io
+                          ? [value.io, ...value.functions].join('/')
+                          : 'питание';
+                        const role =
+                          caption ||
+                          (part?.service || (value.reserved && value.io) ? value.label : '');
+                        const outward: { text: string; kind: string }[] = [
+                          ...(signalName ? [{ text: signalName, kind: 'signal' }] : []),
+                          ...(role ? [{ text: role, kind: 'role' }] : []),
+                          { text: padName, kind: value.io ? 'pad' : 'power' },
+                        ];
+                        // Text that ends at the pin is written outermost-first.
+                        const endsAtPin = position.side === 'left' || position.side === 'bottom';
+                        const tokens = endsAtPin ? [...outward].reverse() : outward;
+                        const tag = (
+                          <>
+                            {tokens.map((token, index) => (
+                              <tspan key={token.kind} className={`pin-tag-${token.kind}`}>
+                                {index > 0 ? '  ' : ''}
+                                {token.text}
+                              </tspan>
+                            ))}
+                          </>
+                        );
                         const numberX =
                           position.x +
                           (position.side === 'left' ? -31 : position.side === 'right' ? 31 : 0);
@@ -614,7 +709,10 @@ export function PinPlanner({
                             onMouseLeave={() => setHoverPin(null)}
                             onFocus={() => setHoverPin(value.number)}
                             onBlur={() => setHoverPin(null)}
-                            onClick={() => {
+                            onClick={(event) => {
+                              // The pad picks the contact; its printed names open the explanation.
+                              if ((event.target as Element).closest('.pin-tag'))
+                                setExplained({ number: value.number, role, signal: signalName });
                               if (!disabled) selectPin(value.number);
                             }}
                             onKeyDown={(event) => {
@@ -641,33 +739,33 @@ export function PinPlanner({
                             {!!assignments.length && (
                               <circle cx={position.x} cy={position.y} r="3" />
                             )}
-                            {!!tag && position.side === 'left' && (
+                            {position.side === 'left' && (
                               <text
-                                x={numberX - 18}
-                                y={position.y + 6}
+                                x={numberX - 16}
+                                y={position.y + 4}
                                 textAnchor="end"
-                                className={`pin-tag ${signalName ? 'with-signal' : ''}`}
+                                className="pin-tag"
                               >
                                 {tag}
                               </text>
                             )}
-                            {!!tag && position.side === 'right' && (
+                            {position.side === 'right' && (
                               <text
-                                x={numberX + 18}
-                                y={position.y + 6}
+                                x={numberX + 16}
+                                y={position.y + 4}
                                 textAnchor="start"
-                                className={`pin-tag ${signalName ? 'with-signal' : ''}`}
+                                className="pin-tag"
                               >
                                 {tag}
                               </text>
                             )}
-                            {!!tag && (position.side === 'top' || position.side === 'bottom') && (
+                            {(position.side === 'top' || position.side === 'bottom') && (
                               <text
-                                transform={`translate(${position.x + 6} ${
-                                  position.side === 'top' ? numberY - 20 : numberY + 20
+                                transform={`translate(${position.x + 4} ${
+                                  position.side === 'top' ? numberY - 14 : numberY + 12
                                 }) rotate(-90)`}
                                 textAnchor={position.side === 'top' ? 'start' : 'end'}
-                                className={`pin-tag ${signalName ? 'with-signal' : ''}`}
+                                className="pin-tag"
                               >
                                 {tag}
                               </text>
@@ -678,56 +776,99 @@ export function PinPlanner({
                     </g>
                   )}
                 </CanvasViewport>
+                {explained &&
+                  (() => {
+                    const target = packagePins.find((value) => value.number === explained.number)!;
+                    return (
+                      <Dialog
+                        key={target.number}
+                        className="dialog pin-explain-dialog"
+                        onClose={() => setExplained(null)}
+                      >
+                        <div className="pin-explain-head">
+                          <h2>Что написано у вывода {target.number}</h2>
+                          <button
+                            type="button"
+                            className="mini-button"
+                            aria-label="Закрыть пояснение"
+                            onClick={() => setExplained(null)}
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                        <dl>
+                          {explainPin(target, explained.role, explained.signal).map((item) => (
+                            <div key={item.term}>
+                              <dt>{item.term}</dt>
+                              <dd>{item.text}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                        <div className="pin-explain-actions">
+                          <button
+                            type="button"
+                            className="button primary"
+                            onClick={() => setExplained(null)}
+                          >
+                            Понятно
+                          </button>
+                        </div>
+                      </Dialog>
+                    );
+                  })()}
               </div>
-              <div className="pin-legend" aria-label="Условные обозначения">
-                <div>
-                  <strong>Цвета контактов</strong>
-                  <ul>
-                    <li>
-                      <i className="pin-legend-free" />
-                      Свободный контакт: цвет показывает банк
-                    </li>
-                    <li>
-                      <i className="pin-legend-assigned" />
-                      Назначен: рядом подписан сигнал
-                    </li>
-                    <li>
-                      <i className="pin-legend-part" />
-                      Подключён к детали платы (LED, кнопка, генератор, UART)
-                    </li>
-                    <li>
-                      <i className="pin-legend-reserved" />
-                      Служебный: питание, JTAG, флеш. Назначать нельзя
-                    </li>
-                  </ul>
-                  <div className="pin-bank-swatches" aria-label="Цвета банков">
-                    {(
-                      [
-                        ['0–1', 'bank-a'],
-                        ['2', 'bank-b'],
-                        ['3', 'bank-c'],
-                        ['4–5', 'bank-d'],
-                        ['6–7', 'bank-e'],
-                      ] as const
-                    ).map(([name, tone]) => (
-                      <span key={name}>
-                        <i className={`pin-bank-chip ${tone}`} />
-                        банк {name}
-                      </span>
-                    ))}
+              <details className="pin-legend-fold">
+                <summary>Цвета и обозначения</summary>
+                <div className="pin-legend" aria-label="Условные обозначения">
+                  <div>
+                    <strong>Цвета контактов</strong>
+                    <ul>
+                      <li>
+                        <i className="pin-legend-free" />
+                        Свободный контакт: цвет показывает банк
+                      </li>
+                      <li>
+                        <i className="pin-legend-assigned" />
+                        Назначен: рядом подписан сигнал
+                      </li>
+                      <li>
+                        <i className="pin-legend-part" />
+                        Подключён к детали платы (LED, кнопка, генератор, UART)
+                      </li>
+                      <li>
+                        <i className="pin-legend-reserved" />
+                        Служебный: питание, JTAG, флеш. Назначать нельзя
+                      </li>
+                    </ul>
+                    <div className="pin-bank-swatches" aria-label="Цвета банков">
+                      {(
+                        [
+                          ['0–1', 'bank-a'],
+                          ['2', 'bank-b'],
+                          ['3', 'bank-c'],
+                          ['4–5', 'bank-d'],
+                          ['6–7', 'bank-e'],
+                        ] as const
+                      ).map(([name, tone]) => (
+                        <span key={name}>
+                          <i className={`pin-bank-chip ${tone}`} />
+                          банк {name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <strong>Что это значит</strong>
+                    <p>
+                      <b>Банк</b> — группа соседних контактов, у которых одно общее питание для
+                      сигналов.
+                    </p>
+                    <p>
+                      <b>LVCMOS33</b> — обычный цифровой сигнал: 0 — это 0 В, 1 — это 3,3 В.
+                    </p>
                   </div>
                 </div>
-                <div>
-                  <strong>Что это значит</strong>
-                  <p>
-                    <b>Банк</b> — группа соседних контактов, у которых одно общее питание для
-                    сигналов.
-                  </p>
-                  <p>
-                    <b>LVCMOS33</b> — обычный цифровой сигнал: 0 — это 0 В, 1 — это 3,3 В.
-                  </p>
-                </div>
-              </div>
+              </details>
             </section>
           </div>
           <footer className="pin-footer">

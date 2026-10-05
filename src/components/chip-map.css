@@ -1,6 +1,9 @@
 .chip-map {
-  --chip-bg: var(--panel);
-  --chip-empty: color-mix(in srgb, var(--muted) 20%, var(--panel));
+  /* Chip-planner palette: dark die, quiet empty logic, a distinct I/O ring. */
+  --chip-bg: #06100d;
+  --chip-logic: #17342c;
+  --chip-io: #6f6335;
+  --chip-empty: #101d19;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 270px;
   gap: 12px;
@@ -172,7 +175,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .chip-modules li button.active {
   border-color: var(--accent);
@@ -195,7 +198,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .chip-gradient {
   display: block;

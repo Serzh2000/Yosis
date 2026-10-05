@@ -678,3 +678,363 @@
 .pin-steps li em {
   font-style: normal;
 }
+
+/* Datasheet-style pin names around the package. */
+.package-pin .pin-tag {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  fill: var(--muted);
+}
+.package-pin .pin-tag-pad {
+  fill: var(--text-soft);
+}
+.package-pin .pin-tag-power {
+  fill: color-mix(in srgb, var(--muted) 60%, transparent);
+}
+.package-pin .pin-tag-role {
+  fill: var(--text);
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
+.package-pin .pin-tag-signal {
+  fill: var(--accent-strong);
+  font-weight: 700;
+}
+.package-pin.faded .pin-tag {
+  opacity: 0.35;
+}
+.pin-package-container {
+  min-height: min(760px, calc(100dvh - 330px));
+}
+
+/* Explanation of the names printed at one pin. */
+.pin-package-container {
+  flex-direction: column;
+}
+.pin-explain {
+  order: -1;
+  margin: 0 12px 8px;
+  max-height: 190px;
+  overflow: auto;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: var(--panel);
+}
+.pin-explain-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+.pin-explain dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 8px 18px;
+}
+.pin-explain dt {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-strong);
+}
+.pin-explain dd {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+.package-pin {
+  cursor: pointer;
+}
+
+/* The pin, its number and its printed names are one click target. */
+.package-pin {
+  pointer-events: bounding-box;
+}
+.package-pin .pin-tag {
+  pointer-events: auto;
+}
+
+/* ---- The three steps: large enough to be read first, and they move with the pupil ---- */
+.pin-steps {
+  gap: 0;
+  padding: 12px 14px;
+}
+.pin-steps li {
+  position: relative;
+  gap: 12px;
+  padding: 10px 16px 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  transition:
+    background-color 0.35s ease,
+    color 0.35s ease;
+}
+/* Arrow between the steps: the order of work. */
+.pin-steps li + li::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-top: 2px solid var(--border);
+  border-right: 2px solid var(--border);
+  transform: translateY(-50%) rotate(45deg);
+  transition: border-color 0.35s ease;
+}
+.pin-steps li.done + li::before {
+  border-color: var(--trace);
+}
+.pin-steps li > b {
+  width: 34px;
+  height: 34px;
+  border-width: 2px;
+  font-size: 15px;
+  font-weight: 600;
+  transition:
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    color 0.35s ease,
+    transform 0.35s ease;
+}
+.pin-steps li strong {
+  font-size: 15px;
+}
+.pin-steps li em,
+.pin-steps li span {
+  font-size: 13px;
+}
+.pin-steps li em {
+  display: block;
+}
+.pin-steps li.now {
+  background: var(--accent-soft);
+  color: var(--text);
+  animation: pin-step-in 0.5s ease;
+}
+.pin-steps li.now > b {
+  transform: scale(1.08);
+  animation: pin-step-ring 1.6s ease-out 0.3s 2;
+}
+.pin-steps li.done > b {
+  background: var(--trace);
+  border-color: var(--trace);
+  color: var(--panel);
+}
+.pin-steps li.done strong {
+  color: var(--text-soft);
+}
+@keyframes pin-step-in {
+  from {
+    background-color: transparent;
+    transform: translateY(3px);
+  }
+}
+@keyframes pin-step-ring {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 12px transparent;
+  }
+}
+@media (max-height: 820px) {
+  .pin-steps {
+    padding: 8px 14px;
+  }
+  .pin-steps li {
+    padding: 6px 16px 6px 12px;
+  }
+}
+
+/* ---- Whatever a click changed arrives visibly: a short rise with a fading highlight ---- */
+.pin-arrive {
+  animation: pin-arrive 0.6s ease;
+}
+@keyframes pin-arrive {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  40% {
+    opacity: 1;
+    transform: none;
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  100% {
+    box-shadow: 0 0 0 2px transparent;
+  }
+}
+.pin-edit-title.pin-arrive {
+  border-radius: 6px;
+}
+.pin-message {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+.pin-signal-table tr,
+.pin-signal-table td {
+  transition: background-color 0.25s ease;
+}
+.package-pin rect {
+  transition:
+    fill 0.35s ease,
+    stroke-width 0.2s ease;
+}
+.package-pin {
+  transition: opacity 0.3s ease;
+}
+/* The chosen contact breathes twice so the eye finds it on the drawing. */
+.package-pin.chosen rect {
+  animation: pin-chosen 0.9s ease 2;
+}
+@keyframes pin-chosen {
+  50% {
+    stroke-width: 6;
+  }
+}
+
+/* ---- The whole package is visible and centred without dragging: the drawing takes the space
+   left between the tools and the legend instead of a fixed height that ran off the screen. ---- */
+@media (min-width: 901px) {
+  .pin-map-panel {
+    overflow: hidden;
+  }
+  .pin-package-container {
+    flex: 1;
+    min-height: 0;
+  }
+  .pin-package {
+    min-height: 0;
+  }
+  .pin-legend {
+    flex: none;
+  }
+}
+/* The chosen contact must be impossible to miss. */
+.package-pin.chosen rect,
+.package-pin.chosen:focus rect {
+  fill: var(--pad-strong);
+  stroke: var(--text);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 7px var(--pad));
+}
+.package-pin.chosen text:not(.pin-tag) {
+  fill: var(--accent-strong);
+  font-weight: 700;
+}
+.package-pin.chosen .pin-tag tspan {
+  fill: var(--text);
+}
+
+.pin-map-panel {
+  position: relative;
+}
+.pin-legend-fold {
+  flex: none;
+  font-size: 13px;
+}
+.pin-legend-fold > summary {
+  padding: 6px 2px 0;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+.pin-legend-fold[open] > .pin-legend {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 38px;
+  z-index: 3;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: var(--panel);
+  box-shadow: 0 8px 24px #0005;
+  animation: pin-arrive 0.4s ease;
+}
+/* The explanation is short and scrolls inside itself, so the drawing keeps its size. */
+.pin-explain {
+  flex: none;
+  max-height: 112px;
+  margin: 6px 0 4px;
+}
+
+/* The explanation of a pin's labels opens as a modal window. */
+.pin-explain-dialog {
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100dvh - 64px);
+  overflow: auto;
+  padding: 20px 24px;
+}
+.pin-explain-dialog .pin-explain-head {
+  margin-bottom: 14px;
+}
+.pin-explain-dialog .pin-explain-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.pin-explain-dialog dl {
+  margin: 0;
+  display: grid;
+  gap: 14px;
+}
+.pin-explain-dialog dt {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-strong);
+}
+.pin-explain-dialog dd {
+  margin: 4px 0 0;
+  max-width: 68ch;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-soft);
+}
+.pin-explain-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+.package-pin .pin-tag {
+  cursor: help;
+}
+.package-pin .pin-tag:hover tspan {
+  fill: var(--accent-strong);
+  text-decoration: underline;
+}
+
+/* The pin of a port is changed right in its row. */
+.pin-signal-table tbody tr {
+  cursor: pointer;
+}
+.pin-row-select {
+  min-width: 74px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pin-row-select:hover {
+  border-color: var(--accent);
+}
+.pin-swap {
+  color: var(--warning);
+  font-size: 13px;
+}

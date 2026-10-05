@@ -223,7 +223,7 @@ export function MissionTour(props: Props) {
         <header>
           <Flag size={17} />
           <strong>МИССИЯ 01 · МАЯК</strong>
-          <span>{progress.step ? `${Math.min(progress.step, 10)} / 10` : 'СТАРТ'}</span>
+          <span>{progress.step ? `${Math.min(progress.step, 10)} / 10` : 'Старт'}</span>
           <button
             aria-label={minimized ? 'Развернуть задание' : 'Свернуть задание'}
             onClick={() => setMinimized(!minimized)}

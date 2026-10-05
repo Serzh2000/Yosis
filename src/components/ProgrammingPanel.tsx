@@ -406,31 +406,38 @@ export function ProgrammingPanel({
         <p className="programming-intro">
           Запустите схему на плате. Загрузка в SRAM действует до отключения питания.
         </p>
-        <h4 className="programming-step-heading">
-          <span>1</span>Подключите плату
-        </h4>
-        <div className="programming-device-row">
-          <button
-            data-tour="connect"
-            className="button subtle"
-            disabled={!usb || running || uartBusy}
-            onClick={() => void connect()}
-          >
-            {connecting ? <LoaderCircle size={14} className="spin" /> : <Link2 size={14} />}{' '}
-            {connecting
-              ? choosingDevice
-                ? 'Выберите USB в окне браузера…'
-                : 'Проверяем JTAG…'
-              : target
-                ? 'Выбрать другую плату'
-                : 'Выбрать USB-плату'}
-          </button>
-          {target && (
-            <>
-              <span>{target.productName || 'Tang Nano 20K'}</span>
+        <section className={`programming-step ${target ? 'is-done' : ''}`}>
+          <h4 className="programming-step-heading">
+            <span>{target ? <Check size={13} aria-label="готово" /> : 1}</span>Подключите плату
+          </h4>
+          <div className={`programming-device-row ${target ? 'is-connected' : ''}`}>
+            {target && (
+              <div className="programming-device">
+                <i aria-hidden="true" />
+                <strong>{target.productName || 'Tang Nano 20K'}</strong>
+                <small>{identity ? 'FPGA отвечает по JTAG' : 'USB подключён'}</small>
+              </div>
+            )}
+            <button
+              data-tour="connect"
+              className="button subtle"
+              disabled={!usb || running || uartBusy}
+              onClick={() => void connect()}
+            >
+              {connecting ? <LoaderCircle size={14} className="spin" /> : <Link2 size={14} />}{' '}
+              {connecting
+                ? choosingDevice
+                  ? 'Выберите USB в окне браузера…'
+                  : 'Проверяем JTAG…'
+                : target
+                  ? 'Выбрать другую плату'
+                  : 'Выбрать USB-плату'}
+            </button>
+            {target && (
               <button
                 className="programming-icon-button"
                 aria-label="Отключить USB-плату"
+                title="Отключить USB-плату"
                 disabled={running}
                 onClick={() => {
                   setTarget(null);
@@ -439,185 +446,190 @@ export function ProgrammingPanel({
               >
                 <Unplug size={15} />
               </button>
-            </>
-          )}
-        </div>
-        {!usb && (
-          <div className="physical-note">
-            WebUSB недоступен. Откройте Yosis через HTTPS или localhost в браузере с WebUSB,
-            например Chrome или Edge.
-          </div>
-        )}
-        {identity && (
-          <details className="programming-helper-detail">
-            <summary>FPGA GW2AR-18C распознана</summary>
-            <span>ID {registerHex(identity.idCode)}</span>
-            <span>
-              Status {registerHex(identity.status)} · UserCode {registerHex(identity.userCode)}
-            </span>
-          </details>
-        )}
-        {error && (
-          <div className="physical-error" role="alert">
-            {error}
-            <details className="programming-error-hint">
-              <summary>Как исправить подключение</summary>
-              {adapterKind === 'dirtyjtag'
-                ? 'Выбран DirtyJTAG. Ошибка захвата требует проверки WinUSB и доступа к interface 0. Переподключите USB без UPDATE и закройте другие программы, работающие с платой.'
-                : 'Штатная FTDI-эмуляция на Windows может блокировать WebUSB. Откройте раздел «Отладчик» и выберите Bouffalo CDC в режиме UPDATE. Закройте другие программы, работающие с платой.'}
-            </details>
-            {onOpenSetup && adapterKind !== 'dirtyjtag' && (
-              <button className="button subtle" onClick={onOpenSetup}>
-                Открыть настройку отладчика
-              </button>
             )}
           </div>
-        )}
-        <h4 className="programming-step-heading">
-          <span>2</span>Выберите схему
-        </h4>
-        <div className="programming-source-row" role="group" aria-label="Источник битстрима">
-          <button
-            className={`button subtle ${source === 'project' ? 'is-active' : ''}`}
-            disabled={running}
-            onClick={() => setSource('project')}
-          >
-            Сборка проекта
-          </button>
-          <button
-            className={`button subtle ${source === 'file' ? 'is-active' : ''}`}
-            disabled={running}
-            onClick={() => {
-              setSource('file');
-              fileRef.current?.click();
-            }}
-          >
-            <Upload size={13} />
-            Свой .fs
-          </button>
-          <input
-            ref={fileRef}
-            hidden
-            type="file"
-            accept=".fs"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void chooseFile(file);
-              event.target.value = '';
-            }}
-          />
-        </div>
-        <div className={`programming-artifact ${validArtifact ? 'is-ready' : ''}`}>
-          {source === 'project' && loadingArtifact ? (
-            <span>
-              <LoaderCircle size={14} className="spin" />
-              Проверяем битстрим…
-            </span>
-          ) : validArtifact && artifact ? (
-            <>
-              <strong>{artifact.projectName}</strong>
+          {!usb && (
+            <div className="physical-note">
+              WebUSB недоступен. Откройте Yosis через HTTPS или localhost в браузере с WebUSB,
+              например Chrome или Edge.
+            </div>
+          )}
+          {identity && (
+            <details className="programming-helper-detail">
+              <summary>FPGA GW2AR-18C распознана</summary>
+              <span>ID {registerHex(identity.idCode)}</span>
               <span>
-                {artifact.name} · {(artifact.text.length / 1024 / 1024).toFixed(2)} МБ
+                Status {registerHex(identity.status)} · UserCode {registerHex(identity.userCode)}
               </span>
-              <details className="programming-artifact-hash">
-                <summary>Проверка файла</summary>
-                <code>SHA-256 {artifact.sha256}</code>
-                <span>Модель FPGA и CRC проверены.</span>
+            </details>
+          )}
+          {error && (
+            <div className="physical-error" role="alert">
+              {error}
+              <details className="programming-error-hint">
+                <summary>Как исправить подключение</summary>
+                {adapterKind === 'dirtyjtag'
+                  ? 'Выбран DirtyJTAG. Ошибка захвата требует проверки WinUSB и доступа к interface 0. Переподключите USB без UPDATE и закройте другие программы, работающие с платой.'
+                  : 'Штатная FTDI-эмуляция на Windows может блокировать WebUSB. Откройте раздел «Отладчик» и выберите Bouffalo CDC в режиме UPDATE. Закройте другие программы, работающие с платой.'}
               </details>
-            </>
-          ) : source === 'project' ? (
-            <>
-              <strong>
-                {physical?.status === 'success' && physical.bitstreamAvailable
-                  ? 'Сборка относится к предыдущим исходникам'
-                  : 'Битстрим проекта ещё не готов'}
-              </strong>
-              <span>Синтезируйте проект и выполните размещение во вкладке «Кристалл».</span>
-              {onOpenChip && (
-                <button className="physical-text-button" onClick={onOpenChip}>
-                  Открыть кристалл
+              {onOpenSetup && adapterKind !== 'dirtyjtag' && (
+                <button className="button subtle" onClick={onOpenSetup}>
+                  Открыть настройку отладчика
                 </button>
               )}
-            </>
-          ) : (
-            <>
-              <strong>Выберите текстовый битстрим .fs</strong>
-              <span>Проверим модель FPGA и CRC каждого кадра.</span>
-            </>
-          )}
-        </div>
-        {artifactError && (
-          <div className="physical-error" role="alert">
-            {artifactError}
-          </div>
-        )}
-        <h4 className="programming-step-heading">
-          <span>3</span>Запустите на FPGA
-        </h4>
-        <div className="programming-action">
-          <button
-            data-tour="program"
-            className="button primary"
-            disabled={
-              !target ||
-              !validArtifact ||
-              running ||
-              uartBusy ||
-              (source === 'project' && loadingArtifact)
-            }
-            onClick={() => void program()}
-          >
-            {receipt?.status === 'running' ? (
-              <LoaderCircle size={14} className="spin" />
-            ) : (
-              <Download size={14} />
-            )}{' '}
-            {receipt?.status === 'running' ? 'Загрузка…' : 'Загрузить в SRAM'}
-          </button>
-          {uartConnected && <span>Перед JTAG-проверкой UART будет закрыт.</span>}
-        </div>
-        {receipt && (
-          <div className={`programming-job status-${receipt.status}`} aria-live="polite">
-            <div>
-              <strong>
-                {receipt.status === 'success' && <Check size={13} />} {receipt.progress.stage}
-              </strong>
-              <button
-                className="physical-text-button"
-                onClick={() => setShowLogs((value) => !value)}
-              >
-                {showLogs ? 'Скрыть журнал' : 'Журнал'}
-              </button>
             </div>
-            {receipt.status === 'running' && (
-              <progress
-                className="programming-progress"
-                max={100}
-                value={receipt.progress.percent}
-                aria-label="Ход загрузки"
-              />
-            )}
-            <details className="programming-receipt-meta">
-              <summary>Подробности загрузки</summary>
-              <small>
-                {receipt.projectName} · SHA-256 {receipt.sha256.slice(0, 16)}… · {receipt.device}
-              </small>
-              {receipt.result && (
-                <p>
-                  Status {registerHex(receipt.result.status)} · UserCode{' '}
-                  {registerHex(receipt.result.userCode)}
-                </p>
-              )}
-            </details>
-            {receipt.status === 'success' && (
-              <p>FPGA подтвердила конфигурацию. Проверьте LED и поведение устройства на плате.</p>
-            )}
-            {receipt.error && <p role="alert">{receipt.error}</p>}
-            {showLogs && (
-              <pre className="physical-logs">{receipt.logs || 'Передача ещё не началась.'}</pre>
+          )}
+        </section>
+        <section className={`programming-step ${validArtifact ? 'is-done' : ''}`}>
+          <h4 className="programming-step-heading">
+            <span>{validArtifact ? <Check size={13} aria-label="готово" /> : 2}</span>Выберите схему
+          </h4>
+          <div className="programming-source-row" role="group" aria-label="Источник битстрима">
+            <button
+              className={`button subtle ${source === 'project' ? 'is-active' : ''}`}
+              disabled={running}
+              onClick={() => setSource('project')}
+            >
+              Сборка проекта
+            </button>
+            <button
+              className={`button subtle ${source === 'file' ? 'is-active' : ''}`}
+              disabled={running}
+              onClick={() => {
+                setSource('file');
+                fileRef.current?.click();
+              }}
+            >
+              <Upload size={13} />
+              Свой .fs
+            </button>
+            <input
+              ref={fileRef}
+              hidden
+              type="file"
+              accept=".fs"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void chooseFile(file);
+                event.target.value = '';
+              }}
+            />
+          </div>
+          <div className={`programming-artifact ${validArtifact ? 'is-ready' : ''}`}>
+            {source === 'project' && loadingArtifact ? (
+              <span>
+                <LoaderCircle size={14} className="spin" />
+                Проверяем битстрим…
+              </span>
+            ) : validArtifact && artifact ? (
+              <>
+                <strong>{artifact.projectName}</strong>
+                <span>
+                  {artifact.name} · {(artifact.text.length / 1024 / 1024).toFixed(2)} МБ
+                </span>
+                <details className="programming-artifact-hash">
+                  <summary>Проверка файла</summary>
+                  <code>SHA-256 {artifact.sha256}</code>
+                  <span>Модель FPGA и CRC проверены.</span>
+                </details>
+              </>
+            ) : source === 'project' ? (
+              <>
+                <strong>
+                  {physical?.status === 'success' && physical.bitstreamAvailable
+                    ? 'Сборка относится к предыдущим исходникам'
+                    : 'Битстрим проекта ещё не готов'}
+                </strong>
+                <span>Синтезируйте проект и выполните размещение во вкладке «Кристалл».</span>
+                {onOpenChip && (
+                  <button className="physical-text-button" onClick={onOpenChip}>
+                    Открыть кристалл
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <strong>Выберите текстовый битстрим .fs</strong>
+                <span>Проверим модель FPGA и CRC каждого кадра.</span>
+              </>
             )}
           </div>
-        )}
+          {artifactError && (
+            <div className="physical-error" role="alert">
+              {artifactError}
+            </div>
+          )}
+        </section>
+        <section className={`programming-step ${receipt?.status === 'success' ? 'is-done' : ''}`}>
+          <h4 className="programming-step-heading">
+            <span>
+              {receipt?.status === 'success' ? <Check size={13} aria-label="готово" /> : 3}
+            </span>
+            Запустите на FPGA
+          </h4>
+          <div className="programming-action">
+            <button
+              data-tour="program"
+              className="button primary"
+              disabled={
+                !target ||
+                !validArtifact ||
+                running ||
+                uartBusy ||
+                (source === 'project' && loadingArtifact)
+              }
+              onClick={() => void program()}
+            >
+              {receipt?.status === 'running' ? (
+                <LoaderCircle size={14} className="spin" />
+              ) : (
+                <Download size={14} />
+              )}{' '}
+              {receipt?.status === 'running' ? 'Загрузка…' : 'Загрузить в SRAM'}
+            </button>
+            {uartConnected && <span>Перед JTAG-проверкой UART будет закрыт.</span>}
+          </div>
+          {receipt && (
+            <div className={`programming-job status-${receipt.status}`} aria-live="polite">
+              <div>
+                <strong>{receipt.progress.stage}</strong>
+                <button
+                  className="physical-text-button"
+                  onClick={() => setShowLogs((value) => !value)}
+                >
+                  {showLogs ? 'Скрыть журнал' : 'Журнал'}
+                </button>
+              </div>
+              {receipt.status === 'running' && (
+                <progress
+                  className="programming-progress"
+                  max={100}
+                  value={receipt.progress.percent}
+                  aria-label="Ход загрузки"
+                />
+              )}
+              <details className="programming-receipt-meta">
+                <summary>Подробности загрузки</summary>
+                <small>
+                  {receipt.projectName} · SHA-256 {receipt.sha256.slice(0, 16)}… · {receipt.device}
+                </small>
+                {receipt.result && (
+                  <p>
+                    Status {registerHex(receipt.result.status)} · UserCode{' '}
+                    {registerHex(receipt.result.userCode)}
+                  </p>
+                )}
+              </details>
+              {receipt.status === 'success' && (
+                <p>FPGA подтвердила конфигурацию. Проверьте LED и поведение устройства на плате.</p>
+              )}
+              {receipt.error && <p role="alert">{receipt.error}</p>}
+              {showLogs && (
+                <pre className="physical-logs">{receipt.logs || 'Передача ещё не началась.'}</pre>
+              )}
+            </div>
+          )}
+        </section>
       </div>
       <div className="programming-setup" hidden={mode !== 'maintenance'}>
         <DebuggerInstaller

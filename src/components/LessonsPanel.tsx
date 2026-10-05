@@ -118,7 +118,7 @@ export function LessonsPanel({
     <section className="lessons-workspace">
       <header className="lessons-heading">
         <div>
-          <span>ОТ ПЕРВОГО ВЕНТИЛЯ К СВОЕЙ СХЕМЕ</span>
+          <span>От первого вентиля к своей схеме</span>
           <h2>Маленькие задания</h2>
           <p>Предскажите результат, опишите устройство на Verilog и проверьте его симулятором.</p>
         </div>

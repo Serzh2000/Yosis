@@ -6,13 +6,14 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { getFocusLoopTarget, getTabDestination } from '../src/lib/accessibility';
 import { StudioNavigation, workspaceTabs } from '../src/components/StudioNavigation';
 
-test('horizontal tabs wrap, reach endpoints, and leave Tab to the browser', () => {
+test('tabs wrap on both arrow axes, reach endpoints, and leave Tab to the browser', () => {
   assert.equal(getTabDestination('ArrowLeft', 0, 9), 8);
   assert.equal(getTabDestination('ArrowRight', 8, 9), 0);
   assert.equal(getTabDestination('Home', 4, 9), 0);
   assert.equal(getTabDestination('End', 4, 9), 8);
   assert.equal(getTabDestination('Tab', 4, 9), null);
-  assert.equal(getTabDestination('ArrowDown', 4, 9), null);
+  assert.equal(getTabDestination('ArrowDown', 4, 9), 5);
+  assert.equal(getTabDestination('ArrowUp', 0, 9), 8);
   assert.equal(getTabDestination('ArrowRight', 0, 0), null);
 });
 

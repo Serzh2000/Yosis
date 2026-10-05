@@ -1,57 +1,74 @@
+/* Design language: the board and its datasheet.
+   Chrome (header, tabs, status bar) is solder mask in both themes; work surfaces are
+   datasheet paper in the light theme and the board itself in the dark one. Gold is the
+   exposed pad: the one thing you press. Wires and signals borrow the trace colour. */
 :root {
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  --font-ui: 'Golos Text Variable', 'Golos Text', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+  --radius-control: 5px;
+  --radius-panel: 8px;
+  font-family: var(--font-ui);
   font-synthesis: none;
+  font-feature-settings: 'tnum' 1;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
-  --surface: #f3f3ed;
-  --panel: #fffefb;
-  --canvas: #fafbf6;
-  --panel-raised: #eeefe7;
-  --text: #30352a;
-  --text-soft: #616958;
-  --muted: #646d5c;
-  --border: #dedfd5;
-  --accent: #537328;
-  --accent-strong: #4c6927;
-  --accent-soft: #e9efd9;
+  --chrome: #0c221b;
+  --chrome-raised: #15352b;
+  --chrome-text: #eef5ef;
+  --chrome-soft: #a9c2b6;
+  --chrome-border: #24493c;
+  --pad: #e8b93a;
+  --pad-strong: #f4cb5c;
+  --pad-text: #1e1803;
+  --trace: #2c9c78;
+  --surface: #eef1ee;
+  --panel: #ffffff;
+  --canvas: #f8faf8;
+  --panel-raised: #e4eae6;
+  --text: #12241d;
+  --text-soft: #3f5249;
+  --muted: #55685f;
+  --border: #cfd8d2;
+  --accent: #0e6b4e;
+  --accent-strong: #0a5740;
+  --accent-soft: #dcede5;
   --accent-text: #ffffff;
-  --danger: #9f433b;
-  --danger-soft: #f9e8e3;
-  --success: #4d7027;
-  --warning: #826027;
-  --warning-soft: #f7efd9;
-  --shadow: 0 16px 50px #30382014;
+  --danger: #b3362b;
+  --danger-soft: #fbe7e3;
+  --success: #146640;
+  --warning: #8a5a00;
+  --warning-soft: #fbefd2;
+  --shadow: 0 14px 40px #0c221b1f;
   --bg: var(--surface);
   color: var(--text);
   background: var(--surface);
   color-scheme: light;
 }
 :root[data-theme='dark'] {
-  --surface: #181a16;
-  --panel: #21241e;
-  --canvas: #1c1e1a;
-  --panel-raised: #2a2f24;
-  --text: #e8eade;
-  --text-soft: #b0baa3;
-  --muted: #a4af96;
-  --border: #363c2d;
-  --accent: #bbd88b;
-  --accent-strong: #cde6a4;
-  --accent-soft: #333f25;
-  --accent-text: #29351b;
-  --danger: #e19a89;
-  --danger-soft: #432b25;
-  --success: #b0cf82;
-  --warning: #d6bd85;
-  --warning-soft: #393322;
-  --shadow: 0 16px 50px #0005;
+  --chrome: #0e211b;
+  --chrome-raised: #1b3a30;
+  --chrome-border: #2b5145;
+  --trace: #57c9a0;
+  --surface: #0e211b;
+  --panel: #14302a;
+  --canvas: #0e211b;
+  --panel-raised: #1d4036;
+  --text: #ebf3ed;
+  --text-soft: #b7cabf;
+  --muted: #9fb5aa;
+  --border: #2b5145;
+  --accent: #e8b93a;
+  --accent-strong: #f4cb5c;
+  --accent-soft: #3b3a1c;
+  --accent-text: #1e1803;
+  --danger: #f39384;
+  --danger-soft: #472621;
+  --success: #7fd9a3;
+  --warning: #f2a75e;
+  --warning-soft: #44301a;
+  --shadow: 0 14px 40px #00000066;
   color-scheme: dark;
 }
 * {
@@ -99,7 +116,7 @@ svg {
 code,
 pre,
 kbd {
-  font-family: 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
 }
 ::selection {
   background: var(--accent-soft);
@@ -593,7 +610,7 @@ kbd {
   background: transparent;
   color: var(--text);
   border: 0;
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
 }
 .explorer-link {
@@ -918,7 +935,7 @@ kbd {
 }
 .pane-meta {
   margin-left: auto;
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   color: var(--muted);
 }
@@ -1151,7 +1168,7 @@ kbd {
   color: var(--text-soft);
 }
 .other-resources strong {
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
   font-weight: 400;
 }
 .full-panel-workspace {
@@ -1270,7 +1287,7 @@ kbd {
 .build-outcome small {
   margin: 0 10px;
   font-size: 12px;
-  font-family: Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .build-outcome.success {
   color: var(--success);

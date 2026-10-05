@@ -133,3 +133,17 @@ test('auto-zoom targets the logic, not the I/O cells on the die edge', () => {
   const onlyIo = parsePlacement(placed({ led: { type: 'IOB', bel: 'X0Y8/IOBA' } }));
   assert.deepEqual(logicBounds(onlyIo), { minX: 0, maxX: 0, minY: 8, maxY: 8 });
 });
+
+test('the first view targets the body of the design, not a far-away single cell', async () => {
+  const { mainClusterBounds } = await import('../src/lib/chip-map');
+  const cells: Record<string, { type: string; bel: string }> = {};
+  // A compact block of logic near the left edge…
+  for (let x = 1; x <= 4; x++)
+    for (let y = 44; y <= 47; y++)
+      cells[`lut_${x}_${y}`] = { type: 'LUT4', bel: `X${x}Y${y}/LUT0` };
+  // …and one clock-related cell at a fixed site on the other side of the die.
+  cells.far = { type: 'DFF', bel: 'X50Y27/DFF0' };
+  const map = parsePlacement(placed(cells));
+  assert.deepEqual(logicBounds(map), { minX: 1, maxX: 50, minY: 27, maxY: 47 });
+  assert.deepEqual(mainClusterBounds(map), { minX: 1, maxX: 4, minY: 44, maxY: 47 });
+});

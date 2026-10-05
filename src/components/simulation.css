@@ -217,7 +217,7 @@
   min-width: 0;
 }
 .simulation-input-values strong {
-  font-family: 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 500;
   overflow-wrap: anywhere;

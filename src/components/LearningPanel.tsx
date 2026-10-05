@@ -99,7 +99,7 @@ function LogicPlayground() {
   return (
     <section className="learning-sandbox" aria-label="Попробуй логический элемент">
       <div className="learning-sandbox-top">
-        <span>ПОТРОГАЙ СХЕМУ</span>
+        <span>Потрогай схему</span>
         <div>
           {['AND', 'OR', 'XOR', 'NOT'].map((item) => (
             <button key={item} aria-pressed={gate === item} onClick={() => setGate(item)}>
@@ -162,6 +162,26 @@ function LogicPlayground() {
       </p>
     </section>
   );
+}
+
+// The authored order puts the right answer first. Each visit shuffles the options, and the
+// order then stays put for that question, so buttons do not jump while the pupil reads.
+const quizSeed = Math.floor(Math.random() * 0x7fffffff);
+const quizOrders = new Map<string, readonly string[]>();
+function shuffledOptions<T extends { id: string }>(options: readonly T[], key: string): T[] {
+  let order = quizOrders.get(key);
+  if (!order || order.length !== options.length) {
+    let state = quizSeed;
+    for (const char of key) state = Math.imul(state ^ char.charCodeAt(0), 0x45d9f3b) >>> 0 || 1;
+    const ids = options.map((option) => option.id);
+    for (let index = ids.length - 1; index > 0; index--) {
+      state = (Math.imul(state ^ (state >>> 15), 0x2c1b3c6d) + 0x9e3779b9) >>> 0;
+      const other = state % (index + 1);
+      [ids[index], ids[other]] = [ids[other], ids[index]];
+    }
+    quizOrders.set(key, (order = ids));
+  }
+  return order.map((id) => options.find((option) => option.id === id)!);
 }
 
 export function LearningPanel({
@@ -394,7 +414,7 @@ export function LearningPanel({
         <div className="learning-layout">
           <aside className="learning-route">
             <div className="learning-route-summary">
-              <span>ТВОЙ МАРШРУТ</span>
+              <span>Твой маршрут</span>
               <strong>
                 {completedCount}
                 <small> / {guidedLessons.length} уроков</small>
@@ -501,7 +521,7 @@ export function LearningPanel({
                   <span className="learning-complete-icon">
                     <Flag size={31} />
                   </span>
-                  <span>УРОК ЗАВЕРШЁН</span>
+                  <span>Урок завершён</span>
                   <h1>{lesson.title}</h1>
                   <p>
                     {lesson.summary}{' '}
@@ -555,12 +575,12 @@ export function LearningPanel({
                   <div className="learning-step-title">
                     <span>
                       {step.kind === 'welcome'
-                        ? 'ЗНАКОМСТВО'
+                        ? 'Знакомство'
                         : step.kind === 'quiz'
-                          ? 'ПРЕДСКАЖИ РЕЗУЛЬТАТ'
+                          ? 'Предскажи результат'
                           : step.kind === 'practice'
-                            ? 'ЛАБОРАТОРИЯ'
-                            : 'РАЗБЕРЁМСЯ ВМЕСТЕ'}
+                            ? 'Лаборатория'
+                            : 'Разберёмся вместе'}
                     </span>
                     <h1>{step.title}</h1>
                     <p>
@@ -634,36 +654,39 @@ export function LearningPanel({
                         <GlossaryText key={step.id} text={step.quiz.question} />
                       </h2>
                       <div>
-                        {step.quiz.options.map((option, index) => (
-                          <button
-                            key={option.id}
-                            disabled={!ready}
-                            aria-pressed={quizOption?.id === option.id}
-                            className={
-                              quizOption?.id === option.id
-                                ? quizOption.id === step.quiz!.correctOptionId
-                                  ? 'correct'
-                                  : 'chosen'
-                                : ''
-                            }
-                            onClick={() =>
-                              setProgress(
-                                (current) =>
-                                  answerCourseQuiz(current, lesson.id, step.id, option.id).progress,
-                              )
-                            }
-                          >
-                            <span>
-                              {quizOption?.id === option.id &&
-                              option.id === step.quiz!.correctOptionId ? (
-                                <Check size={14} />
-                              ) : (
-                                String.fromCharCode(65 + index)
-                              )}
-                            </span>
-                            {option.label}
-                          </button>
-                        ))}
+                        {shuffledOptions(step.quiz.options, `${lesson.id}/${step.id}`).map(
+                          (option, index) => (
+                            <button
+                              key={option.id}
+                              disabled={!ready}
+                              aria-pressed={quizOption?.id === option.id}
+                              className={
+                                quizOption?.id === option.id
+                                  ? quizOption.id === step.quiz!.correctOptionId
+                                    ? 'correct'
+                                    : 'chosen'
+                                  : ''
+                              }
+                              onClick={() =>
+                                setProgress(
+                                  (current) =>
+                                    answerCourseQuiz(current, lesson.id, step.id, option.id)
+                                      .progress,
+                                )
+                              }
+                            >
+                              <span>
+                                {quizOption?.id === option.id &&
+                                option.id === step.quiz!.correctOptionId ? (
+                                  <Check size={14} />
+                                ) : (
+                                  String.fromCharCode(65 + index)
+                                )}
+                              </span>
+                              {option.label}
+                            </button>
+                          ),
+                        )}
                       </div>
                       {quizOption && (
                         <p

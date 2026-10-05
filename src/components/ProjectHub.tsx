@@ -9,6 +9,7 @@ import {
   Save,
   Upload,
   X,
+  CloudUpload,
 } from 'lucide-react';
 import type { BuildResult, Project } from '../../shared/types';
 import { downloadText, type ProjectSummary } from '../lib/projects';
@@ -20,6 +21,9 @@ import { examples } from '../lib/examples';
 import './project-hub.css';
 
 export interface ProjectHubProps {
+  /** Saving projects and progress on the server lives with the other project actions. */
+  onServer?: () => void;
+  serverLabel?: string;
   project: Project;
   projects: ProjectSummary[];
   build: BuildResult | null;
@@ -102,6 +106,12 @@ export function ProjectHub(props: ProjectHubProps) {
               {label}
             </button>
           ))}
+          {props.onServer && (
+            <button disabled={busy} onClick={props.onServer}>
+              <CloudUpload size={16} aria-hidden="true" />
+              {props.serverLabel ?? 'Синхронизация'}
+            </button>
+          )}
         </nav>
         <button
           className="icon-button"

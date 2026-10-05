@@ -28,7 +28,7 @@
   background: color-mix(in srgb, var(--bg, #0b1119) 93%, transparent);
 }
 .schematic-summary > span {
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
   color: var(--text, #dce5ef);
   font-weight: 600;
   font-size: 13px;
@@ -103,12 +103,12 @@
   fill: #dce5ef;
   font-size: 12px;
   font-weight: 650;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .schematic-node-name {
   fill: #8b9eaf;
   font-size: 12px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .schematic-module-mark {
   fill: #87baf2;
@@ -117,7 +117,7 @@
 .schematic-port-label {
   fill: #a6b6c6;
   font-size: 12px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .schematic-port {
   fill: #718599;
@@ -213,22 +213,22 @@
   fill: #d6e7ef;
   font-size: 12px;
   font-weight: 600;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .rtl-adder-operation {
   fill: #f0b36d;
   font-size: 36px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .rtl-operator-operation {
   fill: var(--text);
   font-size: 25px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .rtl-symbol-caption {
   fill: #a7bdce;
   font-size: 12px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .rtl-instance-name {
   font-size: 12px;
@@ -236,7 +236,7 @@
 .rtl-pin-label {
   fill: #a7bdce;
   font-size: 12px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
   paint-order: stroke;
   stroke: var(--bg, #0b1119);
   stroke-width: 3px;
@@ -245,17 +245,17 @@
 .rtl-dff-pin-label {
   fill: #d6e7ef;
   font-size: 12px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .rtl-reset-info {
   fill: #a7bdce;
   font-size: 12px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .rtl-mux-choice {
   fill: #a7bdce;
   font-size: 12px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .rtl-mux-detail {
   font-size: 12px;
@@ -308,7 +308,7 @@
 .schematic-bus-width {
   fill: #8b9eaf;
   font-size: 12px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
   paint-order: stroke;
   stroke: #0b1119;
   stroke-width: 4px;
@@ -429,7 +429,7 @@
   border-radius: 5px;
   font-size: 12px;
   font-weight: 650;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .inspector-cell-heading h3 {
   font-size: 13px;
@@ -507,7 +507,7 @@
 }
 .lut-input-toggles button span {
   font-size: 12px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .lut-input-toggles button strong {
   font-size: 14px;
@@ -564,7 +564,7 @@
   border-spacing: 0;
   font-size: 12px;
   text-align: center;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .lut-truth-table th {
   position: sticky;
@@ -623,7 +623,7 @@
 }
 .inspector-port-row strong {
   font-size: 12px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
   font-weight: 500;
 }
 .inspector-port-row small {
@@ -650,14 +650,14 @@
   padding: 7px 0;
 }
 .inspector-parameters dt {
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   color: var(--muted, #8496a9);
 }
 .inspector-parameters dd {
   margin: 0;
   text-align: right;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   color: var(--text, #dce5ef);
   overflow-wrap: anywhere;
@@ -679,7 +679,7 @@
   padding: 8px;
   color: var(--accent, #61d4b3);
   cursor: pointer;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
 }
 .inspector-sources button span {

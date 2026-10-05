@@ -250,7 +250,7 @@
 }
 .chip-axis {
   fill: var(--muted);
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
 }
 .chip-map-legend,

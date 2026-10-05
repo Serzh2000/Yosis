@@ -26,9 +26,9 @@ const LutInspector = lazy(() =>
 const SimulationPanel = lazy(() =>
   import('./components/SimulationPanel').then((module) => ({ default: module.SimulationPanel })),
 );
-const VirtualBoardPanel = lazy(() =>
-  import('./components/VirtualBoardPanel').then((module) => ({
-    default: module.VirtualBoardPanel,
+const LabPanel = lazy(() =>
+  import('./components/lab/LabPanel').then((module) => ({
+    default: module.LabPanel,
   })),
 );
 import type { LearningGuide, LearningWorkspace } from './components/LearningPanel';
@@ -179,9 +179,8 @@ export default function App() {
   const [projectHubOpen, setProjectHubOpen] = useState(false);
   const [projectHubStart, setProjectHubStart] = useState<string | undefined>();
   const [plannerSignal, setPlannerSignal] = useState('');
-  const [fileManagerOpen, setFileManagerOpen] = useState(
-    () => !window.matchMedia('(max-width: 900px)').matches,
-  );
+  // The file list opens only when the pupil asks for it.
+  const [fileManagerOpen, setFileManagerOpen] = useState(false);
   const [logsOpen, setLogsOpen] = useState(false);
   const [logTab, setLogTab] = useState<'logs' | 'diagnostics'>('logs');
   const [fileDialog, setFileDialog] = useState<FileDialog>(null);
@@ -213,7 +212,6 @@ export default function App() {
       setHighlightedSignal(null);
       setError('');
       setSelectedCell(null);
-      setLogsOpen(true);
       setLogTab('logs');
     },
     onResult: (result) => {
@@ -661,6 +659,7 @@ export default function App() {
         synthesisAvailable={!!health?.capabilities.synthesis}
         healthLoading={healthLoading}
         serverLabel={session ? 'Синхронизация' : 'Войти'}
+        showServer={!session?.local}
         onServer={() => (session ? setSyncOpen(true) : setLoginOpen(true))}
         onCode={() => setWorkTab('code')}
         onProjectHub={() => {
@@ -686,6 +685,9 @@ export default function App() {
         filesAvailable={usesProjectFiles}
         onToggleFiles={() => setFileManagerOpen(!fileManagerOpen)}
         constraintsCount={constraintsFiles.length}
+        schematicAvailable={
+          workTab === 'design' || project.files.some((file) => file.name.endsWith('.ysch'))
+        }
         synthesisStatus={
           busy
             ? 'busy'
@@ -865,53 +867,6 @@ export default function App() {
                   )}
                 </PanelBoundary>
               </div>
-              <details className="code-guide">
-                <summary>О проекте и работе с кодом</summary>
-                <div className="code-context">
-                  <strong>{project.name}</strong>
-                  <button className="button subtle" onClick={() => setProjectHubOpen(true)}>
-                    Управление проектом
-                  </button>
-                  <h2>Код становится схемой</h2>
-                  <p>
-                    Опишите входы, выходы и связь между ними. Yosys покажет, из каких элементов
-                    получается устройство.
-                  </p>
-                  <div className="workflow-steps">
-                    <button onClick={() => setWorkTab('rtl')}>
-                      <span>1</span>
-                      <div>
-                        <strong>Посмотрите RTL</strong>
-                        <small>Вентили, мультиплексоры, регистры</small>
-                      </div>
-                      <ArrowRight size={15} />
-                    </button>
-                    <button onClick={() => setWorkTab('simulation')}>
-                      <span>2</span>
-                      <div>
-                        <strong>Проверьте сигналы</strong>
-                        <small>Такты, сброс и временные диаграммы</small>
-                      </div>
-                      <ArrowRight size={15} />
-                    </button>
-                    <button onClick={() => setWorkTab('virtual')}>
-                      <span>3</span>
-                      <div>
-                        <strong>Запустите на виртуальной плате</strong>
-                        <small>Управляйте входами и наблюдайте выходы</small>
-                      </div>
-                      <ArrowRight size={15} />
-                    </button>
-                  </div>
-                  <button className="lesson-link" onClick={() => setWorkTab('lessons')}>
-                    <GraduationCap size={18} />
-                    <span>
-                      Не знаете, с чего начать?<strong>Начните курс с наставником</strong>
-                    </span>
-                    <ArrowRight size={15} />
-                  </button>
-                </div>
-              </details>
             </div>
           )}
 
@@ -1121,7 +1076,7 @@ export default function App() {
                     </div>
                   )}
                   <div className="resource-section">
-                    <div className="section-label">РЕСУРСЫ МОДУЛЯ</div>
+                    <div className="section-label">Ресурсы модуля</div>
                     {resourceRows ? (
                       <>
                         <div className="resource-grid">
@@ -1217,7 +1172,7 @@ export default function App() {
               aria-labelledby="tab-virtual"
               className="full-panel-workspace"
               hidden={workTab !== 'virtual'}
-              aria-label="Рабочая область виртуальной платы"
+              aria-label="Лаборатория"
             >
               <PanelBoundary name="virtual" resetKey={project.id}>
                 <Suspense
@@ -1227,12 +1182,11 @@ export default function App() {
                     </div>
                   }
                 >
-                  <VirtualBoardPanel
+                  <LabPanel
                     project={project}
-                    rtl={build?.rtl}
-                    onSynthesize={() => void startBuild()}
-                    synthesisBusy={busy}
-                    available={!!health?.capabilities.simulation}
+                    active={workTab === 'virtual'}
+                    onChange={setProject}
+                    onOpenPins={() => setWorkTab('constraints')}
                   />
                 </Suspense>
               </PanelBoundary>
@@ -1389,8 +1343,8 @@ export default function App() {
         <Suspense fallback={null}>
           <ServerSyncDialog
             project={project}
-            user={session.user}
-            canLogout={!session.local && !busy}
+            user={session.guest ? 'Гость этого браузера' : session.user}
+            canLogout={!session.local && !session.guest && !busy}
             onClose={() => setSyncOpen(false)}
             onLogout={logout}
             onCourseRestore={() => {
@@ -1409,6 +1363,12 @@ export default function App() {
             build={build}
             buildFresh={!stale}
             initialStart={projectHubStart}
+            serverLabel={session ? 'Синхронизация' : 'Войти'}
+            onServer={() => {
+              setProjectHubOpen(false);
+              if (session) setSyncOpen(true);
+              else setLoginOpen(true);
+            }}
             onClose={() => setProjectHubOpen(false)}
             onCreate={submitNewProject}
             onOpen={async (id) => {

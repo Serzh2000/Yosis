@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
 
 test('create project, inspect RTL, simulate, place and reload the same workspace', async ({
   page,
@@ -41,7 +41,11 @@ test('create project, inspect RTL, simulate, place and reload the same workspace
   expect(await page.locator('.schematic-edge.is-highlighted').count()).toBeGreaterThan(0);
   await page.getByRole('tab', { name: /^Выводы/ }).click();
   await page.getByRole('button', { name: 'led', exact: true }).click();
-  await page.getByRole('button', { name: /^Вывод 16 ·/ }).click();
+  // The pad picks the contact; a click on its printed names opens their explanation instead.
+  await page
+    .getByRole('button', { name: /^Вывод 16 ·/ })
+    .locator('rect')
+    .click();
   await page.getByRole('button', { name: 'Назначить', exact: true }).click();
   await expect(
     page.getByText('led → 16. Назначение записано в board.cst.', { exact: true }),
@@ -67,7 +71,12 @@ test('create project, inspect RTL, simulate, place and reload the same workspace
   );
   await expect(page.locator('.project-switcher')).toHaveText(projectName);
   const originalId = new URL(page.url()).searchParams.get('project');
-  await page.getByRole('button', { name: 'Синхронизация', exact: true }).click();
+  // Server sync is one of the project actions in the «Проекты» window.
+  await page.getByRole('button', { name: 'Создать проект', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: 'Проекты' })
+    .getByRole('button', { name: 'Синхронизация', exact: true })
+    .click();
   const serverDialog = page.getByRole('dialog', { name: 'Проекты и прогресс на сервере' });
   await serverDialog
     .getByRole('button', { name: `Сохранить «${projectName}» на сервере`, exact: true })
@@ -112,8 +121,8 @@ for (const width of [1024, 1366]) {
     expect((await firstTab.boundingBox())?.x).toBe(before?.x);
     await expect(page.getByRole('button', { name: 'Файлы проекта', exact: true })).toBeVisible();
     await page.getByRole('tab', { name: /^Код/ }).focus();
-    await page.keyboard.press('ArrowRight');
-    await expect(page.getByRole('tab', { name: /^Конструктор/ })).toHaveAttribute(
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('tab', { name: /^Выводы/ })).toHaveAttribute(
       'aria-selected',
       'true',
     );
@@ -128,7 +137,7 @@ for (const width of [1024, 1366]) {
     expect(grid?.height).toBeGreaterThan(768 / 2);
     await expect(dialog.getByRole('button', { name: 'Выбрать этот пример' })).toBeInViewport();
     await dialog.getByRole('button', { name: /^Все уровни/ }).click();
-    await expect(dialog.locator('.example-card')).toHaveCount(108);
+    await expect(dialog.locator('.example-card')).toHaveCount(243);
     await dialog.getByRole('button', { name: 'К выбору начала', exact: true }).click();
     await expect(dialog.getByRole('button', { name: /^Из логических элементов/ })).toBeVisible();
     await page.keyboard.press('Shift+Tab');
@@ -225,5 +234,65 @@ test('constructor tab of a Verilog project explains the conflict and opens the e
   );
   await expect(page.getByTestId('no-schematic')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'И (AND)', exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('laboratory runs the design, wires a part to the board and reports an unassigned contact', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/?tab=virtual');
+  const lab = page.getByRole('region', { name: 'Лаборатория' }).last();
+  // The starter project is combinational: it runs without a clock on pin 4.
+  await expect(lab.getByRole('status').first()).toContainText('на плате прошло', {
+    timeout: 60_000,
+  });
+  await lab.getByRole('button', { name: 'Добавить деталь: Светодиод', exact: true }).click();
+  const led = lab.getByRole('group', { name: 'Светодиод', exact: true });
+  const pin = lab.getByRole('button', { name: 'Светодиод, вывод A', exact: true });
+  // The bench is scaled to fit, so the middle of a part is found from its box.
+  const middle = async (part: Locator) => {
+    const box = (await part.boundingBox())!;
+    return { x: box.width / 2, y: box.height / 2 };
+  };
+  // The properties window: a double click opens it, changes show at once.
+  await led.dblclick({ position: await middle(led) });
+  const properties = page.getByRole('dialog', { name: 'Свойства детали' });
+  await properties.getByRole('radio', { name: 'Синий' }).click();
+  await expect(properties.getByRole('radio', { name: 'Синий' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  await properties.getByRole('button', { name: 'Готово' }).click();
+  await expect(properties).toHaveCount(0);
+  // The context menu rotates: pins move from the bottom to the left.
+  await expect(led).toHaveClass(/rot-0/);
+  await led.click({ button: 'right', position: await middle(led) });
+  await page.getByRole('menuitem', { name: /^Повернуть по часовой/ }).click();
+  await expect(led).toHaveClass(/rot-90/);
+  // Wiring by two clicks: the pin, then the contact.
+  await pin.click();
+  await expect(lab.getByText(/Теперь нажмите контакт на гребёнке платы/)).toBeVisible();
+  await lab.getByRole('button', { name: 'Контакт платы 15', exact: true }).click();
+  await expect(lab.getByText(/идёт из схемы в деталь/)).toBeVisible();
+  // A second jumper to a contact no signal uses is drawn but flagged.
+  await pin.click();
+  await lab.getByRole('button', { name: 'Контакт платы 75', exact: true }).click();
+  await expect(lab.getByText('Контакт 75 не назначен ни одному сигналу схемы.')).toBeVisible();
+  await expect(lab.getByRole('group', { name: 'Назначить сигнал контакту 75' })).toBeVisible();
+  await lab.getByRole('button', { name: 'Убрать провод' }).click();
+  // Delete removes the selected part, Ctrl+Z brings it back.
+  await led.click({ position: await middle(led) });
+  await page.keyboard.press('Delete');
+  await expect(pin).toHaveCount(0);
+  await page.keyboard.press('Control+z');
+  await expect(pin).toHaveCount(1);
+  await lab.getByRole('button', { name: 'Убрать всё со стола' }).click();
+  await page
+    .getByRole('dialog', { name: 'Убрать всё со стола?' })
+    .getByRole('button', { name: 'Убрать всё' })
+    .click();
+  await expect(pin).toHaveCount(0);
   expect(errors).toEqual([]);
 });

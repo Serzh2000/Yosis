@@ -99,7 +99,7 @@
   height: 34px;
   flex-shrink: 0;
   font-size: 12px;
-  font-family: monospace;
+  font-family: var(--font-mono);
   color: var(--muted, #9ca596);
   border: 1px solid var(--border, #32372f);
   border-radius: 6px;

@@ -567,3 +567,266 @@
     flex-wrap: wrap;
   }
 }
+
+/* ---- Connection tab: the three steps read as a chain, the board passport sits beside ---- */
+.physical-workspace.board-workspace {
+  padding: 20px 24px;
+}
+.board-workspace .physical-heading {
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.board-workspace .physical-heading h2 {
+  font-size: 20px;
+  margin: 0 0 4px;
+  letter-spacing: 0;
+}
+.board-workspace .physical-heading p {
+  font-size: 13px;
+}
+.board-mode-nav {
+  gap: 2px;
+  margin: 0;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.board-mode-nav button {
+  padding: 6px 14px;
+  border-radius: 5px;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+.board-mode-nav button:hover:not(:disabled) {
+  color: var(--text);
+}
+.board-mode-nav [aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.board-mode-nav [aria-pressed='true']:hover:not(:disabled) {
+  color: var(--accent-text);
+}
+.board-single-workspace {
+  max-width: 1080px;
+  margin: 0;
+}
+.board-program-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 16px;
+  align-items: start;
+}
+.board-single-workspace .programming-panel {
+  padding: 20px 24px 8px;
+  gap: 0;
+}
+.programming-main-flow {
+  max-width: none;
+  margin: 0;
+}
+.board-workspace .programming-panel .physical-card-title h3 {
+  font-size: 16px;
+}
+.programming-panel .connection-badge {
+  padding: 3px 10px;
+}
+.programming-panel .programming-intro {
+  margin: 6px 0 20px;
+  max-width: 60ch;
+}
+/* Steps. The line between the numbers is the order of work. */
+.programming-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 0 22px 40px;
+}
+.programming-step::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 30px;
+  bottom: 4px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--border);
+}
+.programming-step:last-child::before {
+  display: none;
+}
+.programming-step.is-done::before {
+  background: var(--trace);
+}
+.programming-step-heading {
+  margin: 0;
+  min-height: 26px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.programming-step-heading > span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--border);
+  background: var(--panel);
+  color: var(--text-soft);
+  font-weight: 600;
+}
+.programming-step.is-done .programming-step-heading > span {
+  border-color: var(--trace);
+  background: var(--trace);
+  color: var(--panel);
+}
+.programming-device-row {
+  align-items: center;
+  gap: 8px;
+}
+.programming-device-row.is-connected {
+  padding: 8px 8px 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--canvas);
+}
+.programming-device {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 10px;
+  margin-right: auto;
+  min-width: 0;
+}
+.programming-device i {
+  grid-row: span 2;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--trace);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--trace) 22%, transparent);
+}
+.programming-device strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.programming-device small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.programming-icon-button {
+  width: 34px;
+  height: 34px;
+}
+.programming-icon-button:hover:not(:disabled) {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.programming-helper-detail summary {
+  margin: 0;
+}
+.programming-source-row {
+  gap: 0;
+}
+.programming-source-row .button {
+  border-radius: 0;
+  margin-left: -1px;
+}
+.programming-source-row .button:first-child {
+  margin-left: 0;
+  border-radius: var(--radius-control) 0 0 var(--radius-control);
+}
+.programming-source-row .button:nth-child(2) {
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+}
+.programming-source-row .is-active {
+  position: relative;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-color: var(--accent);
+}
+.programming-artifact {
+  padding: 12px 14px;
+  gap: 4px 12px;
+  background: var(--canvas);
+  font-size: 13px;
+}
+.programming-artifact > strong {
+  font-size: 14px;
+}
+.programming-artifact .physical-text-button {
+  padding: 0;
+  font-size: 13px;
+}
+.board-single-workspace .programming-action .button.primary {
+  min-height: 40px;
+  padding: 8px 18px;
+  font-size: 14px;
+}
+.programming-job {
+  padding-top: 12px;
+  font-size: 13px;
+}
+.programming-job.status-success strong {
+  color: var(--success);
+}
+.programming-job.status-error strong {
+  color: var(--danger);
+}
+/* Board passport. */
+.board-workspace .board-profile-card {
+  padding: 16px 18px;
+}
+.board-workspace .board-profile-card h3 {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.board-workspace .board-profile {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+.board-workspace .board-profile > div {
+  padding: 7px 0;
+}
+.board-workspace .board-profile dd {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.board-single-workspace .uart-card {
+  max-width: 860px;
+}
+.board-single-workspace .uart-terminal {
+  background: var(--canvas);
+  font-family: var(--font-mono);
+}
+.board-program-layout:has(.programming-setup:not([hidden])) .programming-panel {
+  padding-bottom: 20px;
+}
+.board-single-workspace .debugger-installer {
+  padding-top: 0;
+}
+@media (max-width: 980px) {
+  .board-program-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.programming-panel .programming-intro {
+  max-width: 72ch;
+}
+.board-workspace .board-profile dd {
+  font-family: inherit;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.board-single-workspace .debugger-installer-title strong,
+.board-workspace .uart-card .physical-card-title h3 {
+  color: var(--text);
+  font-size: 16px;
+}

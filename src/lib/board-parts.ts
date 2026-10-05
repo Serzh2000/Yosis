@@ -126,3 +126,11 @@ export function partForPin(pin: number): BoardPart | undefined {
 export function ledIndexForPin(pin: number): number {
   return LED_PINS.indexOf(pin as (typeof LED_PINS)[number]);
 }
+
+/** The two 20-pin headers, pin 1 first; a number is the FPGA package pin (the "GPIO"
+ * number printed on pinout cards), null is a power or ground pin.
+ * Source: litex-boards, platforms/sipeed_tang_nano_20k.py, `_connectors` J5 and J6. */
+export const HEADER_PINS: Record<'J5' | 'J6', readonly (number | null)[]> = {
+  J5: [null, null, 75, 80, 42, 41, 56, 54, 51, 48, 55, 49, 86, 79, null, null, 72, 71, 53, 52],
+  J6: [73, 74, 76, 85, 77, 15, 16, 27, 28, 26, 25, 29, 30, 31, 17, 20, 19, 18, null, null],
+};

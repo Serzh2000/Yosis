@@ -246,7 +246,7 @@
 }
 .wizard-board-info strong {
   display: block;
-  font-family: 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 500;
   color: var(--text);

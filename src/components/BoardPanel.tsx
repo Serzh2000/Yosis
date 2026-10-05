@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Cable, Link2, Unplug, Send, ExternalLink, CircuitBoard } from 'lucide-react';
+import { Cable, Link2, Unplug, Send, ExternalLink } from 'lucide-react';
 import type { Project } from '../../shared/types';
 import type { PhysicalResult } from '../../shared/physical';
 import { parseCstPins } from '../lib/physical';
@@ -191,32 +191,30 @@ export function BoardPanel({
     <section className="physical-workspace board-workspace">
       <header className="physical-heading">
         <div>
-          <span className="workspace-eyebrow">РЕАЛЬНОЕ УСТРОЙСТВО</span>
           <h2>Подключение платы</h2>
-          <p>Tang Nano 20K · GW2AR-LV18QN88C8/I7</p>
+          <p>Tang Nano 20K, кристалл GW2AR-LV18QN88C8/I7</p>
         </div>
-        <CircuitBoard size={40} strokeWidth={1.2} />
+        <nav className="board-mode-nav" aria-label="Работа с платой">
+          {(
+            [
+              ['program', 'Загрузить схему'],
+              ['uart', 'UART-терминал'],
+              ['maintenance', 'Отладчик'],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              aria-pressed={view === id}
+              disabled={programmingBusy || busy}
+              onClick={() => setView(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
       </header>
-      <nav className="board-mode-nav" aria-label="Работа с платой">
-        {(
-          [
-            ['program', 'Загрузить схему'],
-            ['uart', 'UART-терминал'],
-            ['maintenance', 'Отладчик'],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            aria-pressed={view === id}
-            disabled={programmingBusy || busy}
-            onClick={() => setView(id)}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
       <div className="board-single-workspace">
-        <div hidden={view === 'uart'}>
+        <div className="board-program-layout" hidden={view === 'uart'}>
           <ProgrammingPanel
             mode={view === 'maintenance' ? 'maintenance' : 'program'}
             onOpenSetup={() => setView('maintenance')}
@@ -231,8 +229,8 @@ export function BoardPanel({
             onIdentity={onIdentity}
             onProgrammed={onProgrammed}
           />
-          <details className="board-profile-card board-profile-footer">
-            <summary>Профиль Tang Nano 20K</summary>
+          <aside className="physical-card board-profile-card">
+            <h3>Паспорт платы</h3>
             <dl className="board-profile">
               <div>
                 <dt>Семейство</dt>
@@ -262,7 +260,7 @@ export function BoardPanel({
             >
               Распиновка Apicula <ExternalLink size={12} />
             </a>
-          </details>
+          </aside>
         </div>
         <section className="physical-card uart-card" hidden={view !== 'uart'}>
           <div className="physical-card-title">

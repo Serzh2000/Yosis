@@ -128,7 +128,7 @@ export function ProjectFiles(props: ProjectFilesProps) {
     <aside className="explorer project-files" id="project-files" aria-label="Файлы проекта">
       <div className="panel-label">
         <Folder size={15} />
-        <span>ФАЙЛЫ ПРОЕКТА</span>
+        <span>Файлы проекта</span>
         <button
           className="mini-button"
           aria-label="Добавить файл"
@@ -151,7 +151,7 @@ export function ProjectFiles(props: ProjectFilesProps) {
         ))}
       </div>
       <label className="section-label" htmlFor="top-module">
-        ВЕРХНИЙ МОДУЛЬ
+        Верхний модуль
       </label>
       <div className="top-input-wrap">
         <Boxes size={15} />

@@ -10,6 +10,7 @@ import {
   fitBounds,
   isBorderTile,
   logicBounds,
+  mainClusterBounds,
   layerOfCell,
   memoryColumns,
   moduleSummaries,
@@ -55,6 +56,8 @@ export function ChipMap({
   const [module, setModule] = useState<string | null>(null);
   const [hover, setHover] = useState<{ x: number; y: number; px: number; py: number } | null>(null);
   const used = useMemo(() => logicBounds(map), [map]);
+  // What the first view shows: the body of the design, not every far-away single cell.
+  const body = useMemo(() => mainClusterBounds(map), [map]);
   const whole: TileBounds = useMemo(
     () => ({ minX: 0, minY: 0, maxX: map.maxX, maxY: map.maxY }),
     [map.maxX, map.maxY],
@@ -109,9 +112,9 @@ export function ChipMap({
     if (fittedFor.current === map || size.width < 50) return;
     fittedFor.current = map;
     setView(
-      fitBounds(used ?? whole, size.width - AXIS_X, size.height - AXIS_Y, used ? 2.5 : 0.5, 60),
+      fitBounds(body ?? whole, size.width - AXIS_X, size.height - AXIS_Y, body ? 2 : 0.5, 72),
     );
-  }, [map, size, used, whole]);
+  }, [map, size, body, whole]);
 
   function toggleLayer(id: ChipLayer) {
     setLayers((previous) => {
@@ -166,43 +169,30 @@ export function ChipMap({
     const y0 = Math.max(0, visible.minY);
     const x1 = Math.min(map.maxX, visible.maxX);
     const y1 = Math.min(map.maxY, visible.maxY);
-    // Die and its regions.
-    ctx.fillStyle = dieColor;
-    ctx.fillRect(view.x, view.y, (map.maxX + 1) * scale, (map.maxY + 1) * scale);
-    ctx.globalAlpha = 0.16;
-    if (layers.has('pins')) {
-      ctx.fillStyle = layerColor.pins;
-      for (let x = x0; x <= x1; x++) {
-        ctx.fillRect(view.x + x * scale, view.y, scale, scale);
-        ctx.fillRect(view.x + x * scale, view.y + map.maxY * scale, scale, scale);
-      }
+    // The die: every tile is a separate cell, so the structure is visible at any zoom.
+    const gapPx = scale >= 14 ? 1.5 : scale >= 7 ? 1 : 0.5;
+    const ioColor = color('--chip-io', '#8a7a4a');
+    const logicColor = color('--chip-logic', '#1d3b33');
+    ctx.fillStyle = bg;
+    ctx.fillRect(view.x - 2, view.y - 2, (map.maxX + 1) * scale + 4, (map.maxY + 1) * scale + 4);
+    for (let x = x0; x <= x1; x++) {
       for (let y = y0; y <= y1; y++) {
-        ctx.fillRect(view.x, view.y + y * scale, scale, scale);
-        ctx.fillRect(view.x + map.maxX * scale, view.y + y * scale, scale, scale);
+        const edge = x === 0 || y === 0 || x === map.maxX || y === map.maxY;
+        if (edge && !layers.has('pins')) continue;
+        ctx.fillStyle = edge
+          ? ioColor
+          : columns.includes(x) && layers.has('memory')
+            ? dieColor
+            : logicColor;
+        ctx.fillRect(
+          view.x + x * scale + gapPx,
+          view.y + y * scale + gapPx,
+          scale - gapPx * 2,
+          scale - gapPx * 2,
+        );
       }
     }
-    if (layers.has('memory')) {
-      ctx.fillStyle = layerColor.memory;
-      for (const column of columns)
-        ctx.fillRect(view.x + column * scale, view.y, scale, (map.maxY + 1) * scale);
-    }
-    ctx.globalAlpha = 1;
-    if (scale >= 9) {
-      ctx.strokeStyle = line;
-      ctx.globalAlpha = 0.45;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (let x = x0; x <= x1 + 1; x++) {
-        ctx.moveTo(Math.round(view.x + x * scale) + 0.5, view.y + y0 * scale);
-        ctx.lineTo(Math.round(view.x + x * scale) + 0.5, view.y + (y1 + 1) * scale);
-      }
-      for (let y = y0; y <= y1 + 1; y++) {
-        ctx.moveTo(view.x + x0 * scale, Math.round(view.y + y * scale) + 0.5);
-        ctx.lineTo(view.x + (x1 + 1) * scale, Math.round(view.y + y * scale) + 0.5);
-      }
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
+    void line;
     // Used tiles.
     const dimmed = module !== null;
     for (const tile of map.tiles) {
@@ -227,8 +217,12 @@ export function ChipMap({
       if (layer) {
         if (scale >= 34) drawSlots(ctx, tile, px, py, scale, layers, soft, panel, text);
         else {
+          // Fuller tiles are more saturated: 14 slots (8 LUT + 6 DFF) is a full logic tile.
+          const fill = Math.min(1, summary.total / 14);
           ctx.fillStyle = layerColor[layer];
-          ctx.fillRect(px + 1, py + 1, scale - 2, scale - 2);
+          ctx.globalAlpha *= 0.55 + 0.45 * fill;
+          ctx.fillRect(px + gapPx, py + gapPx, scale - gapPx * 2, scale - gapPx * 2);
+          ctx.globalAlpha = dimmed && !moduleTiles.has(key) ? 0.3 : 1;
         }
       }
       if (heat && layer) {
