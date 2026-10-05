@@ -33,3 +33,6 @@ hardware/**/technology.json
 hardware/**/rtl.json
 hardware/**/placement.json
 hardware/**/timing.json
+
+# Local archives are never part of the repository.
+*.zip
