@@ -10,6 +10,7 @@ import type { Project, YosysNetlist } from '../shared/types';
 import type { PhysicalConfig, PhysicalResult, PhysicalToolStatus } from '../shared/physical';
 import { BuildManager } from './builds';
 import { RequestError, projectHash } from './validation';
+import { dropUnconstrainedPads } from './unconstrained';
 import { JobQueue, executorCount } from './job-queue';
 import { JobRetention, markJob } from './job-retention';
 import { workspace } from './paths';
@@ -315,8 +316,16 @@ export class PhysicalManager {
       job.result.stage = 'Подготовка плоского нетлиста';
       await this.save(job);
       if (TERMINAL.has(job.result.status)) return;
-      const flat = await this.flatten(job);
+      const whole = await this.flatten(job);
       if (TERMINAL.has(job.result.status)) return;
+      const cst =
+        job.project.files.find((file) => file.name === job.result.config.cstFile)?.content ?? '';
+      const { json: flat, dropped } = dropUnconstrainedPads(whole, cst, job.project.top);
+      if (dropped.length)
+        this.log(
+          job,
+          `\nПредупреждение: портам ${dropped.join(', ')} не назначен вывод в ${job.result.config.cstFile}. Они не попали в битстрим: выходы никуда не выведены, входы читаются как 0. Назначьте им выводы во вкладке «Выводы», если они нужны.\n`,
+        );
       await writeFile(path.join(job.directory, 'flat.json'), flat);
       if (TERMINAL.has(job.result.status)) return;
       job.result.stage = 'Размещение и трассировка';

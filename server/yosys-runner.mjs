@@ -1,6 +1,7 @@
 // Keep the WASM runtime in a separate process so cancellation also interrupts
 // synchronous synthesis and cannot block the HTTP server event loop.
 import { TextDecoder, stripVTControlCharacters } from 'node:util';
+import { compatibleProject, readCommand } from './verilog-compat.mjs';
 import { createWorkerChannel } from './worker-ipc.mjs';
 
 const { send, disconnect } = createWorkerChannel();
@@ -150,6 +151,10 @@ function labDesign(netlist, top) {
       gates.push(LAB_TRI, pin('A'), pin('E'), 0, pad);
     } else if (/tribuf|TBUF/.test(cell.type))
       throw new Error('Выводы с третьим состоянием (z) в лаборатории пока не поддерживаются.');
+    else if (!cell.type.startsWith('$'))
+      throw new Error(
+        `В схеме есть готовый блок кристалла Gowin (${cell.type}). Лаборатория моделирует только обычную логику и триггеры: такой проект проверяйте синтезом и на плате.`,
+      );
     else throw new Error(`Элемент ${cell.type} не поддерживается лабораторией.`);
   }
   if (gates.length / 5 > 250000)
@@ -163,6 +168,11 @@ function labDesign(netlist, top) {
   }));
   return { top, nets, ports, gates, dffs };
 }
+
+// Projects made for the vendor's tools instantiate Gowin primitives (rPLL, CLKDIV, OSER10…)
+// directly. Yosys ships their declarations: read as a library they let such a project pass the
+// hierarchy check, and `-purge_lib` drops the ones the project does not use.
+const GOWIN_LIBRARY = 'read_verilog -lib +/gowin/cells_sim.v +/gowin/cells_xtra_gw2a.v';
 
 let warming = Promise.resolve();
 process.on('message', (request) => {
@@ -188,15 +198,23 @@ async function handle(request) {
       await disconnect();
       return;
     }
-    const project = request.project;
+    const project = compatibleProject(request.project, (text) => send({ type: 'log', text }));
+    // Vendor IP is often shipped encrypted. No open tool can read it, and Yosys reports only
+    // an unknown directive: say what the matter is.
+    const sealed = project.files.find((file) => /`pragma\s+protect/.test(file.content));
+    if (sealed)
+      throw new Error(
+        `Файл ${sealed.name} зашифрован производителем (pragma protect). Это закрытый IP-блок Gowin: открытые инструменты его прочитать не могут, такой проект собирается только в Gowin EDA.`,
+      );
     const files = virtualSources(project);
     const sourceCommands = project.files
       .filter((file) => /\.(v|sv)$/.test(file.name))
-      .map((file) => `read_verilog ${file.name.endsWith('.sv') ? '-sv ' : ''}-I. ${file.name}`);
+      .map((file) => readCommand(project, file));
     if (request.lab) {
       files['lab.ys'] = [
+        GOWIN_LIBRARY,
         ...sourceCommands,
-        `hierarchy -check -top ${project.top}`,
+        `hierarchy -check -top ${project.top} -purge_lib`,
         'proc',
         // Keep tri-state drivers of top-level pads; everything inside becomes plain logic.
         'tribuf -logic',
@@ -208,7 +226,7 @@ async function handle(request) {
         'write_json lab.json',
       ].join('\n');
       send({ type: 'stage', stage: 'Подготовка схемы для лаборатории' });
-      const labFiles = await runYosys(['-T', '-s', 'lab.ys'], files, options);
+      const labFiles = await runYosys(['-q', '-T', '-s', 'lab.ys'], files, options);
       flush();
       send({ type: 'lab', design: labDesign(textFile(labFiles, 'lab.json'), project.top) });
       send({ type: 'success' });
@@ -216,8 +234,9 @@ async function handle(request) {
       return;
     }
     files['rtl.ys'] = [
+      GOWIN_LIBRARY,
       ...sourceCommands,
-      `hierarchy -check -top ${project.top}`,
+      `hierarchy -check -top ${project.top} -purge_lib`,
       'proc',
       'opt',
       'write_json rtl.json',
@@ -271,7 +290,15 @@ async function handle(request) {
     await disconnect();
   } catch (error) {
     flush();
-    send({ type: 'failure', error: error?.message || String(error) });
+    // This build of Yosys overflows its stack instead of reporting some unsupported
+    // constructs; real numbers in constant expressions are the usual cause.
+    const crashed = /Maximum call stack size exceeded/.test(error?.message ?? '');
+    send({
+      type: 'failure',
+      error: crashed
+        ? 'Yosys аварийно остановился на этой схеме. Частая причина — вещественные числа в выражениях (например, 0.85): синтез их не поддерживает. Замените их целыми: вместо N * 0.85 пишите N * 85 / 100.'
+        : error?.message || String(error),
+    });
     // A cancelled parent can close IPC while WASM is still producing logs.
     // Its delivery error is already handled by the send callback.
     try {

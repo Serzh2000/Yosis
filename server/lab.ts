@@ -30,7 +30,11 @@ export class LabManager {
     concurrency: 1,
     timeoutMs: 60000,
     start: (record) => this.run(record),
-    timeout: (record) => this.finish(record, 'Подготовка схемы превысила 60 секунд.'),
+    timeout: (record) =>
+      this.finish(
+        record,
+        'Схема слишком велика для лаборатории: её подготовка заняла больше минуты. Так бывает с процессорами и большой памятью — проверяйте такой проект синтезом и на плате.',
+      ),
   });
   compile(user: string, project: Project, signal: AbortSignal) {
     project = materializeCircuitProject(project);

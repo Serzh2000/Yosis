@@ -1,4 +1,10 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  IMPORTED_FILE,
+  gowinProjects,
+  projectFromFolder,
+  type FolderFile,
+} from './lib/gowin-import';
 import type { FormEvent } from 'react';
 import type * as monaco from 'monaco-editor/editor/editor.api.js';
 import {
@@ -188,6 +194,11 @@ export default function App() {
   const [deletedFile, setDeletedFile] = useState<SourceFile | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+  const folderRef = useRef<HTMLInputElement | null>(null);
+  const [folderChoice, setFolderChoice] = useState<{
+    files: FolderFile[];
+    projects: { path: string; title: string }[];
+  } | null>(null);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const pendingNavigation = useRef<{ file: string; line: number } | null>(null);
   const projectSelectionGeneration = useRef(0);
@@ -453,6 +464,34 @@ export default function App() {
     if (importRef.current) importRef.current.value = '';
   };
 
+  /** A folder with a project of the vendor's IDE (or just Verilog files) picked by the pupil. */
+  const importFolder = async (list: FileList | null) => {
+    if (!list?.length || busyRef.current) return;
+    const generation = ++projectSelectionGeneration.current;
+    try {
+      const wanted = [...list].filter(
+        (file) => IMPORTED_FILE.test(file.name) && file.size <= 512 * 1024,
+      );
+      if (wanted.length > 400)
+        throw new Error('В папке слишком много файлов. Выберите папку одного проекта.');
+      const files = await Promise.all(
+        wanted.map(async (file) => ({
+          path: file.webkitRelativePath || file.name,
+          text: await file.text(),
+        })),
+      );
+      const found = gowinProjects(files);
+      if (generation !== projectSelectionGeneration.current || busyRef.current) return;
+      // A folder of several projects: the pupil says which one.
+      if (found.length > 1) setFolderChoice({ files, projects: found });
+      else void openProject(identifyProject(validateProject(projectFromFolder(files)), true));
+    } catch (cause) {
+      if (generation === projectSelectionGeneration.current)
+        setError(cause instanceof Error ? cause.message : 'Не удалось открыть папку проекта.');
+    }
+    if (folderRef.current) folderRef.current.value = '';
+  };
+
   const submitFile = (event: FormEvent) => {
     event.preventDefault();
     if (!fileDialog) return;
@@ -678,6 +717,51 @@ export default function App() {
         hidden
         onChange={(event) => void importProject(event.target.files?.[0])}
       />
+      <input
+        ref={(element) => {
+          folderRef.current = element;
+          // React has no typed attribute for choosing a folder.
+          element?.setAttribute('webkitdirectory', '');
+        }}
+        type="file"
+        multiple
+        hidden
+        onChange={(event) => void importFolder(event.target.files)}
+      />
+      {folderChoice && (
+        <Dialog
+          title="В папке несколько проектов"
+          className="dialog folder-choice"
+          onClose={() => setFolderChoice(null)}
+        >
+          <p>Выберите, какой открыть. Каждый проект — это отдельный файл .gprj.</p>
+          <ul>
+            {folderChoice.projects.map((item) => (
+              <li key={item.path}>
+                <button
+                  type="button"
+                  className="button subtle"
+                  onClick={() => {
+                    const { files } = folderChoice;
+                    setFolderChoice(null);
+                    try {
+                      void openProject(
+                        identifyProject(validateProject(projectFromFolder(files, item.path)), true),
+                      );
+                    } catch (cause) {
+                      setError(
+                        cause instanceof Error ? cause.message : 'Не удалось открыть проект.',
+                      );
+                    }
+                  }}
+                >
+                  {item.title}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Dialog>
+      )}
       <StudioNavigation
         tab={workTab}
         onChange={setWorkTab}
@@ -1375,6 +1459,7 @@ export default function App() {
               await openProject(await loadProject(id));
             }}
             onImport={() => importRef.current?.click()}
+            onImportFolder={() => folderRef.current?.click()}
             onSave={async () => {
               await flushSave();
             }}
@@ -1393,7 +1478,7 @@ export default function App() {
         </Suspense>
       )}
       {fileDialog && (
-        <Dialog onClose={() => setFileDialog(null)} labelledBy="file-dialog-heading">
+        <Dialog onClose={() => setFileDialog(null)} labelledBy="file-dialog-heading" key="file">
           <form onSubmit={submitFile}>
             <div className="dialog-heading">
               <FileCode2 size={20} />
@@ -1418,8 +1503,8 @@ export default function App() {
               placeholder="module.v"
             />
             <p>
-              Расширения .v, .sv, .vh, .svh, .cst или .ysch. Можно указать папку, например
-              rtl/alu.v.
+              Расширения .v, .sv, .vh, .svh, .cst, .ysch, .hex или .mem. Можно указать папку,
+              например rtl/alu.v.
             </p>
             {fileError && (
               <div className="dialog-error" role="alert">

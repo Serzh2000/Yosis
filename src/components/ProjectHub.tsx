@@ -10,6 +10,7 @@ import {
   Upload,
   X,
   CloudUpload,
+  FolderOpen,
 } from 'lucide-react';
 import type { BuildResult, Project } from '../../shared/types';
 import { downloadText, type ProjectSummary } from '../lib/projects';
@@ -37,6 +38,8 @@ export interface ProjectHubProps {
   onDuplicate: (id: string, name: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onImport: () => void;
+  /** Open a folder with a Gowin EDA project or plain Verilog files. */
+  onImportFolder?: () => void;
   onSave: () => Promise<void>;
 }
 
@@ -180,6 +183,18 @@ export function ProjectHub(props: ProjectHubProps) {
                   <strong>Импорт проекта</strong>
                   <span>Продолжите работу из сохранённого файла JSON.</span>
                 </button>
+                {props.onImportFolder && (
+                  <button
+                    onClick={() => {
+                      props.onClose();
+                      props.onImportFolder!();
+                    }}
+                  >
+                    <FolderOpen size={28} />
+                    <strong>Папка проекта Gowin</strong>
+                    <span>Откройте папку с файлом .gprj или просто с файлами Verilog и .cst.</span>
+                  </button>
+                )}
               </div>
             </section>
           ))}

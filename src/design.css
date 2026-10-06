@@ -158,3 +158,21 @@
 :root:root .code-workspace {
   grid-template-columns: minmax(0, 1fr);
 }
+
+/* Choosing one of several vendor projects found in a folder. */
+:root:root .folder-choice {
+  width: min(460px, calc(100vw - 32px));
+}
+:root:root .folder-choice ul {
+  display: grid;
+  gap: 6px;
+  max-height: 55vh;
+  margin: 12px 0 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+:root:root .folder-choice .button {
+  width: 100%;
+  justify-content: flex-start;
+}

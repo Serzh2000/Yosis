@@ -27,12 +27,12 @@ export function validateProject(value: unknown): Project {
     if (
       typeof file.name !== 'string' ||
       file.name.length > 160 ||
-      !/^(?:[A-Za-z0-9_][A-Za-z0-9_.-]*\/)*[A-Za-z0-9_][A-Za-z0-9_.-]*\.(?:v|sv|vh|svh|cst|ysch)$/.test(
+      !/^(?:[A-Za-z0-9_][A-Za-z0-9_.-]*\/)*[A-Za-z0-9_][A-Za-z0-9_.-]*\.(?:v|sv|vh|svh|cst|sdc|ysch|hex|mem)$/.test(
         file.name,
       )
     )
       throw new RequestError(
-        'Имена файлов: относительные пути из латинских букв, цифр, _, -, . и / с расширением .v, .sv, .vh, .svh, .cst или .ysch.',
+        'Имена файлов: относительные пути из латинских букв, цифр, _, -, . и / с расширением .v, .sv, .vh, .svh, .cst, .sdc, .ysch, .hex или .mem.',
       );
     const components = file.name.split('/');
     if (
