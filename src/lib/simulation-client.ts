@@ -1,13 +1,6 @@
 import type { Project, SimulationConfig, SimulationResult } from '../../shared/types';
+import { request, requestVoid } from './api';
 import { pollJob } from './job-client';
-
-async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  // eslint-disable-next-line no-restricted-syntax -- фаза 2
-  const response = await fetch(url, init);
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || `Ошибка сервиса: ${response.status}`);
-  return data as T;
-}
 
 function pause(signal: AbortSignal): Promise<void> {
   if (signal.aborted) return Promise.reject(new DOMException('Операция отменена', 'AbortError'));
@@ -41,8 +34,7 @@ export async function runSimulation(
   });
   const id = result.id;
   const cancel = () => {
-    // eslint-disable-next-line no-restricted-syntax -- фаза 2
-    void fetch(`/api/simulations/${id}/cancel`, { method: 'POST' }).catch(() => {});
+    void requestVoid(`/api/simulations/${id}/cancel`, { method: 'POST' }).catch(() => {});
   };
   signal.addEventListener('abort', cancel, { once: true });
   if (signal.aborted) {

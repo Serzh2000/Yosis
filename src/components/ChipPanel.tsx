@@ -4,6 +4,7 @@ import type { Project, YosysNetlist } from '../../shared/types';
 import type { PhysicalResult, PhysicalToolStatus } from '../../shared/physical';
 import { parsePlacement } from '../lib/physical';
 import { getResources } from '../lib/netlist';
+import { request, requestVoid } from '../lib/api';
 import { pollJob } from '../lib/job-client';
 import { getProjectSnapshot } from '../lib/projects';
 import { HelpTrigger } from './HelpCard';
@@ -21,13 +22,6 @@ interface Props {
 const COLORS = ['#db9550', '#7fa47d', '#ca7777', '#a58abd', '#bba36d', '#7caaa2', '#b99a8d'];
 const CATEGORIES = ['LUT', 'FF', 'ALU', 'BRAM', 'DSP', 'IO', 'other'] as const;
 const STORAGE_KEY = 'yosis.physical.v1';
-async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  // eslint-disable-next-line no-restricted-syntax -- фаза 2
-  const response = await fetch(url, init);
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error ?? `HTTP ${response.status}`);
-  return result as T;
-}
 function timingRows(report: unknown): { name: string; achieved: number; requested: number }[] {
   if (!report || typeof report !== 'object') return [];
   const fmax = (report as Record<string, unknown>).fmax;
@@ -120,8 +114,7 @@ export function ChipPanel({
       abort.abort();
       const active = jobRef.current;
       if (active && ['queued', 'running'].includes(active.status)) {
-        // eslint-disable-next-line no-restricted-syntax -- фаза 2
-        void fetch(`/api/physical/${active.id}/cancel`, { method: 'POST' }).catch(() => {});
+        void requestVoid(`/api/physical/${active.id}/cancel`, { method: 'POST' }).catch(() => {});
       }
     };
     return dispose;
@@ -173,8 +166,7 @@ export function ChipPanel({
         body: JSON.stringify({ project, buildId, config: { cstFile, frequencyMHz: frequency } }),
       });
       if (generation.current !== currentGeneration) {
-        // eslint-disable-next-line no-restricted-syntax -- фаза 2
-        void fetch(`/api/physical/${result.id}/cancel`, { method: 'POST' }).catch(() => {});
+        void requestVoid(`/api/physical/${result.id}/cancel`, { method: 'POST' }).catch(() => {});
         return;
       }
       setJob(result);

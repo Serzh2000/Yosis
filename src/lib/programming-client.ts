@@ -5,6 +5,7 @@ import type {
   ProgrammingJob,
   ProgrammingRequest,
 } from '../../shared/programming';
+import { fetchExternal } from './api';
 
 export const DEFAULT_HELPER_URL = 'http://127.0.0.1:3211';
 export const MAX_BITSTREAM_BYTES = 16 * 1024 * 1024;
@@ -152,7 +153,7 @@ export class ProgrammingClient {
   readonly origin: string;
   #token: string;
   #fetch: Fetcher;
-  constructor(url: string, token: string, fetcher: Fetcher = fetch) {
+  constructor(url: string, token: string, fetcher: Fetcher = fetchExternal) {
     this.origin = helperOrigin(url);
     if (!token.trim() || token.length > 512 || /[\r\n]/.test(token))
       throw new Error('Введите код подключения из окна локального помощника.');

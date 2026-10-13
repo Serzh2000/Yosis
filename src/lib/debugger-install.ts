@@ -1,4 +1,5 @@
 import manifest from './dirtyjtag-package.json';
+import { download } from './api';
 import {
   Bl616FlashSession,
   FIRMWARE_ADDRESS,
@@ -40,10 +41,11 @@ export async function loadDebuggerPackage(): Promise<FirmwareImage[]> {
   for (const image of manifest.images) {
     if (!['bootloader.bin', 'dirtyjtag.bin'].includes(image.name))
       throw new Error('Неизвестный образ прошивки.');
-    // eslint-disable-next-line no-restricted-syntax -- фаза 2
-    const response = await fetch(`/firmware/dirtyjtag/${image.name}`);
-    if (!response.ok) throw new Error(`Пакет прошивки недоступен (${response.status}).`);
-    const bytes = new Uint8Array(await response.arrayBuffer());
+    const bytes = await download(
+      `/firmware/dirtyjtag/${image.name}`,
+      undefined,
+      (status) => `Пакет прошивки недоступен (${status}).`,
+    );
     if (bytes.length !== image.size || (await firmwareHash(bytes)) !== image.sha256)
       throw new Error('SHA-256 пакета прошивки не совпал. Установка запрещена.');
     if (

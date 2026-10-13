@@ -3,7 +3,7 @@ import type { CourseProgress } from './learning-course';
 import type { LearningDrafts } from './learning-session';
 import { LEARNING_PROGRESS_KEY, parseCourseProgress } from './learning-course';
 import { LEARNING_DRAFTS_KEY, parseLearningDrafts } from './learning-session';
-import { request } from './api';
+import { request, requestRaw, requestVoid } from './api';
 import { validateProject } from './projects';
 
 export interface ServerProjectSummary {
@@ -40,9 +40,11 @@ export async function uploadProject(project: Project, revision?: string): Promis
   });
 }
 export async function removeServerProject(id: string): Promise<void> {
-  // eslint-disable-next-line no-restricted-syntax -- фаза 2
-  const response = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
-  if (!response.ok) throw new Error('Не удалось удалить проект на сервере.');
+  await requestVoid(
+    `/api/projects/${id}`,
+    { method: 'DELETE' },
+    'Не удалось удалить проект на сервере.',
+  );
 }
 export function currentCourseBackup(): CourseBackup {
   return {
@@ -63,8 +65,7 @@ export function parseCourseBackup(value: unknown): CourseBackup {
 }
 export async function uploadCourse(): Promise<void> {
   const body = JSON.stringify(currentCourseBackup());
-  // eslint-disable-next-line no-restricted-syntax -- фаза 2
-  const response = await fetch('/api/progress', {
+  const response = await requestRaw('/api/progress', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body,

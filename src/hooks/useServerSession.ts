@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ApiError, request } from '../lib/api';
+import { ApiError, request, requestVoid } from '../lib/api';
 
 export interface ServerSession {
   user: string;
@@ -43,9 +43,7 @@ export function useServerSession() {
     return result;
   }, []);
   const logout = useCallback(async () => {
-    // eslint-disable-next-line no-restricted-syntax -- фаза 2
-    const response = await fetch('/api/session', { method: 'DELETE' });
-    if (!response.ok) throw new Error('Не удалось завершить сеанс.');
+    await requestVoid('/api/session', { method: 'DELETE' }, 'Не удалось завершить сеанс.');
     if (session?.guest) {
       await refresh();
       return;

@@ -15,6 +15,7 @@ import {
 } from '../lib/bl616-rom';
 import './programming.css';
 import { DebuggerInstaller } from './DebuggerInstaller';
+import { requestText } from '../lib/api';
 import { getProjectSnapshot } from '../lib/projects';
 
 interface Props {
@@ -187,13 +188,11 @@ export function ProgrammingPanel({
       projectName = project.name;
     void (async () => {
       try {
-        // eslint-disable-next-line no-restricted-syntax -- фаза 2
-        const response = await fetch(
+        const text = await requestText(
           `/api/physical/${encodeURIComponent(id)}/artifacts/design.fs`,
           { signal: abort.signal, cache: 'no-store' },
+          'Не удалось получить битстрим. Повторите размещение.',
         );
-        if (!response.ok) throw new Error('Не удалось получить битстрим. Повторите размещение.');
-        const text = await response.text();
         parseGowinBitstream(text);
         const sha256 = await sha256Text(text);
         if (!abort.signal.aborted)
