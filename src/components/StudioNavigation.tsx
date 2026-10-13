@@ -13,9 +13,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { getTabDestination } from '../lib/accessibility';
-import { studioTabs, type WorkTab } from '../lib/studio-tabs';
+import { studioTabs, type WorkspaceStatus, type WorkTab } from '../lib/studio-tabs';
 
-export type WorkspaceStatus = 'success' | 'error' | 'stale' | 'busy';
+export type { WorkspaceStatus };
 const tabIcons: Record<WorkTab, LucideIcon> = {
   lessons: GraduationCap,
   code: Code2,

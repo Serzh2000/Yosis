@@ -11,6 +11,9 @@ export type WorkTab =
   | 'lessons'
   | 'board';
 
+/** Состояние результата за вкладкой: значок рядом с её названием. */
+export type WorkspaceStatus = 'success' | 'error' | 'stale' | 'busy';
+
 /** Вкладки в порядке показа: подпись на кнопке и подсказка к ней. */
 export const studioTabs: { id: WorkTab; label: string; caption: string }[] = [
   { id: 'lessons', label: 'Обучение', caption: 'От первого бита к своему устройству' },
