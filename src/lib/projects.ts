@@ -1,9 +1,9 @@
 import type { Project } from '../../shared/types';
 import { validateProject } from '../../shared/project-validation';
-import { examples } from './examples';
 import type { Example } from './examples';
+import { starterProject } from './starter-project';
 import { markExampleOrigin } from './example-origin';
-export { examples, validateProject };
+export { validateProject };
 export type { Example };
 
 const CURRENT_KEY = 'yosis.current.v1';
@@ -259,7 +259,7 @@ export async function loadProject(id?: string): Promise<Project> {
     await done;
     if (record) return validateProject(record.project);
     if (id) throw new Error('Проект из ссылки не найден в этом браузере.');
-    return identifyProject(examples[0].project, true);
+    return identifyProject(starterProject(), true);
   });
 }
 export async function saveProject(project: Project, makeCurrent = true): Promise<Project> {
@@ -318,15 +318,6 @@ export function loadExample(
   let suffix = 2;
   while (names.has(copy.name)) copy.name = `${example.project.name}-${suffix++}`;
   return markExampleOrigin(copy, example);
-}
-export type ProjectTemplate = 'blank' | 'logic' | 'counter';
-export function createProject(name: string, template: ProjectTemplate): Project {
-  const source = cloneProject(
-    examples.find((example) => example.id === (template === 'blank' ? 'button' : template))!
-      .project,
-  );
-  source.name = name;
-  return validateProject(source);
 }
 export function downloadText(filename: string, text: string, mime = 'application/json'): void {
   const url = URL.createObjectURL(new Blob([text], { type: mime }));

@@ -1,10 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  createProject,
   deleteProject,
   duplicateProject,
-  examples,
   getProjectSnapshot,
   identifyProject,
   listProjects,
@@ -13,6 +11,8 @@ import {
   saveProject,
   validateProject,
 } from '../src/lib/projects';
+import { examples } from '../src/lib/examples';
+import { createProject } from '../src/lib/project-templates';
 import { IDBFactory } from 'fake-indexeddb';
 import { validateProject as validateServerProject } from '../server/validation';
 

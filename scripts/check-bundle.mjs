@@ -18,4 +18,5 @@ visit(entry);
 let bytes = 0;
 for (const file of files) bytes += (await stat(path.join(output, file))).size;
 console.log(`Initial JavaScript: ${(bytes / 1024).toFixed(1)} KiB across ${files.size} files`);
-if (bytes >= 1024 * 1024) throw new Error('Initial JavaScript exceeds the 1 MiB budget.');
+// Библиотека примеров загружается лениво; порог ловит возвращение данных в стартовый граф.
+if (bytes >= 600 * 1024) throw new Error('Initial JavaScript exceeds the 600 KiB budget.');

@@ -1,6 +1,7 @@
 import { reservedWords } from '../../shared/verilog-identifiers';
 import type { Project } from '../../shared/types';
 import { examples } from './examples';
+import { moduleDeclarations } from './verilog-modules';
 import { cloneProject, validateProject } from './projects';
 import { markExampleOrigin } from './example-origin';
 import { starterCircuit } from '../../shared/schematic';
@@ -101,16 +102,6 @@ export const wizardStartingPoints = [
   },
   ...examples,
 ];
-
-/** Keep source offsets so that only a real declaration, never an explanation, is renamed. */
-export function moduleDeclarations(source: string): Array<{ name: string; start: number }> {
-  const masked = source.replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*|"(?:\\.|[^"\\])*"/g, (token) =>
-    token.replace(/[^\r\n]/g, ' '),
-  );
-  return [
-    ...masked.matchAll(/\bmodule\s+(?:(?:automatic|static)\s+)?([A-Za-z_][A-Za-z0-9_$]*)/g),
-  ].map((match) => ({ name: match[1], start: match.index! + match[0].lastIndexOf(match[1]) }));
-}
 
 export function validateWizardFields(
   settings: WizardSettings,

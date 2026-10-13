@@ -4,7 +4,6 @@ import type { Project, YosysNetlist } from '../shared/types';
 import {
   bitLevel,
   boardPorts,
-  builtinTruthTableScenario,
   inputValuesAtTime,
   mergeInputEvent,
   nextStep,
@@ -14,6 +13,7 @@ import {
   topSignal,
   truthTableScenario,
 } from '../src/lib/virtual-board';
+import { builtinTruthTableScenario } from '../src/lib/builtin-scenarios';
 import { examples } from '../src/lib/examples';
 import { checkLessonTrace, lessons } from '../src/lib/lessons';
 import { parseVcd, type VcdTrace } from '../src/lib/vcd';

@@ -1,5 +1,5 @@
 import type { Project } from '../../shared/types';
-import { moduleDeclarations } from './project-wizard';
+import { moduleDeclarations } from './verilog-modules';
 
 export type SchematicAdditionPlan = { ok: true; fileName: string } | { ok: false; reason: string };
 

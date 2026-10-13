@@ -4,7 +4,7 @@ import type { Project } from '../shared/types';
 import { materializeCircuitProject, starterCircuit } from '../shared/schematic';
 import { validateProject } from '../shared/project-validation';
 import { planSchematicAddition } from '../src/lib/circuit-add';
-import { examples } from '../src/lib/projects';
+import { examples } from '../src/lib/examples';
 import { createWizardProject } from '../src/lib/project-wizard';
 
 const hdl = (files: Array<[string, string]>, top = 'top'): Project => ({

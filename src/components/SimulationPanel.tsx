@@ -12,12 +12,8 @@ import type { Project, SimulationConfig, SimulationResult, YosysNetlist } from '
 import { downloadText, getProjectSnapshot, validateProject } from '../lib/projects';
 import { parseVcd, type VcdTrace, type VcdSignal } from '../lib/vcd';
 import { runSimulation } from '../lib/simulation-client';
-import {
-  boardPorts,
-  builtinTruthTableScenario,
-  simulationDefaults,
-  truthTableScenario,
-} from '../lib/virtual-board';
+import { boardPorts, simulationDefaults, truthTableScenario } from '../lib/virtual-board';
+import { builtinTruthTableScenario } from '../lib/builtin-scenarios';
 import { WaveformViewer } from './WaveformViewer';
 import { SimulationChecks } from './SimulationChecks';
 import { simulationScenarioSnapshot } from '../../shared/simulation-scenario';

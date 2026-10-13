@@ -1,5 +1,4 @@
 import type { Project, SimulationConfig, YosysNetlist } from '../../shared/types';
-import { examples } from './examples';
 import type { VcdSignal, VcdTrace } from './vcd';
 import { valueAt } from './waveform';
 
@@ -143,32 +142,6 @@ export function truthTableScenario(
     stimuli: rows.slice(1).map((event) => ({ ...event, cycle: event.cycle + startCycle })),
     cycles: cycles + startCycle,
   };
-}
-
-/** Prepared scenarios belong to untouched teaching sources, never to arbitrary user HDL. */
-export function builtinTruthTableScenario(
-  project: Project,
-  ports: BoardPort[],
-): InputScenario | null {
-  const defaults = simulationDefaults(ports);
-  if (defaults.clock || defaults.reset) return null;
-  const sources = project.files.filter((file) => /\.(v|sv|vh|svh)$/.test(file.name));
-  const builtin = examples.some(
-    (example) =>
-      example.project.top === project.top &&
-      (() => {
-        const original = example.project.files.filter((file) => /\.(v|sv|vh|svh)$/.test(file.name));
-        return (
-          original.length === sources.length &&
-          original.every((file) =>
-            sources.some(
-              (candidate) => candidate.name === file.name && candidate.content === file.content,
-            ),
-          )
-        );
-      })(),
-  );
-  return builtin ? truthTableScenario(ports) : null;
 }
 
 export function stepTimes(trace: VcdTrace, clock: string | null): number[] {

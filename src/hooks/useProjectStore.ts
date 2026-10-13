@@ -3,7 +3,6 @@ import type { Project } from '../../shared/types';
 import {
   deleteProject,
   duplicateProject,
-  examples,
   getProjectSnapshot,
   identifyProject,
   listProjects,
@@ -12,10 +11,11 @@ import {
   saveProject,
 } from '../lib/projects';
 import type { ProjectSummary } from '../lib/projects';
+import { starterProject } from '../lib/starter-project';
 
 export function useProjectStore(initialId?: string) {
   const initialProjectId = useRef(initialId).current;
-  const [project, setProject] = useState<Project>(() => identifyProject(examples[0].project, true));
+  const [project, setProject] = useState<Project>(() => identifyProject(starterProject(), true));
   const [savedProjects, setSavedProjects] = useState<ProjectSummary[]>([]);
   const [ready, setReady] = useState(false);
   const [saveState, setSaveState] = useState<'saving' | 'saved' | 'error'>('saved');

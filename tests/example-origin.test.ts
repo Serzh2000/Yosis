@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { Project } from '../shared/types';
 import { validateProject as validateServerProject } from '../server/validation';
-import { examples, loadExample, validateProject } from '../src/lib/projects';
+import { examples } from '../src/lib/examples';
+import { loadExample, validateProject } from '../src/lib/projects';
 import { createWizardProject } from '../src/lib/project-wizard';
 import {
   contentSimilarity,

@@ -3,6 +3,14 @@ import { logicExamples } from './examples-logic';
 import { systemExamples } from './examples-systems';
 import { applicationExamples } from './examples-applications';
 import { labExamples } from './examples-lab';
+import { constraints, type Pin } from './example-constraints';
+import {
+  STARTER_DESCRIPTION,
+  STARTER_ID,
+  STARTER_PINS,
+  STARTER_SOURCE,
+  STARTER_TITLE,
+} from './starter-project';
 
 export interface Example {
   id: string;
@@ -12,7 +20,6 @@ export interface Example {
   category?: 'logic' | 'memory' | 'systems';
 }
 
-type Pin = [signal: string, pin: number, explanation: string];
 const clock: Pin = ['clk', 4, 'Такт от генератора платы: 27 МГц.'];
 const reset: Pin = ['reset', 88, 'Кнопка сброса S1: нажата = 1, отпущена = 0.'];
 const leds = (signal: string, count = 6): Pin[] =>
@@ -21,35 +28,6 @@ const leds = (signal: string, count = 6): Pin[] =>
     15 + bit,
     `LED${bit}: уровень 0 включает светодиод, 1 выключает.`,
   ]);
-
-function constraints(pins: Pin[]): string {
-  return (
-    `// Физические соединения Tang Nano 20K (GW2AR-LV18QN88C8/I7).
-// IO_LOC связывает порт Verilog с номером вывода FPGA, а не контактом разъёма.
-// IO_PORT задаёт электрический стандарт: LVCMOS33 — логические уровни 3,3 В.
-// Для каждого отдельного бита шины требуется своё назначение.
-// Проверенный pinout: https://github.com/YosysHQ/apicula/blob/master/examples/tangnano20k.cst
-// Полярность LED и частота: https://wiki.sipeed.com/hardware/en/tang/tang-nano-20k/nano-20k.html
-// Кнопки 87/88 и LED 15–20 уже находятся на плате.
-// Кнопка даёт 1 при нажатии и 0 в покое; LED светится при 0 на выводе.
-
-` +
-    pins
-      .map(
-        ([signal, pin, explanation]) => `// ${signal}: ${explanation}
-IO_LOC "${signal}" ${pin};
-IO_PORT "${signal}" IO_TYPE=LVCMOS33${pin === 87 || pin === 88 ? ' PULL_MODE=DOWN' : ''};
-${
-  signal === 'clk'
-    ? `// Такт подключаем к глобальному буферу с малой разницей задержек.
-CLOCK_LOC "clk" BUFG;
-`
-    : ''
-}`,
-      )
-      .join('\n')
-  );
-}
 
 function example(
   id: string,
@@ -77,32 +55,7 @@ function example(
 }
 
 export const examples: Example[] = [
-  example(
-    'logic',
-    'Логическое выражение',
-    'AND + OR: от выражения к таблице LUT.',
-    `// Комбинационная логика: y = (a И b) ИЛИ c.
-// assign описывает постоянно действующую связь, а не программу по шагам.
-// На диаграммах переберите a, b, c = 0/1 и посмотрите таблицу LUT в Gowin.
-// a/b — уровни кнопок (нажата = 1). c — UART_RX на выводе 70,
-// внешний сигнал от USB-UART; это НЕ третья кнопка. В симуляции задайте c сами.
-// y выведен на LED0: y = 0 включает LED, y = 1 выключает его.
-module top (
-    input wire a,
-    input wire b,
-    input wire c,
-    output wire y
-);
-    assign y = (a & b) | c;
-endmodule
-`,
-    [
-      ['a', 87, 'Уровень первой кнопки: 1 при нажатии.'],
-      ['b', 88, 'Уровень второй кнопки: 1 при нажатии.'],
-      ['c', 70, 'UART_RX от встроенного USB-UART; задаётся внешним устройством, не кнопкой.'],
-      ['y', 15, 'LED0; 0 = светится, 1 = погашен.'],
-    ],
-  ),
+  example(STARTER_ID, STARTER_TITLE, STARTER_DESCRIPTION, STARTER_SOURCE, STARTER_PINS),
 
   example(
     'button',

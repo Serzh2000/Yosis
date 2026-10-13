@@ -3,7 +3,7 @@ import path from 'node:path';
 import { BuildManager } from '../server/builds';
 import { SimulationManager } from '../server/simulations';
 import { PhysicalManager } from '../server/physical';
-import { createProject } from '../src/lib/projects';
+import { createProject } from '../src/lib/project-templates';
 import { boardPorts, simulationDefaults, topSignal } from '../src/lib/virtual-board';
 import { parseVcd } from '../src/lib/vcd';
 import { valueAt } from '../src/lib/waveform';

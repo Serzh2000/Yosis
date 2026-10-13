@@ -1,7 +1,8 @@
 import test from 'node:test';
 import { HEADER_PINS } from '../src/lib/board-parts';
 import assert from 'node:assert/strict';
-import { examples, loadExample, validateProject } from '../src/lib/projects';
+import { examples } from '../src/lib/examples';
+import { loadExample, validateProject } from '../src/lib/projects';
 import { parseCstPins } from '../src/lib/physical';
 import { validateProject as validateServerProject } from '../server/validation';
 
