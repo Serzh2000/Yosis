@@ -13,51 +13,23 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { getTabDestination } from '../lib/accessibility';
+import { studioTabs, type WorkTab } from '../lib/studio-tabs';
 
-export type WorkTab =
-  | 'design'
-  | 'code'
-  | 'rtl'
-  | 'technology'
-  | 'constraints'
-  | 'simulation'
-  | 'virtual'
-  | 'chip'
-  | 'lessons'
-  | 'board';
 export type WorkspaceStatus = 'success' | 'error' | 'stale' | 'busy';
-export const workspaceTabs: { id: WorkTab; label: string; icon: LucideIcon; caption: string }[] = [
-  {
-    id: 'lessons',
-    label: 'Обучение',
-    icon: GraduationCap,
-    caption: 'От первого бита к своему устройству',
-  },
-  { id: 'code', label: 'Код', icon: Code2, caption: 'Исходники проекта' },
-  {
-    id: 'design',
-    label: 'Конструктор',
-    icon: CircuitBoard,
-    caption: 'Схема из логических элементов без ручного Verilog',
-  },
-  {
-    id: 'constraints',
-    label: 'Выводы',
-    icon: SlidersHorizontal,
-    caption: 'Физические выводы и ограничения .cst',
-  },
-  { id: 'rtl', label: 'RTL', icon: GitBranch, caption: 'Логические элементы и связи' },
-  { id: 'simulation', label: 'Диаграммы', icon: Activity, caption: 'Сигналы во времени' },
-  {
-    id: 'virtual',
-    label: 'Лаборатория',
-    icon: CircuitBoard,
-    caption: 'Плата на столе: детали, провода и схема в работе',
-  },
-  { id: 'technology', label: 'Gowin', icon: Cpu, caption: 'LUT, регистры и ресурсы' },
-  { id: 'chip', label: 'Кристалл', icon: Layers3, caption: 'Размещение и карта занятости' },
-  { id: 'board', label: 'Подключение', icon: Usb, caption: 'Работа с настоящей платой' },
-];
+const tabIcons: Record<WorkTab, LucideIcon> = {
+  lessons: GraduationCap,
+  code: Code2,
+  design: CircuitBoard,
+  constraints: SlidersHorizontal,
+  rtl: GitBranch,
+  simulation: Activity,
+  virtual: CircuitBoard,
+  technology: Cpu,
+  chip: Layers3,
+  board: Usb,
+};
+export const workspaceTabs: { id: WorkTab; label: string; icon: LucideIcon; caption: string }[] =
+  studioTabs.map((item) => ({ ...item, icon: tabIcons[item.id] }));
 const groups: { label: string; tabs: WorkTab[] }[] = [
   { label: 'Узнать', tabs: ['lessons'] },
   { label: 'Создать', tabs: ['code', 'design', 'constraints'] },

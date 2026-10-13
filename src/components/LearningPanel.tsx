@@ -20,6 +20,7 @@ import {
   Waves,
 } from 'lucide-react';
 import { getProjectSnapshot } from '../lib/projects';
+import type { LearningGuide, LearningWorkspace } from '../lib/learning-types';
 import { localStore, STORAGE_KEYS } from '../lib/storage';
 import type { Project, SimulationResult } from '../../shared/types';
 import {
@@ -41,7 +42,7 @@ import {
   revealCourseHint,
   selectCourseLesson,
 } from '../lib/learning-course';
-import type { CourseProgress, CourseStep } from '../lib/learning-course';
+import type { CourseProgress } from '../lib/learning-course';
 import {
   explainLearningFailure,
   explainLearningVerdicts,
@@ -58,11 +59,6 @@ import { WaveformViewer } from './WaveformViewer';
 import { GlossaryButton, GlossaryDialog, GlossaryText } from './GlossaryText';
 import './learning.css';
 
-export interface LearningGuide {
-  title: string;
-  tip: string;
-}
-export type LearningWorkspace = NonNullable<CourseStep['workspace']>;
 const workspaceLabels: Record<LearningWorkspace, string> = {
   code: 'код проекта',
   rtl: 'RTL-схему',

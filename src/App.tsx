@@ -37,7 +37,7 @@ const LabPanel = lazy(() =>
     default: module.LabPanel,
   })),
 );
-import type { LearningGuide, LearningWorkspace } from './components/LearningPanel';
+import type { LearningGuide, LearningWorkspace } from './lib/learning-types';
 const LearningPanel = lazy(() =>
   import('./components/LearningPanel').then((module) => ({ default: module.LearningPanel })),
 );
@@ -69,7 +69,8 @@ import { ModuleHierarchyMenu } from './components/ModuleHierarchyMenu';
 import './components/studio-header.css';
 import { StudioHeader } from './components/StudioHeader';
 import { BuildLogs } from './components/BuildLogs';
-import { StudioNavigation, type WorkTab } from './components/StudioNavigation';
+import { StudioNavigation } from './components/StudioNavigation';
+import type { WorkTab } from './lib/studio-tabs';
 import { PanelBoundary } from './components/PanelBoundary';
 import { Dialog } from './components/Dialog';
 import { StudioGuide } from './components/StudioGuide';
