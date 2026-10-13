@@ -2,7 +2,8 @@ import { fork, type ChildProcess } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { BuildResult, Project, ToolchainStatus, YosysNetlist } from '../shared/types';
+import type { BuildResult, Project, ToolchainStatus } from '../shared/types';
+import type { YosysRequest, YosysWorkerMessage } from '../shared/worker-protocol';
 import { materializeCircuitProject } from '../shared/schematic';
 import { JobManager, type JobRecord } from './job-manager';
 import { TERMINAL } from './job-constants';
@@ -11,14 +12,6 @@ import { parseDiagnostics, projectHash, RequestError } from './validation';
 const RUNNER = fileURLToPath(new URL('./yosys-runner.mjs', import.meta.url));
 const ARTIFACTS = new Set(['rtl.json', 'technology.json', 'logs.txt']);
 
-interface WorkerMessage {
-  type: 'log' | 'stage' | 'netlist' | 'success' | 'failure' | 'probe-success' | 'warm';
-  text?: string;
-  stage?: string;
-  name?: 'rtl' | 'technology';
-  netlist?: YosysNetlist;
-  error?: string;
-}
 interface BuildRecord extends JobRecord<BuildResult> {
   project: Project;
   elapsedStart?: number;
@@ -95,7 +88,7 @@ export class BuildManager extends JobManager<BuildResult, BuildRecord> {
       };
       const timer = setTimeout(() => done(false), 45_000);
       child.on('message', (value) => {
-        const message = value as WorkerMessage;
+        const message = value as YosysWorkerMessage;
         if (message.type === 'log') logs += message.text ?? '';
         else if (message.type === 'probe-success') succeeded = true;
         else if (message.type === 'failure') done(false);
@@ -105,7 +98,7 @@ export class BuildManager extends JobManager<BuildResult, BuildRecord> {
       child.stderr?.on('data', (chunk) => {
         logs += String(chunk);
       });
-      child.send({ probe: true }, (error) => {
+      child.send({ probe: true } satisfies YosysRequest, (error) => {
         if (error) done(false);
       });
     }));
@@ -218,9 +211,10 @@ export class BuildManager extends JobManager<BuildResult, BuildRecord> {
     child.once('error', drop);
     child.once('exit', drop);
     child.once('message', (value) => {
-      if (this.spare === child && (value as WorkerMessage).type === 'warm') this.spareReady = true;
+      if (this.spare === child && (value as YosysWorkerMessage).type === 'warm')
+        this.spareReady = true;
     });
-    child.send({ warm: true }, (error) => {
+    child.send({ warm: true } satisfies YosysRequest, (error) => {
       if (error) {
         drop();
         child.kill();
@@ -273,7 +267,7 @@ export class BuildManager extends JobManager<BuildResult, BuildRecord> {
     let succeeded = false;
     child.on('message', (value) => {
       if (TERMINAL.has(record.result.status)) return;
-      const message = value as WorkerMessage;
+      const message = value as YosysWorkerMessage;
       if (message.type === 'log') this.appendLog(record, message.text ?? '');
       else if (message.type === 'stage') {
         record.result.stage = message.stage ?? record.result.stage;
@@ -311,7 +305,7 @@ export class BuildManager extends JobManager<BuildResult, BuildRecord> {
           `Yosys завершился без полного результата (код ${code ?? signal}).`,
         );
     });
-    child.send({ project: record.project }, (error) => {
+    child.send({ project: record.project } satisfies YosysRequest, (error) => {
       if (error) void this.finish(record, 'error', 'Ошибка связи с Yosys', error.message);
     });
   }

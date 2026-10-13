@@ -1,6 +1,7 @@
 import { fork, type ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import type { Project, Diagnostic } from '../shared/types';
+import type { SyntaxRequest, SyntaxWorkerMessage } from '../shared/worker-protocol';
 import { JobQueue } from './job-queue';
 import { parseDiagnostics } from './validation';
 import { materializeCircuitProject } from '../shared/schematic';
@@ -74,7 +75,7 @@ export class SyntaxManager {
       }
       record.logs += text;
     };
-    child.on('message', (value: { type: string; text?: string; error?: string }) => {
+    child.on('message', (value: SyntaxWorkerMessage) => {
       if (value.type === 'log') log(value.text ?? '');
       else if (value.type === 'success') success = true;
       else if (value.type === 'failure') error = value.error;
@@ -90,7 +91,7 @@ export class SyntaxManager {
       );
       this.queue.complete(record);
     });
-    child.send({ project: record.project }, (cause) => {
+    child.send({ project: record.project } satisfies SyntaxRequest, (cause) => {
       if (cause) this.finish(record, cause.message);
     });
   }

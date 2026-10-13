@@ -1,3 +1,7 @@
+// @ts-check
+/** @typedef {import('../shared/types').Project} Project */
+/** @typedef {import('../shared/types').SourceFile} SourceFile */
+
 // Makes sources written for the vendor's tools digestible for Yosys without changing what the
 // pupil sees in the editor: the rewrite happens only in the copy handed to synthesis.
 
@@ -5,9 +9,10 @@ const REAL_LITERAL =
   /(?<![\w.$])\d[\d_]*\.\d[\d_]*(?:[eE][+-]?\d+)?|(?<![\w.$])\d[\d_]*[eE][+-]?\d+/;
 
 /** Same length as the source, with comments and strings blanked, so offsets stay valid. */
-function mask(source) {
-  return source.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\\n])*"/g, (text) =>
-    text.replace(/[^\n]/g, ' '),
+function mask(/** @type {string} */ source) {
+  return source.replace(
+    /\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\\n])*"/g,
+    (/** @type {string} */ text) => text.replace(/[^\n]/g, ' '),
   );
 }
 
@@ -17,7 +22,7 @@ function mask(source) {
  * compared with 21.95 behaves exactly as one compared with 22, so every real-valued parameter
  * is rounded up to an integer with the language's own functions. Line numbers do not change.
  */
-export function integerRealParameters(source) {
+export function integerRealParameters(/** @type {string} */ source) {
   const plain = mask(source);
   const real = new Set();
   const edits = [];
@@ -62,7 +67,10 @@ export function integerRealParameters(source) {
 }
 
 /** Applies the rewrites to every Verilog file of a project; `report` receives a note. */
-export function compatibleProject(project, report) {
+export function compatibleProject(
+  /** @type {Project} */ project,
+  /** @type {(note: string) => void} */ report,
+) {
   const files = project.files.map((file) => {
     if (!/\.(v|sv|vh|svh)$/.test(file.name)) return file;
     const { text: integers, rounded } = integerRealParameters(file.content);
@@ -102,7 +110,7 @@ export function compatibleProject(project, report) {
  * SystemVerilog throughout, as the vendor's tool allows; every folder of the project is a
  * place to look for `include files, so sources kept in src/ find their headers.
  */
-export function readCommand(project, file) {
+export function readCommand(/** @type {Project} */ project, /** @type {SourceFile} */ file) {
   const folders = new Set(
     project.files
       .filter((item) => item.name.includes('/'))

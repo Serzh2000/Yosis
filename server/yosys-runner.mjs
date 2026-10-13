@@ -1,10 +1,21 @@
+// @ts-check
 // Keep the WASM runtime in a separate process so cancellation also interrupts
 // synchronous synthesis and cannot block the HTTP server event loop.
 import { TextDecoder, stripVTControlCharacters } from 'node:util';
 import { compatibleProject, readCommand } from './verilog-compat.mjs';
-import { createWorkerChannel } from './worker-ipc.mjs';
+import { createWorkerChannel, loadYosys } from './worker-ipc.mjs';
 
-const { send, disconnect } = createWorkerChannel();
+/**
+ * @typedef {import('../shared/worker-protocol').YosysRequest} YosysRequest
+ * @typedef {import('../shared/types').Project} Project
+ * @typedef {import('../shared/types').YosysNetlist} YosysNetlist
+ * @typedef {import('./worker-ipc.mjs').Tree} Tree
+ */
+const channel =
+  /** @type {ReturnType<typeof createWorkerChannel<import('../shared/worker-protocol').YosysWorkerMessage>>} */ (
+    createWorkerChannel()
+  );
+const { send, disconnect } = channel;
 let buffer = '';
 let loggedBytes = 0;
 const decoder = new TextDecoder();
@@ -14,7 +25,7 @@ function flush() {
     buffer = '';
   }
 }
-function output(bytes) {
+function output(/** @type {Uint8Array | null} */ bytes) {
   if (!bytes) {
     flush();
     return;
@@ -26,7 +37,7 @@ function output(bytes) {
   if (buffer.length >= 4096 || text.includes('ERROR:')) flush();
 }
 const options = { stdout: output, stderr: output, decodeASCII: true, fetchProgress: () => {} };
-function textFile(files, name) {
+function textFile(/** @type {Tree} */ files, /** @type {string} */ name) {
   const data = files[name];
   if (!(typeof data === 'string' || data instanceof Uint8Array))
     throw new Error(`Yosys не создал ${name}.`);
@@ -38,11 +49,11 @@ function textFile(files, name) {
     throw new Error(`Некорректный нетлист ${name}.`);
   return result;
 }
-function virtualSources(project) {
+function virtualSources(/** @type {Project} */ project) {
   const result = Object.create(null);
   for (const file of project.files) {
     const components = file.name.split('/');
-    const name = components.pop();
+    const name = /** @type {string} */ (components.pop());
     let directory = result;
     for (const component of components) {
       directory[component] ??= Object.create(null);
@@ -72,7 +83,7 @@ const WARMUP = `module warm(input clk, input rst, input [7:0] a, input [7:0] b, 
     end
 endmodule`;
 async function warmUp() {
-  const { runYosys } = await import('@yowasp/yosys');
+  const runYosys = await loadYosys();
   const quiet = { stdout: () => {}, stderr: () => {}, decodeASCII: true, fetchProgress: () => {} };
   const rtl = await runYosys(
     ['-T', '-p', 'read_verilog warm.v; hierarchy -check -top warm; proc; opt; write_json rtl.json'],
@@ -92,6 +103,7 @@ async function warmUp() {
 
 // The laboratory simulates the design in the browser, so it needs nothing but two-input
 // gates and plain rising-edge flip-flops. Numbers keep the message small.
+/** @type {Record<string, number>} */
 const LAB_OPS = {
   $_NOT_: 0,
   $_AND_: 1,
@@ -107,11 +119,11 @@ const LAB_OPS = {
 };
 // A tri-state buffer on a top-level pad: Y = E ? A : whatever the outside world drives.
 const LAB_TRI = 11;
-function labDesign(netlist, top) {
+function labDesign(/** @type {YosysNetlist} */ netlist, /** @type {string} */ top) {
   const module = netlist.modules?.[top];
   if (!module) throw new Error(`Модуль ${top} не найден после подготовки.`);
   let nets = 2;
-  const net = (bit) => {
+  const net = (/** @type {number | string} */ bit) => {
     if (typeof bit !== 'number') return bit === '1' ? 1 : 0;
     if (bit + 1 > nets) nets = bit + 1;
     return bit;
@@ -134,7 +146,7 @@ function labDesign(netlist, top) {
   const gates = [];
   const dffs = [];
   for (const cell of Object.values(module.cells ?? {})) {
-    const pin = (name) => net(cell.connections[name]?.[0]);
+    const pin = (/** @type {string} */ name) => net(cell.connections[name]?.[0]);
     if (cell.type === '$_DFF_P_') dffs.push(pin('C'), pin('D'), pin('Q'), init.get(pin('Q')) ?? 0);
     else if (cell.type in LAB_OPS)
       gates.push(LAB_OPS[cell.type], pin('A'), pin('B'), pin('S'), pin('Y'));
@@ -175,7 +187,7 @@ function labDesign(netlist, top) {
 const GOWIN_LIBRARY = 'read_verilog -lib +/gowin/cells_sim.v +/gowin/cells_xtra_gw2a.v';
 
 let warming = Promise.resolve();
-process.on('message', (request) => {
+process.on('message', (/** @type {YosysRequest} */ request) => {
   if (request?.warm) {
     // A failed warm-up only costs speed; the job itself reports real errors.
     warming = warmUp().then(
@@ -187,10 +199,10 @@ process.on('message', (request) => {
   void warming.then(() => handle(request));
 });
 
-async function handle(request) {
+async function handle(/** @type {YosysRequest} */ request) {
   try {
     send({ type: 'stage', stage: 'Загрузка Yosys WebAssembly' });
-    const { runYosys } = await import('@yowasp/yosys');
+    const runYosys = await loadYosys();
     if (request.probe) {
       await runYosys(['-V'], {}, options);
       flush();
@@ -198,7 +210,9 @@ async function handle(request) {
       await disconnect();
       return;
     }
-    const project = compatibleProject(request.project, (text) => send({ type: 'log', text }));
+    const project = compatibleProject(/** @type {Project} */ (request.project), (text) =>
+      send({ type: 'log', text }),
+    );
     // Vendor IP is often shipped encrypted. No open tool can read it, and Yosys reports only
     // an unknown directive: say what the matter is.
     const sealed = project.files.find((file) => /`pragma\s+protect/.test(file.content));
@@ -292,12 +306,13 @@ async function handle(request) {
     flush();
     // This build of Yosys overflows its stack instead of reporting some unsupported
     // constructs; real numbers in constant expressions are the usual cause.
-    const crashed = /Maximum call stack size exceeded/.test(error?.message ?? '');
+    const failure = /** @type {Error | undefined} */ (error);
+    const crashed = /Maximum call stack size exceeded/.test(failure?.message ?? '');
     send({
       type: 'failure',
       error: crashed
         ? 'Yosys аварийно остановился на этой схеме. Частая причина — вещественные числа в выражениях (например, 0.85): синтез их не поддерживает. Замените их целыми: вместо N * 0.85 пишите N * 85 / 100.'
-        : error?.message || String(error),
+        : failure?.message || String(error),
     });
     // A cancelled parent can close IPC while WASM is still producing logs.
     // Its delivery error is already handled by the send callback.

@@ -7,18 +7,18 @@ import type { Project, YosysNetlist, YosysPort } from './types';
  * те же типы, поэтому расхождение формата ловит компилятор, а не тест.
  */
 
-/** Запросы к `yosys-runner.mjs`. */
-export type YosysRequest =
-  /** Прогрев запасного воркера: загрузить Yosys и прогнать маленький проект. */
-  | { warm: true }
-  /** Проверка, что Yosys запускается (`yosys -V`). */
-  | { probe: true }
-  /** Синтез проекта: RTL и Gowin. */
-  | { project: Project; lab?: false; prepareSimulation?: false }
-  /** Нетлист из вентилей и триггеров для лаборатории. */
-  | { project: Project; lab: true; prepareSimulation?: false }
-  /** RTL, экспортированный в Verilog для Icarus. */
-  | { project: Project; prepareSimulation: true; lab?: false };
+/**
+ * Запрос к `yosys-runner.mjs`. Это один из режимов: прогрев (`warm`), проверка запуска (`probe`),
+ * подготовка схемы для лаборатории (`project` + `lab`), RTL для Icarus (`project` +
+ * `prepareSimulation`) или обычный синтез (`project`).
+ */
+export interface YosysRequest {
+  warm?: boolean;
+  probe?: boolean;
+  project?: Project;
+  lab?: boolean;
+  prepareSimulation?: boolean;
+}
 
 /** Запрос к `syntax-runner.mjs`: проверить синтаксис без полного синтеза. */
 export interface SyntaxRequest {
@@ -60,9 +60,7 @@ export type SyntaxWorkerMessage = CommonWorkerMessage;
 
 /** Сообщения `physical-yosys-runner.mjs` (собственный вид ответа: `flat` и `error`). */
 export type FlattenWorkerMessage =
-  | { type: 'log'; text: string }
-  | { type: 'flat'; text: string }
-  | { type: 'error'; error: string };
+  { type: 'log'; text: string } | { type: 'flat'; text: string } | { type: 'error'; error: string };
 
 /** Любое сообщение воркера. */
 export type WorkerMessage = YosysWorkerMessage | SyntaxWorkerMessage | FlattenWorkerMessage;

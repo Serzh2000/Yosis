@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Project, YosysNetlist } from '../shared/types';
 import type { PhysicalConfig, PhysicalResult, PhysicalToolStatus } from '../shared/physical';
+import type { FlattenRequest, FlattenWorkerMessage } from '../shared/worker-protocol';
 import { BuildManager } from './builds';
 import { JOB_ID, TERMINAL } from './job-constants';
 import { JobManager, type JobRecord } from './job-manager';
@@ -386,7 +387,7 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
       job.child = child;
       let text: string | undefined, error: string | undefined;
       child.on('message', (message) => {
-        const value = message as { type: string; text?: string; error?: string };
+        const value = message as FlattenWorkerMessage;
         if (value.type === 'log') this.appendLog(job, value.text ?? '');
         else if (value.type === 'flat') text = value.text;
         else if (value.type === 'error') error = value.error;
@@ -398,7 +399,7 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
         if (code === 0 && text) resolve(text);
         else reject(new Error(error ?? 'Не удалось подготовить нетлист.'));
       });
-      child.send({ technology: job.technology, top: job.project.top });
+      child.send({ technology: job.technology, top: job.project.top } satisfies FlattenRequest);
     });
   }
   private command(job: PhysicalJob, executable: string, args: string[]) {

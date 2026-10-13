@@ -3,6 +3,7 @@ import { writeFile, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Project, SimulationConfig, SimulationResult, YosysPort } from '../shared/types';
+import type { YosysRequest, YosysWorkerMessage } from '../shared/worker-protocol';
 import { generateTestbench, TESTBENCH_TOP } from './simulation-testbench';
 import { parseDiagnostics, projectHash } from './validation';
 import { TERMINAL } from './job-constants';
@@ -260,14 +261,7 @@ export class SimulationManager extends JobManager<SimulationResult, SimulationRe
         { ports: Record<string, YosysPort>; modules: string[]; design: string } | undefined;
       let succeeded = false;
       child.on('message', (value) => {
-        const message = value as {
-          type: string;
-          text?: string;
-          error?: string;
-          ports: Record<string, YosysPort>;
-          modules: string[];
-          design: string;
-        };
+        const message = value as YosysWorkerMessage;
         if (record.aborted) return;
         if (message.type === 'log') this.appendLog(record, message.text ?? '');
         else if (message.type === 'simulation-design')
@@ -288,9 +282,12 @@ export class SimulationManager extends JobManager<SimulationResult, SimulationRe
           );
       });
       child.stderr?.on('data', (chunk) => this.appendLog(record, String(chunk)));
-      child.send({ project: record.project, prepareSimulation: true }, (error) => {
-        if (error) reject(error);
-      });
+      child.send(
+        { project: record.project, prepareSimulation: true } satisfies YosysRequest,
+        (error) => {
+          if (error) reject(error);
+        },
+      );
     });
   }
 

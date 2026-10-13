@@ -2,6 +2,7 @@ import { fork, type ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import type { Diagnostic, Project } from '../shared/types';
 import type { LabDesign } from '../shared/lab';
+import type { YosysRequest, YosysWorkerMessage } from '../shared/worker-protocol';
 import { JobQueue } from './job-queue';
 import { parseDiagnostics } from './validation';
 import { materializeCircuitProject } from '../shared/schematic';
@@ -86,15 +87,12 @@ export class LabManager {
       }
       record.logs += text;
     };
-    child.on(
-      'message',
-      (value: { type: string; text?: string; error?: string; design?: LabDesign }) => {
-        if (value.type === 'log') log(value.text ?? '');
-        else if (value.type === 'lab') record.design = value.design;
-        else if (value.type === 'success') success = true;
-        else if (value.type === 'failure') error = value.error;
-      },
-    );
+    child.on('message', (value: YosysWorkerMessage) => {
+      if (value.type === 'log') log(value.text ?? '');
+      else if (value.type === 'lab') record.design = value.design;
+      else if (value.type === 'success') success = true;
+      else if (value.type === 'failure') error = value.error;
+    });
     child.stdout?.on('data', (data) => log(String(data)));
     child.stderr?.on('data', (data) => log(String(data)));
     child.once('error', (cause) => this.finish(record, cause.message));
@@ -108,7 +106,7 @@ export class LabManager {
       );
       this.queue.complete(record);
     });
-    child.send({ project: record.project, lab: true }, (cause) => {
+    child.send({ project: record.project, lab: true } satisfies YosysRequest, (cause) => {
       if (cause) this.finish(record, cause.message);
     });
   }
