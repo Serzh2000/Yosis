@@ -81,6 +81,24 @@ export default tseslint.config(
     },
   },
   {
+    // Хранилище браузера открыто только через src/lib/storage.ts: там собраны ключи и версии.
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/lib/storage.ts'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'localStorage',
+          message: 'Используйте localStore и STORAGE_KEYS из lib/storage.',
+        },
+        {
+          name: 'sessionStorage',
+          message: 'Используйте sessionStore и STORAGE_KEYS из lib/storage.',
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.mjs'],
     languageOptions: {
       globals: {

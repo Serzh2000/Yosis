@@ -18,11 +18,12 @@ tests/    node:test; e2e/ — Playwright
 
 Правила импортов проверяет ESLint (`npm run lint`):
 
-| Откуда                        | Куда нельзя           | Почему                                   |
-| ----------------------------- | --------------------- | ---------------------------------------- |
-| `shared/**`                   | `src/**`, `server/**` | общий код не знает, кто его вызывает     |
-| `src/lib/**`, `src/hooks/**`  | `src/components/**`   | доменная логика не зависит от интерфейса |
-| `src/**` (кроме `lib/api.ts`) | глобальный `fetch`    | все запросы идут через единый клиент     |
+| Откуда                            | Куда нельзя                      | Почему                                      |
+| --------------------------------- | -------------------------------- | ------------------------------------------- |
+| `shared/**`                       | `src/**`, `server/**`            | общий код не знает, кто его вызывает        |
+| `src/lib/**`, `src/hooks/**`      | `src/components/**`              | доменная логика не зависит от интерфейса    |
+| `src/**` (кроме `lib/api.ts`)     | глобальный `fetch`               | все запросы идут через единый клиент        |
+| `src/**` (кроме `lib/storage.ts`) | `localStorage`, `sessionStorage` | все ключи хранилища описаны в одном реестре |
 
 Ни `src → server`, ни `server → src` не бывает: клиент и сервер общаются только по HTTP и через
 типы из `shared/`.
@@ -89,6 +90,28 @@ tests/    node:test; e2e/ — Playwright
 | `YOSIS_OPENFPGALOADER`, `YOSIS_GOWIN_PROGRAMMER`                                        | программаторы для локального помощника                          |
 | `YOSIS_DOWNLOAD_URL`, `YOSIS_DOWNLOAD_FILE`                                             | источник архивов для скриптов `setup:*`                         |
 | `YOWASP_CACHE_DIR`                                                                      | кэш скомпилированного WebAssembly Yosys                         |
+
+## Реестр ключей хранилища браузера
+
+Все обращения идут через `src/lib/storage.ts` (`localStore`, `sessionStore`): чтение и запись не
+бросают исключений, ключи и версии собраны в `STORAGE_KEYS`. Формат и имена менять нельзя: в
+браузерах учеников уже лежат данные. Новому формату нужен новый ключ и миграция при чтении.
+
+| Ключ                               | Область        | Содержимое                                                 | Кто пишет                             |
+| ---------------------------------- | -------------- | ---------------------------------------------------------- | ------------------------------------- |
+| `yosis.theme.v1`                   | localStorage   | `'light'` или `'dark'`                                     | `App`                                 |
+| `yosis.projects.v1`                | localStorage   | старая библиотека проектов (читается только при переносе)  | `lib/projects.ts`                     |
+| `yosis.current.v1`                 | localStorage   | старый текущий проект (читается только при переносе)       | `lib/projects.ts`                     |
+| `yosis.build.v1`                   | sessionStorage | последняя сборка вкладки: `{id, snapshot}`                 | `lib/projects.ts`                     |
+| `yosis.physical.v1`                | sessionStorage | последнее размещение: `{id, project}`                      | `ChipPanel`                           |
+| `yosis.lessons.v1`                 | localStorage   | пройденные уроки (идентификаторы)                          | `LessonsPanel`                        |
+| `yosis.learning-course.v1`         | localStorage   | прогресс курса «Обучение»                                  | `LearningPanel`, `lib/server-sync.ts` |
+| `yosis.learning-drafts.v1`         | localStorage   | черновики решений курса                                    | `LearningPanel`, `lib/server-sync.ts` |
+| `yosis.first-mission.v1`           | localStorage   | прогресс первой миссии                                     | `MissionTour`                         |
+| `yosis.stale-example.dismissed.v1` | localStorage   | скрытые напоминания об устаревших копиях: `{проект: хэш}`  | `lib/example-origin.ts`               |
+| `yosis.lab.v1.<проект>`            | localStorage   | стол лаборатории проекта                                   | `lib/lab/runtime.ts`                  |
+| `yosis.projects.v2`                | IndexedDB      | проекты ученика: хранилища `projects`, `summaries`, `meta` | `lib/projects.ts`                     |
+| `yosis.debugger-backups`           | IndexedDB      | резервные копии прошивки отладчика                         | `lib/debugger-backups.ts`             |
 
 ## Брейкпоинты CSS
 

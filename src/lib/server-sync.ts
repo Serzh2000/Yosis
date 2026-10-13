@@ -1,8 +1,9 @@
 import type { Project } from '../../shared/types';
 import type { CourseProgress } from './learning-course';
 import type { LearningDrafts } from './learning-session';
-import { LEARNING_PROGRESS_KEY, parseCourseProgress } from './learning-course';
-import { LEARNING_DRAFTS_KEY, parseLearningDrafts } from './learning-session';
+import { parseCourseProgress } from './learning-course';
+import { parseLearningDrafts } from './learning-session';
+import { localStore, STORAGE_KEYS } from './storage';
 import { request, requestRaw, requestVoid } from './api';
 import { validateProject } from './projects';
 
@@ -49,8 +50,8 @@ export async function removeServerProject(id: string): Promise<void> {
 export function currentCourseBackup(): CourseBackup {
   return {
     version: 1,
-    course: parseCourseProgress(localStorage.getItem(LEARNING_PROGRESS_KEY)),
-    drafts: parseLearningDrafts(localStorage.getItem(LEARNING_DRAFTS_KEY)),
+    course: parseCourseProgress(localStore.getItem(STORAGE_KEYS.learningCourse)),
+    drafts: parseLearningDrafts(localStore.getItem(STORAGE_KEYS.learningDrafts)),
   };
 }
 export function parseCourseBackup(value: unknown): CourseBackup {
@@ -81,20 +82,17 @@ export async function downloadCourse(): Promise<CourseBackup> {
   return parseCourseBackup(value);
 }
 export function restoreCourse(backup: CourseBackup): void {
-  const progress = localStorage.getItem(LEARNING_PROGRESS_KEY),
-    drafts = localStorage.getItem(LEARNING_DRAFTS_KEY);
+  const progress = localStore.getItem(STORAGE_KEYS.learningCourse),
+    drafts = localStore.getItem(STORAGE_KEYS.learningDrafts);
   try {
-    localStorage.setItem(LEARNING_DRAFTS_KEY, JSON.stringify(backup.drafts));
-    localStorage.setItem(LEARNING_PROGRESS_KEY, JSON.stringify(backup.course));
+    localStore.setItemStrict(STORAGE_KEYS.learningDrafts, JSON.stringify(backup.drafts));
+    localStore.setItemStrict(STORAGE_KEYS.learningCourse, JSON.stringify(backup.course));
   } catch (cause) {
-    try {
-      if (progress === null) localStorage.removeItem(LEARNING_PROGRESS_KEY);
-      else localStorage.setItem(LEARNING_PROGRESS_KEY, progress);
-      if (drafts === null) localStorage.removeItem(LEARNING_DRAFTS_KEY);
-      else localStorage.setItem(LEARNING_DRAFTS_KEY, drafts);
-    } catch {
-      /* Preserve the initial failure. */
-    }
+    // Откат лучшим усилием: пользователю сообщается исходная ошибка.
+    if (progress === null) localStore.removeItem(STORAGE_KEYS.learningCourse);
+    else localStore.setItem(STORAGE_KEYS.learningCourse, progress);
+    if (drafts === null) localStore.removeItem(STORAGE_KEYS.learningDrafts);
+    else localStore.setItem(STORAGE_KEYS.learningDrafts, drafts);
     throw cause;
   }
 }

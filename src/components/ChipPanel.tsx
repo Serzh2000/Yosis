@@ -5,6 +5,7 @@ import type { PhysicalResult, PhysicalToolStatus } from '../../shared/physical';
 import { parsePlacement } from '../lib/physical';
 import { getResources } from '../lib/netlist';
 import { request, requestVoid } from '../lib/api';
+import { sessionStore, STORAGE_KEYS } from '../lib/storage';
 import { pollJob } from '../lib/job-client';
 import { getProjectSnapshot } from '../lib/projects';
 import { HelpTrigger } from './HelpCard';
@@ -21,7 +22,6 @@ interface Props {
 }
 const COLORS = ['#db9550', '#7fa47d', '#ca7777', '#a58abd', '#bba36d', '#7caaa2', '#b99a8d'];
 const CATEGORIES = ['LUT', 'FF', 'ALU', 'BRAM', 'DSP', 'IO', 'other'] as const;
-const STORAGE_KEY = 'yosis.physical.v1';
 function timingRows(report: unknown): { name: string; achieved: number; requested: number }[] {
   if (!report || typeof report !== 'object') return [];
   const fmax = (report as Record<string, unknown>).fmax;
@@ -85,11 +85,13 @@ export function ChipPanel({
       .catch((cause) => {
         if (!abort.signal.aborted) setError(cause.message);
       });
-    try {
-      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? 'null') as {
-        id: string;
-        project: string;
-      } | null;
+    {
+      // Повреждённый кэш сессии не влияет на сохранённые проекты.
+      const saved = sessionStore.readJson(
+        STORAGE_KEYS.physicalJob,
+        (value) => value as { id: string; project: string } | null,
+        null,
+      );
       if (saved?.id && saved.project === initialSnapshot) {
         request<PhysicalResult>(`/api/physical/${saved.id}`, { signal: abort.signal })
           .then((result) => {
@@ -106,8 +108,6 @@ export function ChipPanel({
           })
           .catch(() => {});
       }
-    } catch {
-      /* A damaged session cache does not affect saved projects. */
     }
     const dispose = () => {
       generation.current++;
@@ -174,7 +174,7 @@ export function ChipPanel({
       setPlacement(null);
       setSelected(null);
       setArtifactName('');
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ id: result.id, project: source }));
+      sessionStore.writeJson(STORAGE_KEYS.physicalJob, { id: result.id, project: source });
     } catch (cause) {
       if (generation.current === currentGeneration)
         setError(cause instanceof Error ? cause.message : String(cause));
@@ -209,7 +209,7 @@ export function ChipPanel({
       setJob(null);
       setSelected(null);
       setError('');
-      sessionStorage.removeItem(STORAGE_KEY);
+      sessionStore.removeItem(STORAGE_KEYS.physicalJob);
     } catch (cause) {
       if (generation.current === currentGeneration)
         setError(cause instanceof Error ? cause.message : String(cause));

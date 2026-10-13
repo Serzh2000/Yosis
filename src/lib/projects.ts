@@ -3,13 +3,9 @@ import { validateProject } from '../../shared/project-validation';
 import type { Example } from './examples';
 import { starterProject } from './starter-project';
 import { markExampleOrigin } from './example-origin';
+import { DATABASES, localStore, sessionStore, STORAGE_KEYS } from './storage';
 export { validateProject };
 export type { Example };
-
-const CURRENT_KEY = 'yosis.current.v1';
-const LIBRARY_KEY = 'yosis.projects.v1';
-const LAST_BUILD_KEY = 'yosis.build.v1';
-export const PROJECT_DATABASE = 'yosis.projects.v2';
 
 export interface ProjectSummary {
   id: string;
@@ -30,7 +26,7 @@ interface SavedBuild {
 
 export function loadLastBuild(project: Project | string): SavedBuild | null {
   try {
-    const raw = sessionStorage.getItem(LAST_BUILD_KEY);
+    const raw = sessionStore.getItem(STORAGE_KEYS.lastBuild);
     if (!raw) return null;
     const saved = JSON.parse(raw) as Partial<SavedBuild>;
     if (
@@ -58,18 +54,11 @@ export function loadLastBuild(project: Project | string): SavedBuild | null {
 }
 
 export function saveLastBuild(id: string, snapshot: string): void {
-  try {
-    sessionStorage.setItem(LAST_BUILD_KEY, JSON.stringify({ id, snapshot }));
-  } catch {
-    /* A live build still works when session storage is disabled. */
-  }
+  // Живая сборка работает и без хранилища сессии.
+  sessionStore.writeJson(STORAGE_KEYS.lastBuild, { id, snapshot });
 }
 export function clearLastBuild(): void {
-  try {
-    sessionStorage.removeItem(LAST_BUILD_KEY);
-  } catch {
-    /* Optional session recovery. */
-  }
+  sessionStore.removeItem(STORAGE_KEYS.lastBuild);
 }
 
 export function cloneProject(project: Project): Project {
@@ -124,7 +113,7 @@ async function openDatabase(): Promise<IDBDatabase> {
     throw new Error(
       'Браузер не предоставляет IndexedDB. Проект доступен в памяти; сохранение недоступно.',
     );
-  const request = indexedDB.open(PROJECT_DATABASE, 1);
+  const request = indexedDB.open(DATABASES.projects.name, DATABASES.projects.version);
   request.onupgradeneeded = () => {
     request.result.createObjectStore('projects', { keyPath: 'id' });
     request.result.createObjectStore('summaries', { keyPath: 'id' });
@@ -139,14 +128,9 @@ function readLegacy(): {
   selected?: Project;
   libraryValid: boolean;
 } {
-  let library: string | null = null,
-    current: string | null = null;
-  try {
-    library = localStorage.getItem(LIBRARY_KEY);
-    current = localStorage.getItem(CURRENT_KEY);
-  } catch {
-    /* IndexedDB can still work. */
-  }
+  // Если localStorage недоступен, IndexedDB всё равно работает.
+  const library = localStore.getItem(STORAGE_KEYS.legacyProjects),
+    current = localStore.getItem(STORAGE_KEYS.legacyCurrentProject);
   const projects: Project[] = [];
   let libraryValid = true;
   try {
@@ -221,18 +205,15 @@ async function migrateLegacy(database: IDBDatabase): Promise<void> {
     throw cause;
   }
   // Only remove data after the complete atomic migration; leave malformed keys recoverable.
-  try {
-    if (
-      legacy.libraryValid &&
-      legacy.projects.length &&
-      localStorage.getItem(LIBRARY_KEY) === legacy.library
-    )
-      localStorage.removeItem(LIBRARY_KEY);
-    if (legacy.selected && localStorage.getItem(CURRENT_KEY) === legacy.current)
-      localStorage.removeItem(CURRENT_KEY);
-  } catch {
-    /* Successful migration does not depend on deleting the old keys. */
-  }
+  // Успешный перенос не зависит от удаления старых ключей.
+  if (
+    legacy.libraryValid &&
+    legacy.projects.length &&
+    localStore.getItem(STORAGE_KEYS.legacyProjects) === legacy.library
+  )
+    localStore.removeItem(STORAGE_KEYS.legacyProjects);
+  if (legacy.selected && localStore.getItem(STORAGE_KEYS.legacyCurrentProject) === legacy.current)
+    localStore.removeItem(STORAGE_KEYS.legacyCurrentProject);
 }
 async function withDatabase<T>(operation: (database: IDBDatabase) => Promise<T>): Promise<T> {
   const database = await openDatabase();

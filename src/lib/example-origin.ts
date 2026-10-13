@@ -1,5 +1,6 @@
 import type { Project, SourceFile } from '../../shared/types';
 import type { Example } from './examples';
+import { localStore, STORAGE_KEYS } from './storage';
 
 /**
  * Копия встроенного примера хранится в браузере навсегда, а библиотека примеров
@@ -125,7 +126,13 @@ export function findStaleExampleCopy(
   return null;
 }
 
-const DISMISSED_KEY = 'yosis.stale-example.dismissed.v1';
+function readDismissed(): Record<string, unknown> {
+  return localStore.readJson(
+    STORAGE_KEYS.staleExampleDismissed,
+    (value) => value as Record<string, unknown>,
+    {},
+  );
+}
 
 /** Скрытие уведомления привязано к проекту и версии примера: новая правка библиотеки покажет его снова. */
 export function isStaleNoticeDismissed(
@@ -133,30 +140,15 @@ export function isStaleNoticeDismissed(
   currentHash: string,
 ): boolean {
   if (!projectId) return false;
-  try {
-    const saved = JSON.parse(localStorage.getItem(DISMISSED_KEY) ?? '{}') as Record<
-      string,
-      unknown
-    >;
-    return saved[projectId] === currentHash;
-  } catch {
-    return false;
-  }
+  return readDismissed()[projectId] === currentHash;
 }
 
 export function dismissStaleNotice(projectId: string | undefined, currentHash: string): void {
   if (!projectId) return;
-  try {
-    const saved = JSON.parse(localStorage.getItem(DISMISSED_KEY) ?? '{}') as Record<
-      string,
-      unknown
-    >;
-    const entries = Object.entries(saved).filter(([, value]) => typeof value === 'string');
-    localStorage.setItem(
-      DISMISSED_KEY,
-      JSON.stringify(Object.fromEntries([...entries.slice(-199), [projectId, currentHash]])),
-    );
-  } catch {
-    /* Уведомление просто покажется снова. */
-  }
+  const entries = Object.entries(readDismissed()).filter(([, value]) => typeof value === 'string');
+  // Если запись не удалась, уведомление просто покажется снова.
+  localStore.writeJson(
+    STORAGE_KEYS.staleExampleDismissed,
+    Object.fromEntries([...entries.slice(-199), [projectId, currentHash]]),
+  );
 }

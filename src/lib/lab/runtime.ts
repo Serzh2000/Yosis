@@ -10,6 +10,7 @@ import { LabSim, type LabProbe } from './engine';
 import { registerBusDevices } from './bus';
 import { PadWiring } from './bus/pads';
 import { boardPreset, examplePreset } from './presets';
+import { localStore, STORAGE_KEYS } from '../storage';
 
 registerBusDevices();
 
@@ -262,14 +263,11 @@ export class LabRuntime implements DeviceHost {
   }
 }
 
-const storageKey = (project: Project) => `yosis.lab.v1.${project.id ?? project.name}`;
+const storageKey = (project: Project) => STORAGE_KEYS.labLayout(project.id ?? project.name);
 export function loadLayout(project: Project): LabLayout {
-  try {
-    const layout = migrateLayout(JSON.parse(localStorage.getItem(storageKey(project)) ?? 'null'));
-    if (layout) return layout;
-  } catch {
-    /* A damaged or blocked store starts an empty bench. */
-  }
+  // Повреждённое или заблокированное хранилище начинает пустой стол.
+  const layout = localStore.readJson(storageKey(project), migrateLayout, null);
+  if (layout) return layout;
   // A project made from an example with a ready bench starts with that bench.
   const preset = project.origin
     ? (examplePreset(project.origin.exampleId) ?? boardPreset(project))
@@ -277,9 +275,6 @@ export function loadLayout(project: Project): LabLayout {
   return preset ?? { parts: [], wires: [] };
 }
 export function saveLayout(project: Project, layout: LabLayout) {
-  try {
-    localStorage.setItem(storageKey(project), JSON.stringify(layout));
-  } catch {
-    /* The bench still works for this session. */
-  }
+  // Без хранилища стол работает в этой сессии.
+  localStore.writeJson(storageKey(project), layout);
 }

@@ -2,7 +2,6 @@ import type { Project } from '../../shared/types';
 import { guidedLessons } from './learning-course';
 import type { LessonVerdict } from './lessons';
 
-export const LEARNING_DRAFTS_KEY = 'yosis.learning-drafts.v1';
 export type LearningDrafts = Record<string, string>;
 
 export function parseLearningDrafts(input: unknown): LearningDrafts {

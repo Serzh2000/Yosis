@@ -1,7 +1,6 @@
 import type { Project, SimulationConfig } from '../../shared/types';
 import type { Lesson } from './lessons';
 
-export const MISSION_KEY = 'yosis.first-mission.v1';
 export type MissionTab = 'code' | 'rtl' | 'constraints' | 'simulation' | 'chip' | 'board';
 export const missionSteps: Array<{
   id: string;

@@ -1,4 +1,5 @@
 import { FLASH_SECTOR, MAX_DEBUGGER_FLASH, firmwareHash, type DebuggerFlash } from './bl616-flash';
+import { DATABASES } from './storage';
 
 export interface DebuggerBackup {
   version: 1;
@@ -32,7 +33,10 @@ async function database() {
   if (typeof indexedDB === 'undefined')
     throw new Error('Браузер не поддерживает сохранение резервной копии. Установка запрещена.');
   return new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open('yosis.debugger-backups', 1);
+    const request = indexedDB.open(
+      DATABASES.debuggerBackups.name,
+      DATABASES.debuggerBackups.version,
+    );
     request.onupgradeneeded = () => {
       const store = request.result.createObjectStore('backups', { keyPath: 'key' });
       store.createIndex('chipId', 'chipId');

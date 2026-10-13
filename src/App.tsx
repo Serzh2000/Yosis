@@ -94,6 +94,7 @@ import {
 } from './lib/projects';
 import { planSchematicAddition } from './lib/circuit-add';
 import { starterProject } from './lib/starter-project';
+import { localStore, STORAGE_KEYS } from './lib/storage';
 import { useStaleExample } from './hooks/useStaleExample';
 
 type View = 'rtl' | 'technology';
@@ -169,12 +170,8 @@ export default function App() {
     );
   };
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    try {
-      const saved = localStorage.getItem('yosis.theme.v1');
-      if (saved === 'light' || saved === 'dark') return saved;
-    } catch {
-      /* Optional preference. */
-    }
+    const saved = localStore.getItem(STORAGE_KEYS.theme);
+    if (saved === 'light' || saved === 'dark') return saved;
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
   const [projectHubOpen, setProjectHubOpen] = useState(false);
@@ -281,11 +278,8 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
-    try {
-      localStorage.setItem('yosis.theme.v1', theme);
-    } catch {
-      /* The theme still works in memory. */
-    }
+    // Без хранилища тема продолжает работать в памяти.
+    localStore.setItem(STORAGE_KEYS.theme, theme);
   }, [theme]);
 
   useEffect(() => {

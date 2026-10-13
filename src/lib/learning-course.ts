@@ -1067,7 +1067,6 @@ guidedLessons.push(
   },
 );
 
-export const LEARNING_PROGRESS_KEY = 'yosis.learning-course.v1';
 function lessonById(id: string): GuidedLesson {
   const lesson = guidedLessons.find((item) => item.id === id);
   if (!lesson) throw new Error('Неизвестный урок.');

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Check, Flag, Lightbulb, LoaderCircle, Minimize2, Play, X } from 'lucide-react';
 import type { Project } from '../../shared/types';
+import { localStore, STORAGE_KEYS } from '../lib/storage';
 import {
   createMissionProject,
   emptyMission,
-  MISSION_KEY,
   missionConfig,
   missionExercise,
   missionSimulationProject,
@@ -39,7 +39,7 @@ interface Props {
 }
 function savedMission() {
   try {
-    return parseMission(localStorage.getItem(MISSION_KEY));
+    return parseMission(localStore.getItem(STORAGE_KEYS.firstMission));
   } catch {
     return emptyMission();
   }
@@ -87,11 +87,8 @@ export function MissionTour(props: Props) {
                     : false;
 
   useEffect(() => {
-    try {
-      localStorage.setItem(MISSION_KEY, JSON.stringify(progress));
-    } catch {
-      /* The current session can continue. */
-    }
+    // Без хранилища текущая сессия продолжается.
+    localStore.writeJson(STORAGE_KEYS.firstMission, progress);
   }, [progress]);
   useEffect(() => {
     if (previousSnapshot.current === snapshot) return;

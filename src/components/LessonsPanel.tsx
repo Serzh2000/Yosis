@@ -17,20 +17,20 @@ import { lessons, checkLessonTrace, type LessonVerdict } from '../lib/lessons';
 import { parseVcd } from '../lib/vcd';
 import { runSimulation } from '../lib/simulation-client';
 import { getProjectSnapshot } from '../lib/projects';
+import { localStore, STORAGE_KEYS } from '../lib/storage';
 import './lessons.css';
 
-const PROGRESS_KEY = 'yosis.lessons.v1';
 function readProgress(): string[] {
-  try {
-    const data: unknown = JSON.parse(localStorage.getItem(PROGRESS_KEY) || '[]');
-    return Array.isArray(data)
-      ? data.filter(
-          (item) => typeof item === 'string' && lessons.some((lesson) => lesson.id === item),
-        )
-      : [];
-  } catch {
-    return [];
-  }
+  return localStore.readJson<string[]>(
+    STORAGE_KEYS.lessons,
+    (data) =>
+      Array.isArray(data)
+        ? data.filter(
+            (item) => typeof item === 'string' && lessons.some((lesson) => lesson.id === item),
+          )
+        : [],
+    [],
+  );
 }
 export function LessonsPanel({
   project,
@@ -78,11 +78,8 @@ export function LessonsPanel({
     [],
   );
   useEffect(() => {
-    try {
-      localStorage.setItem(PROGRESS_KEY, JSON.stringify(completed));
-    } catch {
-      /* Keep lesson progress for this session when local storage is unavailable. */
-    }
+    // Без хранилища прогресс уроков остаётся только в этой сессии.
+    localStore.writeJson(STORAGE_KEYS.lessons, completed);
   }, [completed]);
 
   async function verify() {

@@ -20,6 +20,7 @@ import {
   Waves,
 } from 'lucide-react';
 import { getProjectSnapshot } from '../lib/projects';
+import { localStore, STORAGE_KEYS } from '../lib/storage';
 import type { Project, SimulationResult } from '../../shared/types';
 import {
   advanceCourseStep,
@@ -33,7 +34,6 @@ import {
   guidedLessons,
   invalidateCourseExercise,
   isCourseLessonUnlocked,
-  LEARNING_PROGRESS_KEY,
   parseCourseProgress,
   previousCourseStep,
   recordCourseExerciseResult,
@@ -46,7 +46,6 @@ import {
   explainLearningFailure,
   explainLearningVerdicts,
   learningProject,
-  LEARNING_DRAFTS_KEY,
   parseLearningDrafts,
 } from '../lib/learning-session';
 import type { LearningDrafts } from '../lib/learning-session';
@@ -81,13 +80,7 @@ interface Props {
   lessonId?: string;
   onLessonChange?: (id: string) => void;
 }
-function stored(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
+const stored = (key: string): string | null => localStore.getItem(key);
 
 function LogicPlayground() {
   const [a, setA] = useState(0);
@@ -197,10 +190,10 @@ export function LearningPanel({
   const [mode, setMode] = useState<'course' | 'practice'>('course');
   const [glossaryOpen, setGlossaryOpen] = useState(false);
   const [progress, setProgress] = useState<CourseProgress>(() =>
-    parseCourseProgress(stored(LEARNING_PROGRESS_KEY)),
+    parseCourseProgress(stored(STORAGE_KEYS.learningCourse)),
   );
   const [drafts, setDrafts] = useState<LearningDrafts>(() =>
-    parseLearningDrafts(stored(LEARNING_DRAFTS_KEY)),
+    parseLearningDrafts(stored(STORAGE_KEYS.learningDrafts)),
   );
   const [ready, setReady] = useState(false);
   const [storageError, setStorageError] = useState('');
@@ -276,15 +269,15 @@ export function LearningPanel({
   }, []);
   useEffect(() => {
     if (!ready) return;
-    try {
-      localStorage.setItem(LEARNING_PROGRESS_KEY, JSON.stringify(progress));
-      localStorage.setItem(LEARNING_DRAFTS_KEY, JSON.stringify(drafts));
+    if (
+      localStore.writeJson(STORAGE_KEYS.learningCourse, progress) &&
+      localStore.writeJson(STORAGE_KEYS.learningDrafts, drafts)
+    )
       setStorageError('');
-    } catch {
+    else
       setStorageError(
         'Браузер не сохранил прогресс. Оставь эту вкладку открытой, чтобы продолжить урок.',
       );
-    }
   }, [progress, drafts, ready]);
   useEffect(() => {
     generation.current++;
