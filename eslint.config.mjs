@@ -34,6 +34,53 @@ export default tseslint.config(
     rules: { 'react-hooks/rules-of-hooks': 'error', 'react-hooks/exhaustive-deps': 'warn' },
   },
   {
+    // Слои: lib и hooks не знают о компонентах; shared не знает ни о клиенте, ни о сервере.
+    files: ['src/lib/**/*.{ts,tsx}', 'src/hooks/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/components/**'],
+              message: 'lib и hooks не импортируют components: вынесите общие типы в src/lib.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['shared/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/src/**', '**/server/**'],
+              message: 'shared не зависит от клиента и сервера.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Все запросы к серверу идут через src/lib/api.ts: он ждёт установления гостевой сессии.
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/lib/api.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.name='fetch']",
+          message: 'Используйте request/requestVoid/requestRaw/download из lib/api.',
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.mjs'],
     languageOptions: {
       globals: {

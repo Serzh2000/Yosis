@@ -22,6 +22,7 @@ const COLORS = ['#db9550', '#7fa47d', '#ca7777', '#a58abd', '#bba36d', '#7caaa2'
 const CATEGORIES = ['LUT', 'FF', 'ALU', 'BRAM', 'DSP', 'IO', 'other'] as const;
 const STORAGE_KEY = 'yosis.physical.v1';
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
+  // eslint-disable-next-line no-restricted-syntax -- фаза 2
   const response = await fetch(url, init);
   const result = await response.json();
   if (!response.ok) throw new Error(result.error ?? `HTTP ${response.status}`);
@@ -119,6 +120,7 @@ export function ChipPanel({
       abort.abort();
       const active = jobRef.current;
       if (active && ['queued', 'running'].includes(active.status)) {
+        // eslint-disable-next-line no-restricted-syntax -- фаза 2
         void fetch(`/api/physical/${active.id}/cancel`, { method: 'POST' }).catch(() => {});
       }
     };
@@ -171,6 +173,7 @@ export function ChipPanel({
         body: JSON.stringify({ project, buildId, config: { cstFile, frequencyMHz: frequency } }),
       });
       if (generation.current !== currentGeneration) {
+        // eslint-disable-next-line no-restricted-syntax -- фаза 2
         void fetch(`/api/physical/${result.id}/cancel`, { method: 'POST' }).catch(() => {});
         return;
       }

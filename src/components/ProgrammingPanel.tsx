@@ -187,6 +187,7 @@ export function ProgrammingPanel({
       projectName = project.name;
     void (async () => {
       try {
+        // eslint-disable-next-line no-restricted-syntax -- фаза 2
         const response = await fetch(
           `/api/physical/${encodeURIComponent(id)}/artifacts/design.fs`,
           { signal: abort.signal, cache: 'no-store' },

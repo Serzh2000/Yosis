@@ -134,6 +134,9 @@ e2e/        сквозные тесты в браузере (Playwright)
 hardware/   исходники прошивки отладчика DirtyJTAG для BL616
 ```
 
+Подробнее — в [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): слои, правила импортов, протокол
+заданий, переменные окружения.
+
 Схема проекта проходит три разных пути:
 
 1. **Синтез** — Yosys строит схему RTL и отображает её на примитивы Gowin.
@@ -147,7 +150,9 @@ hardware/   исходники прошивки отладчика DirtyJTAG д�
 ```sh
 npm run check        # типы
 npm run lint
-npm test             # 596 юнит-тестов
+npm run test:unit    # быстрые тесты без внешних инструментов, секунды
+npm run test:integration # с настоящими Yosys, Icarus и Express, несколько минут
+npm test             # оба набора
 npm run test:e2e     # 7 сценариев в браузере
 ```
 

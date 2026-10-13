@@ -43,6 +43,7 @@ export function useServerSession() {
     return result;
   }, []);
   const logout = useCallback(async () => {
+    // eslint-disable-next-line no-restricted-syntax -- фаза 2
     const response = await fetch('/api/session', { method: 'DELETE' });
     if (!response.ok) throw new Error('Не удалось завершить сеанс.');
     if (session?.guest) {

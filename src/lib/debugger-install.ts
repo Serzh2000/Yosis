@@ -40,6 +40,7 @@ export async function loadDebuggerPackage(): Promise<FirmwareImage[]> {
   for (const image of manifest.images) {
     if (!['bootloader.bin', 'dirtyjtag.bin'].includes(image.name))
       throw new Error('Неизвестный образ прошивки.');
+    // eslint-disable-next-line no-restricted-syntax -- фаза 2
     const response = await fetch(`/firmware/dirtyjtag/${image.name}`);
     if (!response.ok) throw new Error(`Пакет прошивки недоступен (${response.status}).`);
     const bytes = new Uint8Array(await response.arrayBuffer());

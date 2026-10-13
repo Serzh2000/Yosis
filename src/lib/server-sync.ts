@@ -40,6 +40,7 @@ export async function uploadProject(project: Project, revision?: string): Promis
   });
 }
 export async function removeServerProject(id: string): Promise<void> {
+  // eslint-disable-next-line no-restricted-syntax -- фаза 2
   const response = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
   if (!response.ok) throw new Error('Не удалось удалить проект на сервере.');
 }
@@ -62,6 +63,7 @@ export function parseCourseBackup(value: unknown): CourseBackup {
 }
 export async function uploadCourse(): Promise<void> {
   const body = JSON.stringify(currentCourseBackup());
+  // eslint-disable-next-line no-restricted-syntax -- фаза 2
   const response = await fetch('/api/progress', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

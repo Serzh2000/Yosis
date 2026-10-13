@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- фаза 4
 import type { WorkTab } from '../components/StudioNavigation';
 
 export const workTabs: readonly WorkTab[] = [
