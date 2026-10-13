@@ -1,21 +1,15 @@
-import { atomicWrite } from './atomic-write';
-import { incrementalStatus, storedStatus } from './job-status';
 import { fork, type ChildProcess } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, writeFile, appendFile, stat } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { BuildResult, Project, ToolchainStatus, YosysNetlist } from '../shared/types';
-import { parseDiagnostics, projectHash, RequestError } from './validation';
-import { JobQueue, executorCount } from './job-queue';
-import { JobRetention, markJob } from './job-retention';
 import { materializeCircuitProject } from '../shared/schematic';
+import { JobManager, type JobRecord } from './job-manager';
+import { TERMINAL } from './job-constants';
+import { parseDiagnostics, projectHash, RequestError } from './validation';
 
 const RUNNER = fileURLToPath(new URL('./yosys-runner.mjs', import.meta.url));
-const BUILD_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-const TERMINAL = new Set(['success', 'error', 'cancelled']);
 const ARTIFACTS = new Set(['rtl.json', 'technology.json', 'logs.txt']);
-const MAX_LOG_BYTES = 4 * 1024 * 1024;
 
 interface WorkerMessage {
   type: 'log' | 'stage' | 'netlist' | 'success' | 'failure' | 'probe-success' | 'warm';
@@ -25,13 +19,8 @@ interface WorkerMessage {
   netlist?: YosysNetlist;
   error?: string;
 }
-interface Record {
-  result: BuildResult;
+interface BuildRecord extends JobRecord<BuildResult> {
   project: Project;
-  directory: string;
-  persistence: Promise<void>;
-  child?: ChildProcess;
-  timer?: NodeJS.Timeout;
   elapsedStart?: number;
 }
 
@@ -49,10 +38,24 @@ export function toolchainStatus(available: boolean, version?: string): Toolchain
   };
 }
 
-export class BuildManager {
-  private records = new Map<string, Record>();
-  private scheduler: JobQueue<Record>;
-  private retention: JobRetention;
+/** Воркер Yosys в дочернем процессе: общий вид запуска для проб, прогрева и сборок. */
+function forkRunner(): ChildProcess {
+  return fork(RUNNER, [], {
+    execArgv: ['--max-old-space-size=2048'],
+    stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+    windowsHide: true,
+  });
+}
+
+export class BuildManager extends JobManager<BuildResult, BuildRecord> {
+  protected readonly notFound = 'Сборка не найдена.';
+  protected readonly logOverflow = {
+    stage: 'Журнал слишком велик',
+    error: 'Журнал синтеза превышает 4 МБ.',
+  };
+  protected readonly shutdownStage = 'Сервис завершён';
+  protected readonly persistenceStage = 'Ошибка сохранения сборки';
+  protected readonly transientFields = ['rtl', 'technology', 'logs'];
   private probeChild?: ChildProcess;
   private probePromise: Promise<ToolchainStatus> | undefined;
   /** A worker that has already loaded and exercised Yosys; the next job takes it. */
@@ -60,38 +63,8 @@ export class BuildManager {
   private spareReady = false;
   private prewarmEnabled = false;
 
-  constructor(
-    public root: string,
-    private timeoutMs = 120_000,
-  ) {
-    this.root = path.resolve(root);
-    this.scheduler = new JobQueue({
-      capacity: 8,
-      concurrency: executorCount('build'),
-      timeoutMs,
-      start: (record) => this.start(record),
-      timeout: (record) => {
-        this.appendLog(
-          record,
-          `\nERROR: Время сборки превысило ${this.timeoutMs / 1000} секунд.\n`,
-        );
-        void this.finish(
-          record,
-          'error',
-          'Истекло время сборки',
-          'Время сборки превышено. Уменьшите размер проекта.',
-        );
-      },
-    });
-    this.retention = new JobRetention(
-      this.root,
-      () =>
-        new Set([...this.records].filter(([, r]) => this.scheduler.isActive(r)).map(([id]) => id)),
-      (id) => this.records.delete(id),
-    );
-  }
-  prune() {
-    return this.retention.sweep();
+  constructor(root: string, timeoutMs = 120_000) {
+    super(root, { capacity: 8, executor: 'build', timeoutMs });
   }
 
   health(): Promise<ToolchainStatus> {
@@ -101,11 +74,7 @@ export class BuildManager {
       let succeeded = false;
       let child: ChildProcess;
       try {
-        child = fork(RUNNER, [], {
-          execArgv: ['--max-old-space-size=2048'],
-          stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-          windowsHide: true,
-        });
+        child = forkRunner();
       } catch {
         resolve(toolchainStatus(false));
         return;
@@ -147,21 +116,10 @@ export class BuildManager {
     project = materializeCircuitProject(project);
     const release = this.scheduler.reserve();
     try {
-      const id = randomUUID();
-      const directory = path.join(this.root, id);
-      await mkdir(path.join(directory, 'sources'), { recursive: true });
-      await markJob(directory, id);
-      for (const file of project.files) {
-        const filename = path.join(directory, 'sources', ...file.name.split('/'));
-        await mkdir(path.dirname(filename), { recursive: true });
-        await writeFile(filename, file.content, 'utf8');
-      }
-      await writeFile(
-        path.join(directory, 'project.json'),
-        JSON.stringify(project, null, 2),
-        'utf8',
-      );
-      await writeFile(path.join(directory, 'logs.txt'), '', 'utf8');
+      const { id, directory } = await this.prepareDirectory(project.files, {
+        'project.json': JSON.stringify(project, null, 2),
+        'logs.txt': '',
+      });
       if (this.scheduler.stopping) throw new RequestError('Сервис завершает работу.', 503);
       const result: BuildResult = {
         id,
@@ -173,82 +131,69 @@ export class BuildManager {
         top: project.top,
         projectHash: sourceHash,
       };
-      const record: Record = { project, result, directory, persistence: Promise.resolve() };
-      this.records.set(id, record);
-      await this.save(record);
-      this.scheduler.enqueue(record);
-      const queued = structuredClone(result);
-      this.trimMemory();
-      return queued;
+      return await this.enqueue({ project, result, directory, persistence: Promise.resolve() });
     } finally {
       release();
     }
   }
 
-  async status(id: string, logOffset = 0) {
-    const record = this.records.get(id);
-    return record
-      ? incrementalStatus(record.result, logOffset)
-      : storedStatus(this.root, id, logOffset);
-  }
-
-  async get(id: string): Promise<BuildResult> {
-    if (!BUILD_ID.test(id)) throw new RequestError('Сборка не найдена.', 404);
-    const record = this.records.get(id);
-    if (record) return record.result;
-    try {
-      const directory = path.join(this.root, id);
-      const result = JSON.parse(
-        await readFile(path.join(directory, 'metadata.json'), 'utf8'),
-      ) as BuildResult;
-      result.logs = await readFile(path.join(directory, 'logs.txt'), 'utf8');
-      if (!TERMINAL.has(result.status)) {
-        result.status = 'error';
-        result.stage = 'Сборка прервана перезапуском сервиса';
-        result.error = result.stage;
-        result.finishedAt = new Date().toISOString();
-        result.diagnostics.push({ severity: 'error', message: result.stage });
-      }
-      for (const name of ['rtl', 'technology'] as const) {
-        try {
-          result[name] = JSON.parse(await readFile(path.join(directory, `${name}.json`), 'utf8'));
-        } catch (error) {
-          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-        }
-      }
-      return result;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT')
-        throw new RequestError('Сборка не найдена.', 404);
-      throw error;
-    }
-  }
-
-  async cancel(id: string): Promise<BuildResult> {
-    if (!BUILD_ID.test(id)) throw new RequestError('Сборка не найдена.', 404);
-    const record = this.records.get(id);
-    if (!record) return this.get(id);
-    if (!TERMINAL.has(record.result.status)) {
-      this.appendLog(record, '\nСборка отменена пользователем.\n');
-      await this.finish(record, 'cancelled', 'Сборка отменена');
-    }
-    return record.result;
-  }
-
   async artifact(id: string, name: string): Promise<string> {
-    if (!BUILD_ID.test(id) || !ARTIFACTS.has(name))
-      throw new RequestError('Артефакт не найден.', 404);
-    const record = this.records.get(id);
-    if (record) await record.persistence;
-    const filename = path.join(this.root, id, name);
-    try {
-      await stat(filename);
-      return filename;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT')
-        throw new RequestError('Артефакт пока не создан.', 404);
-      throw error;
+    return this.artifactPath(id, name, ARTIFACTS);
+  }
+
+  protected interrupt(result: BuildResult) {
+    result.status = 'error';
+    result.stage = 'Сборка прервана перезапуском сервиса';
+    result.error = result.stage;
+    result.finishedAt = new Date().toISOString();
+    result.diagnostics.push({ severity: 'error', message: result.stage });
+  }
+  protected async attachStored(result: BuildResult, directory: string) {
+    for (const name of ['rtl', 'technology'] as const) {
+      try {
+        result[name] = JSON.parse(await readFile(path.join(directory, `${name}.json`), 'utf8'));
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
     }
+  }
+
+  protected async cancelRecord(record: BuildRecord) {
+    this.appendLog(record, '\nСборка отменена пользователем.\n');
+    await this.finish(record, 'cancelled', 'Сборка отменена');
+  }
+  protected shutdown(record: BuildRecord) {
+    this.appendLog(record, '\nСервис сборки завершает работу.\n');
+    return super.shutdown(record);
+  }
+  protected onTimeout(record: BuildRecord) {
+    this.appendLog(record, `\nERROR: Время сборки превысило ${this.timeoutMs / 1000} секунд.\n`);
+    void this.finish(
+      record,
+      'error',
+      'Истекло время сборки',
+      'Время сборки превышено. Уменьшите размер проекта.',
+    );
+  }
+  protected async stop(record: BuildRecord) {
+    if (record.child && !record.child.killed) record.child.kill();
+  }
+  protected finalize(record: BuildRecord) {
+    const { result } = record;
+    result.diagnostics = parseDiagnostics(result.logs);
+    if (result.status === 'error' && !result.diagnostics.some((item) => item.severity === 'error'))
+      result.diagnostics.push({ severity: 'error', message: result.error ?? result.stage });
+  }
+  protected startedAt(record: BuildRecord) {
+    return record.elapsedStart ?? super.startedAt(record);
+  }
+  /** Вывод воркера принимается и после завершения: оно может прийти вместе с закрытием потоков. */
+  protected acceptsLog() {
+    return true;
+  }
+  protected onLog(record: BuildRecord) {
+    const version = record.result.logs.match(/Yosys[^\r\n]*/)?.[0];
+    if (version) record.result.toolVersion = version;
   }
 
   /** Keep a warm Yosys worker ready. The server calls this once; tests and tools do not. */
@@ -261,11 +206,7 @@ export class BuildManager {
     if (!this.prewarmEnabled || this.spare) return;
     let child: ChildProcess;
     try {
-      child = fork(RUNNER, [], {
-        execArgv: ['--max-old-space-size=2048'],
-        stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-        windowsHide: true,
-      });
+      child = forkRunner();
     } catch {
       return;
     }
@@ -299,24 +240,14 @@ export class BuildManager {
     return child.connected && child.exitCode === null ? child : undefined;
   }
 
-  async close(): Promise<void> {
+  protected async releaseTools() {
     this.prewarmEnabled = false;
     this.spare?.kill();
     this.spare = undefined;
-    this.scheduler.stop();
     this.probeChild?.kill();
-    await Promise.all(
-      [...this.records.values()]
-        .filter((record) => !TERMINAL.has(record.result.status))
-        .map(async (record) => {
-          this.appendLog(record, '\nСервис сборки завершает работу.\n');
-          await this.finish(record, 'cancelled', 'Сервис завершён');
-        }),
-    );
-    await Promise.all([...this.records.values()].map((record) => record.persistence));
   }
 
-  private start(record: Record) {
+  protected start(record: BuildRecord) {
     if (TERMINAL.has(record.result.status)) {
       this.scheduler.complete(record);
       return;
@@ -328,13 +259,7 @@ export class BuildManager {
     void this.save(record);
     let child: ChildProcess;
     try {
-      child =
-        this.takeSpare() ??
-        fork(RUNNER, [], {
-          execArgv: ['--max-old-space-size=2048'],
-          stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-          windowsHide: true,
-        });
+      child = this.takeSpare() ?? forkRunner();
     } catch (error) {
       void this.finish(
         record,
@@ -389,74 +314,5 @@ export class BuildManager {
     child.send({ project: record.project }, (error) => {
       if (error) void this.finish(record, 'error', 'Ошибка связи с Yosys', error.message);
     });
-  }
-
-  private appendLog(record: Record, text: string) {
-    if (
-      Buffer.byteLength(record.result.logs, 'utf8') + Buffer.byteLength(text, 'utf8') >
-      MAX_LOG_BYTES
-    ) {
-      void this.finish(record, 'error', 'Журнал слишком велик', 'Журнал синтеза превышает 4 МБ.');
-      return;
-    }
-    record.result.logs += text;
-    const version = record.result.logs.match(/Yosys[^\r\n]*/)?.[0];
-    if (version) record.result.toolVersion = version;
-    this.persist(record, () => appendFile(path.join(record.directory, 'logs.txt'), text, 'utf8'));
-  }
-
-  private async finish(
-    record: Record,
-    status: 'success' | 'error' | 'cancelled',
-    stage: string,
-    error?: string,
-  ) {
-    if (TERMINAL.has(record.result.status)) return;
-    clearTimeout(record.timer);
-    record.result.status = status;
-    record.result.stage = stage;
-    record.result.error = error;
-    record.result.finishedAt = new Date().toISOString();
-    record.result.elapsedMs =
-      Date.now() - (record.elapsedStart ?? Date.parse(record.result.startedAt));
-    record.result.diagnostics = parseDiagnostics(record.result.logs);
-    if (status === 'error' && !record.result.diagnostics.some((item) => item.severity === 'error'))
-      record.result.diagnostics.push({ severity: 'error', message: error ?? stage });
-    if (record.child && !record.child.killed) record.child.kill();
-    await this.save(record);
-    this.scheduler.complete(record);
-    void this.retention.sweep();
-  }
-
-  private save(record: Record): Promise<void> {
-    const { rtl: _rtl, technology: _technology, logs: _logs, ...metadata } = record.result;
-    const json = JSON.stringify(metadata, null, 2);
-    return this.persist(record, async () => {
-      await atomicWrite(path.join(record.directory, 'metadata.json'), json);
-    });
-  }
-
-  private persist(record: Record, action: () => Promise<void>): Promise<void> {
-    record.persistence = record.persistence.then(action).catch((error: unknown) => {
-      record.child?.kill();
-      clearTimeout(record.timer);
-      record.result.status = 'error';
-      record.result.stage = 'Ошибка сохранения сборки';
-      record.result.error = error instanceof Error ? error.message : String(error);
-      record.result.finishedAt = new Date().toISOString();
-      record.result.diagnostics.push({ severity: 'error', message: record.result.error });
-      this.scheduler.complete(record);
-      console.error('Build persistence failed:', record.result.error);
-    });
-    return record.persistence;
-  }
-
-  private trimMemory() {
-    if (this.records.size <= 24) return;
-    for (const [id, record] of this.records) {
-      if (TERMINAL.has(record.result.status) && !this.scheduler.isActive(record))
-        this.records.delete(id);
-      if (this.records.size <= 24) break;
-    }
   }
 }
