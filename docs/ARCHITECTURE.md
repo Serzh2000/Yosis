@@ -24,6 +24,7 @@ tests/    node:test; e2e/ — Playwright
 | `src/lib/**`, `src/hooks/**`      | `src/components/**`              | доменная логика не зависит от интерфейса    |
 | `src/**` (кроме `lib/api.ts`)     | глобальный `fetch`               | все запросы идут через единый клиент        |
 | `src/**` (кроме `lib/storage.ts`) | `localStorage`, `sessionStorage` | все ключи хранилища описаны в одном реестре |
+| `src/lib/lab/**`                  | `document`, `window`             | симулятор можно вынести в Web Worker        |
 
 Ни `src → server`, ни `server → src` не бывает: клиент и сервер общаются только по HTTP и через
 типы из `shared/`.

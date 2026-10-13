@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { BOARD } from '../../lib/lab/bench';
 
 interface Props {
@@ -8,8 +9,21 @@ interface Props {
   onButton: (pin: number, on: boolean) => void;
 }
 
-/** The Tang Nano 20K as a picture, with its own LEDs and buttons. */
-export function BoardView({ top, leds, pressed, onButton }: Props) {
+const sameList = (a: readonly unknown[], b: readonly unknown[]) =>
+  a.length === b.length && a.every((item, index) => item === b[index]);
+
+/**
+ * The Tang Nano 20K as a picture, with its own LEDs and buttons. It is redrawn only when what it
+ * shows changes; `onButton` is a fresh closure on every bench render and does not count.
+ */
+export const BoardView = memo(
+  BoardViewPicture,
+  (previous, next) =>
+    previous.top === next.top &&
+    sameList(previous.leds, next.leds) &&
+    sameList(previous.pressed, next.pressed),
+);
+function BoardViewPicture({ top, leds, pressed, onButton }: Props) {
   return (
     <div
       className="vb-board lab-board"

@@ -99,6 +99,22 @@ export default tseslint.config(
     },
   },
   {
+    // Симулятор лаборатории не знает о браузере: его можно будет вынести в Web Worker.
+    files: ['src/lib/lab/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        { name: 'document', message: 'src/lib/lab не обращается к DOM.' },
+        { name: 'window', message: 'src/lib/lab не обращается к window.' },
+        { name: 'localStorage', message: 'Используйте localStore и STORAGE_KEYS из lib/storage.' },
+        {
+          name: 'sessionStorage',
+          message: 'Используйте sessionStore и STORAGE_KEYS из lib/storage.',
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.mjs'],
     languageOptions: {
       globals: {

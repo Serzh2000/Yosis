@@ -75,6 +75,8 @@ const SPEEDS = [
   ['20', '20 тактов/с'],
   ['2', '2 такта/с'],
 ] as const;
+/** About 30 redraws a second; the slack keeps every second 60 Hz frame from being skipped by jitter. */
+const REDRAW_INTERVAL_MS = 1000 / 30 - 4;
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 2;
 const formatRate = (rate: number) =>
@@ -258,6 +260,8 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
     let owed = 0;
     let counted = 0;
     let since = last;
+    // The design is simulated on every frame, but the bench is redrawn at most 30 times a second.
+    let drawn = last;
     const loop = (now: number) => {
       const elapsed = Math.min(0.1, (now - last) / 1000);
       last = now;
@@ -277,7 +281,10 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
         counted = 0;
         since = now;
       }
-      setTick((value) => value + 1);
+      if (now - drawn >= REDRAW_INTERVAL_MS) {
+        drawn = now;
+        setTick((value) => value + 1);
+      }
       frame = requestAnimationFrame(loop);
     };
     frame = requestAnimationFrame(loop);

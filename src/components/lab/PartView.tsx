@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { BOARD_CLOCK_HZ, type Device } from '../../lib/lab/devices';
 import { BusPartBody } from './BusPartView';
 
@@ -203,22 +203,32 @@ function Waves({ device, act }: { device: Device; act: Act }) {
 
 type Act = (name: string, value?: unknown) => void;
 
-/** The picture of a part and its controls. Everything shown comes from `device.view`. */
-export function PartBody({
-  device,
-  title,
-  color = '#ffd23f',
-  act,
-  muted,
-}: {
+interface PartBodyProps {
   device: Device;
+  /** `device.viewVersion` at the time of drawing: the picture is redrawn when it changes. */
+  version: number;
   /** What the part is called on the bench; names its controls. */
   title: string;
   /** The colour property of the part, which is not part of its behaviour. */
   color?: string;
   act: Act;
   muted: boolean;
-}) {
+}
+/**
+ * The picture depends on the device, its view version and the few props below. `act` is a fresh
+ * closure on every bench render and behaves the same, so it does not count.
+ */
+export const PartBody = memo(
+  PartBodyView,
+  (previous, next) =>
+    previous.device === next.device &&
+    previous.version === next.version &&
+    previous.title === next.title &&
+    previous.color === next.color &&
+    previous.muted === next.muted,
+);
+/** The picture of a part and its controls. Everything shown comes from `device.view`. */
+function PartBodyView({ device, version, title, color = '#ffd23f', act, muted }: PartBodyProps) {
   const shape = device.shape;
   const view = device.view as Record<string, never>;
   const hold = (pin: number) => ({
@@ -627,7 +637,7 @@ export function PartBody({
       );
     }
     case 'bus':
-      return <BusPartBody device={device} act={act} />;
+      return <BusPartBody device={device} version={version} act={act} />;
     case 'analyzer':
       return <Waves device={device} act={act} />;
     case 'pulse':

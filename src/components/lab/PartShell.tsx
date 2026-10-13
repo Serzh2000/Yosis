@@ -98,6 +98,7 @@ export function PartShell({
         {device && (
           <PartBody
             device={device}
+            version={device.viewVersion}
             title={title}
             color={color}
             muted={muted}

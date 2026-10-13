@@ -202,7 +202,13 @@ export function SidePanel({
         <summary>USB-терминал платы</summary>
         <p>Выводы 69 (TX схемы) и 70 (RX схемы), как у настоящего USB-разъёма.</p>
         {terminal && (
-          <PartBody device={terminal} title="USB-терминал платы" muted act={actTerminal} />
+          <PartBody
+            device={terminal}
+            version={terminal.viewVersion}
+            title="USB-терминал платы"
+            muted
+            act={actTerminal}
+          />
         )}
       </details>
       {!!layout.parts.length && (

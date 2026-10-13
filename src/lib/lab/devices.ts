@@ -14,13 +14,43 @@ export interface DeviceHost {
 }
 export type Options = PartOptions;
 
+/**
+ * Совпадают ли два вида детали по содержимому. Осторожно: массив или объект по той же ссылке мог
+ * быть изменён на месте, поэтому он считается изменившимся; разные массивы сравниваются
+ * поэлементно, если в них только числа, строки и флаги.
+ */
+export function sameView(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+  const keys = Object.keys(a);
+  if (keys.length !== Object.keys(b).length) return false;
+  return keys.every((key) => {
+    const x = a[key],
+      y = b[key];
+    if (x === y) return x === null || typeof x !== 'object';
+    if (!Array.isArray(x) || !Array.isArray(y) || x.length !== y.length) return false;
+    return x.every(
+      (item, index) => item === y[index] && (item === null || typeof item !== 'object'),
+    );
+  });
+}
+
 /** Behaviour of one part on the bench. `view` is what its picture is drawn from. */
 export abstract class Device {
   /** One entry per pin of the part; null where nothing from the FPGA arrives. */
   probes: (LabProbe | null)[];
   /** Share of the last frame each pin spent high (its level while time stands still). */
   duty: number[];
-  view: Record<string, unknown> = {};
+  /** Растёт, когда вид детали изменился: по нему интерфейс решает, перерисовывать ли картинку. */
+  viewVersion = 0;
+  private currentView: Record<string, unknown> = {};
+  get view(): Record<string, unknown> {
+    return this.currentView;
+  }
+  set view(value: Record<string, unknown>) {
+    // Деталь пересчитывает вид каждый кадр; неизменившийся вид не должен вызывать перерисовку.
+    if (sameView(this.currentView, value)) return;
+    this.currentView = value;
+    this.viewVersion++;
+  }
   /** Pins, parameters and picture for this part's property values at the time it was built. */
   readonly pins: readonly PinDef[];
   readonly params: Readonly<Record<string, unknown>>;

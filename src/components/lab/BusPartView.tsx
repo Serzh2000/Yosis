@@ -1,4 +1,4 @@
-import { useEffect, useRef, type PointerEvent } from 'react';
+import { memo, useEffect, useRef, type PointerEvent } from 'react';
 import type { Hd44780 } from '../../lib/lab/bus/hd44780';
 import { PS2_KEYS, REMOTE_KEYS } from '../../lib/lab/bus/sensors';
 import type { Device } from '../../lib/lab/devices';
@@ -417,7 +417,12 @@ function Keyboard({ view, act }: { view: View; act: Act }) {
 }
 
 /** The picture and controls of a protocol part; everything shown comes from `device.view`. */
-export function BusPartBody({ device, act }: { device: Device; act: Act }) {
+/** Redrawn only when the device, its view version or the part shape changes; `act` is not compared. */
+export const BusPartBody = memo(
+  BusPartBodyView,
+  (previous, next) => previous.device === next.device && previous.version === next.version,
+);
+function BusPartBodyView({ device, act }: { device: Device; version: number; act: Act }) {
   const view = device.view as View;
   if (!Object.keys(view).length) return null;
   switch (device.params.model) {
