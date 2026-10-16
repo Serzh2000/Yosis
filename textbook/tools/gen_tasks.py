@@ -2,6 +2,10 @@
 # Запуск из textbook/: python tools/gen_tasks.py
 import io
 import os
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
+from tasks_ext import ANS_NEW, NAMES_NEW, ORDER, T_NEW  # noqa: E402
 
 CH = os.path.join(os.path.dirname(__file__), '..', 'tex', 'chapters')
 
@@ -174,7 +178,7 @@ def rw(path, text=None):
     io.open(path, 'w', encoding='utf8', newline='\n').write(text)
 
 
-for ch, (key, items) in T.items():
+for ch, (key, items) in {**T, **T_NEW}.items():
     path = os.path.join(CH, ch + '.tex')
     s = rw(path)
     if r'\section{Вопросы и задачи}' in s:
@@ -191,10 +195,13 @@ for ch, (key, items) in T.items():
         s = s.rstrip('\n') + '\n\n' + block
     rw(path, s)
 
-out = ['\\chapter{Ответы к задачам первой части}\n\\label{app:answers}\n\n']
-for ch, (key, items) in T.items():
-    out.append('\\section*{%s}\n\\begin{enumerate}\n' % NAMES[key])
-    out.append('\n'.join('  \\item ' + a for a in ANS[key]))
+ALL_ANS = {**ANS, **ANS_NEW}
+ALL_NAMES = {**NAMES, **NAMES_NEW}
+out = ['\\chapter{Ответы к задачам}\n\\label{app:answers}\n\n',
+       'Здесь собраны ответы и краткие решения к задачам из глав, в порядке книги.\n\n']
+for key in ORDER:
+    out.append('\\section*{%s}\n\\begin{enumerate}\n' % ALL_NAMES[key])
+    out.append('\n'.join('  \\item ' + a for a in ALL_ANS[key]))
     out.append('\n\\end{enumerate}\n\n')
 rw(os.path.join(CH, 'a2_answers.tex'), ''.join(out))
 print('ok')
