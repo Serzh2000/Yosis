@@ -1,0 +1,219 @@
+\chapter{Что такое ПЛИС}
+
+\section{Схема, которую можно перепаять без паяльника}
+
+Представьте, что вам нужно собрать устройство, которое включает лампу,
+когда нажаты \emph{обе} кнопки. Вы берёте микросхему с элементами И,
+паяете провода, и всё работает. А завтра заказчик просит: «Пусть лампа
+горит, когда нажата \emph{ровно одна} кнопка». Придётся выпаивать
+элемент И, ставить элемент «Исключающее ИЛИ» и перекладывать провода.
+
+А теперь представьте микросхему, внутри которой лежат тысячи
+«заготовок» логических элементов и триггеров и огромная сеть
+проводов с управляемыми переключателями на каждом перекрёстке. Какие
+заготовки чем станут и какие переключатели будут замкнуты, задаётся
+специальным файлом конфигурации, который загружается в микросхему по кабелю
+за доли секунды. Это и есть \term{ПЛИС}.
+
+\begin{ideabox}
+\textbf{ПЛИС} (программируемая логическая интегральная схема, англ.
+\textbf{FPGA}, Field-Programmable Gate Array: «вентильная матрица,
+программируемая в полевых условиях») --- это микросхема, внутреннюю
+цифровую схему которой можно многократно изменять после её производства.
+\end{ideabox}
+
+Важно сразу понять разницу: ПЛИС \emph{не выполняет программу}, как
+процессор. Она \emph{становится схемой}. После загрузки конфигурации внутри
+кристалла существуют настоящие логические элементы и настоящие провода,
+по которым сигналы бегут одновременно, как в схеме на макетной плате.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  % Вариант 1
+  \begin{scope}
+    \node[font=\sffamily\bfseries\small] at (1.4,1.9) {Конфигурация №1};
+    \node[gAND] (g1) at (1.4,0) {};
+    \draw[wire] (g1.input 1) -- ++(-0.8,0) node[left] {$a$};
+    \draw[wire] (g1.input 2) -- ++(-0.8,0) node[left] {$b$};
+    \draw[wire] (g1.output) -- ++(0.8,0) node[right] {$y=a\cdot b$};
+  \end{scope}
+  % Стрелка
+  \draw[-{Stealth[length=4mm]}, line width=2pt, FpgaOrange] (4.8,0) -- (6.4,0)
+    node[midway, above=2mm, font=\sffamily\scriptsize, text=FpgaDark, align=center] {новый файл\\конфигурации};
+  % Вариант 2
+  \begin{scope}[xshift=8.6cm]
+    \node[font=\sffamily\bfseries\small] at (0.3,1.9) {Конфигурация №2};
+    \node[gXOR] (g2) at (0.3,0) {};
+    \draw[wire] (g2.input 1) -- ++(-0.8,0) node[left] {$a$};
+    \draw[wire] (g2.input 2) -- ++(-0.8,0) node[left] {$b$};
+    \draw[wire] (g2.output) -- ++(0.8,0) node[right] {$y=a\oplus b$};
+  \end{scope}
+  \draw[dashed, FpgaGray, rounded corners] (-0.3,-1.1) rectangle (11.8,2.4);
+  \node[lbl, anchor=north] at (5.75,-1.2) {одна и та же микросхема ПЛИС, одни и те же ножки};
+\end{tikzpicture}
+\caption{Одна и та же ПЛИС после загрузки разных конфигураций}
+\label{fig:reconfig}
+\end{figure}
+
+\section{Немного истории}
+
+Идея программируемой логики появилась в 1970-х. Сначала это были
+небольшие матрицы И--ИЛИ (PAL, PLA), в которых пережигались перемычки.
+Затем появились CPLD (сложные программируемые логические устройства), а в 1985 году компания Xilinx
+выпустила первую FPGA XC2064, в которой было всего 64 логических блока.
+Современные ПЛИС содержат миллионы логических ячеек.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[line width=2pt, FpgaBlue, -{Stealth[length=4mm]}] (0,0) -- (15,0);
+  \foreach \x/\y/\t/\d in {
+      0.8/1/1975/PLA, 3.2/-1/1978/PAL,
+      5.6/1/1984/CPLD (Altera), 8/-1/1985/{Xilinx XC2064,\\ первая FPGA},
+      10.4/1/2000-е/{FPGA с DSP\\и памятью}, 13/-1/2020-е/{Tang Nano 20K:\\ 20\,736 LUT за копейки}} {
+    \fill[FpgaOrange] (\x,0) circle (1.1mm);
+    \draw[FpgaGray] (\x,0) -- (\x,\y*0.55);
+    \node[font=\sffamily\bfseries\small, text=FpgaDark] at (\x,\y*0.85) {\t};
+    \node[font=\sffamily\scriptsize, align=center, text=FpgaDark, anchor={\ifnum\y>0 south\else north\fi}] at (\x,\y*1.1) {\d};
+  }
+\end{tikzpicture}
+\caption{Эволюция программируемой логики}
+\end{figure}
+
+\section{ПЛИС, микроконтроллер и заказная микросхема}
+
+Чтобы понять, зачем нужны ПЛИС, сравним три способа сделать «умное»
+цифровое устройство.
+
+\begin{description}
+  \item[Микроконтроллер (МК)] --- готовый процессор, который
+    \emph{последовательно}, команда за командой, выполняет программу. Например,
+    на МК STM32 работает автопилот квадрокоптера «Геоскан Пионер».
+  \item[Заказная микросхема (ASIC)] --- схема, «выжженная» в кремнии на
+    заводе. Она работает быстрее и экономичнее всех, но её разработка стоит
+    миллионы долларов, и изменить её уже нельзя.
+  \item[ПЛИС (FPGA)] --- золотая середина: аппаратная схема, как у ASIC,
+    которую можно менять, как программу МК.
+\end{description}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  % МК
+  \begin{scope}
+    \node[font=\sffamily\bfseries] at (2.6,3.6) {Микроконтроллер};
+    \node[hblock, minimum width=16mm] (cpu) at (2.6,2.4) {ЦП};
+    \foreach \i/\t in {0/{$a\cdot b$}, 1/{$c+d$}, 2/{$e\oplus f$}, 3/{$g\cdot h$}} {
+      \node[block, minimum width=14mm, minimum height=6mm, font=\sffamily\scriptsize]
+        (t\i) at (2.6, 1.2-\i*0.8) {\t};
+    }
+    \draw[arr] (cpu) -- (t0);
+    \draw[arr] (t0) -- (t1); \draw[arr] (t1) -- (t2); \draw[arr] (t2) -- (t3);
+    \draw[arr, FpgaOrange] (0.9,1.3) -- (0.9,-1.3) node[midway, left, font=\sffamily\scriptsize, align=right] {время\\4 шага};
+  \end{scope}
+  % ПЛИС
+  \begin{scope}[xshift=7.2cm]
+    \node[font=\sffamily\bfseries] at (2.8,3.6) {ПЛИС};
+    \foreach \i/\t in {0/{$a\cdot b$}, 1/{$c+d$}, 2/{$e\oplus f$}, 3/{$g\cdot h$}} {
+      \node[gblock, minimum width=12mm, minimum height=6mm, font=\sffamily\scriptsize]
+        (p\i) at (\i*1.5+0.5, 1.2) {\t};
+      \draw[arr] (\i*1.5+0.5, 2.5) -- (p\i);
+      \draw[arr] (p\i) -- (\i*1.5+0.5, 0);
+    }
+    \draw[arr, FpgaOrange] (-0.5,1.5) -- (-0.5,0.9) node[midway, left, font=\sffamily\scriptsize, align=right] {1 шаг};
+    \node[lbl, align=center] at (2.75,-0.6) {все четыре операции --\\ отдельные схемы, работают \emph{одновременно}};
+  \end{scope}
+\end{tikzpicture}
+\caption{Процессор выполняет действия по очереди, ПЛИС --- параллельно}
+\label{fig:par}
+\end{figure}
+
+На рис.~\ref{fig:par} видна главная суперсила ПЛИС --- \term{параллелизм}.
+Если нужно выполнить 1000 независимых операций, процессору нужно
+1000 шагов, а в ПЛИС можно построить 1000 схем, которые справятся за один
+такт.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.82\textwidth, height=6.2cm,
+  xlabel={Число независимых операций}, ylabel={Время, мкс},
+  xmin=0, xmax=1000, ymin=0, ymax=12,
+  grid=major, grid style={FpgaGray!25},
+  legend pos=north west, legend style={font=\sffamily\small, draw=none, fill=white, fill opacity=0.8},
+  tick label style={font=\small}, label style={font=\sffamily\small},
+]
+  \addplot[very thick, FpgaRed, domain=0:1000, samples=2] {x*0.0104};
+  \addlegendentry{Микроконтроллер 96 МГц (1 операция за такт)}
+  \addplot[very thick, FpgaGreen, domain=0:1000, samples=2] {0.037};
+  \addlegendentry{ПЛИС 27 МГц (все операции за 1 такт)}
+\end{axis}
+\end{tikzpicture}
+\caption{Время обработки при росте числа операций (упрощённая оценка)}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Сравнение трёх подходов}
+\small
+\begin{tabularx}{\textwidth}{>{\bfseries}X c c c}
+\toprule
+ & \textbf{Микроконтроллер} & \textbf{ПЛИС} & \textbf{ASIC} \\
+\midrule
+Как работает          & программа, по шагам & схема, параллельно & схема, параллельно \\
+Скорость реакции      & микросекунды        & наносекунды        & наносекунды \\
+Можно изменить?       & да                  & да                 & нет \\
+Цена одного образца   & низкая              & средняя            & огромная \\
+Сложность разработки  & низкая              & средняя            & очень высокая \\
+Энергопотребление     & низкое              & среднее            & самое низкое \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Где применяются ПЛИС}
+
+ПЛИС выбирают там, где нужно одно из трёх: \emph{очень быстро},
+\emph{очень много параллельно} или \emph{точно по времени}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  app/.style={block, minimum width=34mm, minimum height=13mm, font=\sffamily\scriptsize},
+]
+  \node[hblock, circle, minimum size=24mm, font=\sffamily\bfseries] (c) at (0,0) {ПЛИС};
+  \foreach \a/\t/\s in {
+     90/{Обработка видео\\и машинное зрение}/app,
+     30/{Связь: 5G, радары,\\программное радио}/app,
+    -30/{Управление моторами,\\ШИМ, датчики дронов}/app,
+    -90/{Прототипирование\\процессоров (ASIC)}/app,
+   -150/{Сопряжение\\интерфейсов}/app,
+    150/{Ускорение ИИ\\и вычислений}/app} {
+    \node[\s] (n\a) at (\a:4.1) {\t};
+    \draw[thick, FpgaBlue!60] (c) -- (n\a);
+  }
+\end{tikzpicture}
+\caption{Основные области применения ПЛИС}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{Цифровая обработка сигналов}: фильтры, преобразование
+        Фурье, обработка звука и радиосигналов в реальном времени.
+  \item \textbf{Видео}: генерация изображения для HDMI, обработка кадров с камер,
+        поиск объектов прямо «на лету».
+  \item \textbf{Связь и интерфейсы}: ПЛИС может «говорить» на любом
+        протоколе (UART, SPI, I$^2$C, Ethernet, USB), даже на придуманном вами.
+  \item \textbf{Робототехника и БПЛА}: точная генерация десятков ШИМ-сигналов,
+        одновременный опрос многих датчиков, стабилизация видео.
+  \item \textbf{Прототипирование}: прежде чем заказывать ASIC за
+        миллионы долларов, инженеры проверяют его на ПЛИС.
+  \item \textbf{Ретро-компьютеры}: на ПЛИС воссоздают старые игровые
+        приставки и компьютеры (проект MiSTer), причём с точностью до такта.
+\end{itemize}
+
+\begin{ideabox}
+ПЛИС --- это «пластилин» для цифровой схемотехники. Вы описываете схему,
+программа-синтезатор раскладывает её по ресурсам кристалла, и через
+минуту ваша схема уже работает в железе.
+\end{ideabox}

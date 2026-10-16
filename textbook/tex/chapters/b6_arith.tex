@@ -1,0 +1,350 @@
+\chapter{Арифметические узлы}
+\label{ch:arith}
+
+Компьютер --- по-английски «вычислитель», и главное, что он умеет, ---
+считать. В этой главе мы увидим, что сложение, вычитание и сравнение чисел
+выполняются всё теми же логическими элементами.
+
+\section{Сложение двоичных чисел}
+
+Двоичные числа складываются «столбиком», как десятичные, только перенос в
+следующий разряд возникает, когда сумма достигает двух:
+\[
+  0+0 = 0, \quad 0+1 = 1, \quad 1+0 = 1, \quad 1+1 = 10_2 \ (\text{ноль и перенос единицы}).
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=9mm, y=7mm, font=\ttfamily\large]
+  \node[text=FpgaRed, font=\ttfamily\small] at (1,3) {1}; \node[text=FpgaRed, font=\ttfamily\small] at (2,3) {1};
+  \node[text=FpgaRed, font=\ttfamily\small] at (3,3) {1};
+  \foreach \d [count=\i] in {0,1,1,1} \node at (\i,2) {\d};
+  \foreach \d [count=\i] in {0,0,1,1} \node at (\i,1) {\d};
+  \foreach \d [count=\i from 0] in {1,0,1,0} \node at (\i+1,-0.2) {\d};
+  \node at (-0.2,1.5) {$+$};
+  \draw[thick] (0.4,0.5) -- (4.5,0.5);
+  \node[font=\sffamily\small, anchor=west] at (5.2,2) {$0111_2 = 7$};
+  \node[font=\sffamily\small, anchor=west] at (5.2,1) {$0011_2 = 3$};
+  \node[font=\sffamily\small, anchor=west] at (5.2,-0.2) {$1010_2 = 10$};
+  \node[font=\sffamily\small, anchor=west, text=FpgaRed] at (5.2,3) {переносы};
+\end{tikzpicture}
+\caption{Сложение столбиком в двоичной системе}
+\end{figure}
+
+\section{Полусумматор}
+
+Сложение двух одноразрядных чисел $a$ и $b$ даёт двухразрядный результат:
+бит суммы $s$ и бит переноса $c$. Таблица истинности:
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.35\textwidth}
+\centering
+\begin{tabular}{cc|cc}
+\toprule
+$a$ & $b$ & $c$ & $s$ \\
+\midrule
+0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 1 \\
+1 & 0 & 0 & 1 \\
+1 & 1 & 1 & 0 \\
+\bottomrule
+\end{tabular}
+
+\medskip
+$s = a \oplus b, \qquad c = a\cdot b$
+\end{minipage}
+\begin{minipage}{0.55\textwidth}
+\centering
+\begin{tikzpicture}
+  \node[gXOR, minimum height=12mm] (x) at (2,0.8) {};
+  \node[gAND, minimum height=12mm] (g) at (2,-0.8) {};
+  \draw[wire] (x.input 1) -- ++(-2.0,0) node[left] {$a$};
+  \draw[wire] (x.input 2) -- ++(-2.0,0) node[left] {$b$};
+  \coordinate (A) at ($(x.input 1)+(-1.4,0)$); \coordinate (B) at ($(x.input 2)+(-0.9,0)$);
+  \draw[wire] (A) |- (g.input 1); \fill (A) circle (1.3pt);
+  \draw[wire] (B) |- (g.input 2); \fill (B) circle (1.3pt);
+  \draw[wire] (x.output) -- ++(0.6,0) node[right] {$s$ (сумма)};
+  \draw[wire] (g.output) -- ++(0.6,0) node[right] {$c$ (перенос)};
+\end{tikzpicture}
+\end{minipage}
+\caption{Полусумматор (half adder)}
+\label{fig:ha}
+\end{figure}
+
+\section{Полный сумматор}
+
+Полусумматор годится только для младшего разряда. В остальных разрядах
+складываются \emph{три} бита: $a_i$, $b_i$ и перенос $c_\text{in}$ из
+предыдущего разряда. Такой узел называется \term{полным сумматором}.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.38\textwidth}
+\centering
+\small
+\begin{tabular}{ccc|cc}
+\toprule
+$a$ & $b$ & $c_\text{in}$ & $c_\text{out}$ & $s$ \\
+\midrule
+0&0&0 & 0&0 \\
+0&0&1 & 0&1 \\
+0&1&0 & 0&1 \\
+0&1&1 & 1&0 \\
+1&0&0 & 0&1 \\
+1&0&1 & 1&0 \\
+1&1&0 & 1&0 \\
+1&1&1 & 1&1 \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\begin{minipage}{0.58\textwidth}
+\[
+  s = a \oplus b \oplus c_\text{in}
+\]
+\[
+  c_\text{out} = ab + ac_\text{in} + bc_\text{in}
+\]
+\small Заметьте: $c_\text{out}$ --- это мажоритарная функция «2 из 3» из
+главы~\ref{ch:comb}! Перенос возникает, когда единиц хотя бы две.
+\end{minipage}
+\caption{Полный сумматор (full adder): таблица истинности и формулы}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[ha/.style={draw=FpgaBlue, fill=FpgaLight, thick, minimum width=14mm, minimum height=14mm, font=\sffamily\small, align=center}]
+  \node[ha] (h1) at (0,0) {HA};
+  \node[ha] (h2) at (2.8,-0.6) {HA};
+  \node[gOR, minimum width=10mm, minimum height=7mm] (o) at (5.4,-1.8) {};
+  \draw[wire] ([yshift=3.5mm]h1.west) -- ++(-0.8,0) node[left] {$a$};
+  \draw[wire] ([yshift=-3.5mm]h1.west) -- ++(-0.8,0) node[left] {$b$};
+  \draw[wire] ([yshift=3.5mm]h1.east) -- node[above, lbl] {$s$} ++(0.4,0) |- ([yshift=3.5mm]h2.west);
+  \draw[wire] (-0.8,-1.4) node[left] {$c_\text{in}$} -- (1.7,-1.4) |- ([yshift=-3.5mm]h2.west);
+  \draw[wire] ([yshift=3.5mm]h2.east) -- ++(3.4,0) node[right] {$s$};
+  \draw[wire] ([yshift=-3.5mm]h1.east) -- node[below, lbl, pos=0.3] {$c$} ++(0.25,0) |- (0.95,-2.2) -- (4.7,-2.2) |- (o.input 2);
+  \draw[wire] ([yshift=-3.5mm]h2.east) -- node[above, lbl] {$c$} ++(0.4,0) |- (o.input 1);
+  \draw[wire] (o.output) -- ++(0.6,0) node[right] {$c_\text{out}$};
+\end{tikzpicture}
+\caption{Полный сумматор из двух полусумматоров и элемента ИЛИ}
+\label{fig:fa}
+\end{figure}
+
+\section{Многоразрядный сумматор}
+
+Чтобы сложить $n$-разрядные числа, $n$ полных сумматоров соединяют в цепочку:
+выход переноса каждого разряда идёт на вход переноса следующего. Такой
+сумматор называется \term{сумматором с последовательным переносом} (ripple
+carry adder).
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[fa/.style={draw=FpgaBlue, fill=FpgaLight, thick, minimum width=15mm, minimum height=13mm, font=\sffamily\small}]
+  \foreach \i [evaluate=\i as \x using (3-\i)*2.9] in {0,...,3} {
+    \node[fa] (f\i) at (\x,0) {FA$_\i$};
+    \draw[wire] ([xshift=-3mm]f\i.north) -- ++(0,0.6) node[above] {$a_\i$};
+    \draw[wire] ([xshift=3mm]f\i.north) -- ++(0,0.6) node[above] {$b_\i$};
+    \draw[wire] (f\i.south) -- ++(0,-0.6) node[below] {$s_\i$};
+  }
+  \foreach \i [evaluate=\i as \j using int(\i+1)] in {0,1,2}
+    \draw[arr, FpgaRed] (f\i.west) -- node[above, lbl] {$c_\j$} (f\j.east);
+  \draw[arr] ($(f0.east)+(0.8,0)$) node[right] {$c_0 = 0$} -- (f0.east);
+  \draw[arr, FpgaRed] (f3.west) -- ++(-0.8,0) node[left, text=FpgaDark] {$c_4$ (перенос)};
+\end{tikzpicture}
+\caption{Четырёхразрядный сумматор с последовательным переносом. Красным ---
+цепочка переноса}
+\label{fig:rca}
+\end{figure}
+
+Недостаток такого сумматора: старший разряд не может посчитать результат,
+пока не получит перенос от младшего, а тот --- от ещё более младшего.
+Задержка растёт пропорционально числу разрядов. Поэтому в быстрых
+процессорах используют сумматоры с \term{ускоренным переносом}, в которых
+перенос вычисляется параллельно специальной схемой. А в ПЛИС для этой цели
+рядом с каждым LUT проложена отдельная быстрая \emph{цепочка переноса}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.8\textwidth, height=5.4cm, xlabel={Разрядность, бит}, ylabel={Задержка, $t_\text{зд}$},
+  xmin=0, xmax=64, ymin=0, ymax=140, xtick={8,16,32,48,64},
+  legend pos=north west, legend style={font=\sffamily\small, draw=none, fill=white, fill opacity=0.8},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  grid=major, grid style={FpgaGray!20}, axis lines*=left,
+]
+  \addplot[very thick, FpgaRed, domain=1:64, samples=2] {2*x};
+  \addlegendentry{последовательный перенос ($\sim n$)}
+  \addplot[very thick, FpgaGreen, domain=1:64, samples=64] {4+4*ln(x)/ln(2)};
+  \addlegendentry{ускоренный перенос ($\sim \log_2 n$)}
+\end{axis}
+\end{tikzpicture}
+\caption{Задержка сумматора в зависимости от разрядности (оценка)}
+\end{figure}
+
+\section{Отрицательные числа и вычитание}
+
+Как записать отрицательное число, если у нас есть только нули и единицы?
+Используется \term{дополнительный код}: старший бит считается имеющим
+\emph{отрицательный} вес. Для 4 битов веса разрядов равны $-8, 4, 2, 1$.
+
+\begin{table}[H]
+\centering
+\caption{Четырёхбитные числа в дополнительном коде}
+\small
+\begin{tabular}{c c @{\hspace{10mm}} c c}
+\toprule
+\textbf{Код} & \textbf{Число} & \textbf{Код} & \textbf{Число} \\
+\midrule
+\code{0000} & 0 & \code{1000} & $-8$ \\
+\code{0001} & 1 & \code{1001} & $-7$ \\
+\code{0010} & 2 & \code{1010} & $-6$ \\
+\code{0011} & 3 & \code{1011} & $-5$ \\
+\code{0100} & 4 & \code{1100} & $-4$ \\
+\code{0101} & 5 & \code{1101} & $-3$ \\
+\code{0110} & 6 & \code{1110} & $-2$ \\
+\code{0111} & 7 & \code{1111} & $-1$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \foreach \i in {0,...,15} {
+    \pgfmathsetmacro{\ang}{90-\i*22.5}
+    \pgfmathtruncatemacro{\v}{\i<8 ? \i : \i-16}
+    \fill[\ifnum\i<8 FpgaBlue\else FpgaOrange\fi] (\ang:2.2) circle (0.09);
+    \node[font=\sffamily\small] at (\ang:2.65) {\v};
+  }
+  \draw[thick, FpgaGray] (0,0) circle (2.2);
+  \node[font=\ttfamily\scriptsize] at (90:1.75) {0000};
+  \node[font=\ttfamily\scriptsize] at (90-7*22.5:1.75) {0111};
+  \node[font=\ttfamily\scriptsize] at (90-8*22.5:1.75) {1000};
+  \node[font=\ttfamily\scriptsize] at (90-15*22.5:1.75) {1111};
+  \draw[-{Stealth}, thick, FpgaGreen] (60:1.2) arc (60:-30:1.2);
+  \node[font=\sffamily\small, text=FpgaGreen] at (0,0) {$+1$};
+  \node[font=\sffamily\small, align=left, anchor=west] at (3.6,0.8) {\textcolor{FpgaBlue}{$\bullet$} положительные: старший бит 0};
+  \node[font=\sffamily\small, align=left, anchor=west] at (3.6,0.1) {\textcolor{FpgaOrange}{$\bullet$} отрицательные: старший бит 1};
+  \node[font=\sffamily\small, align=left, anchor=west] at (3.6,-0.8) {$7 + 1 = -8$: \textbf{переполнение}!};
+\end{tikzpicture}
+\caption{Числа в дополнительном коде удобно представлять на круге: прибавление
+единицы --- шаг по часовой стрелке}
+\end{figure}
+
+Главное достоинство дополнительного кода: \textbf{складывать и вычитать можно
+одним и тем же сумматором}. Чтобы получить $-b$, нужно инвертировать все
+биты $b$ и прибавить единицу:
+\[
+  a - b = a + \overline{b} + 1.
+\]
+Инверсию сделают элементы «Исключающее ИЛИ» (при управляющем сигнале 1
+элемент $x\oplus 1 = \overline{x}$ инвертирует), а единицу --- вход переноса
+младшего разряда.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[hblock, minimum width=40mm, minimum height=14mm] (add) at (0,0) {4-разрядный\\сумматор};
+  \node[block, minimum width=22mm, minimum height=10mm] (xr) at (1.0,2.2) {4 элемента\\\scriptsize Исключающее ИЛИ};
+  \draw[bus, -{Stealth}] (1.0,3.6) node[above, text=FpgaDark] {$B$} -- (xr.north);
+  \draw[bus, -{Stealth}] (xr.south) -- node[right, lbl] {$B$ или $\overline{B}$} (1.0,0.7);
+  \draw[bus, -{Stealth}] (-1.0,3.6) node[above, text=FpgaDark] {$A$} -- (-1.0,0.7);
+  \draw[arr, FpgaRed] (-3.2,2.2) node[left, text=FpgaDark] {SUB} -- (xr.west);
+  \draw[arr, FpgaRed] (-2.6,2.2) |- node[pos=0.75, above, lbl, text=FpgaRed] {$c_0$} (add.west);
+  \fill[FpgaRed] (-2.6,2.2) circle (1.5pt);
+  \draw[bus, -{Stealth}] (add.south) -- ++(0,-0.8) node[below, text=FpgaDark] {$S = A \pm B$};
+\end{tikzpicture}
+\caption{Сумматор-вычитатель: при SUB $= 0$ считает $A+B$, при SUB $= 1$ ---
+$A-B$}
+\end{figure}
+
+\section{Компараторы}
+
+\term{Компаратор} сравнивает два числа. Проще всего проверить
+\emph{равенство}: числа равны, если равны все их разряды. Равенство двух
+битов проверяет элемент «Исключающее ИЛИ-НЕ» ($\overline{a\oplus b} = 1$,
+когда $a = b$), а элемент И объединяет результаты всех разрядов.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \foreach \i in {0,...,3} {
+    \node[gXNOR, minimum width=10mm, minimum height=7mm] (x\i) at (1.5,1.8-\i*1.2) {};
+    \draw[wire] (x\i.input 1) -- ++(-0.6,0) node[left] {$a_\i$};
+    \draw[wire] (x\i.input 2) -- ++(-0.6,0) node[left] {$b_\i$};
+  }
+  \node[gAND, logic gate inputs=nnnn, minimum height=18mm] (g) at (4.2,0) {};
+  \foreach \i [evaluate=\i as \j using int(\i+1)] in {0,...,3}
+    \draw[wire] (x\i.output) -- ++(0.3,0) |- (g.input \j);
+  \draw[wire] (g.output) -- ++(0.6,0) node[right] {$A = B$};
+\end{tikzpicture}
+\caption{Компаратор равенства 4-разрядных чисел}
+\label{fig:cmp}
+\end{figure}
+
+Сравнение «больше/меньше» устроено сложнее: числа сравниваются, начиная со
+старшего разряда. Первый разряд, в котором они различаются, определяет
+результат. Для одного разряда:
+\[
+  (a > b) = a\,\overline{b}, \qquad (a < b) = \overline{a}\,b, \qquad (a = b) = \overline{a\oplus b}.
+\]
+Кстати, $A < B$ можно проверить и вычитателем: если $A - B$ отрицательно
+(старший бит результата равен 1, при отсутствии переполнения), то $A < B$.
+
+\section{Умножение и АЛУ}
+
+Двоичное умножение ещё проще десятичного: каждая цифра множителя --- это 0
+или 1, поэтому частичные произведения --- это либо ноль, либо сдвинутый
+множимый. Их остаётся сложить.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=8mm, y=6.5mm, font=\ttfamily]
+  \foreach \d [count=\i] in {1,0,1,1} \node at (\i+3,4) {\d};
+  \foreach \d [count=\i] in {0,1,1,0} \node at (\i+3,3) {\d};
+  \node at (2.8,3.5) {$\times$};
+  \draw (3.3,2.5) -- (7.6,2.5);
+  \foreach \d [count=\i] in {0,0,0,0} \node[text=FpgaGray] at (\i+3,2) {\d};
+  \foreach \d [count=\i] in {1,0,1,1} \node[text=FpgaBlue] at (\i+2,1) {\d};
+  \foreach \d [count=\i] in {1,0,1,1} \node[text=FpgaBlue] at (\i+1,0) {\d};
+  \foreach \d [count=\i] in {0,0,0,0} \node[text=FpgaGray] at (\i,-1) {\d};
+  \draw (0.5,-1.5) -- (7.6,-1.5);
+  \foreach \d [count=\i] in {1,0,0,0,0,1,0} \node at (\i+0.0,-2) {\d};
+  \node[font=\sffamily\small, anchor=west] at (8.5,4) {$1011_2 = 11$};
+  \node[font=\sffamily\small, anchor=west] at (8.5,3) {$0110_2 = 6$};
+  \node[font=\sffamily\small, anchor=west] at (8.5,-2) {$1000010_2 = 66$};
+  \node[font=\sffamily\small, anchor=west, text=FpgaBlue] at (8.5,0.5) {сдвинутые копии};
+\end{tikzpicture}
+\caption{Умножение столбиком: сдвиги и сложения}
+\end{figure}
+
+Умножитель $n\times n$ бит требует примерно $n^2$ полных сумматоров, поэтому
+он получается большим. В ПЛИС для этого есть готовые аппаратные умножители
+(блоки DSP).
+
+Сумматор, вычитатель, логические операции и сдвиги, собранные вместе и
+выбираемые мультиплексором по коду операции, образуют \term{арифметико-логическое
+устройство} (АЛУ) --- сердце любого процессора.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=FpgaLight] (0,1.8) -- (0.9,1.8) -- (1.35,1.1) -- (1.8,1.8) -- (2.7,1.8) -- (2.0,-0.4) -- (0.7,-0.4) -- cycle;
+  \node[font=\sffamily\bfseries] at (1.35,0.5) {АЛУ};
+  \draw[bus, -{Stealth}] (0.45,2.6) node[above, text=FpgaDark] {$A$} -- (0.45,1.8);
+  \draw[bus, -{Stealth}] (2.25,2.6) node[above, text=FpgaDark] {$B$} -- (2.25,1.8);
+  \draw[bus, -{Stealth}] (1.35,-0.4) -- (1.35,-1.2) node[below, text=FpgaDark] {результат};
+  \draw[arr, FpgaBlue] (-1.3,0.7) node[left, text=FpgaDark, align=right] {код\\операции} -- (0.33,0.7);
+  \draw[arr] (2.37,0.7) -- (3.4,0.7) node[right, font=\sffamily\small, align=left] {флаги: ноль,\\перенос, знак,\\переполнение};
+  \node[font=\sffamily\small, align=left, anchor=west] at (7.2,0.7) {\code{000}: $A+B$\\\code{001}: $A-B$\\\code{010}: $A \,\&\, B$\\\code{011}: $A \mid B$\\\code{100}: $A \oplus B$\ldots};
+\end{tikzpicture}
+\caption{Арифметико-логическое устройство}
+\end{figure}
+
+\begin{ideabox}
+Сложение выполняется полными сумматорами, соединёнными цепочкой переноса.
+Отрицательные числа записываются в дополнительном коде, и тогда вычитание
+сводится к сложению. Компаратор равенства строится из элементов
+«Исключающее ИЛИ-НЕ» и И.
+\end{ideabox}

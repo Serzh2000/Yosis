@@ -1,0 +1,61 @@
+\chapter*{Как читать это пособие}
+\addcontentsline{toc}{chapter}{Как читать это пособие}
+
+Это пособие рассчитано на тех, кто только начинает знакомство с цифровой
+электроникой. Предварительных знаний почти не требуется: достаточно школьной
+математики и желания разобраться, как «думают» компьютеры, контроллеры
+дронов и любые другие цифровые устройства.
+
+Книга состоит из двух частей.
+
+\begin{description}
+  \item[Часть I. Основы цифровой схемотехники.] Что такое сигнал и почему
+    техника цифровая; логические элементы и булева алгебра; комбинационные
+    схемы; типовые узлы --- дешифраторы, шифраторы, мультиплексоры,
+    демультиплексоры, сумматоры, компараторы; триггеры, регистры, счётчики;
+    синхронные схемы, конечные автоматы и память. Эта часть не привязана к
+    конкретной микросхеме и служит общей базой для всех наших курсов.
+  \item[Часть II. ПЛИС на практике: Tang Nano 20K.] Что такое ПЛИС и что у неё
+    внутри; плата Sipeed Tang Nano 20K; путь от текста до работающей схемы;
+    язык Verilog; семь законченных проектов; симуляция; встроенная память
+    SDRAM; задания для самостоятельной работы.
+\end{description}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=5mm and 7mm, t/.style={block, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize}]
+  \node[t] (a) {Сигналы};
+  \node[t, right=of a] (b) {Логические\\элементы};
+  \node[t, right=of b] (c) {Комбинационные\\узлы};
+  \node[t, right=of c] (d) {Триггеры,\\регистры};
+  \node[t, right=of d] (e) {Автоматы,\\память};
+  \node[hblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, below=9mm of e] (f) {Что такое\\ПЛИС};
+  \node[hblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of f] (g) {Плата и\\инструменты};
+  \node[hblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of g] (h) {Verilog};
+  \node[oblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of h] (i) {Проекты\\и симуляция};
+  \node[oblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of i] (j) {SDRAM,\\задания};
+  \foreach \u/\v in {a/b, b/c, c/d, d/e, e/f, f/g, g/h, h/i, i/j} \draw[arr] (\u) -- (\v);
+  \begin{scope}[on background layer]
+    \node[draw=FpgaGray, dashed, rounded corners, fit=(a)(e), inner sep=2.5mm, label={[lbl]above:Часть I}] {};
+    \node[draw=FpgaGray, dashed, rounded corners, fit=(f)(j), inner sep=2.5mm, label={[lbl]below:Часть II}] {};
+  \end{scope}
+\end{tikzpicture}
+\caption{Путь, который мы пройдём}
+\end{figure}
+
+Если вы уже изучили основы цифровой схемотехники в другом нашем курсе, можете
+сразу переходить ко второй части и возвращаться к первой как к справочнику:
+во второй части есть ссылки на нужные главы первой.
+
+Все исходные тексты примеров лежат рядом с книгой, в папке
+\nolinkurl{personal/fpga/tang_nano_20k/code}. Их можно открыть, скопировать и
+сразу загрузить в плату.
+
+\begin{infobox}[Обозначения]
+\begin{itemize}
+  \item Синие блоки «Справка» содержат полезные подробности.
+  \item Оранжевые блоки «Внимание!» предупреждают о типичных ошибках.
+  \item Фиолетовые блоки «Главная мысль» подводят итог раздела.
+  \item Зелёные блоки «Задание» предлагают что-то сделать самостоятельно.
+\end{itemize}
+\end{infobox}

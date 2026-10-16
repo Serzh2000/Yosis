@@ -1,0 +1,373 @@
+\chapter{Дешифраторы и шифраторы}
+\label{ch:coders}
+
+Из логических элементов строят более крупные «кирпичи» --- типовые
+комбинационные узлы. Они встречаются почти в любом цифровом устройстве, и их
+полезно узнавать с первого взгляда. Начнём с узлов, которые преобразуют
+один способ записи числа (код) в другой.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=6mm and 32mm]
+  \node[block, minimum width=34mm] (bin) {Двоичный код\\\scriptsize \code{10} (число 2)};
+  \node[oblock, minimum width=34mm, right=of bin] (oh) {Унитарный код\\\scriptsize \code{0100} (единица на 2-м месте)};
+  \draw[arr] ([yshift=2mm]bin.east) -- node[above, font=\sffamily\small] {дешифратор} ([yshift=2mm]oh.west);
+  \draw[arr] ([yshift=-2mm]oh.west) -- node[below, font=\sffamily\small] {шифратор} ([yshift=-2mm]bin.east);
+\end{tikzpicture}
+\caption{Дешифратор и шифратор выполняют взаимно обратные преобразования}
+\end{figure}
+
+\term{Унитарный код} (one-hot, «одна горячая») --- код, в котором из $N$
+проводов единица стоит ровно на одном, а номер этого провода и есть
+передаваемое значение. Он удобен, чтобы что-то \emph{выбрать}: включить одну из
+нескольких ламп, одну из нескольких микросхем памяти.
+
+\section{Дешифратор}
+
+\term{Дешифратор} (decoder) имеет $n$ входов и $2^n$ выходов. Входы задают
+двоичный номер, и на выходе с этим номером появляется 1, а на всех остальных
+--- 0. На схемах дешифратор обозначают буквами DC.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.4\textwidth}
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=FpgaLight] (0,0) rectangle (2.6,3.2);
+  \draw[thick] (0.6,0) -- (0.6,3.2); \draw[thick] (2.0,0) -- (2.0,3.2);
+  \node[font=\sffamily\bfseries\large] at (1.3,1.6) {DC};
+  \foreach \i/\n in {0/0, 1/1} {
+    \draw[wire] (-0.6,2.1-\i*0.8) node[left] {$a_\i$} -- (0,2.1-\i*0.8);
+    \node[font=\sffamily\small] at (0.3,2.1-\i*0.8) {\pgfmathparse{int(2^\i)}\pgfmathresult};
+  }
+  \draw[wire] (-0.6,0.4) node[left] {$E$} -- (0,0.4); \node[font=\sffamily\small] at (0.3,0.4) {E};
+  \foreach \i in {0,...,3} {
+    \draw[wire] (2.6,2.6-\i*0.7) -- (3.2,2.6-\i*0.7) node[right] {$y_\i$};
+    \node[font=\sffamily\small] at (2.3,2.6-\i*0.7) {\i};
+  }
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.56\textwidth}
+\centering
+\begin{tabular}{ccc|cccc}
+\toprule
+$E$ & $a_1$ & $a_0$ & $y_0$ & $y_1$ & $y_2$ & $y_3$ \\
+\midrule
+0 & $\times$ & $\times$ & 0 & 0 & 0 & 0 \\
+1 & 0 & 0 & \textbf{1} & 0 & 0 & 0 \\
+1 & 0 & 1 & 0 & \textbf{1} & 0 & 0 \\
+1 & 1 & 0 & 0 & 0 & \textbf{1} & 0 \\
+1 & 1 & 1 & 0 & 0 & 0 & \textbf{1} \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+{\small $\times$ --- «неважно, 0 или 1»}
+\end{minipage}
+\caption{Дешифратор 2$\to$4 с входом разрешения $E$: обозначение и таблица истинности}
+\label{fig:dc24}
+\end{figure}
+
+Вход $E$ (Enable, разрешение) позволяет «выключить» дешифратор: при $E=0$
+все выходы равны нулю, какой бы номер ни был подан.
+
+Как построить дешифратор из элементов? Каждый выход --- это произведение,
+равное единице ровно для одной комбинации входов:
+\[
+  y_0 = E\,\overline{a_1}\,\overline{a_0}, \quad
+  y_1 = E\,\overline{a_1}\,a_0, \quad
+  y_2 = E\,a_1\,\overline{a_0}, \quad
+  y_3 = E\,a_1\,a_0.
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  % входы
+  \draw[wire] (-0.4,1.6) node[left] {$a_1$} -- (1.0,1.6);
+  \draw[wire] (-0.4,0.8) node[left] {$a_0$} -- (2.4,0.8);
+  \draw[wire] (-0.4,0.0) node[left] {$E$} -- (3.8,0.0);
+  % инверторы
+  \node[gNOT, minimum width=7mm, minimum height=5mm] (n1) at (1.0,2.4) {};
+  \draw[wire] (0.3,1.6) |- (n1.input); \fill (0.3,1.6) circle (1.3pt);
+  \draw[very thick, FpgaBlue] (n1.output) -| (1.6,-4.8);
+  \node[gNOT, minimum width=7mm, minimum height=5mm] (n0) at (2.4,1.5) {};
+  \draw[wire] (1.95,0.8) |- (n0.input); \fill (1.95,0.8) circle (1.3pt);
+  \draw[very thick, FpgaBlue] (n0.output) -| (3.0,-4.8);
+  % шины
+  \draw[very thick, FpgaBlue] (1.0,1.6) -- (1.0,-4.8);
+  \draw[very thick, FpgaBlue] (2.4,0.8) -- (2.4,-4.8);
+  \draw[very thick, FpgaBlue] (3.8,0.0) -- (3.8,-4.8);
+  \foreach \x/\l in {1.0/a_1, 1.6/\overline{a_1}, 2.4/a_0, 3.0/\overline{a_0}, 3.8/E}
+    \node[below, font=\small] at (\x,-4.8) {$\l$};
+  % элементы И: y0 = ~a1 ~a0, y1 = ~a1 a0, y2 = a1 ~a0, y3 = a1 a0
+  \foreach \i/\x/\z in {0/1.6/3.0, 1/1.6/2.4, 2/1.0/3.0, 3/1.0/2.4} {
+    \pgfmathsetmacro{\y}{-0.9-\i*1.1}
+    \node[gAND, logic gate inputs=nnn, minimum height=9mm] (g\i) at (5.6,\y) {};
+    \draw[wire] (g\i.input 1) -- (\x,0 |- g\i.input 1) node[circle, fill, inner sep=1.1pt] {};
+    \draw[wire] (g\i.input 2) -- (\z,0 |- g\i.input 2) node[circle, fill, inner sep=1.1pt] {};
+    \draw[wire] (g\i.input 3) -- (3.8,0 |- g\i.input 3) node[circle, fill, inner sep=1.1pt] {};
+    \draw[wire] (g\i.output) -- ++(0.6,0) node[right] {$y_\i$};
+  }
+\end{tikzpicture}
+\caption{Дешифратор 2$\to$4 на элементах И и НЕ}
+\label{fig:dc24_gates}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.05, xscale=2.2, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  $a_1a_0$ & 2D{00} 2D{01} 2D{10} 2D{11} 2D{00} \\
+  $y_0$ & 2H 6L 2H \\
+  $y_1$ & 2L 2H 6L \\
+  $y_2$ & 4L 2H 4L \\
+  $y_3$ & 6L 2H 2L \\
+\end{tikztimingtable}
+\caption{При переборе номеров единица «переходит» с одного выхода на другой}
+\end{figure}
+
+\subsection{Где применяются дешифраторы}
+
+\begin{itemize}
+  \item \textbf{Выбор устройства по адресу.} В компьютере к одной шине
+        подключено много микросхем памяти и периферии. Дешифратор по
+        старшим битам адреса выбирает, какая из них сейчас должна ответить.
+  \item \textbf{Управление индикаторами}: включение одного из нескольких
+        светодиодов, разрядов индикатора, строк матрицы.
+  \item \textbf{Выбор команды в процессоре}: код операции дешифрируется в
+        управляющие сигналы «сложить», «прочитать из памяти» и т.\,д.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=5mm]
+  \node[hblock, minimum height=30mm, minimum width=18mm] (cpu) {Процессор};
+  \node[block, right=22mm of cpu, minimum height=26mm] (dc) {DC\\2$\to$4};
+  \foreach \i/\t in {0/ПЗУ, 1/ОЗУ, 2/Порт ввода, 3/Порт вывода} {
+    \node[oblock, minimum width=24mm, minimum height=7mm] (d\i) at (9.0,1.65-\i*1.1) {\t};
+  }
+  \draw[arr] (cpu.east) -- node[above, lbl] {A[15:14]} (dc.west);
+  \foreach \i in {0,...,3} \draw[arr] ($(dc.north east)!{(\i+0.5)/4}!(dc.south east)$) -- ++(0.6,0) |- (d\i.west);
+  \foreach \i in {0,...,3} \node[lbl, above=0mm of d\i.north west, anchor=south west] {CS$_\i$};
+\end{tikzpicture}
+\caption{Дешифратор адреса: два старших бита адреса выбирают одну из четырёх микросхем}
+\end{figure}
+
+\subsection{Дешифратор для семисегментного индикатора}
+
+Семисегментный индикатор состоит из семи светодиодных полосок, обозначаемых
+буквами от $a$ до $g$. Зажигая разные сегменты, можно показать любую цифру.
+Узел, который переводит двоичный код цифры в сигналы для сегментов, тоже
+называют дешифратором (хотя он выдаёт не унитарный код).
+
+\newcommand{\sevenseg}[8]{%
+  \begin{tikzpicture}[scale=0.32, seg/.style={line width=2.6pt, line cap=round}]
+    \def\segc##1{\ifnum##1=1 \def\cc{FpgaRed}\else\def\cc{gray!20}\fi}
+    \segc{#1}\draw[seg, color=\cc] (0.2,4) -- (1.8,4);   % a
+    \segc{#2}\draw[seg, color=\cc] (2,3.8) -- (2,2.2);   % b
+    \segc{#3}\draw[seg, color=\cc] (2,1.8) -- (2,0.2);   % c
+    \segc{#4}\draw[seg, color=\cc] (0.2,0) -- (1.8,0);   % d
+    \segc{#5}\draw[seg, color=\cc] (0,1.8) -- (0,0.2);   % e
+    \segc{#6}\draw[seg, color=\cc] (0,3.8) -- (0,2.2);   % f
+    \segc{#7}\draw[seg, color=\cc] (0.2,2) -- (1.8,2);   % g
+    \node[font=\sffamily\scriptsize] at (1,-1.1) {#8};
+  \end{tikzpicture}}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.8, seg/.style={line width=4pt, line cap=round, FpgaRed}]
+  \draw[seg] (0.25,4) -- (1.75,4) node[midway, above=1mm, text=FpgaDark, font=\sffamily\small] {a};
+  \draw[seg] (2,3.75) -- (2,2.25) node[midway, right=1mm, text=FpgaDark, font=\sffamily\small] {b};
+  \draw[seg] (2,1.75) -- (2,0.25) node[midway, right=1mm, text=FpgaDark, font=\sffamily\small] {c};
+  \draw[seg] (0.25,0) -- (1.75,0) node[midway, below=1mm, text=FpgaDark, font=\sffamily\small] {d};
+  \draw[seg] (0,1.75) -- (0,0.25) node[midway, left=1mm, text=FpgaDark, font=\sffamily\small] {e};
+  \draw[seg] (0,3.75) -- (0,2.25) node[midway, left=1mm, text=FpgaDark, font=\sffamily\small] {f};
+  \draw[seg] (0.25,2) -- (1.75,2) node[midway, above=0.5mm, text=FpgaDark, font=\sffamily\small] {g};
+\end{tikzpicture}
+\hspace{12mm}
+\sevenseg1111110{0}\,\sevenseg0110000{1}\,\sevenseg1101101{2}\,\sevenseg1111001{3}\,\sevenseg0110011{4}\,%
+\sevenseg1011011{5}\,\sevenseg1011111{6}\,\sevenseg1110000{7}\,\sevenseg1111111{8}\,\sevenseg1111011{9}
+\caption{Семисегментный индикатор: обозначение сегментов и изображение цифр}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Таблица истинности дешифратора для семисегментного индикатора (1 --- сегмент горит)}
+\label{tab:7seg}
+\small
+\begin{tabular}{c|cccc|ccccccc}
+\toprule
+Цифра & $x_3$ & $x_2$ & $x_1$ & $x_0$ & a & b & c & d & e & f & g \\
+\midrule
+0 & 0&0&0&0 & 1&1&1&1&1&1&0 \\
+1 & 0&0&0&1 & 0&1&1&0&0&0&0 \\
+2 & 0&0&1&0 & 1&1&0&1&1&0&1 \\
+3 & 0&0&1&1 & 1&1&1&1&0&0&1 \\
+4 & 0&1&0&0 & 0&1&1&0&0&1&1 \\
+5 & 0&1&0&1 & 1&0&1&1&0&1&1 \\
+6 & 0&1&1&0 & 1&0&1&1&1&1&1 \\
+7 & 0&1&1&1 & 1&1&1&0&0&0&0 \\
+8 & 1&0&0&0 & 1&1&1&1&1&1&1 \\
+9 & 1&0&0&1 & 1&1&1&1&0&1&1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Каждый столбец a--g --- это отдельная логическая функция от четырёх
+переменных. Её можно упростить по карте Карно и собрать из элементов, как в
+главе~\ref{ch:comb}.
+
+\section{Шифратор}
+
+\term{Шифратор} (encoder, на схемах обозначается CD) выполняет обратное
+преобразование: из унитарного кода на $2^n$ входах делает $n$-разрядный
+двоичный номер той линии, на которой стоит единица.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.38\textwidth}
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=FpgaLight] (0,0) rectangle (2.6,3.0);
+  \draw[thick] (0.6,0) -- (0.6,3.0); \draw[thick] (2.0,0) -- (2.0,3.0);
+  \node[font=\sffamily\bfseries\large] at (1.3,1.5) {CD};
+  \foreach \i in {0,...,3} {
+    \draw[wire] (-0.6,2.4-\i*0.65) node[left] {$x_\i$} -- (0,2.4-\i*0.65);
+    \node[font=\sffamily\small] at (0.3,2.4-\i*0.65) {\i};
+  }
+  \foreach \i/\w in {0/1, 1/2} {
+    \draw[wire] (2.6,1.9-\i*0.9) -- (3.2,1.9-\i*0.9) node[right] {$y_\i$};
+    \node[font=\sffamily\small] at (2.3,1.9-\i*0.9) {\w};
+  }
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.58\textwidth}
+\centering
+\begin{tabular}{cccc|cc}
+\toprule
+$x_0$ & $x_1$ & $x_2$ & $x_3$ & $y_1$ & $y_0$ \\
+\midrule
+1 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & 1 \\
+0 & 0 & 1 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1 & 1 & 1 \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\caption{Шифратор 4$\to$2: обозначение и таблица истинности}
+\end{figure}
+
+По таблице видно: $y_0$ равен 1, когда активна линия 1 или 3; $y_1$ --- когда
+активна линия 2 или 3. Значит, шифратор собирается из одних элементов ИЛИ:
+\[
+  y_0 = x_1 + x_3, \qquad y_1 = x_2 + x_3.
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \foreach \i in {0,...,3} \draw[very thick, FpgaBlue] (\i*0.7,0.6) node[above, text=FpgaDark] {$x_\i$} -- (\i*0.7,-2.4);
+  \node[gOR] (o0) at (4.2,-0.4) {};
+  \node[gOR] (o1) at (4.2,-1.7) {};
+  \draw[wire] (o0.input 1) -- (0.7,0 |- o0.input 1) node[circle, fill, inner sep=1.1pt] {};
+  \draw[wire] (o0.input 2) -- (2.1,0 |- o0.input 2) node[circle, fill, inner sep=1.1pt] {};
+  \draw[wire] (o1.input 1) -- (1.4,0 |- o1.input 1) node[circle, fill, inner sep=1.1pt] {};
+  \draw[wire] (o1.input 2) -- (2.1,0 |- o1.input 2) node[circle, fill, inner sep=1.1pt] {};
+  \draw[wire] (o0.output) -- ++(0.6,0) node[right] {$y_0$};
+  \draw[wire] (o1.output) -- ++(0.6,0) node[right] {$y_1$};
+  \node[lbl, text=FpgaGray] at (0,-2.7) {не используется};
+\end{tikzpicture}
+\caption{Шифратор 4$\to$2 из двух элементов ИЛИ}
+\end{figure}
+
+\subsection{Приоритетный шифратор}
+
+Что будет, если единица окажется сразу на двух входах, например, если
+одновременно нажаты кнопки 1 и 2? Простой шифратор выдаст $y_1y_0 = 11$, то есть
+номер 3, --- явную ошибку. Поэтому на практике применяют
+\term{приоритетный шифратор}: он выдаёт номер \emph{старшего} из активных
+входов, а остальные игнорирует. Дополнительный выход $V$ (valid) показывает,
+что хотя бы один вход активен.
+
+\begin{table}[H]
+\centering
+\caption{Приоритетный шифратор 4$\to$2 ($\times$ --- значение не важно)}
+\begin{tabular}{cccc|ccc}
+\toprule
+$x_3$ & $x_2$ & $x_1$ & $x_0$ & $y_1$ & $y_0$ & $V$ \\
+\midrule
+0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0 & 0 & 1 \\
+0 & 0 & 1 & $\times$ & 0 & 1 & 1 \\
+0 & 1 & $\times$ & $\times$ & 1 & 0 & 1 \\
+1 & $\times$ & $\times$ & $\times$ & 1 & 1 & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Выражения: $y_1 = x_3 + x_2$, \ $y_0 = x_3 + \overline{x_2}\,x_1$, \
+$V = x_3 + x_2 + x_1 + x_0$.
+
+\begin{infobox}[Где применяются шифраторы]
+\begin{itemize}
+  \item \textbf{Клавиатуры}: номер нажатой клавиши превращается в код.
+  \item \textbf{Контроллеры прерываний}: из нескольких одновременных запросов
+        процессору передаётся номер самого важного.
+  \item \textbf{Датчики положения}: из показаний линейки фотодатчиков
+        получают число --- координату.
+\end{itemize}
+\end{infobox}
+
+\section{Преобразователи кодов}
+
+Дешифраторы и шифраторы --- частные случаи \term{преобразователей кодов}.
+Ещё один полезный пример --- перевод двоичного кода в \term{код Грея}, в
+котором соседние числа отличаются ровно одним битом. Это важно для датчиков
+угла поворота: при переходе от 3 (\code{011}) к 4 (\code{100}) в двоичном коде
+меняются сразу три бита, и в промежуточный момент датчик может выдать
+что угодно. В коде Грея меняется только один бит.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.45\textwidth}
+\centering
+\begin{tabular}{c c c}
+\toprule
+\textbf{Число} & \textbf{Двоичный} & \textbf{Грея} \\
+\midrule
+0 & \code{000} & \code{000} \\
+1 & \code{001} & \code{001} \\
+2 & \code{010} & \code{011} \\
+3 & \code{011} & \code{010} \\
+4 & \code{100} & \code{110} \\
+5 & \code{101} & \code{111} \\
+6 & \code{110} & \code{101} \\
+7 & \code{111} & \code{100} \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}{0.5\textwidth}
+\centering
+\begin{tikzpicture}
+  \draw[very thick, FpgaBlue] (0,0) node[left, text=FpgaDark] {$b_2$} -- (3.2,0) node[right, text=FpgaDark] {$g_2$};
+  \node[gXOR, minimum width=10mm, minimum height=7mm] (x1) at (2.2,-1.0) {};
+  \node[gXOR, minimum width=10mm, minimum height=7mm] (x0) at (2.2,-2.2) {};
+  \draw[wire] (x1.input 1) -- (0.6,0 |- x1.input 1) -- (0.6,0); \fill (0.6,0) circle (1.3pt);
+  \draw[wire] (x1.input 2) -- (0,0 |- x1.input 2) node[left] {$b_1$};
+  \fill (1.0,0 |- x1.input 2) circle (1.3pt);
+  \draw[wire] (x0.input 1) -- (1.0,0 |- x0.input 1) -- (1.0,0 |- x1.input 2);
+  \draw[wire] (x0.input 2) -- (0,0 |- x0.input 2) node[left] {$b_0$};
+  \draw[wire] (x1.output) -- ++(0.5,0) node[right] {$g_1$};
+  \draw[wire] (x0.output) -- ++(0.5,0) node[right] {$g_0$};
+\end{tikzpicture}
+
+\small $g_i = b_{i+1} \oplus b_i$
+\end{minipage}
+\caption{Двоичный код и код Грея; преобразователь на элементах «Исключающее ИЛИ»}
+\end{figure}
+
+\begin{ideabox}
+\textbf{Дешифратор}: номер $\to$ единица на одном из $2^n$ выходов.
+\textbf{Шифратор}: единица на одном из входов $\to$ её номер.
+\textbf{Приоритетный шифратор} при нескольких активных входах выбирает старший.
+\end{ideabox}
