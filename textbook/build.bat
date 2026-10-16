@@ -6,4 +6,4 @@ rem minted v3 берёт папку сборки из этой переменн�
 set TEXMF_OUTPUT_DIRECTORY=../build
 xelatex -shell-escape -interaction=nonstopmode -output-directory=../build main.tex
 xelatex -shell-escape -interaction=nonstopmode -output-directory=../build main.tex
-copy /Y ..\build\main.pdf ..\Tang_Nano_20K.pdf
+copy /Y ..\build\main.pdf ..\Digital_Design.pdf

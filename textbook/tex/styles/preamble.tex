@@ -1,5 +1,5 @@
 % =============================================================================
-% Преамбула учебника «ПЛИС на практике: Sipeed Tang Nano 20K»
+% Преамбула учебника «Цифровая схемотехника: от логических элементов до ПЛИС»
 % Компиляция: xelatex main.tex (дважды, для оглавления и ссылок)
 % =============================================================================
 
@@ -80,7 +80,7 @@
 \usepackage[automark, headsepline]{scrlayer-scrpage}
 \clearpairofpagestyles
 \ihead{\headmark}
-\ohead{\textbf{\textcolor{FpgaBlue}{TANG NANO 20K}}}
+\ohead{\textbf{\textcolor{FpgaBlue}{ЦИФРОВАЯ СХЕМОТЕХНИКА}}}
 \cfoot{\pagemark}
 \setkomafont{pageheadfoot}{\sffamily\small\color{FpgaDark}}
 \setkomafont{pagenumber}{\sffamily\bfseries\color{FpgaBlue}}
@@ -146,7 +146,7 @@
 \sisetup{output-decimal-marker={,}, group-separator={\,}, locale=FR}
 \usepackage{hyperref}
 \hypersetup{colorlinks=true, linkcolor=FpgaBlue, urlcolor=FpgaBlue,
-  citecolor=FpgaBlue, pdftitle={ПЛИС на практике: Sipeed Tang Nano 20K},
+  citecolor=FpgaBlue, pdftitle={Цифровая схемотехника: от логических элементов до ПЛИС},
   pdfauthor={Корягин С.А.}}
 
 % Удобные команды
@@ -189,3 +189,14 @@
   gNOT/.style={not gate US, draw=FpgaDark, thick, fill=FpgaLight,
                minimum width=9mm, minimum height=6mm, inner sep=0pt},
 }
+
+% --- Снимки экрана Yosis ---
+\graphicspath{{../img/}}
+\usepackage{adjustbox}
+% \shot[ширина]{файл}{подпись}{метка}
+\newcommand{\shot}[4][\textwidth]{%
+  \begin{figure}[H]
+  \centering
+  \adjustbox{max width=#1, cfbox=FpgaGray!60 0.4pt 0pt}{\includegraphics[width=#1]{#2}}
+  \caption{#3}\label{#4}
+  \end{figure}}

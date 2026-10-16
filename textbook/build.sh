@@ -10,5 +10,5 @@ for i in 1 2; do
     xelatex -shell-escape -interaction=nonstopmode -halt-on-error \
             -output-directory=../build main.tex > /dev/null
 done
-cp ../build/main.pdf ../Tang_Nano_20K.pdf
-echo "Готово: Tang_Nano_20K.pdf"
+cp ../build/main.pdf ../Digital_Design.pdf
+echo "Готово: Digital_Design.pdf"
