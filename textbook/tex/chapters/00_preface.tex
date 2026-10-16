@@ -22,13 +22,13 @@
     и ШИМ. К каждой главе есть задачи, ответы собраны в приложении.
   \item[Часть II. ПЛИС и среда Yosis.] Всё, что мы изучили на бумаге, теперь
     собирается «в железе». Что такое ПЛИС и что у неё внутри; плата Sipeed
-    Tang Nano 20K; среда Yosis, в которой схему можно написать, увидеть,
-    проверить и загрузить в плату; язык Verilog; узлы первой части, описанные
-    на Verilog и разобранные на экране; семь законченных проектов; интерфейсы
-    UART, SPI и I$^2$C; симуляция; тактирование, временной анализ и
-    пересечение тактовых доменов; встроенная память SDRAM; собственный
-    процессор, который запускает программу; задания для самостоятельной
-    работы.
+    Tang Nano 20K; путь от текста до работающей схемы и язык Verilog; среда
+    Yosis, в которой схему можно написать, увидеть, проверить и загрузить в
+    плату; узлы первой части, описанные на Verilog и разобранные на экране;
+    семь законченных проектов; симуляция; тактирование, временной анализ и
+    пересечение тактовых доменов; интерфейсы UART, SPI и I$^2$C; встроенная
+    память SDRAM; собственный процессор, который запускает программу; задания
+    для самостоятельной работы.
 \end{description}
 
 \begin{figure}[H]
@@ -38,11 +38,11 @@
   \node[t, right=of a] (b) {Логические\\элементы};
   \node[t, right=of b] (c) {Комбинационные\\узлы};
   \node[t, right=of c] (d) {Триггеры,\\регистры};
-  \node[t, right=of d] (e) {Автоматы,\\память};
+  \node[t, right=of d] (e) {Автоматы,\\ЦАП и АЦП};
   \node[hblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, below=9mm of e] (f) {Что такое\\ПЛИС};
-  \node[hblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of f] (g) {Плата и\\Yosis};
-  \node[hblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of g] (h) {Verilog};
-  \node[oblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of h] (i) {Проекты\\и симуляция};
+  \node[hblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of f] (g) {Плата и\\маршрут};
+  \node[hblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of g] (h) {Verilog\\и Yosis};
+  \node[oblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of h] (i) {Проекты,\\интерфейсы};
   \node[oblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of i] (j) {SDRAM,\\задания};
   \foreach \u/\v in {a/b, b/c, c/d, d/e, e/f, f/g, g/h, h/i, i/j} \draw[arr] (\u) -- (\v);
   \begin{scope}[on background layer]

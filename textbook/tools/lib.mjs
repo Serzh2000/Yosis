@@ -1,8 +1,10 @@
 import { chromium } from '@playwright/test';
 export const URL = 'http://127.0.0.1:5173/';
-export async function open() {
+// Для снимков отдельных схем и диаграмм: узкое окно (крупный текст при печати) и высокая плотность.
+// Для обзора всего окна: open(1400, 860, 2).
+export async function open(width = 1100, height = 700, scale = 3) {
   const b = await chromium.launch({ channel: 'msedge' });
-  const ctx = await b.newContext({ viewport: { width: 1440, height: 860 }, deviceScaleFactor: 1.5, colorScheme: 'light', permissions: ['clipboard-read', 'clipboard-write'] });
+  const ctx = await b.newContext({ viewport: { width, height }, deviceScaleFactor: scale, colorScheme: 'light', permissions: ['clipboard-read', 'clipboard-write'] });
   const page = await ctx.newPage();
   await page.goto(URL);
   await page.waitForTimeout(2000);
@@ -35,3 +37,10 @@ export async function synth(page) {
 }
 export async function tab(page, re) { await page.getByRole('tab', { name: re }).click(); await page.waitForTimeout(800); }
 export const shot = (page, f, opts = {}) => page.screenshot({ path: `img/${f}.png`, ...opts });
+
+/** Снимок элемента по CSS-селектору: только схема или только диаграмма, без рамки приложения. */
+export async function shotEl(page, selector, name, extra = {}) {
+  const box = await page.locator(selector).first().boundingBox();
+  const clip = { x: box.x, y: box.y, width: box.width, height: box.height, ...extra };
+  await page.screenshot({ path: `img/${name}.png`, clip });
+}

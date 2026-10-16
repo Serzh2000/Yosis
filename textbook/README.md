@@ -59,7 +59,8 @@ code/       примеры: в каждой папке .v (схема) и .cst (
             common/tang_nano_20k.cst — сводная распиновка; Makefile
 img/        снимки экрана Yosis (получены скриптами tools/shoot.mjs и tools/shoot3.mjs)
 tools/      shoot.mjs, shoot3.mjs — снимки интерфейса Yosis через Playwright;
-            gen_tasks.py, tasks_ext.py — задачи и ответы к главам
+            gen_tasks.py, tasks_ext.py — задачи и ответы к главам;
+            audit_terms.py, audit_forward.py, audit_overlap.py, figure_sheets.py — проверки книги
 build.sh    сборка PDF в Linux и macOS
 build.bat   сборка PDF в Windows
 Digital_Design.pdf   собранная книга (обновляется после сборки)
@@ -116,7 +117,7 @@ cd textbook/code/01_gates && iverilog -o tb tb_gates.v gates.v && vvp tb
 
 ```bash
 cd textbook
-node tools/shoot.mjs          # обзор среды и главы 18, 21, 22; можно указать tour, bridge или gates
+node tools/shoot.mjs tour     # обзор окна Yosis (глава 18); затем bridge и gates (главы 21, 22)
 node tools/shoot3.mjs         # главы 2, 8, 13, 14, 23, 25, 27; можно указать имя снимка (vending, uart, cpu, ...)
 ```
 

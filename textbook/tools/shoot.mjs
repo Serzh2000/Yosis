@@ -1,18 +1,20 @@
 // Снимки интерфейса Yosis для учебника. Запуск: node tools/shoot.mjs [tour|bridge]
 // Нужен запущенный Yosis (npm run dev) на http://127.0.0.1:5173
 import { readFileSync } from 'node:fs';
-import { open, newProject, synth, tab, shot } from './lib.mjs';
+import { open, newProject, synth, tab, shot, shotEl } from './lib.mjs';
 
 const src = (f) => readFileSync(new URL(`../code/00_theory/${f}`, import.meta.url), 'utf8');
 const which = process.argv[2] ?? 'all';
-const { b, page } = await open();
+const tourMode = (process.argv[2] ?? 'all') === 'tour';
+const { b, page } = tourMode ? await open(1400, 860, 2) : await open();
 
 async function waveShot(name, extra = {}) {
   await page.waitForTimeout(800);
   const rows = page.locator('.waveform-track-svg');
   const n = await rows.count();
   const last = await rows.nth(n - 1).boundingBox();
-  await shot(page, name, { clip: { x: 184, y: 50, width: 1256, height: last.y + last.height + 8 - 50 }, ...extra });
+  const top = (await page.locator('.waveform-viewer').first().boundingBox());
+  await shot(page, name, { clip: { x: top.x, y: top.y, width: top.width, height: last.y + last.height + 8 - top.y }, ...extra });
 }
 async function hideInternals() {
   // скрыть служебные сигналы _0_, _1_ ...
@@ -39,13 +41,13 @@ async function simulate(exhaustive) {
 }
 async function rtl(name) {
   await tab(page, /^RTL/); await page.waitForTimeout(3500);
-  await shot(page, name, { clip: { x: 184, y: 50, width: 1256, height: 690 } });
+  await shotEl(page, '.schematic-root', name);
 }
 
-if (which === 'all' || which === 'tour') {
+if (which === 'tour') {
   await page.getByRole('button', { name: 'Создать проект', exact: true }).click();
   await page.waitForTimeout(800);
-  await shot(page, 'app-wizard', { clip: { x: 0, y: 0, width: 1440, height: 640 } });
+  await shot(page, 'app-wizard', { clip: { x: 0, y: 0, width: 1400, height: 640 } });
   await page.keyboard.press('Escape');
   await newProject(page, 'Бегущий огонь', 'top', `module top(
     input        clk,
@@ -73,7 +75,7 @@ if (which === 'all' || which === 'tour') {
     assign led_n = ~ring;
 endmodule
 `);
-  await shot(page, 'app-code', { clip: { x: 0, y: 0, width: 1440, height: 420 } });
+  await shot(page, 'app-code', { clip: { x: 0, y: 0, width: 1400, height: 420 } });
   await synth(page);
   await rtl('app-rtl');
   await tab(page, /^Gowin/); await page.waitForTimeout(3000); await shot(page, 'app-gowin');
@@ -97,7 +99,7 @@ if (which === 'all' || which === 'bridge') {
   await tab(page, /^Gowin/); await page.waitForTimeout(3000);
   const lut = page.locator('.schematic-node', { hasText: 'LUT' }).first();
   if (await lut.count()) { await lut.click(); await page.waitForTimeout(800); }
-  await shot(page, 'br-adder-lut', { clip: { x: 184, y: 50, width: 1256, height: 690 } });
+  await shot(page, 'br-adder-lut');
 
   // --- Дешифратор 2->4
   await newProject(page, 'Дешифратор 2 в 4', 'decoder2to4', src('decoder2to4.v'));

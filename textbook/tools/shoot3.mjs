@@ -1,16 +1,17 @@
 // Снимки для расширенных глав (коды, шины, автоматы, АЦП, UART, процессор, тактирование).
 // Запуск: node tools/shoot3.mjs [имя_снимка ...]
 import { readFileSync } from 'node:fs';
-import { open, newProject, synth, tab, shot } from './lib.mjs';
+import { open, newProject, synth, tab, shot, shotEl } from './lib.mjs';
 
 const only = process.argv.slice(2);
 const code = (d, f) => readFileSync(new URL(`../code/${d}/${f}`, import.meta.url), 'utf8');
-const { b, page } = await open();
+const tourMode = (process.argv[2] ?? 'all') === 'tour';
+const { b, page } = tourMode ? await open(1400, 860, 2) : await open();
 
 async function rtl(name, extra = {}) {
   await tab(page, /^RTL/);
   await page.waitForTimeout(3500);
-  await shot(page, name, { clip: { x: 184, y: 50, width: 1256, height: 690 }, ...extra });
+  await shotEl(page, '.schematic-root', name);
 }
 async function openScenario() {
   await tab(page, /^Диаграммы/);
@@ -60,8 +61,7 @@ async function onlySignals(names) {
     const box = item.locator('input[type=checkbox]');
     if (!(await box.isChecked())) await box.evaluate((el) => el.click());
   }
-  await page.keyboard.press('Escape');
-  await page.mouse.click(700, 700);
+  await page.getByRole('button', { name: 'Закрыть выбор сигналов' }).click({ force: true });
   await page.waitForTimeout(500);
 }
 async function waveShot(name, signals) {
@@ -74,7 +74,8 @@ async function waveShot(name, signals) {
   await page.waitForTimeout(500);
   const rows = page.locator('.waveform-track-svg');
   const last = await rows.nth((await rows.count()) - 1).boundingBox();
-  await shot(page, name, { clip: { x: 184, y: 50, width: 1256, height: last.y + last.height + 8 - 50 } });
+  const top = await page.locator('.waveform-viewer').first().boundingBox();
+  await shot(page, name, { clip: { x: top.x, y: top.y, width: top.width, height: last.y + last.height + 8 - top.y } });
 }
 async function project(name, top, dir, file) {
   await newProject(page, name, top, code(dir, file));
@@ -84,7 +85,6 @@ async function project(name, top, dir, file) {
 const jobs = {
   async hamming() {
     await project('Код Хэмминга', 'hamming74', '00_theory', 'hamming74.v');
-    await rtl('n-hamming-rtl');
   },
   async iopad() {
     await project('Ножка с тремя состояниями', 'io_pad', '00_theory', 'io_pad.v');
@@ -92,7 +92,6 @@ const jobs = {
   },
   async vending() {
     await project('Автомат по продаже', 'vending', '00_theory', 'vending.v');
-    await rtl('n-vend-rtl');
     await openScenario();
     await events([
       [3, { c5: 1 }], [4, { c5: 0 }], [5, { c5: 1 }], [6, { c5: 0 }], [7, { c5: 1 }], [8, { c5: 0 }],
@@ -159,6 +158,7 @@ for (const [name, fn] of Object.entries(jobs)) {
     await fn();
     console.log('ok', name);
   } catch (e) {
+    await page.screenshot({ path: 'img/_fail.png' });
     console.log('FAIL', name, String(e.message).split('\n')[0]);
   }
 }

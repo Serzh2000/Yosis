@@ -98,5 +98,5 @@ NAMES_NEW = {
 }
 
 # Порядок разделов в приложении «Ответы»
-ORDER = ['signals', 'codes', 'gates', 'comb', 'minimize', 'coders', 'mux', 'electrical', 'arith',
-         'ff', 'regs', 'sync', 'fsmdesign', 'analog', 'uart', 'clocks', 'cpu']
+ORDER = ['signals', 'gates', 'comb', 'minimize', 'coders', 'mux', 'electrical', 'arith', 'codes',
+         'ff', 'regs', 'sync', 'fsmdesign', 'analog', 'clocks', 'uart', 'cpu']
