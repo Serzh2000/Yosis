@@ -67,3 +67,18 @@ export function getBusTapAnnotation(
     description: `${label} · ${edge.width} бит. Подпись указывает разряды этой ветви в общей шине.${from?.aliases || to?.aliases ? ' Повторяющиеся позиции содержат один и тот же сигнал.' : ' Остальные разряды шины подключаются отдельными ветвями.'}`,
   };
 }
+
+/**
+ * Yosys names the cells it creates itself like `$ternary$top.v:7$157`. A beginner cannot read
+ * that, so show «top.v · строка 7»; internal cells without a source position get no label.
+ * Names written by the user (instances, named cells) stay as they are.
+ */
+export function friendlyCellName(name: string): string {
+  if (!name.startsWith('$')) return name;
+  const located = /^\$[^$]*\$(.+?):(\d+)(?:\.\d+(?:-\d+(?:\.\d+)?)?)?\$\d+$/.exec(name);
+  if (located) {
+    const file = located[1].split(/[\/]/).pop();
+    return `${file} · строка ${located[2]}`;
+  }
+  return '';
+}

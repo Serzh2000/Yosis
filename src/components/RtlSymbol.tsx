@@ -1,3 +1,4 @@
+import { friendlyCellName } from '../lib/schematic-labels';
 import type { YosysCell } from '../../shared/types';
 import type { GraphNode, GraphPort } from '../lib/netlist';
 
@@ -463,13 +464,13 @@ export function RtlSymbol({ node, spec }: { node: GraphNode; spec: RtlSymbolSpec
             y="166"
             textAnchor="middle"
           >
-            {shortName(node.name)}
+            {shortName(friendlyCellName(node.name))}
           </text>
         </>
       ) : kind === 'mux' ? (
         <>
           <text className="schematic-node-name rtl-instance-name" x="90" y="15" textAnchor="middle">
-            {shortName(node.name)}
+            {shortName(friendlyCellName(node.name))}
           </text>
           <text className="rtl-symbol-caption rtl-mux-detail" x="99" y="134">
             {spec.detail}
@@ -478,7 +479,7 @@ export function RtlSymbol({ node, spec }: { node: GraphNode; spec: RtlSymbolSpec
       ) : (
         <>
           <text className="schematic-node-name rtl-instance-name" x="90" y="15" textAnchor="middle">
-            {shortName(node.name)}
+            {shortName(friendlyCellName(node.name))}
           </text>
           <text className="rtl-symbol-caption" x="90" y="121" textAnchor="middle">
             {spec.detail}

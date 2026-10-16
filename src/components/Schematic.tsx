@@ -4,7 +4,7 @@ import ELK, { type ElkNode, type ElkPort } from 'elkjs/lib/elk-api.js';
 import elkWorkerUrl from 'elkjs/lib/elk-worker.min.js?url';
 import type { YosysCell, YosysNetlist } from '../../shared/types';
 import { buildGraph, resourceCategory, type GraphNode, type SourceLocation } from '../lib/netlist';
-import { getBusTapAnnotation } from '../lib/schematic-labels';
+import { friendlyCellName, getBusTapAnnotation } from '../lib/schematic-labels';
 import { getRtlSymbol, RtlSymbol } from './RtlSymbol';
 import './schematic.css';
 
@@ -30,6 +30,18 @@ const clampScale = (scale: number) => Math.max(0.04, Math.min(3, scale));
 
 function displayName(name: string, max = 23): string {
   return name.length > max ? `${name.slice(0, max - 1)}…` : name;
+}
+
+/** The label sits on the longest horizontal run of the wire, so it never lands on a short stub. */
+function labelAnchor(points: { x: number; y: number }[]): { x: number; y: number } {
+  let best = { x: points[0].x, y: points[0].y, length: -1 };
+  for (let i = 1; i < points.length; i += 1) {
+    const length = Math.abs(points[i].x - points[i - 1].x);
+    if (points[i].y === points[i - 1].y && length > best.length) {
+      best = { x: (points[i].x + points[i - 1].x) / 2, y: points[i].y, length };
+    }
+  }
+  return best;
 }
 
 function matchesSource(
@@ -423,8 +435,8 @@ export function Schematic({
                         />
                         {(tap || data.width > 1) && (
                           <text
-                            x={(points[0].x + (points[1]?.x ?? points[0].x)) / 2}
-                            y={points[0].y - 6}
+                            x={labelAnchor(points).x}
+                            y={labelAnchor(points).y - 6}
                             textAnchor="middle"
                             className={`schematic-bus-width ${tap ? 'schematic-bus-tap' : ''}`}
                           >
@@ -511,7 +523,7 @@ export function Schematic({
                             {displayName(node.type, 21)}
                           </text>
                           <text x={12} y={height - 12} className="schematic-node-name">
-                            {displayName(node.name, 26)}
+                            {displayName(friendlyCellName(node.name), 26)}
                           </text>
                           {node.moduleName && (
                             <text

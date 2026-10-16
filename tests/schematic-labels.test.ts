@@ -1,8 +1,12 @@
-import test from 'node:test';
+﻿import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { Bit, YosysNetlist } from '../shared/types';
 import { buildGraph, type GraphEdge, type GraphPort } from '../src/lib/netlist';
-import { getBusTapAnnotation, graphPortBitIndex } from '../src/lib/schematic-labels';
+import {
+  friendlyCellName,
+  getBusTapAnnotation,
+  graphPortBitIndex,
+} from '../src/lib/schematic-labels';
 
 function port(name: string, bits: Bit[], offset = 0, upto = 0): GraphPort {
   return { id: name, name, direction: 'input', bits, offset, upto };
@@ -162,4 +166,12 @@ test('buildGraph carries index metadata for top-level and hierarchical module po
   assert.equal(graph.nodes.find((value) => value.id === 'port:data')?.ports[0].upto, 1);
   assert.equal(graph.nodes.find((value) => value.id === 'cell:unit')?.ports[0].offset, 6);
   assert.equal(graph.nodes.find((value) => value.id === 'cell:unit')?.ports[0].upto, 1);
+});
+
+test('friendlyCellName turns Yosys internal names into a source line', () => {
+  assert.equal(friendlyCellName('$ternary$top.v:7$157'), 'top.v · строка 7');
+  assert.equal(friendlyCellName('$and$src/top.v:9.5-9.12$158'), 'top.v · строка 9');
+  assert.equal(friendlyCellName('$procdff$172'), '');
+  assert.equal(friendlyCellName('$auto$ff.cc:337:slice$165'), '');
+  assert.equal(friendlyCellName('u_counter'), 'u_counter');
 });

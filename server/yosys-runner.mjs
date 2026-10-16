@@ -258,8 +258,27 @@ async function handle(/** @type {YosysRequest} */ request) {
     send({ type: 'stage', stage: 'Синтез RTL' });
     const rtlFiles = await runYosys(['-T', '-s', 'rtl.ys'], files, options);
     const rtl = textFile(rtlFiles, 'rtl.json');
+    // The schematic shows bitwise operators on a vector as one gate per bit, like a gate-level
+    // schematic. Wide vectors stay word-level so the diagram does not become a forest. The
+    // simulation and technology mapping below keep using the untouched rtl.json.
+    const fineFiles = await runYosys(
+      [
+        '-T',
+        '-p',
+        [
+          'read_json rtl.json',
+          ...['$and', '$or', '$xor', '$xnor', '$not'].map(
+            (type) => `simplemap t:${type} r:Y_WIDTH<=8 %i`,
+          ),
+          'opt_clean',
+          'write_json rtl-fine.json',
+        ].join('; '),
+      ],
+      { 'rtl.json': rtlFiles['rtl.json'] },
+      options,
+    );
     flush();
-    send({ type: 'netlist', name: 'rtl', netlist: rtl });
+    send({ type: 'netlist', name: 'rtl', netlist: textFile(fineFiles, 'rtl-fine.json') });
     if (request.prepareSimulation) {
       const exported = await runYosys(
         ['-T', '-p', 'read_json rtl.json; write_verilog -noattr design.v'],

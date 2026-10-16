@@ -9,6 +9,9 @@ import { HelpTrigger } from '../HelpCard';
 import { ModuleHierarchyMenu } from '../ModuleHierarchyMenu';
 import { PanelBoundary } from '../PanelBoundary';
 import { LutInspector, Schematic } from './lazy-panels';
+// Стили инспектора нужны и без выбранного элемента (подсказка и счётчики ресурсов),
+// а LutInspector подгружается лениво только после выбора.
+import '../inspector.css';
 
 /** Разобранный нетлист вкладки: то, что считает `useNetlistView`. */
 export interface NetlistModel {
@@ -69,6 +72,8 @@ export function LogicWorkspace({
         ['I/O', resources.IO],
       ] as const)
     : null;
+  // До отображения на FPGA плитки LUT/FF/BRAM всегда нули: показывать их незачем.
+  const preMapping = view === 'rtl' && !!resourceRows && resourceRows.every(([, v]) => v === 0);
   return (
     <div
       id={`panel-${tab}`}
@@ -226,54 +231,68 @@ export function LogicWorkspace({
           <div className="resource-section resource-groups">
             {resourceRows ? (
               <>
-                <section className="resource-group" aria-label="Логика">
-                  <h4 className="resource-group-title">
-                    Логика
-                    <small>{resourceRows.slice(0, 3).reduce((sum, [, v]) => sum + v, 0)}</small>
-                  </h4>
-                  <div className="resource-tiles">
-                    {resourceRows.slice(0, 3).map(([label, value]) => (
-                      <HelpTrigger
-                        topic={{ kind: 'resource', resource: label === 'I/O' ? 'IO' : label, view }}
-                        className={`resource-tile ${value ? 'has-resource' : ''}`}
-                        key={label}
-                      >
-                        <span>{label}</span>
-                        <strong>{value.toLocaleString('ru-RU')}</strong>
-                      </HelpTrigger>
-                    ))}
-                  </div>
-                </section>
-                <section className="resource-group" aria-label="Память и ввод-вывод">
-                  <h4 className="resource-group-title">
-                    Память и ввод-вывод
-                    <small>{resourceRows.slice(3).reduce((sum, [, v]) => sum + v, 0)}</small>
-                  </h4>
-                  <div className="resource-tiles">
-                    {resourceRows.slice(3).map(([label, value]) => (
-                      <HelpTrigger
-                        topic={{ kind: 'resource', resource: label === 'I/O' ? 'IO' : label, view }}
-                        className={`resource-tile ${value ? 'has-resource' : ''}`}
-                        key={label}
-                      >
-                        <span>{label}</span>
-                        <strong>{value.toLocaleString('ru-RU')}</strong>
-                      </HelpTrigger>
-                    ))}
-                  </div>
-                </section>
+                {!preMapping && (
+                  <>
+                    <section className="resource-group" aria-label="Логика">
+                      <h4 className="resource-group-title">
+                        Логика
+                        <small>{resourceRows.slice(0, 3).reduce((sum, [, v]) => sum + v, 0)}</small>
+                      </h4>
+                      <div className="resource-tiles">
+                        {resourceRows.slice(0, 3).map(([label, value]) => (
+                          <HelpTrigger
+                            topic={{
+                              kind: 'resource',
+                              resource: label === 'I/O' ? 'IO' : label,
+                              view,
+                            }}
+                            className={`resource-tile ${value ? 'has-resource' : ''}`}
+                            key={label}
+                          >
+                            <span>{label}</span>
+                            <strong>{value.toLocaleString('ru-RU')}</strong>
+                          </HelpTrigger>
+                        ))}
+                      </div>
+                    </section>
+                    <section className="resource-group" aria-label="Память и ввод-вывод">
+                      <h4 className="resource-group-title">
+                        Память и ввод-вывод
+                        <small>{resourceRows.slice(3).reduce((sum, [, v]) => sum + v, 0)}</small>
+                      </h4>
+                      <div className="resource-tiles">
+                        {resourceRows.slice(3).map(([label, value]) => (
+                          <HelpTrigger
+                            topic={{
+                              kind: 'resource',
+                              resource: label === 'I/O' ? 'IO' : label,
+                              view,
+                            }}
+                            className={`resource-tile ${value ? 'has-resource' : ''}`}
+                            key={label}
+                          >
+                            <span>{label}</span>
+                            <strong>{value.toLocaleString('ru-RU')}</strong>
+                          </HelpTrigger>
+                        ))}
+                      </div>
+                    </section>
+                  </>
+                )}
                 {resources!.other > 0 && (
                   <HelpTrigger
                     topic={{ kind: 'resource', resource: 'other', view }}
                     className="other-resources"
                   >
-                    <span>Другие элементы</span>
+                    <span>{preMapping ? 'Элементов в схеме' : 'Другие элементы'}</span>
                     <strong>{resources!.other}</strong>
                   </HelpTrigger>
                 )}
                 <p className="resource-note">
                   {view === 'rtl'
-                    ? 'RTL-операции до технологического синтеза.'
+                    ? preMapping
+                      ? 'Это элементы схемы до отображения на FPGA. LUT и триггеры появятся на вкладке Gowin.'
+                      : 'RTL-операции до технологического синтеза.'
                     : 'После synth_gowin; до упаковки и размещения.'}
                 </p>
               </>
