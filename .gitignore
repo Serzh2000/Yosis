@@ -37,3 +37,6 @@ hardware/**/timing.json
 # Local archives are never part of the repository.
 *.zip
 *.7z
+
+# Session journals of the Impeccable live mode; only local tooling state.
+.impeccable/live/

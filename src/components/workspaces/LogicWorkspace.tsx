@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { Braces, Cpu, GitBranch, LoaderCircle, Play, RotateCcw, Search } from 'lucide-react';
+import { Cpu, GitBranch, LoaderCircle, Play, RotateCcw, Search } from 'lucide-react';
 import type { BuildResult, Project, YosysCell, YosysNetlist } from '../../../shared/types';
 import type { HierarchyNode, ResourceCounts } from '../../lib/netlist';
 import type { RtlSignalLink } from '../../lib/signal-link';
@@ -177,32 +177,91 @@ export function LogicWorkspace({
               </Suspense>
             </PanelBoundary>
           ) : (
-            <div className="inspector-intro">
-              <Braces size={27} />
-              <h3>Выберите элемент</h3>
-              <p>Нажмите на схеме, чтобы изучить подключения, параметры и таблицу LUT.</p>
+            <div className="inspector-guide">
+              <svg viewBox="0 0 220 72" aria-hidden="true">
+                <path
+                  d="M8 22h30M8 50h30M98 36h38"
+                  stroke="var(--trace)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                <path
+                  d="M38 12h26a24 24 0 0 1 0 48H38z"
+                  fill="var(--panel)"
+                  stroke="var(--text-soft)"
+                  strokeWidth="2"
+                />
+                <rect
+                  x="136"
+                  y="22"
+                  width="56"
+                  height="28"
+                  rx="4"
+                  fill="var(--panel)"
+                  stroke="var(--accent)"
+                  strokeWidth="2"
+                />
+                <text
+                  x="164"
+                  y="40"
+                  textAnchor="middle"
+                  fontSize="11"
+                  fontFamily="var(--font-mono)"
+                  fill="var(--accent)"
+                >
+                  LUT4
+                </text>
+                <path
+                  d="M176 48l6 16 3-6 6 4-3-6 7-1z"
+                  fill="var(--text)"
+                  stroke="var(--panel)"
+                  strokeWidth="1.5"
+                />
+              </svg>
+              <h3>Нажмите на элемент схемы</h3>
+              <p>Справа появятся его входы и выходы, параметры и таблица истинности LUT.</p>
             </div>
           )}
-          <div className="resource-section">
-            <div className="section-label">Ресурсы модуля</div>
+          <div className="resource-section resource-groups">
             {resourceRows ? (
               <>
-                <div className="resource-grid">
-                  {resourceRows.map(([label, value]) => (
-                    <HelpTrigger
-                      topic={{
-                        kind: 'resource',
-                        resource: label === 'I/O' ? 'IO' : label,
-                        view,
-                      }}
-                      className={value ? 'has-resource' : ''}
-                      key={label}
-                    >
-                      <strong>{value.toLocaleString('ru-RU')}</strong>
-                      <span>{label}</span>
-                    </HelpTrigger>
-                  ))}
-                </div>
+                <section className="resource-group" aria-label="Логика">
+                  <h4 className="resource-group-title">
+                    Логика
+                    <small>{resourceRows.slice(0, 3).reduce((sum, [, v]) => sum + v, 0)}</small>
+                  </h4>
+                  <div className="resource-tiles">
+                    {resourceRows.slice(0, 3).map(([label, value]) => (
+                      <HelpTrigger
+                        topic={{ kind: 'resource', resource: label === 'I/O' ? 'IO' : label, view }}
+                        className={`resource-tile ${value ? 'has-resource' : ''}`}
+                        key={label}
+                      >
+                        <span>{label}</span>
+                        <strong>{value.toLocaleString('ru-RU')}</strong>
+                      </HelpTrigger>
+                    ))}
+                  </div>
+                </section>
+                <section className="resource-group" aria-label="Память и ввод-вывод">
+                  <h4 className="resource-group-title">
+                    Память и ввод-вывод
+                    <small>{resourceRows.slice(3).reduce((sum, [, v]) => sum + v, 0)}</small>
+                  </h4>
+                  <div className="resource-tiles">
+                    {resourceRows.slice(3).map(([label, value]) => (
+                      <HelpTrigger
+                        topic={{ kind: 'resource', resource: label === 'I/O' ? 'IO' : label, view }}
+                        className={`resource-tile ${value ? 'has-resource' : ''}`}
+                        key={label}
+                      >
+                        <span>{label}</span>
+                        <strong>{value.toLocaleString('ru-RU')}</strong>
+                      </HelpTrigger>
+                    ))}
+                  </div>
+                </section>
                 {resources!.other > 0 && (
                   <HelpTrigger
                     topic={{ kind: 'resource', resource: 'other', view }}
@@ -219,7 +278,7 @@ export function LogicWorkspace({
                 </p>
               </>
             ) : (
-              <p className="resource-note">Подсчёт появится после синтеза.</p>
+              <p className="resource-note">Подсчёт ресурсов появится после синтеза.</p>
             )}
           </div>
         </div>

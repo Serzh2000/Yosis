@@ -308,7 +308,7 @@ export function PinPlanner({
                   ? 'Порты прочитаны из текста Verilog (предварительно). Нажмите «Прочитать порты», чтобы проверить их по настоящему синтезу.'
                   : 'Портов пока нет: проект ещё не проанализирован. Нажмите «Прочитать порты», и они появятся здесь, а после синтеза список обновляется сам.'}
               </span>
-              <button className="button primary" disabled={busy} onClick={onSynthesize}>
+              <button className="button subtle" disabled={busy} onClick={onSynthesize}>
                 <Play size={13} />
                 {busy ? 'Читаем порты…' : 'Прочитать порты'}
               </button>

@@ -256,3 +256,118 @@
     padding-top: 0;
   }
 }
+
+/* ---- Inspector at rest: a guide card, then the module's resources in two groups,
+   logic and memory/IO, so the pupil reads what the design is made of. ---- */
+.inspector-pane .inspector-guide {
+  margin: 12px;
+  padding: 12px 12px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: var(--canvas);
+  color: var(--text-soft);
+}
+.inspector-pane .inspector-guide svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: 8px;
+}
+.inspector-pane .inspector-guide h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.inspector-pane .inspector-guide p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.inspector-pane .resource-groups {
+  padding: 0 0 14px;
+}
+.inspector-pane .resource-group {
+  padding: 10px 12px 2px;
+}
+.inspector-pane .resource-group + .resource-group {
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.inspector-pane .resource-group-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+.inspector-pane .resource-group-title small {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.inspector-pane .resource-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.inspector-pane .resource-tile {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 4px;
+  padding: 8px 8px 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--canvas);
+  color: var(--muted);
+  text-align: left;
+  transition:
+    border-color 0.14s ease,
+    transform 0.12s ease;
+}
+.inspector-pane .resource-tile:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.inspector-pane .resource-tile:active {
+  transform: none;
+}
+.inspector-pane .resource-tile > span {
+  grid-row: 1;
+  font-size: 12px;
+}
+.inspector-pane .resource-tile > strong {
+  grid-row: 2;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-soft);
+}
+.inspector-pane .resource-tile .help-trigger-icon {
+  grid-row: 1;
+  justify-self: end;
+  width: 11px;
+  height: 11px;
+}
+.inspector-pane .resource-tile.has-resource {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.inspector-pane .resource-tile.has-resource > strong {
+  color: var(--accent);
+}
+.inspector-pane .resource-tile.has-resource > span {
+  color: var(--text);
+}
+.inspector-pane .resource-groups .other-resources {
+  width: calc(100% - 24px);
+  margin: 8px 12px 0;
+}
+.inspector-pane .resource-groups .resource-note {
+  margin: 10px 12px 0;
+  line-height: 1.6;
+}
