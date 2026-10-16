@@ -107,8 +107,8 @@
 \captionsetup{font=small, labelfont={bf,color=FpgaBlue}}
 \usepackage{subcaption}
 
-% --- Листинги кода (minted: нужен Pygments и ключ -shell-escape) ---
-\usepackage[outputdir=../build]{minted}
+% --- Листинги кода (minted v3: нужен Pygments и ключ -shell-escape; папку сборки задаёт TEXMF_OUTPUT_DIRECTORY) ---
+\usepackage{minted}
 \usemintedstyle{friendly}
 \setminted{fontsize=\small, breaklines=true, tabsize=4, baselinestretch=1.0}
 

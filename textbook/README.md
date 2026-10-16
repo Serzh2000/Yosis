@@ -3,7 +3,11 @@
 Учебное пособие для начинающих: от понятия сигнала до собственных схем в ПЛИС.
 Предварительных знаний по электронике не требуется.
 
-📄 **[Открыть PDF](./Tang_Nano_20K.pdf)**
+Книга входит в проект [Yosis · FPGA Studio](../README.md). Примеры из неё собираются теми же открытыми
+инструментами, что и в Yosis: Yosys, nextpnr и Project Apicula, а исходники (`.v` и `.cst`) можно брать
+как стартовые проекты для вкладок «Код» и «Выводы».
+
+**[Открыть PDF](./Tang_Nano_20K.pdf)**
 
 ## Содержание
 
@@ -35,25 +39,37 @@
 
 ## Структура
 
+Все пути считаются от папки `textbook/` в корне репозитория.
+
 ```
 tex/        исходники XeLaTeX (main.tex, chapters/, styles/)
-code/       примеры: в каждой папке .v (схема) и .cst (выводы с комментариями); common/tang_nano_20k.cst — сводная распиновка; Makefile
-build.sh    сборка PDF в Linux/macOS
+code/       примеры: в каждой папке .v (схема) и .cst (выводы с комментариями);
+            common/tang_nano_20k.cst — сводная распиновка; Makefile
+build.sh    сборка PDF в Linux и macOS
 build.bat   сборка PDF в Windows
+Tang_Nano_20K.pdf   собранная книга (обновляется после сборки)
 ```
 
 ## Сборка PDF
 
-Понадобятся XeLaTeX (TeX Live или MiKTeX) и Python-пакет Pygments (для `minted`):
+Понадобятся XeLaTeX (TeX Live 2024 или новее, либо MiKTeX) и Python с пакетом Pygments: он нужен
+пакету `minted` для подсветки листингов, поэтому сборка идёт с ключом `-shell-escape`.
 
 ```bash
-./build.sh          # результат: Tang_Nano_20K.pdf
+cd textbook
+./build.sh          # Linux и macOS
+build.bat           # Windows
 ```
+
+Результат: `Tang_Nano_20K.pdf` рядом со скриптом. Промежуточные файлы остаются в `build/`, в репозиторий
+они не попадают.
 
 ## Сборка примеров открытыми инструментами
 
+Нужны Yosys, nextpnr-himbaechel, Project Apicula (`gowin_pack`) и `openFPGALoader`.
+
 ```bash
-cd code
+cd textbook/code
 make PROJECT=02_blink TOP=blink load     # синтез, трассировка и загрузка в SRAM
 make PROJECT=02_blink TOP=blink flash    # запись во Flash
 ```
@@ -61,5 +77,5 @@ make PROJECT=02_blink TOP=blink flash    # запись во Flash
 Симуляция:
 
 ```bash
-cd code/01_gates && iverilog -o tb tb_gates.v gates.v && vvp tb
+cd textbook/code/01_gates && iverilog -o tb tb_gates.v gates.v && vvp tb
 ```
