@@ -1,0 +1,408 @@
+\chapter{Триггеры}
+\label{ch:ff}
+
+\section{Зачем схеме память}
+
+Представьте кнопку «включить/выключить» на пульте: нажали --- свет
+загорелся, отпустили --- продолжает гореть, нажали ещё раз --- погас. В момент,
+когда кнопка отпущена, входы схемы одинаковы, а выход может быть и 0, и 1 ---
+в зависимости от того, \emph{что было раньше}. Комбинационная схема так не
+умеет. Нужна \term{память}.
+
+Простейший элемент памяти хранит один бит и называется \term{триггером}
+(от англ. \emph{trigger} --- «спусковой крючок»; в английской литературе ---
+latch и flip-flop).
+
+\section{Бистабильная ячейка}
+
+Соединим два инвертора в кольцо. Если на выходе первого 1, то на выходе
+второго 0, и этот 0 поддерживает 1 на выходе первого. Состояние
+\emph{само себя поддерживает}. Возможно и противоположное устойчивое
+состояние. У схемы два устойчивых состояния --- она \term{бистабильна} и
+может хранить один бит.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[gNOT, minimum width=12mm, minimum height=8mm] (n1) at (0,0.8) {};
+  \node[gNOT, minimum width=12mm, minimum height=8mm, rotate=180] (n2) at (0,-0.8) {};
+  \draw[wire] (n1.output) -- ++(0.6,0) |- (n2.input);
+  \draw[wire] (n2.output) -- ++(-0.6,0) |- (n1.input);
+  \node[font=\sffamily\small, text=FpgaRed] at (1.4,1.15) {1};
+  \node[font=\sffamily\small, text=FpgaBlue] at (-1.4,-0.45) {0};
+  \fill ($(n1.output)+(0.6,-0.8)$) circle (1.3pt);
+  \draw[wire] ($(n1.output)+(0.6,-0.8)$) -- ++(0.6,0) node[right] {$Q$};
+  \node[font=\sffamily\small, align=left, anchor=west] at (3.4,0.3) {Состояние поддерживает само себя,};
+  \node[font=\sffamily\small, align=left, anchor=west] at (3.4,-0.3) {но изменить его пока нечем.};
+\end{tikzpicture}
+\caption{Два инвертора в кольце --- бистабильная ячейка}
+\end{figure}
+
+\section{RS-триггер}
+
+Чтобы записывать в ячейку новое значение, заменим инверторы на элементы
+ИЛИ-НЕ и используем их вторые входы. Получится \term{RS-триггер}
+(асинхронная RS-защёлка):
+\begin{itemize}
+  \item вход $S$ (Set --- «установить») записывает 1;
+  \item вход $R$ (Reset --- «сбросить») записывает 0;
+  \item если $S = R = 0$, триггер \textbf{хранит} прежнее значение.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.48\textwidth}
+\centering
+\begin{tikzpicture}
+  \node[gNOR, minimum height=10mm] (g1) at (0,1) {};
+  \node[gNOR, minimum height=10mm] (g2) at (0,-1) {};
+  \draw[wire] (g1.input 1) -- ++(-1.2,0) node[left] {$R$};
+  \draw[wire] (g2.input 2) -- ++(-1.2,0) node[left] {$S$};
+  \draw[wire] (g1.output) -- ++(1.2,0) node[right] {$Q$};
+  \draw[wire] (g2.output) -- ++(1.2,0) node[right] {$\overline{Q}$};
+  \draw[wire] ($(g1.output)+(0.4,0)$) -- ++(0,-0.6) -- ($(g2.input 1)+(-0.4,0.8)$) -- ($(g2.input 1)+(-0.4,0)$) -- (g2.input 1);
+  \draw[wire] ($(g2.output)+(0.4,0)$) -- ++(0,0.6) -- ($(g1.input 2)+(-0.4,-0.8)$) -- ($(g1.input 2)+(-0.4,0)$) -- (g1.input 2);
+  \fill ($(g1.output)+(0.4,0)$) circle (1.3pt); \fill ($(g2.output)+(0.4,0)$) circle (1.3pt);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.48\textwidth}
+\centering
+\begin{tabular}{cc|c|l}
+\toprule
+$S$ & $R$ & $Q$ & \textbf{Режим} \\
+\midrule
+0 & 0 & $Q$ & хранение \\
+1 & 0 & 1 & установка \\
+0 & 1 & 0 & сброс \\
+1 & 1 & \textcolor{FpgaRed}{?} & \textcolor{FpgaRed}{запрещено} \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\caption{RS-триггер на двух элементах ИЛИ-НЕ и его таблица переходов}
+\label{fig:rs}
+\end{figure}
+
+Разберём, почему он работает. Помним: выход ИЛИ-НЕ равен 0, если хотя бы один
+вход равен 1.
+\begin{itemize}
+  \item $S=1$: нижний элемент выдаёт $\overline{Q}=0$. У верхнего оба входа
+        равны нулю ($R=0$, $\overline{Q}=0$), поэтому $Q=1$.
+  \item Теперь $S$ вернули в 0. На нижнем элементе $Q=1$, поэтому
+        $\overline{Q}$ по-прежнему 0, а $Q$ по-прежнему 1: триггер
+        \emph{запомнил} единицу.
+  \item $S=R=1$ --- оба выхода становятся нулями (хотя должны быть
+        противоположны), а при одновременном снятии сигналов неизвестно, в
+        какое состояние триггер «упадёт». Поэтому это сочетание запрещено.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.1, xscale=3.0, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  $S$ & 1L 1H 10L \\
+  $R$ & 5L 1H 6L \\
+  $Q$ & 1L 4H 7L \\
+\extracode
+  \node[lbl, text=FpgaOrange] at (1.5,1.1) {уст.};
+  \node[lbl, text=FpgaOrange] at (3.5,1.1) {хранение 1};
+  \node[lbl, text=FpgaOrange] at (5.5,1.1) {сброс};
+  \node[lbl, text=FpgaOrange] at (8.0,1.1) {хранение 0};
+\end{tikztimingtable}
+\caption{Работа RS-триггера: короткий импульс на $S$ или $R$ переключает
+триггер, а без импульсов он хранит значение}
+\end{figure}
+
+\begin{infobox}[RS-триггер на элементах И-НЕ]
+Точно так же триггер собирают из двух элементов И-НЕ. Но тогда входы
+срабатывают от \emph{нуля}: $\overline{S}=0$ устанавливает, $\overline{R}=0$
+сбрасывает, а запрещено сочетание $\overline{S}=\overline{R}=0$. Такой
+триггер --- классическое средство подавления дребезга механического
+переключателя: при первом же касании контакта он переключается и дальнейших
+«прыжков» не замечает.
+\end{infobox}
+
+\section{D-защёлка}
+
+У RS-триггера два неудобства: есть запрещённое сочетание входов, и он
+реагирует на входы в любой момент. Добавим перед ним два элемента И, вход
+данных $D$ и вход разрешения $C$ (clock, «синхронизация»). Получится
+\term{D-защёлка} (D latch):
+\begin{itemize}
+  \item при $C=1$ защёлка \textbf{прозрачна}: выход повторяет вход, $Q = D$;
+  \item при $C=0$ защёлка \textbf{хранит} значение, которое было на $D$ в момент
+        перехода $C$ из 1 в 0.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[gAND, minimum height=9mm] (a1) at (1.6,1) {};
+  \node[gAND, minimum height=9mm] (a2) at (1.6,-1) {};
+  \node[draw=FpgaGreen, fill=green!8, thick, minimum width=18mm, minimum height=30mm, font=\sffamily\small, align=center] (rs) at (4.4,0) {RS-\\триггер};
+  \node[font=\sffamily\scriptsize] at ($(rs.west)+(0.25,1)$) {R};
+  \node[font=\sffamily\scriptsize] at ($(rs.west)+(0.25,-1)$) {S};
+  \node[gNOT, minimum width=7mm, minimum height=5mm] (n) at (-0.2,1.12) {};
+  \draw[wire] (-1.6,-0.88) node[left] {$D$} -- (a2.input 1);
+  \draw[wire] (-0.9,-0.88) |- (n.input); \fill (-0.9,-0.88) circle (1.3pt);
+  \draw[wire] (n.output) -- (a1.input 1);
+  \draw[wire, FpgaBlue] (-1.6,0) node[left, text=FpgaDark] {$C$} -- (0.4,0);
+  \draw[wire, FpgaBlue] (0.4,0) |- (a1.input 2); \draw[wire, FpgaBlue] (0.4,0) |- (a2.input 2);
+  \fill[FpgaBlue] (0.4,0) circle (1.3pt);
+  \draw[wire] (a1.output) -- ($(rs.west)+(0,1)$);
+  \draw[wire] (a2.output) -- ($(rs.west)+(0,-1)$);
+  \draw[wire] ($(rs.east)+(0,1)$) -- ++(0.8,0) node[right] {$Q$};
+  \draw[wire] ($(rs.east)+(0,-1)$) -- ++(0.8,0) node[right] {$\overline{Q}$};
+\end{tikzpicture}
+\caption{D-защёлка: запрещённое сочетание $S=R=1$ теперь невозможно, так как
+на $S$ и $R$ подаются $D$ и $\overline{D}$}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.08, xscale=1.6, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  $C$ & 2L 4H 4L 4H 2L \\
+  $D$ & 1L 2H 1L 4H 3L 1H 4L \\
+  $Q$ & 2L 1H 1L 6H 1L 1H 4L \\
+\extracode
+  \begin{pgfonlayer}{background}
+    \fill[green!10] (2,0.6) rectangle (6,-5.2);
+    \fill[green!10] (10,0.6) rectangle (14,-5.2);
+  \end{pgfonlayer}
+  \node[lbl, text=FpgaGreen] at (4,1.0) {прозрачна};
+  \node[lbl] at (8,1.0) {хранит};
+  \node[lbl, text=FpgaGreen] at (12,1.0) {прозрачна};
+\end{tikztimingtable}
+\caption{D-защёлка при $C=1$ передаёт все изменения $D$ на выход, при $C=0$
+«замораживает» выход}
+\label{fig:dlatch_t}
+\end{figure}
+
+\section{D-триггер}
+
+Прозрачность защёлки --- это и достоинство, и недостаток. Если выход защёлки
+через комбинационную логику идёт обратно на её же вход (как в счётчике), то
+пока $C=1$, сигнал будет бегать по кругу, и результат станет непредсказуемым.
+Нужен элемент, который запоминает значение в \emph{один момент времени} ---
+по \emph{фронту} тактового сигнала. Это \term{D-триггер} (D flip-flop),
+главный элемент памяти всей современной цифровой техники и ПЛИС.
+
+Его можно собрать из двух D-защёлок, включённых последовательно, с
+противоположными сигналами разрешения. Такая схема называется
+\term{«ведущий -- ведомый»} (master--slave):
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[lt/.style={draw=FpgaGreen, fill=green!8, thick, minimum width=24mm, minimum height=16mm, font=\sffamily\small, align=center}]
+  \node[lt] (m) at (0,0) {\quad ведущая\\\quad защёлка};
+  \node[lt] (s) at (4.2,0) {\quad ведомая\\\quad защёлка};
+  \node[font=\sffamily\scriptsize] at ($(m.west)+(0.2,0.45)$) {D};
+  \node[font=\sffamily\scriptsize] at ($(m.west)+(0.2,-0.45)$) {C};
+  \node[font=\sffamily\scriptsize] at ($(s.west)+(0.2,0.45)$) {D};
+  \node[font=\sffamily\scriptsize] at ($(s.west)+(0.2,-0.45)$) {C};
+  \draw[wire] ($(m.west)+(-1.2,0.45)$) node[left] {$D$} -- ($(m.west)+(0,0.45)$);
+  \draw[wire] ($(m.east)+(0,0.45)$) -- node[above, lbl] {$Q_m$} ($(s.west)+(0,0.45)$);
+  \draw[wire] ($(s.east)+(0,0.45)$) -- ++(1,0) node[right] {$Q$};
+  \node[gNOT, minimum width=7mm, minimum height=5mm] (n) at (-1.2,-1.3) {};
+  \draw[wire, FpgaBlue] (-2.4,-1.3) node[left, text=FpgaDark] {CLK} -- (n.input);
+  \draw[wire, FpgaBlue] (n.output) -- ++(0.2,0) |- ($(m.west)+(0,-0.45)$);
+  \draw[wire, FpgaBlue] (-1.9,-1.3) |- (2.5,-1.9) |- ($(s.west)+(0,-0.45)$);
+  \fill[FpgaBlue] (-1.9,-1.3) circle (1.3pt);
+  \node[font=\sffamily\small, align=left, anchor=north west] at (-2.4,-2.2) {CLK $=0$: ведущая прозрачна, ведомая хранит;\\
+  CLK $=1$: ведущая хранит, ведомая прозрачна;\\ $\Rightarrow$ $Q$ меняется только в момент перехода CLK из 0 в 1.};
+\end{tikzpicture}
+\caption{D-триггер, построенный по схеме «ведущий -- ведомый»}
+\label{fig:ms}
+\end{figure}
+
+На схемах D-триггер рисуют прямоугольником, где вход тактового сигнала
+отмечен треугольником (знак «срабатывает по фронту»):
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=green!8] (0,0) rectangle (1.8,2.2);
+  \node[font=\sffamily\small] at (0.3,1.7) {D}; \node[font=\sffamily\small] at (1.5,1.7) {Q};
+  \node[font=\sffamily\small] at (1.5,0.5) {$\overline{\text{Q}}$};
+  \draw[thick] (0,0.3) -- (0.25,0.5) -- (0,0.7);
+  \draw[wire] (-0.7,1.7) node[left] {$D$} -- (0,1.7);
+  \draw[wire] (-0.7,0.5) node[left] {CLK} -- (0,0.5);
+  \draw[wire] (1.8,1.7) -- (2.5,1.7) node[right] {$Q$};
+  \draw[wire] (1.8,0.5) -- (2.1,0.5); \draw[thick] (2.18,0.5) circle (0.08); \draw[wire] (2.26,0.5) -- (2.5,0.5) node[right] {$\overline{Q}$};
+  \draw[wire] (0.9,2.2) -- (0.9,2.7) node[above] {$\overline{\text{SET}}$}; \draw[thick, fill=white] (0.9,2.28) circle (0.08);
+  \draw[wire] (0.9,0) -- (0.9,-0.5) node[below] {$\overline{\text{RST}}$}; \draw[thick, fill=white] (0.9,-0.08) circle (0.08);
+  \node[font=\sffamily\small, align=left, anchor=west] at (4.2,1.6) {треугольник --- срабатывает по фронту};
+  \node[font=\sffamily\small, align=left, anchor=west] at (4.2,1.0) {кружок --- активный уровень 0};
+  \node[font=\sffamily\small, align=left, anchor=west] at (4.2,0.4) {SET, RST --- асинхронные установка и сброс:};
+  \node[font=\sffamily\small, align=left, anchor=west] at (4.2,-0.1) {срабатывают сразу, не дожидаясь фронта};
+\end{tikzpicture}
+\caption{Условное обозначение D-триггера}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.08, xscale=1.6, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  CLK            & 2L 4H 4L 4H 2L \\
+  $D$            & 1L 2H 1L 4H 3L 1H 4L \\
+  $Q$ защёлки    & 2L 1H 1L 6H 1L 1H 4L \\
+  $Q$ триггера   & 2L 8H 6L \\
+\extracode
+  \begin{pgfonlayer}{background}
+    \draw[FpgaOrange, dashed] (2,0.6) -- (2,-7.2);
+    \draw[FpgaOrange, dashed] (10,0.6) -- (10,-7.2);
+  \end{pgfonlayer}
+  \node[lbl, text=FpgaOrange] at (2,1.0) {фронт}; \node[lbl, text=FpgaOrange] at (10,1.0) {фронт};
+\end{tikztimingtable}
+\caption{Сравнение: защёлка (рис.~\ref{fig:dlatch_t}) пропускает все изменения
+$D$, пока CLK $=1$, а триггер берёт значение $D$ \emph{только в момент фронта}}
+\label{fig:latch_vs_ff}
+\end{figure}
+
+\section{Временные параметры триггера}
+
+Чтобы триггер надёжно запомнил значение, вход $D$ должен быть неизменным в
+течение некоторого времени до фронта и после него:
+\begin{itemize}
+  \item $t_\text{su}$ (setup, \term{время предустановки}) --- сколько $D$ должен
+        быть стабилен \emph{до} фронта;
+  \item $t_\text{h}$ (hold, \term{время удержания}) --- сколько \emph{после} фронта;
+  \item $t_\text{co}$ (clock-to-output) --- через сколько после фронта меняется $Q$.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \draw[very thick, FpgaBlue] (0,2.2) -- (4,2.2) -- (4.1,3) -- (8,3);
+  \node[font=\sffamily\small, anchor=east] at (-0.1,2.6) {CLK};
+  \draw[very thick] (0,1.1) -- (1.5,1.1) -- (1.7,1.5) -- (6,1.5) -- (6.2,1.1) -- (8,1.1);
+  \draw[very thick] (0,1.5) -- (1.5,1.5) -- (1.7,1.1) -- (6,1.1) -- (6.2,1.5) -- (8,1.5);
+  \node[font=\sffamily\small, anchor=east] at (-0.1,1.3) {$D$};
+  \node[font=\sffamily\scriptsize] at (3.9,1.3) {стабильно};
+  \draw[very thick, FpgaGreen] (0,0) -- (4.8,0) -- (4.9,0.4) -- (8,0.4);
+  \node[font=\sffamily\small, anchor=east] at (-0.1,0.2) {$Q$};
+  \fill[FpgaRed, opacity=0.15] (2.6,0.9) rectangle (4.05,1.7);
+  \fill[FpgaOrange, opacity=0.2] (4.05,0.9) rectangle (4.8,1.7);
+  \draw[dashed, FpgaGray] (4.05,3.3) -- (4.05,-0.5);
+  \draw[<->] (2.6,-0.35) -- (4.05,-0.35) node[midway, below, font=\sffamily\small] {$t_\text{su}$};
+  \draw[<->] (4.05,-0.35) -- (4.8,-0.35) node[midway, below, font=\sffamily\small] {$t_\text{h}$};
+  \draw[<->] (4.05,-1.1) -- (4.85,-1.1) node[midway, below, font=\sffamily\small] {$t_\text{co}$};
+\end{tikzpicture}
+\caption{Время предустановки, удержания и задержка выхода триггера}
+\label{fig:setup_hold}
+\end{figure}
+
+\begin{warnbox}[Метастабильность]
+Если $D$ меняется внутри окна $t_\text{su}$--$t_\text{h}$, триггер может на
+некоторое время «зависнуть» в промежуточном состоянии --- ни 0, ни 1 --- и
+лишь потом случайно упасть в одно из них. Это \term{метастабильность}. Она
+неизбежно возникает, когда на триггер приходит сигнал, не связанный с
+тактом (например, от кнопки). Защита --- \term{синхронизатор} из двух
+триггеров подряд: к моменту следующего фронта первый триггер почти наверняка
+успокоится.
+\end{warnbox}
+
+\section{Вход разрешения}
+
+Часто нужно, чтобы триггер обновлялся не на каждом фронте, а только по
+команде. Для этого добавляют вход разрешения CE (clock enable). Устроен он
+просто: перед входом $D$ ставится мультиплексор, который при CE $=0$ подаёт
+на вход триггера его же выход --- триггер переписывает сам себя и не меняется.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=orange!15] (0,0.9) -- (0.9,0.5) -- (0.9,-0.5) -- (0,-0.9) -- cycle;
+  \node[font=\sffamily\scriptsize] at (0.45,0) {MUX};
+  \node[font=\tiny, anchor=west] at (0.02,0.5) {0}; \node[font=\tiny, anchor=west] at (0.02,-0.5) {1};
+  \draw[thick, fill=green!8] (1.8,-0.8) rectangle (3.2,0.8);
+  \node[font=\sffamily\small] at (2.05,0) {D}; \node[font=\sffamily\small] at (2.95,0) {Q};
+  \draw[thick] (2.3,-0.8) -- (2.5,-0.6) -- (2.7,-0.8);
+  \draw[wire] (0.9,0) -- (1.8,0);
+  \draw[wire] (3.2,0) -- (4.4,0) node[right] {$Q$};
+  \draw[wire] (3.8,0) -- (3.8,1.5) -| (-0.6,0.5) -- (0,0.5); \fill (3.8,0) circle (1.3pt);
+  \draw[wire] (-1.2,-0.5) node[left] {$D$} -- (0,-0.5);
+  \draw[wire, FpgaBlue] (0.45,-0.7) -- (0.45,-1.4) node[below, text=FpgaDark] {CE};
+  \draw[wire, FpgaBlue] (2.5,-0.8) -- (2.5,-1.4) node[below, text=FpgaDark] {CLK};
+\end{tikzpicture}
+\caption{D-триггер с входом разрешения: мультиплексор + обратная связь}
+\label{fig:ce}
+\end{figure}
+
+\section{T-триггер и JK-триггер}
+
+\term{T-триггер} (toggle, «переключатель») меняет своё состояние на
+противоположное по каждому фронту, если на входе $T=1$, и хранит его при
+$T=0$. Его легко сделать из D-триггера и элемента «Исключающее ИЛИ»:
+$D = T \oplus Q$.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.5\textwidth}
+\centering
+\begin{tikzpicture}
+  \node[gXOR, minimum width=10mm, minimum height=8mm] (x) at (0,0) {};
+  \draw[thick, fill=green!8] (1.2,-0.8) rectangle (2.6,0.8);
+  \node[font=\sffamily\small] at (1.45,0) {D}; \node[font=\sffamily\small] at (2.35,0) {Q};
+  \draw[thick] (1.7,-0.8) -- (1.9,-0.6) -- (2.1,-0.8);
+  \draw[wire] (x.output) -- (1.2,0);
+  \draw[wire] (2.6,0) -- (3.6,0) node[right] {$Q$};
+  \draw[wire] (3.1,0) -- (3.1,1.3) -| (-1.0,0 |- x.input 1) -- (x.input 1); \fill (3.1,0) circle (1.3pt);
+  \draw[wire] (x.input 2) -- ++(-0.9,0) node[left] {$T$};
+  \draw[wire, FpgaBlue] (1.9,-0.8) -- (1.9,-1.3) node[below, text=FpgaDark] {CLK};
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.45\textwidth}
+\centering
+\begin{tabular}{c|c|l}
+\toprule
+$T$ & $Q$ после фронта & \\
+\midrule
+0 & $Q$ & хранение \\
+1 & $\overline{Q}$ & переключение \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\caption{T-триггер из D-триггера и элемента «Исключающее ИЛИ»}
+\end{figure}
+
+Если на T-триггер постоянно подавать $T=1$, он переключается на каждом
+фронте, и частота на его выходе будет \emph{вдвое меньше} тактовой. Это
+простейший \term{делитель частоты на 2}.
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.08, xscale=1.5, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  CLK            & 8{1L 1H} \\
+  $Q$ ($T=1$)    & 1L 2H 2L 2H 2L 2H 2L 2H 1L \\
+\end{tikztimingtable}
+\caption{T-триггер с $T=1$ делит частоту на 2}
+\end{figure}
+
+\term{JK-триггер} объединяет возможности RS- и T-триггеров: $J$ ---
+установка, $K$ --- сброс, $J = K = 1$ --- переключение (запрещённого сочетания
+нет). В старых схемах на микросхемах серии 155 JK-триггеры были очень
+популярны. В ПЛИС же используются только D-триггеры, а остальные виды
+при необходимости получаются из них добавлением логики на входе.
+
+\begin{table}[H]
+\centering
+\caption{Сводка: виды триггеров}
+\small
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Тип} & \textbf{Когда срабатывает} & \textbf{Что делает} \\
+\midrule
+RS-защёлка & сразу & $S$ --- установить 1, $R$ --- сбросить в 0, $S=R=1$ запрещено \\
+D-защёлка  & пока $C = 1$ & повторяет $D$, при $C = 0$ хранит \\
+\textbf{D-триггер} & \textbf{по фронту} CLK & запоминает $D$ в момент фронта \\
+T-триггер  & по фронту CLK & при $T=1$ меняет состояние на противоположное \\
+JK-триггер & по фронту CLK & $J$ --- установка, $K$ --- сброс, $J=K=1$ --- переключение \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{ideabox}
+Триггер хранит один бит. Главный элемент памяти в цифровой технике ---
+\textbf{D-триггер}: он запоминает значение входа $D$ в момент \emph{переднего
+фронта} тактового сигнала и хранит его до следующего фронта. Чтобы
+триггер работал надёжно, вход не должен меняться в окне $t_\text{su}$--$t_\text{h}$
+вокруг фронта.
+\end{ideabox}

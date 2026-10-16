@@ -1,0 +1,339 @@
+\chapter{Мультиплексоры и демультиплексоры}
+\label{ch:mux}
+
+\section{Цифровой переключатель}
+
+Представьте старый галетный переключатель: ручка поворачивается и соединяет
+общий контакт с одним из нескольких. \term{Мультиплексор} (MUX) делает то же
+самое с цифровыми сигналами: у него несколько информационных входов, один
+выход и \term{адресные} (управляющие) входы, которые выбирают, какой из
+информационных входов соединить с выходом.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  % механический переключатель
+  \foreach \i in {0,...,3} {
+    \fill (0,1.5-\i) circle (2pt);
+    \draw[wire] (-1,1.5-\i) node[left] {$x_\i$} -- (0,1.5-\i);
+  }
+  \fill (2,0) circle (2.5pt);
+  \draw[very thick, FpgaOrange] (2,0) -- (0.08,0.5);
+  \draw[wire] (2,0) -- (3,0) node[right] {$y$};
+  \node[lbl] at (1.2,-2.3) {механический переключатель};
+  % мультиплексор
+  \begin{scope}[xshift=7.5cm]
+    \draw[thick, fill=orange!15] (0,2) -- (1.6,1.2) -- (1.6,-1.2) -- (0,-2) -- cycle;
+    \node[font=\sffamily\bfseries] at (0.8,0) {MUX};
+    \foreach \i in {0,...,3} {
+      \draw[wire] (-1,1.5-\i) node[left] {$x_\i$} -- (0,1.5-\i);
+      \node[font=\sffamily\scriptsize, anchor=west] at (0.05,1.5-\i) {\i};
+    }
+    \draw[wire] (1.6,0) -- (2.6,0) node[right] {$y$};
+    \draw[wire, FpgaBlue] (0.6,-1.7) -- (0.6,-2.6) node[below] {$s_1$};
+    \draw[wire, FpgaBlue] (1.1,-1.45) -- (1.1,-2.6) node[below] {$s_0$};
+    \node[lbl] at (0.8,-3.3) {цифровой мультиплексор 4:1};
+  \end{scope}
+  \draw[-{Stealth[length=4mm]}, line width=2pt, FpgaOrange] (4.2,0) -- (5.6,0);
+\end{tikzpicture}
+\caption{Мультиплексор --- это управляемый переключатель: при $s_1s_0 = 01$
+выход соединён со входом $x_1$}
+\end{figure}
+
+Мультиплексор с $n$ адресными входами может выбирать из $2^n$
+информационных входов. Его обозначают дробью: \textbf{2:1}, \textbf{4:1},
+\textbf{8:1} (сколько входов : сколько выходов).
+
+\section{Мультиплексор 2:1}
+
+Самый простой мультиплексор имеет два входа $a$, $b$ и один адресный вход $s$:
+если $s = 0$, на выход проходит $a$; если $s = 1$ --- проходит $b$.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.28\textwidth}
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=orange!15] (0,1.1) -- (1.1,0.6) -- (1.1,-0.6) -- (0,-1.1) -- cycle;
+  \node[font=\sffamily\small] at (0.55,0) {MUX};
+  \draw[wire] (-0.7,0.6) node[left] {$a$} -- (0,0.6); \node[font=\sffamily\scriptsize, anchor=west] at (0.02,0.6) {0};
+  \draw[wire] (-0.7,-0.6) node[left] {$b$} -- (0,-0.6); \node[font=\sffamily\scriptsize, anchor=west] at (0.02,-0.6) {1};
+  \draw[wire] (1.1,0) -- (1.7,0) node[right] {$y$};
+  \draw[wire, FpgaBlue] (0.55,-0.85) -- (0.55,-1.5) node[below] {$s$};
+\end{tikzpicture}
+\end{minipage}
+\begin{minipage}{0.27\textwidth}
+\centering
+\begin{tabular}{c|c}
+\toprule
+$s$ & $y$ \\
+\midrule
+0 & $a$ \\
+1 & $b$ \\
+\bottomrule
+\end{tabular}
+
+\medskip
+$y = \overline{s}\,a + s\,b$
+\end{minipage}
+\begin{minipage}{0.43\textwidth}
+\centering
+\begin{tikzpicture}
+  \node[gAND, minimum width=10mm, minimum height=7mm] (g1) at (2,0.6) {};
+  \node[gAND, minimum width=10mm, minimum height=7mm] (g2) at (2,-0.6) {};
+  \node[gOR, minimum width=10mm, minimum height=7mm] (o) at (3.7,0) {};
+  \node[gNOT, minimum width=7mm, minimum height=5mm] (n) at (0.9,0.48) {};
+  \draw[wire] (g1.input 1) -- ++(-1.8,0) node[left] {$a$};
+  \draw[wire] (g2.input 2) -- ++(-1.8,0) node[left] {$b$};
+  \draw[wire, FpgaBlue] (0.2,-1.4) node[below] {$s$} -- (0.2,0.48) -- (n.input);
+  \draw[wire, FpgaBlue] (0.2,-0.48) -- (g2.input 1); \fill[FpgaBlue] (0.2,-0.48) circle (1.3pt);
+  \draw[wire] (n.output) -- (g1.input 2);
+  \draw[wire] (g1.output) -- ++(0.15,0) |- (o.input 1);
+  \draw[wire] (g2.output) -- ++(0.15,0) |- (o.input 2);
+  \draw[wire] (o.output) -- ++(0.4,0) node[right] {$y$};
+\end{tikzpicture}
+\end{minipage}
+\caption{Мультиплексор 2:1: обозначение, таблица, формула и схема на элементах}
+\label{fig:mux21}
+\end{figure}
+
+Как работает схема: при $s = 0$ верхний элемент И «пропускает» $a$, а нижний
+«закрыт» (на его входе 0). При $s = 1$ --- наоборот. Элемент ИЛИ собирает
+результат.
+
+\section{Мультиплексор 4:1}
+
+У мультиплексора 4:1 два адресных входа $s_1 s_0$ задают номер входа от 0 до 3.
+\[
+  y = \overline{s_1}\,\overline{s_0}\,x_0 + \overline{s_1}\,s_0\,x_1 + s_1\,\overline{s_0}\,x_2 + s_1\,s_0\,x_3.
+\]
+Присмотритесь к формуле: множители при $x_i$ --- это ровно выходы
+\emph{дешифратора} 2$\to$4 из главы~\ref{ch:coders}! Значит, мультиплексор
+состоит из дешифратора адреса, четырёх элементов И и одного ИЛИ.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=FpgaLight] (0,-2.6) rectangle (1.6,1.0);
+  \node[font=\sffamily\bfseries] at (0.8,-0.8) {DC};
+  \draw[wire, FpgaBlue] (-0.8,0.2) node[left, text=FpgaDark] {$s_1$} -- (0,0.2);
+  \draw[wire, FpgaBlue] (-0.8,-1.8) node[left, text=FpgaDark] {$s_0$} -- (0,-1.8);
+  \foreach \i in {0,...,3} {
+    \pgfmathsetmacro{\y}{0.6-\i*1.0}
+    \node[gAND, minimum width=10mm, minimum height=7mm] (g\i) at (4.6,\y-0.12) {};
+    \draw[wire] (1.6,\y) -- ++(0.8,0) |- (g\i.input 2);
+    \node[font=\sffamily\scriptsize, anchor=east] at (1.55,\y) {\i};
+    \draw[wire] (g\i.input 1) -- ++(-0.8,0) node[left, font=\small] {$x_\i$};
+  }
+  \node[gOR, logic gate inputs=nnnn, minimum height=18mm] (o) at (7.2,-0.9) {};
+  \foreach \i in {0,...,3} {
+    \pgfmathtruncatemacro{\j}{\i+1}
+    \draw[wire] (g\i.output) -- ++(0.35,0) |- (o.input \j);
+  }
+  \draw[wire] (o.output) -- ++(0.7,0) node[right] {$y$};
+\end{tikzpicture}
+\caption{Мультиплексор 4:1 = дешифратор адреса + элементы И + элемент ИЛИ}
+\label{fig:mux41}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.05, xscale=0.9, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  $x_0$     & 16{1L 1H} \\
+  $x_1$     & 8{2L 2H} \\
+  $x_2$     & 32H \\
+  $x_3$     & 32L \\
+  $s_1s_0$  & 8D{00} 8D{01} 8D{10} 8D{11} \\
+  $y$       & 4{1L 1H} 2{2L 2H} 8H 8L \\
+\end{tikztimingtable}
+\caption{Мультиплексор 4:1 по очереди передаёт на выход разные входные
+сигналы}
+\end{figure}
+
+\section{Дерево мультиплексоров}
+
+Большой мультиплексор можно собрать из маленьких. Мультиплексор 4:1 --- это
+три мультиплексора 2:1: первый уровень выбирает по младшему биту адреса,
+второй --- по старшему. Мультиплексор 8:1 --- дерево из семи мультиплексоров
+2:1 в три уровня, и так далее.
+
+\newcommand{\muxsym}[3]{% имя, x, y
+  \draw[thick, fill=orange!15] (#2,#3+0.55) -- (#2+0.7,#3+0.3) -- (#2+0.7,#3-0.3) -- (#2,#3-0.55) -- cycle;
+  \coordinate (#1-i0) at (#2,#3+0.3); \coordinate (#1-i1) at (#2,#3-0.3);
+  \coordinate (#1-o) at (#2+0.7,#3); \coordinate (#1-s) at (#2+0.35,#3-0.42);}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \muxsym{m0}{0}{1}
+  \muxsym{m1}{0}{-1}
+  \muxsym{m2}{2}{0}
+  \foreach \m/\a/\b in {m0/x_0/x_1, m1/x_2/x_3} {
+    \draw[wire] (\m-i0) -- ++(-0.6,0) node[left] {$\a$};
+    \draw[wire] (\m-i1) -- ++(-0.6,0) node[left] {$\b$};
+  }
+  \draw[wire] (m0-o) -- ++(0.4,0) |- (m2-i0);
+  \draw[wire] (m1-o) -- ++(0.4,0) |- (m2-i1);
+  \draw[wire] (m2-o) -- ++(0.6,0) node[right] {$y$};
+  \draw[wire, FpgaBlue] (m0-s) -- (0.35,0.25) -- (-0.9,0.25) node[left, text=FpgaDark] {$s_0$};
+  \draw[wire, FpgaBlue] (m1-s) -- (0.35,-1.8) -- (-0.4,-1.8) -- (-0.4,0.25); \fill[FpgaBlue] (-0.4,0.25) circle (1.3pt);
+  \draw[wire, FpgaBlue] (m2-s) -- (2.35,-1.2) node[below, text=FpgaDark] {$s_1$};
+  \node[lbl] at (0.35,-2.4) {уровень 1};
+  \node[lbl] at (2.35,-2.4) {уровень 2};
+\end{tikzpicture}
+\caption{Мультиплексор 4:1 из трёх мультиплексоров 2:1}
+\label{fig:muxtree}
+\end{figure}
+
+\section{Мультиплексор как универсальный логический элемент}
+
+Вот удивительное свойство мультиплексора. Подадим на адресные входы
+\emph{переменные} $a$ и $b$, а на информационные входы --- \emph{константы}
+0 и 1, взятые из правого столбца таблицы истинности какой-либо функции. Тогда
+мультиплексор будет выбирать нужную строку таблицы и выдавать значение
+функции! Любую функцию от $n$ переменных можно реализовать одним
+мультиплексором $2^n$:1.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=orange!15] (0,2) -- (1.6,1.2) -- (1.6,-1.2) -- (0,-2) -- cycle;
+  \node[font=\sffamily\bfseries] at (0.8,0) {MUX};
+  \foreach \i/\v/\ab in {0/0/00, 1/1/01, 2/1/10, 3/0/11} {
+    \draw[wire] (-0.8,1.5-\i) -- (0,1.5-\i);
+    \node[draw=FpgaGreen, fill=green!8, thick, minimum size=6mm, font=\ttfamily] at (-1.1,1.5-\i) {\v};
+    \node[font=\sffamily\scriptsize, anchor=west] at (0.05,1.5-\i) {\i};
+    \node[lbl, anchor=east] at (-1.5,1.5-\i) {$ab=\ab$};
+  }
+  \draw[wire] (1.6,0) -- (2.6,0) node[right] {$y = a\oplus b$};
+  \draw[wire, FpgaBlue] (0.6,-1.7) -- (0.6,-2.6) node[below, text=FpgaDark] {$a$};
+  \draw[wire, FpgaBlue] (1.1,-1.45) -- (1.1,-2.6) node[below, text=FpgaDark] {$b$};
+  \node[lbl, align=center, text=FpgaGreen] at (-1.1,2.3) {таблица\\истинности};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5.0,0.8) {Подставьте \code{0001} --- получится И,};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5.0,0.2) {\code{0111} --- ИЛИ, \code{1110} --- И-НЕ\ldots};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5.0,-0.4) {Схема та же --- меняются только};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5.0,-1.0) {четыре бита слева.};
+\end{tikzpicture}
+\caption{Мультиплексор 4:1 с константами на входах вычисляет любую функцию
+двух переменных (здесь --- Исключающее ИЛИ)}
+\label{fig:mux_lut}
+\end{figure}
+
+\begin{ideabox}[Запомните этот рисунок]
+Мультиплексор, на входы которого поданы биты из маленькой памяти, --- это и
+есть \textbf{LUT}, основной строительный блок ПЛИС. Во второй части книги
+(глава~\ref{ch:inside}) мы увидим, что ПЛИС состоит из тысяч таких
+«программируемых мультиплексоров».
+\end{ideabox}
+
+\section{Демультиплексор}
+
+\term{Демультиплексор} (DEMUX) выполняет обратное действие: у него один
+информационный вход $x$ и $2^n$ выходов. Адрес $s$ определяет, на какой из
+выходов будет передан входной сигнал; на остальных выходах --- 0.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.35\textwidth}
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=orange!15] (0,1.2) -- (1.6,2) -- (1.6,-2) -- (0,-1.2) -- cycle;
+  \node[font=\sffamily\small\bfseries] at (0.8,0) {DEMUX};
+  \draw[wire] (-0.8,0) node[left] {$x$} -- (0,0);
+  \foreach \i in {0,...,3} {
+    \draw[wire] (1.6,1.5-\i) -- (2.4,1.5-\i) node[right] {$y_\i$};
+    \node[font=\sffamily\scriptsize, anchor=east] at (1.55,1.5-\i) {\i};
+  }
+  \draw[wire, FpgaBlue] (0.5,-1.45) -- (0.5,-2.6) node[below, text=FpgaDark] {$s_1$};
+  \draw[wire, FpgaBlue] (1.0,-1.7) -- (1.0,-2.6) node[below, text=FpgaDark] {$s_0$};
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.6\textwidth}
+\centering
+\begin{tabular}{cc|cccc}
+\toprule
+$s_1$ & $s_0$ & $y_0$ & $y_1$ & $y_2$ & $y_3$ \\
+\midrule
+0 & 0 & $x$ & 0 & 0 & 0 \\
+0 & 1 & 0 & $x$ & 0 & 0 \\
+1 & 0 & 0 & 0 & $x$ & 0 \\
+1 & 1 & 0 & 0 & 0 & $x$ \\
+\bottomrule
+\end{tabular}
+
+\medskip
+$y_0 = x\,\overline{s_1}\,\overline{s_0}, \ \ y_1 = x\,\overline{s_1}\,s_0, \ \ \ldots$
+\end{minipage}
+\caption{Демультиплексор 1:4}
+\end{figure}
+
+Сравните формулы с дешифратором со входом разрешения
+(рис.~\ref{fig:dc24}): они совпадают, если вход $E$ назвать $x$. Поэтому
+\textbf{демультиплексор --- это дешифратор, у которого на вход разрешения
+подаётся информационный сигнал}. В справочниках эти две микросхемы часто
+объединяют под одним названием.
+
+\section{Передача по одной линии}
+
+Вместе мультиплексор и демультиплексор позволяют передать несколько сигналов
+по \emph{одному} проводу. Адрес быстро перебирает значения $0, 1, 2, 3, 0,
+1\ldots$, и в каждый момент по линии идёт сигнал одного из источников. На
+приёмной стороне демультиплексор с таким же адресом раскладывает их по своим
+выходам. Это \term{временное разделение каналов}: так работают телефонные
+линии, шины компьютеров, а в дронах --- приёмник пульта, передающий по одному
+проводу сигналы всех каналов (протоколы PPM, SBUS).
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=orange!15] (0,1.3) -- (1.2,0.7) -- (1.2,-0.7) -- (0,-1.3) -- cycle;
+  \node[font=\sffamily\scriptsize\bfseries] at (0.6,0) {MUX};
+  \foreach \i/\t in {0/газ, 1/крен, 2/тангаж, 3/рыскание}
+    \draw[wire] (-0.6,0.9-\i*0.6) node[left, font=\sffamily\small] {\t} -- (0,0.9-\i*0.6);
+  \draw[very thick, FpgaOrange] (1.2,0) -- node[above, font=\sffamily\small, text=FpgaDark] {одна линия} (5.0,0);
+  \begin{scope}[xshift=5cm]
+  \draw[thick, fill=orange!15] (0,0.7) -- (1.2,1.3) -- (1.2,-1.3) -- (0,-0.7) -- cycle;
+  \node[font=\sffamily\tiny\bfseries] at (0.6,0) {DEMUX};
+  \foreach \i/\t in {0/газ, 1/крен, 2/тангаж, 3/рыскание}
+    \draw[wire] (1.2,0.9-\i*0.6) -- (1.8,0.9-\i*0.6) node[right, font=\sffamily\small] {\t};
+  \end{scope}
+  \node[block, minimum width=20mm, minimum height=7mm] (ctr) at (3.1,-2.1) {Счётчик\\\scriptsize адреса};
+  \draw[arr, FpgaBlue] (ctr.west) -| node[pos=0.25, below, lbl] {$s$} (0.6,-1.05);
+  \draw[arr, FpgaBlue] (ctr.east) -| node[pos=0.25, below, lbl] {$s$} (5.6,-1.05);
+\end{tikzpicture}
+\caption{Четыре канала пульта по одному проводу}
+\end{figure}
+
+\section{Многоразрядные мультиплексоры}
+
+Часто нужно выбирать не между битами, а между \emph{числами}. Для этого
+несколько мультиплексоров ставят параллельно с общим адресом. Например,
+8-разрядный мультиплексор 2:1 --- это восемь мультиплексоров 2:1, у
+которых соединены адресные входы. На схемах такой узел рисуют одним символом
+с шинами.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=orange!15] (0,1.1) -- (1.1,0.6) -- (1.1,-0.6) -- (0,-1.1) -- cycle;
+  \node[font=\sffamily\small] at (0.55,0) {MUX};
+  \draw[bus] (-1.4,0.6) node[left, text=FpgaDark] {$A$} -- (0,0.6);
+  \draw[bus] (-1.4,-0.6) node[left, text=FpgaDark] {$B$} -- (0,-0.6);
+  \draw[bus] (1.1,0) -- (2.4,0) node[right, text=FpgaDark] {$Y$};
+  \foreach \x/\y in {-0.8/0.6, -0.8/-0.6, 1.7/0} {
+    \draw[thick] (\x-0.1,\y-0.15) -- (\x+0.1,\y+0.15);
+    \node[font=\sffamily\scriptsize, above] at (\x,\y+0.1) {8};
+  }
+  \draw[wire, FpgaBlue] (0.55,-0.85) -- (0.55,-1.5) node[below, text=FpgaDark] {$s$};
+  \node[font=\sffamily\small, anchor=west] at (4.0,0.3) {$s=0$: \ $Y = A$};
+  \node[font=\sffamily\small, anchor=west] at (4.0,-0.3) {$s=1$: \ $Y = B$};
+\end{tikzpicture}
+\caption{Мультиплексор 8-разрядных чисел. Косая черта с цифрой показывает число проводов в шине}
+\end{figure}
+
+\begin{ideabox}
+\textbf{Мультиплексор} выбирает один из $2^n$ входов по адресу. Он состоит из
+дешифратора адреса и элементов И-ИЛИ и может реализовать любую функцию, если
+подать на входы константы. \textbf{Демультиплексор} передаёт один вход на
+выбранный выход --- это дешифратор с информационным входом разрешения.
+\end{ideabox}

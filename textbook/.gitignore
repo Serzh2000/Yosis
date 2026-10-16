@@ -1,0 +1,4 @@
+build/
+code/build/
+*.vcd
+missfont.log

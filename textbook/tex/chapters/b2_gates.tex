@@ -1,0 +1,288 @@
+\chapter{Логические элементы и булева алгебра}
+\label{ch:gates}
+
+\section{Логические функции}
+
+\term{Логическая функция} ставит в соответствие каждой комбинации входных
+битов значение выхода: 0 или 1. Функцию удобно задавать \term{таблицей
+истинности} --- перечнем всех комбинаций входов и значений выхода. У функции от
+$n$ входов в таблице $2^n$ строк.
+
+Схема, которая вычисляет логическую функцию, называется
+\term{логическим элементом} (вентилем). Логические элементы изображают
+условными знаками. В нашей стране принят стандарт ГОСТ (прямоугольник с
+символом внутри), в зарубежной литературе и в программах часто используют
+американские (ANSI) знаки. Полезно узнавать оба.
+
+\section{Основные элементы}
+
+\newcommand{\gaterow}[5]{%
+  \begin{tikzpicture}[baseline=-1mm]
+    \node[#1, minimum width=10mm, minimum height=7mm] (g) at (0,0) {};
+    \ifstrequal{#1}{gNOT}{\draw[wire] (g.input) -- ++(-0.35,0);}{%
+      \draw[wire] (g.input 1) -- ++(-0.35,0); \draw[wire] (g.input 2) -- ++(-0.35,0);}
+    \draw[wire] (g.output) -- ++(0.35,0);
+  \end{tikzpicture} &
+  \begin{tikzpicture}[baseline=-1mm]
+    \node[#2] (h) at (0,0) {};
+    \ifstrequal{#2}{iNOT}{\draw[wire] (h.input) -- ++(-0.35,0);}{%
+      \draw[wire] (h.input 1) -- ++(-0.35,0); \draw[wire] (h.input 2) -- ++(-0.35,0);}
+    \draw[wire] (h.output) -- ++(0.35,0);
+  \end{tikzpicture} & #3 & #4 & #5 \\[3mm]}
+
+\begin{table}[H]
+\centering
+\caption{Основные логические элементы. Столбец «таблица» --- значения выхода
+для входов $ab = 00, 01, 10, 11$}
+\label{tab:gates_all}
+\small
+\begin{tabular}{c c l l c}
+\toprule
+\textbf{ANSI} & \textbf{ГОСТ / IEC} & \textbf{Название} & \textbf{Формула} & \textbf{Таблица} \\
+\midrule
+\gaterow{gNOT}{iNOT}{НЕ (инверсия)}{$y=\overline{a}$}{\code{10} (для $a=0,1$)}
+\gaterow{gAND}{iAND}{И (конъюнкция)}{$y=a\cdot b$}{\code{0001}}
+\gaterow{gOR}{iOR}{ИЛИ (дизъюнкция)}{$y=a+b$}{\code{0111}}
+\gaterow{gNAND}{iNAND}{И-НЕ (штрих Шеффера)}{$y=\overline{a\cdot b}$}{\code{1110}}
+\gaterow{gNOR}{iNOR}{ИЛИ-НЕ (стрелка Пирса)}{$y=\overline{a+b}$}{\code{1000}}
+\gaterow{gXOR}{iXOR}{Исключающее ИЛИ}{$y=a\oplus b$}{\code{0110}}
+\gaterow{gXNOR}{iXNOR}{Исключающее ИЛИ-НЕ}{$y=\overline{a\oplus b}$}{\code{1001}}
+\bottomrule
+\end{tabular}
+\end{table}
+
+Кружок на выходе элемента обозначает инверсию. Поэтому И-НЕ рисуют как
+элемент И с кружком, ИЛИ-НЕ --- как ИЛИ с кружком.
+
+Словами:
+\begin{itemize}
+  \item \textbf{НЕ}: выход противоположен входу;
+  \item \textbf{И}: выход равен 1, только если \emph{все} входы равны 1;
+  \item \textbf{ИЛИ}: выход равен 1, если \emph{хотя бы один} вход равен 1;
+  \item \textbf{Исключающее ИЛИ}: выход равен 1, если входы \emph{различны}
+        (для многих входов --- если число единиц нечётно).
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.05, xscale=2.4, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  $a$              & 2L 2L 2H 2H \\
+  $b$              & 2L 2H 2L 2H \\
+  $a\cdot b$       & 6L 2H \\
+  $a+b$            & 2L 6H \\
+  $\overline{a\cdot b}$ & 6H 2L \\
+  $a\oplus b$      & 2L 4H 2L \\
+\end{tikztimingtable}
+\caption{Работа элементов на временной диаграмме: перебираются все четыре
+комбинации входов}
+\end{figure}
+
+\section{Как устроен элемент внутри}
+
+Внутри микросхем логические элементы строятся из транзисторов. В
+современной технологии КМОП (CMOS) используются пары транзисторов двух типов:
+$p$-канальный открыт при нуле на затворе, $n$-канальный --- при единице.
+Самый простой элемент --- инвертор --- состоит всего из двух транзисторов.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95, transform shape]
+  \draw (0,0) node[pmos, anchor=D] (P) {};
+  \draw (P.S) node[vcc] {$+3{,}3$ В};
+  \draw (P.D) -- ++(0,-0.3) coordinate (mid) -- ++(0,-0.3) node[nmos, anchor=D] (N) {};
+  \draw (N.S) node[ground] {};
+  \draw (P.G) -- ++(-0.5,0) coordinate (g1);
+  \draw (N.G) -- ++(-0.5,0) coordinate (g2);
+  \draw (g1) -- (g2);
+  \draw ($(g1)!0.5!(g2)$) to[short, -o] ++(-1,0) node[left] {$a$};
+  \draw (mid) to[short, *-o] ++(1.6,0) node[right] {$y=\overline{a}$};
+  \node[font=\sffamily\small, align=left, anchor=west] at (4,0.2) {$a=0$: верхний открыт, $y$ соединён с $+3{,}3$ В $\to$ 1};
+  \node[font=\sffamily\small, align=left, anchor=west] at (4,-1.9) {$a=1$: нижний открыт, $y$ соединён с землёй $\to$ 0};
+\end{circuitikz}
+\caption{КМОП-инвертор: два транзистора работают как переключатели}
+\end{figure}
+
+Элементы И-НЕ и ИЛИ-НЕ получаются из четырёх транзисторов, а И и ИЛИ ---
+это И-НЕ и ИЛИ-НЕ с инвертором на выходе (шесть транзисторов). Поэтому в
+микросхемах самыми «дешёвыми» оказываются именно инвертирующие элементы.
+
+\section{Булева алгебра}
+
+С логическими выражениями можно обращаться почти как с обычными
+алгебраическими: раскрывать скобки, выносить общий множитель, сокращать.
+Этими правилами занимается \term{булева алгебра}, названная в честь
+английского математика Джорджа Буля. Операцию И записывают как умножение
+($a\cdot b$ или $ab$), ИЛИ --- как сложение ($a+b$), НЕ --- чертой сверху
+($\overline{a}$).
+
+\begin{table}[H]
+\centering
+\caption{Основные законы булевой алгебры}
+\label{tab:bool}
+\begin{tabular}{l l l}
+\toprule
+\textbf{Закон} & \textbf{Для И} & \textbf{Для ИЛИ} \\
+\midrule
+Действия с константами & $a\cdot 0 = 0$, \ $a\cdot 1 = a$ & $a+1 = 1$, \ $a+0 = a$ \\
+Повторение             & $a\cdot a = a$ & $a+a = a$ \\
+Дополнение             & $a\cdot\overline{a} = 0$ & $a+\overline{a} = 1$ \\
+Двойное отрицание      & \multicolumn{2}{c}{$\overline{\overline{a}} = a$} \\
+Переместительный       & $ab = ba$ & $a+b = b+a$ \\
+Сочетательный          & $(ab)c = a(bc)$ & $(a+b)+c = a+(b+c)$ \\
+Распределительный      & $a(b+c) = ab+ac$ & $a+bc = (a+b)(a+c)$ \\
+Поглощение             & $a(a+b) = a$ & $a+ab = a$ \\
+\textbf{Законы де Моргана} & $\overline{a\cdot b} = \overline{a}+\overline{b}$ & $\overline{a+b} = \overline{a}\cdot\overline{b}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{warnbox}[Внимание: необычный закон]
+Второй распределительный закон $a+bc = (a+b)(a+c)$ не выполняется в обычной
+арифметике, но верен в булевой алгебре. Проверьте его таблицей истинности!
+\end{warnbox}
+
+\subsection{Законы де Моргана}
+
+Законы де Моргана --- самые полезные на практике. Они говорят: \emph{инверсию
+над выражением можно «протащить» внутрь, заменив И на ИЛИ и наоборот}.
+Графически это значит, что элемент И-НЕ можно нарисовать как ИЛИ с
+инверсиями на входах:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[gNAND] (g1) at (0,0) {};
+  \draw[wire] (g1.input 1) -- ++(-0.6,0) node[left] {$a$};
+  \draw[wire] (g1.input 2) -- ++(-0.6,0) node[left] {$b$};
+  \draw[wire] (g1.output) -- ++(0.6,0) node[right] {$\overline{ab}$};
+  \node[font=\Large] at (2.6,0) {$=$};
+  \begin{scope}[xshift=5.2cm]
+    \node[gOR] (g2) at (0,0) {};
+    \node[gNOT, minimum width=6mm, minimum height=4mm] (n1) at (-1.3,0.18) {};
+    \node[gNOT, minimum width=6mm, minimum height=4mm] (n2) at (-1.3,-0.18) {};
+    \draw[wire] (n1.output) -- (g2.input 1);
+    \draw[wire] (n2.output) -- (g2.input 2);
+    \draw[wire] (n1.input) -- ++(-0.4,0) node[left] {$a$};
+    \draw[wire] (n2.input) -- ++(-0.4,0) node[left] {$b$};
+    \draw[wire] (g2.output) -- ++(0.6,0) node[right] {$\overline{a}+\overline{b}$};
+  \end{scope}
+\end{tikzpicture}
+\caption{Закон де Моргана в виде схемы}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Проверка закона де Моргана таблицей истинности}
+\begin{tabular}{cc|c|cc|c}
+\toprule
+$a$ & $b$ & $\overline{a\cdot b}$ & $\overline{a}$ & $\overline{b}$ & $\overline{a}+\overline{b}$ \\
+\midrule
+0 & 0 & \textbf{1} & 1 & 1 & \textbf{1} \\
+0 & 1 & \textbf{1} & 1 & 0 & \textbf{1} \\
+1 & 0 & \textbf{1} & 0 & 1 & \textbf{1} \\
+1 & 1 & \textbf{0} & 0 & 0 & \textbf{0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Универсальные элементы}
+
+Удивительный факт: \textbf{из одних только элементов И-НЕ можно собрать любую
+логическую схему}. То же верно для ИЛИ-НЕ. Такие элементы называют
+\term{универсальными}. Достаточно показать, как из И-НЕ получить НЕ, И и ИЛИ ---
+а из них уже строится всё остальное.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  % НЕ
+  \node[font=\sffamily\small\bfseries] at (0.3,1.3) {НЕ};
+  \node[gNAND] (a1) at (0.3,0) {};
+  \draw[wire] (a1.input 1) -- ++(-0.35,0) coordinate (t1);
+  \draw[wire] (a1.input 2) -- ++(-0.35,0) coordinate (t2);
+  \draw[wire] (t1) -- (t2); \draw[wire] ($(t1)!0.5!(t2)$) -- ++(-0.5,0) node[left] {$a$};
+  \fill ($(t1)!0.5!(t2)$) circle (1.3pt);
+  \draw[wire] (a1.output) -- ++(0.4,0) node[right] {$\overline{a}$};
+  % И
+  \begin{scope}[xshift=4.2cm]
+  \node[font=\sffamily\small\bfseries] at (0.9,1.3) {И};
+  \node[gNAND] (b1) at (0,0) {};
+  \node[gNAND] (b2) at (2.0,0) {};
+  \draw[wire] (b1.input 1) -- ++(-0.4,0) node[left] {$a$};
+  \draw[wire] (b1.input 2) -- ++(-0.4,0) node[left] {$b$};
+  \draw[wire] (b1.output) -- ++(0.2,0) coordinate (m);
+  \draw[wire] (m) |- (b2.input 1); \draw[wire] (m) |- (b2.input 2); \fill (m) circle (1.3pt);
+  \draw[wire] (b2.output) -- ++(0.4,0) node[right] {$ab$};
+  \end{scope}
+  % ИЛИ
+  \begin{scope}[xshift=10cm]
+  \node[font=\sffamily\small\bfseries] at (0.9,1.3) {ИЛИ};
+  \node[gNAND, minimum width=9mm, minimum height=6mm] (c1) at (0,0.45) {};
+  \node[gNAND, minimum width=9mm, minimum height=6mm] (c2) at (0,-0.45) {};
+  \node[gNAND] (c3) at (2.0,0) {};
+  \foreach \c/\n in {c1/a, c2/b} {
+    \draw[wire] (\c.input 1) -- ++(-0.3,0) coordinate (u1);
+    \draw[wire] (\c.input 2) -- ++(-0.3,0) coordinate (u2);
+    \draw[wire] (u1) -- (u2); \draw[wire] ($(u1)!0.5!(u2)$) -- ++(-0.35,0) node[left] {$\n$};
+  }
+  \draw[wire] (c1.output) -- ++(0.3,0) |- (c3.input 1);
+  \draw[wire] (c2.output) -- ++(0.3,0) |- (c3.input 2);
+  \draw[wire] (c3.output) -- ++(0.4,0) node[right] {$a+b$};
+  \end{scope}
+\end{tikzpicture}
+\caption{НЕ, И и ИЛИ, собранные только из элементов И-НЕ}
+\end{figure}
+
+Проверим схему ИЛИ по законам де Моргана:
+$\overline{\overline{a}\cdot\overline{b}} = \overline{\overline{a}} + \overline{\overline{b}} = a + b$.
+
+\begin{infobox}[Зачем это нужно]
+В эпоху микросхем серии К155 (ТТЛ) разработчики часто собирали целые
+устройства из микросхем К155ЛА3, в каждой из которых четыре элемента И-НЕ.
+Так схема получалась дешевле и требовала меньше разных деталей. Внутри
+ПЛИС вопрос решён иначе --- там используются таблицы истинности (глава~\ref{ch:inside}).
+\end{infobox}
+
+\section{Многовходовые элементы}
+
+Элементы И, ИЛИ и Исключающее ИЛИ могут иметь больше двух входов. Их можно
+собрать из двухвходовых, соединив «цепочкой» или «деревом»:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[font=\sffamily\small\bfseries] at (1.2,1.6) {Цепочка: 3 уровня};
+  \node[gAND, minimum width=9mm, minimum height=6mm] (a1) at (0,0.6) {};
+  \node[gAND, minimum width=9mm, minimum height=6mm] (a2) at (1.3,0.3) {};
+  \node[gAND, minimum width=9mm, minimum height=6mm] (a3) at (2.6,0) {};
+  \draw[wire] (a1.input 1) -- ++(-0.4,0) node[left] {$a$};
+  \draw[wire] (a1.input 2) -- ++(-0.4,0) node[left] {$b$};
+  \draw[wire] (a1.output) -- ++(0.1,0) |- (a2.input 1);
+  \draw[wire] (a2.input 2) -- ++(-1.7,0) node[left] {$c$};
+  \draw[wire] (a2.output) -- ++(0.1,0) |- (a3.input 1);
+  \draw[wire] (a3.input 2) -- ++(-3.0,0) node[left] {$d$};
+  \draw[wire] (a3.output) -- ++(0.4,0) node[right] {$abcd$};
+  \begin{scope}[xshift=7.5cm]
+  \node[font=\sffamily\small\bfseries] at (0.7,1.6) {Дерево: 2 уровня};
+  \node[gAND, minimum width=9mm, minimum height=6mm] (b1) at (0,0.5) {};
+  \node[gAND, minimum width=9mm, minimum height=6mm] (b2) at (0,-0.5) {};
+  \node[gAND, minimum width=9mm, minimum height=6mm] (b3) at (1.5,0) {};
+  \draw[wire] (b1.input 1) -- ++(-0.4,0) node[left] {$a$};
+  \draw[wire] (b1.input 2) -- ++(-0.4,0) node[left] {$b$};
+  \draw[wire] (b2.input 1) -- ++(-0.4,0) node[left] {$c$};
+  \draw[wire] (b2.input 2) -- ++(-0.4,0) node[left] {$d$};
+  \draw[wire] (b1.output) -- ++(0.1,0) |- (b3.input 1);
+  \draw[wire] (b2.output) -- ++(0.1,0) |- (b3.input 2);
+  \draw[wire] (b3.output) -- ++(0.4,0) node[right] {$abcd$};
+  \end{scope}
+\end{tikzpicture}
+\caption{Четырёхвходовый элемент И из двухвходовых. Дерево работает быстрее:
+сигнал проходит через два элемента, а не через три}
+\end{figure}
+
+\begin{ideabox}
+Семь основных логических элементов (НЕ, И, ИЛИ, И-НЕ, ИЛИ-НЕ, Исключающее
+ИЛИ и Исключающее ИЛИ-НЕ) задаются таблицами истинности. Выражения с ними упрощаются по
+законам булевой алгебры, а законы де Моргана позволяют менять И на ИЛИ.
+Элементы И-НЕ и ИЛИ-НЕ универсальны: из любого из них собирается любая схема.
+\end{ideabox}

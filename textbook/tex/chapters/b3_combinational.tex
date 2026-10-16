@@ -1,0 +1,266 @@
+\chapter{Комбинационные схемы}
+\label{ch:comb}
+
+\section{Комбинационная и последовательностная логика}
+
+Все цифровые схемы делятся на два больших класса.
+
+\begin{description}
+  \item[Комбинационные схемы] --- выходы зависят \emph{только от текущих
+    значений входов}. У них нет памяти: подайте те же входы --- получите те же
+    выходы, неважно, что было раньше. Примеры: логические элементы,
+    дешифраторы, мультиплексоры, сумматоры.
+  \item[Последовательностные схемы] --- выходы зависят не только от текущих
+    входов, но и от \emph{предыстории}, то есть от того, что было раньше.
+    У них есть память. Примеры: триггеры, регистры, счётчики. О них ---
+    в главах~\ref{ch:ff}--\ref{ch:sync}.
+\end{description}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[block, minimum width=30mm, minimum height=20mm] (c) {Комбинационная\\логика};
+  \foreach \i in {1,2,3} \draw[arr] ($(c.west)+(-1.2,0.9-\i*0.45)$) -- ($(c.west)+(0,0.9-\i*0.45)$);
+  \foreach \i in {1,2} \draw[arr] ($(c.east)+(0,0.68-\i*0.45)$) -- ($(c.east)+(1.2,0.68-\i*0.45)$);
+  \node[lbl, left=12mm of c] {входы};
+  \node[lbl, right=12mm of c] {выходы};
+  \node[font=\sffamily\small\bfseries, above=2mm of c] {Комбинационная схема};
+  \begin{scope}[xshift=8.3cm]
+    \node[block, minimum width=30mm, minimum height=20mm] (s) {Комбинационная\\логика};
+    \node[gblock, minimum width=30mm, below=6mm of s] (m) {Память\\(триггеры)};
+    \foreach \i in {1,2,3} \draw[arr] ($(s.west)+(-1.2,0.9-\i*0.45)$) -- ($(s.west)+(0,0.9-\i*0.45)$);
+    \foreach \i in {1,2} \draw[arr] ($(s.east)+(0,0.68-\i*0.45)$) -- ($(s.east)+(1.2,0.68-\i*0.45)$);
+    \draw[arr] ($(s.east)+(0.4,-0.7)$) -- ++(0,-1.0) |- (m.east);
+    \draw[arr] (m.west) -- ++(-0.4,0) |- ($(s.west)+(0,-0.7)$);
+    \node[lbl, left=4mm of m, align=center] {состояние};
+    \node[font=\sffamily\small\bfseries, above=2mm of s] {Последовательностная схема};
+  \end{scope}
+\end{tikzpicture}
+\caption{Главное отличие: у последовательностной схемы есть память и обратная
+связь через неё}
+\label{fig:comb_vs_seq}
+\end{figure}
+
+\section{От словесного условия к схеме}
+
+Разработка комбинационной схемы всегда идёт по одному плану:
+\begin{enumerate}
+  \item понять, какие входы и выходы нужны, и дать им имена;
+  \item составить \textbf{таблицу истинности};
+  \item записать логическое выражение;
+  \item \textbf{упростить} его;
+  \item нарисовать схему.
+\end{enumerate}
+
+\subsection{Пример: голосование трёх судей}
+
+На соревнованиях работают три судьи: $a$, $b$, $c$. Каждый нажимает кнопку,
+если засчитывает попытку. Лампа $y$ должна загораться, если попытку
+засчитали \emph{хотя бы двое}. Такая функция называется
+\term{мажоритарной} (от лат. \emph{major} --- большинство).
+
+\textbf{Шаг 1--2. Таблица истинности.} Три входа --- $2^3 = 8$ строк:
+
+\begin{table}[H]
+\centering
+\caption{Таблица истинности мажоритарной функции}
+\label{tab:maj}
+\begin{tabular}{c|ccc|c|l}
+\toprule
+\textbf{№} & $a$ & $b$ & $c$ & $y$ & \textbf{Слагаемое} \\
+\midrule
+0 & 0 & 0 & 0 & 0 & \\
+1 & 0 & 0 & 1 & 0 & \\
+2 & 0 & 1 & 0 & 0 & \\
+3 & 0 & 1 & 1 & \textbf{1} & $\overline{a}bc$ \\
+4 & 1 & 0 & 0 & 0 & \\
+5 & 1 & 0 & 1 & \textbf{1} & $a\overline{b}c$ \\
+6 & 1 & 1 & 0 & \textbf{1} & $ab\overline{c}$ \\
+7 & 1 & 1 & 1 & \textbf{1} & $abc$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Шаг 3. Выражение.} Для каждой строки, где $y=1$, запишем
+произведение всех входов: вход берётся как есть, если он равен 1, и с
+инверсией, если равен 0. Такое произведение равно единице \emph{только} в
+этой строке. Сложив все такие произведения, получим функцию. Эта форма
+записи называется \term{совершенной дизъюнктивной нормальной формой} (СДНФ):
+\[
+  y = \overline{a}bc + a\overline{b}c + ab\overline{c} + abc.
+\]
+
+\textbf{Шаг 4. Упрощение.} Слагаемое $abc$ можно повторить сколько угодно
+раз ($x + x = x$). Добавим его ещё дважды и сгруппируем:
+\[
+  y = (\overline{a}bc + abc) + (a\overline{b}c + abc) + (ab\overline{c} + abc)
+    = bc(\overline{a}+a) + ac(\overline{b}+b) + ab(\overline{c}+c)
+    = bc + ac + ab.
+\]
+Вместо четырёх трёхвходовых элементов И и трёх инверторов нужно всего три
+двухвходовых элемента И и один элемент ИЛИ.
+
+\textbf{Шаг 5. Схема.}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \foreach \n/\x in {a/0, b/0.6, c/1.2} {
+    \draw[very thick, FpgaBlue] (\x,0.6) node[above, text=FpgaDark] {$\n$} -- (\x,-3.4);
+  }
+  \node[gAND] (g1) at (3.4,0) {};
+  \node[gAND] (g2) at (3.4,-1.4) {};
+  \node[gAND] (g3) at (3.4,-2.8) {};
+  \node[gOR, logic gate inputs=nnn, minimum height=14mm] (o) at (6,-1.4) {};
+  \draw[wire] (g1.input 1) -- (0,0 |- g1.input 1) node[circle, fill, inner sep=1.2pt] {};
+  \draw[wire] (g1.input 2) -- (0.6,0 |- g1.input 2) node[circle, fill, inner sep=1.2pt] {};
+  \draw[wire] (g2.input 1) -- (0,0 |- g2.input 1) node[circle, fill, inner sep=1.2pt] {};
+  \draw[wire] (g2.input 2) -- (1.2,0 |- g2.input 2) node[circle, fill, inner sep=1.2pt] {};
+  \draw[wire] (g3.input 1) -- (0.6,0 |- g3.input 1) node[circle, fill, inner sep=1.2pt] {};
+  \draw[wire] (g3.input 2) -- (1.2,0 |- g3.input 2) node[circle, fill, inner sep=1.2pt] {};
+  \draw[wire] (g1.output) -- node[above, lbl] {$ab$} ++(0.6,0) |- (o.input 1);
+  \draw[wire] (g2.output) -- node[above, lbl] {$ac$} (o.input 2);
+  \draw[wire] (g3.output) -- node[below, lbl] {$bc$} ++(0.6,0) |- (o.input 3);
+  \draw[wire] (o.output) -- ++(0.8,0) node[right] {$y$};
+\end{tikzpicture}
+\caption{Мажоритарный элемент «2 из 3»: $y = ab + ac + bc$}
+\label{fig:maj}
+\end{figure}
+
+\section{Карты Карно}
+
+Упрощать выражения алгебраически можно, но легко ошибиться. Для функций от
+2--4 переменных есть наглядный способ --- \term{карта Карно}. Это та же
+таблица истинности, но нарисованная в виде прямоугольника так, что
+\emph{соседние клетки отличаются значением только одной переменной}.
+Поэтому столбцы подписаны в порядке 00, 01, 11, 10 (код Грея), а не
+00, 01, 10, 11.
+
+Правило упрощения: единицы объединяют в прямоугольные группы по 2, 4, 8
+клеток (степень двойки), стараясь сделать группы как можно больше. Каждой
+группе соответствует одно произведение, в котором остаются только те
+переменные, что \emph{не меняются} внутри группы.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[cell/.style={draw, minimum size=11mm, font=\sffamily\large}]
+  \foreach \c/\lab in {0/00, 1/01, 2/11, 3/10} \node[font=\sffamily\small] at (\c*1.1,1.05) {\lab};
+  \foreach \r/\lab in {0/0, 1/1} \node[font=\sffamily\small] at (-0.95,-\r*1.1) {\lab};
+  \node[font=\sffamily\small] at (-1.1,1.05) {$a \backslash bc$};
+  % значения: строка a=0: bc=00,01,11,10 -> 0,0,1,0; a=1: 0,1,1,1
+  \foreach \r/\c/\v in {0/0/0, 0/1/0, 0/2/1, 0/3/0, 1/0/0, 1/1/1, 1/2/1, 1/3/1}
+    {\ifnum\v=1 \def\cc{FpgaLight}\else\def\cc{white}\fi
+     \node[cell, fill=\cc] at (\c*1.1,-\r*1.1) {\v};}
+  \draw[very thick, FpgaRed, rounded corners=4pt] (1.7,-1.62) rectangle (2.7,0.52);
+  \draw[very thick, FpgaGreen, rounded corners=4pt] (0.6,-1.56) rectangle (2.62,-0.64);
+  \draw[very thick, FpgaOrange, rounded corners=4pt] (1.78,-1.48) rectangle (3.8,-0.72);
+  \node[font=\sffamily\small, text=FpgaRed, anchor=west] at (4.6,0.2) {$bc$ --- столбец $bc=11$ ($a$ меняется)};
+  \node[font=\sffamily\small, text=FpgaGreen, anchor=west] at (4.6,-0.5) {$ac$ --- клетки $abc=101, 111$};
+  \node[font=\sffamily\small, text=FpgaOrange, anchor=west] at (4.6,-1.2) {$ab$ --- клетки $abc=111, 110$};
+  \node[font=\sffamily\small\bfseries, anchor=west] at (4.6,-2.0) {$y = ab + ac + bc$};
+\end{tikzpicture}
+\caption{Карта Карно мажоритарной функции: три группы по две клетки дают
+три слагаемых}
+\label{fig:karnaugh}
+\end{figure}
+
+\begin{infobox}[Кто будет упрощать схемы в ПЛИС?]
+Когда вы будете работать с ПЛИС, упрощение выполняет программа-синтезатор,
+причём гораздо лучше человека. Но понимать, \emph{как} это делается, всё
+равно полезно: это помогает оценить, сколько ресурсов займёт ваша схема и
+насколько быстро она будет работать.
+\end{infobox}
+
+\section{Задержка распространения}
+
+До сих пор мы считали, что элемент срабатывает мгновенно. На самом деле
+транзисторам нужно время, чтобы переключиться, а проводам --- чтобы
+зарядиться. Выход элемента меняется через время $t_\text{зд}$ после входа.
+Это \term{задержка распространения}. У современных микросхем она составляет
+от долей наносекунды до нескольких наносекунд.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \draw[very thick, FpgaBlue] (0,1.6) -- (2,1.6) -- (2.1,2.4) -- (6,2.4) -- (6.1,1.6) -- (9,1.6);
+  \draw[very thick, FpgaOrange] (0,0.8) -- (3,0.8) -- (3.1,0) -- (7,0) -- (7.1,0.8) -- (9,0.8);
+  \node[font=\sffamily\small, anchor=east] at (-0.1,2.0) {$a$};
+  \node[font=\sffamily\small, anchor=east] at (-0.1,0.4) {$\overline{a}$};
+  \draw[dashed, FpgaGray] (2.05,2.6) -- (2.05,-0.4); \draw[dashed, FpgaGray] (3.05,2.6) -- (3.05,-0.4);
+  \draw[<->, thick] (2.05,-0.3) -- (3.05,-0.3) node[midway, below, font=\sffamily\small] {$t_\text{зд}$};
+  \draw[dashed, FpgaGray] (6.05,2.6) -- (6.05,-0.4); \draw[dashed, FpgaGray] (7.05,2.6) -- (7.05,-0.4);
+  \draw[<->, thick] (6.05,-0.3) -- (7.05,-0.3) node[midway, below, font=\sffamily\small] {$t_\text{зд}$};
+\end{tikzpicture}
+\caption{Выход инвертора меняется с задержкой $t_\text{зд}$}
+\end{figure}
+
+Если сигнал проходит через несколько элементов подряд, задержки
+складываются. Самый длинный путь от входа до выхода называется
+\term{критическим путём}. Он определяет, насколько быстро может работать
+схема.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[gAND, minimum width=10mm, minimum height=7mm] (g1) at (0,0) {};
+  \node[gOR, minimum width=10mm, minimum height=7mm] (g2) at (1.8,-0.3) {};
+  \node[gXOR, minimum width=10mm, minimum height=7mm] (g3) at (3.6,-0.6) {};
+  \node[gNOT] (g4) at (5.3,-0.6) {};
+  \draw[wire, FpgaRed, very thick] (g1.input 1) -- ++(-0.5,0) node[left, text=FpgaDark] {$a$};
+  \draw[wire] (g1.input 2) -- ++(-0.5,0) node[left] {$b$};
+  \draw[wire, FpgaRed, very thick] (g1.output) -- ++(0.2,0) |- (g2.input 1);
+  \draw[wire] (g2.input 2) -- ++(-2.3,0) node[left] {$c$};
+  \draw[wire, FpgaRed, very thick] (g2.output) -- ++(0.2,0) |- (g3.input 1);
+  \draw[wire] (g3.input 2) -- ++(-4.1,0) node[left] {$d$};
+  \draw[wire, FpgaRed, very thick] (g3.output) -- (g4.input);
+  \draw[wire, FpgaRed, very thick] (g4.output) -- ++(0.6,0) node[right, text=FpgaDark] {$y$};
+  \node[font=\sffamily\small, text=FpgaRed, anchor=west] at (7.2,-0.2) {критический путь:};
+  \node[font=\sffamily\small, text=FpgaRed, anchor=west] at (7.2,-0.8) {$t = 4\,t_\text{зд}$};
+\end{tikzpicture}
+\caption{Критический путь проходит через четыре элемента}
+\end{figure}
+
+\subsection{Состязания и «иголки»}
+
+Из-за задержек на выходе комбинационной схемы могут появляться короткие
+ложные импульсы --- \term{иголки} (glitches). Классический пример:
+$y = a\cdot\overline{a}$. По законам алгебры $y$ всегда равен 0. Но инвертор
+срабатывает с задержкой, и в течение короткого времени после фронта $a$
+\emph{оба} входа элемента И равны 1.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[gAND, minimum width=10mm, minimum height=7mm] (g) at (2.2,0) {};
+  \node[gNOT] (n) at (0.9,-0.7) {};
+  \draw[wire] (-0.6,0.12) node[left] {$a$} -- (g.input 1);
+  \fill (0.0,0.12) circle (1.3pt);
+  \draw[wire] (0.0,0.12) |- (n.input);
+  \draw[wire] (n.output) -- ++(0.3,0) |- (g.input 2);
+  \draw[wire] (g.output) -- ++(0.5,0) node[right] {$y$};
+  \begin{scope}[xshift=5cm, yshift=0.9cm, x=1cm, y=1cm]
+    \draw[very thick, FpgaBlue] (0,0) -- (1.5,0) -- (1.55,0.5) -- (5,0.5);
+    \draw[very thick, FpgaOrange] (0,-0.4) -- (2.4,-0.4) -- (2.45,-0.9) -- (5,-0.9);
+    \draw[very thick, FpgaRed] (0,-1.8) -- (1.6,-1.8) -- (1.65,-1.3) -- (2.5,-1.3) -- (2.55,-1.8) -- (5,-1.8);
+    \node[font=\sffamily\small, anchor=east] at (-0.1,0.25) {$a$};
+    \node[font=\sffamily\small, anchor=east] at (-0.1,-0.65) {$\overline{a}$};
+    \node[font=\sffamily\small, anchor=east] at (-0.1,-1.55) {$y$};
+    \node[font=\sffamily\small, text=FpgaRed, anchor=west] at (2.7,-1.4) {ложный импульс!};
+  \end{scope}
+\end{tikzpicture}
+\caption{Возникновение «иголки» из-за задержки инвертора}
+\end{figure}
+
+\begin{warnbox}[Как с этим бороться]
+Иголки --- главная причина, по которой в серьёзных схемах выходы
+комбинационной логики «читают» не когда попало, а только по фронту
+тактового сигнала, когда все переходные процессы уже закончились. Это
+называется \term{синхронным проектированием} (глава~\ref{ch:sync}), и все
+схемы для ПЛИС строятся именно так.
+\end{warnbox}
+
+\begin{ideabox}
+Комбинационная схема не имеет памяти. Её проектируют по таблице истинности,
+упрощают алгебраически или по карте Карно. Реальные элементы имеют
+задержку, из-за которой возможны кратковременные ложные импульсы.
+\end{ideabox}
