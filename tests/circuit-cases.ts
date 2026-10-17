@@ -137,3 +137,22 @@ add('edge', { mode: 'rising' }, { steps: 60, hold: 1 });
 add('edge', { mode: 'falling' }, { steps: 60, hold: 1 });
 add('debounce', { ms: 1, clockHz: 5000 }, { steps: 200, hold: 2 });
 add('debounce', { ms: 0.2, clockHz: 5000 }, { steps: 100, hold: 1 });
+// Блоки, добавленные по образцу библиотек Quartus.
+for (const aclr of [false, true]) {
+  add('jkff', { aclr, init: !aclr }, { steps: 80 });
+  add('srff', { aclr, init: !aclr }, { steps: 80 });
+}
+add('latch', { width: 1 }, { steps: 60, hold: 2 });
+add('latch', { width: 8 }, { steps: 60, hold: 2 });
+add('ram', { addrBits: 1, width: 1 }, { steps: 60, hold: 1 });
+add('ram', { addrBits: 3, width: 8 }, { steps: 120, hold: 1 });
+add('ram', { addrBits: 5, width: 16 }, { steps: 120, hold: 1 });
+for (const signed of [false, true])
+  for (const rem of [false, true]) {
+    for (const width of [1, 4, 12]) add('div', { width, signed, rem });
+  }
+for (const mode of ['abs', 'neg'])
+  for (const width of [2, 4, 8, 64]) add('negabs', { width, mode });
+for (const mode of ['enc', 'dec']) for (const width of [2, 4, 7, 64]) add('gray', { width, mode });
+for (const hex of [false, true])
+  for (const activeLow of [false, true]) add('sevenseg', { hex, activeLow }, { steps: 100 });
