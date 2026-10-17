@@ -156,3 +156,10 @@ for (const mode of ['abs', 'neg'])
 for (const mode of ['enc', 'dec']) for (const width of [2, 4, 7, 64]) add('gray', { width, mode });
 for (const hex of [false, true])
   for (const activeLow of [false, true]) add('sevenseg', { hex, activeLow }, { steps: 100 });
+for (const cascade of [false, true])
+  for (const activeLow of [false, true])
+    for (const width of [2, 8, 10, 32])
+      add('encoder', { width, cascade, activeLow }, { steps: 80 });
+for (const mode of ['bin2bcd', 'bcd2bin'])
+  for (const bits of [1, 4, 8, 16]) add('bcdconv', { bits, mode }, { steps: 80 });
+for (const activeLow of [false, true]) add('bcddec', { activeLow }, { steps: 80 });

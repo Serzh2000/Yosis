@@ -1,5 +1,6 @@
 import { basicBlocks } from './circuit-blocks-basic';
 import { extraBlocks } from './circuit-blocks-extra';
+import { codeBlocks } from './circuit-blocks-extra2';
 import { mathBlocks } from './circuit-blocks-math';
 import { memoryBlocks } from './circuit-blocks-memory';
 import type {
@@ -14,7 +15,10 @@ import type {
 
 /** Реестр: определение каждого блока лежит в одном месте — выводы, параметры, проверки, символ, Verilog и справка. */
 export const blocks = Object.fromEntries(
-  [...basicBlocks, ...mathBlocks, ...memoryBlocks, ...extraBlocks].map((def) => [def.kind, def]),
+  [...basicBlocks, ...mathBlocks, ...memoryBlocks, ...extraBlocks, ...codeBlocks].map((def) => [
+    def.kind,
+    def,
+  ]),
 ) as Record<BlockKind, BlockDef>;
 
 export const blockDef = (kind: BlockKind): BlockDef => blocks[kind];
@@ -975,6 +979,73 @@ export const library: LibraryEntry[] = [
     {},
     undefined,
     'ram озу память lpm_ram',
+  ),
+
+  entry(
+    'enc148',
+    'encoder',
+    'select',
+    'Приоритетный шифратор 8→3 с EI, EO, GS (как 74148)',
+    'enc148',
+    'Номер старшего активного входа. Все сигналы с активным низким уровнем, как у микросхемы; EO и GS позволяют соединять шифраторы в цепочку.',
+    { width: 8, cascade: true, activeLow: true },
+    undefined,
+    '74148 encoder шифратор каскад',
+  ),
+  entry(
+    'enc147',
+    'encoder',
+    'select',
+    'Шифратор 10→4: десятичная цифра в BCD (как 74147)',
+    'enc147',
+    'Номер старшей нажатой цифры 0…9 в виде BCD с активным низким уровнем. Подходит для клавиатуры.',
+    { width: 10, cascade: false, activeLow: true },
+    undefined,
+    '74147 encoder шифратор bcd клавиатура',
+  ),
+  entry(
+    'bin2bcd',
+    'bcdconv',
+    'select',
+    'Двоичный → BCD (как 74184)',
+    'b2bcd',
+    'Переводит двоичное число в десятичные цифры, по четыре бита на цифру.',
+    { mode: 'bin2bcd' },
+    undefined,
+    '74184 bcd двоично-десятичный конвертер',
+  ),
+  entry(
+    'bcd2bin',
+    'bcdconv',
+    'select',
+    'BCD → двоичный (как 74185)',
+    'bcd2b',
+    'Собирает двоичное число из десятичных цифр BCD.',
+    { mode: 'bcd2bin' },
+    undefined,
+    '74185 bcd двоично-десятичный конвертер',
+  ),
+  entry(
+    'bcd10',
+    'bcddec',
+    'select',
+    'Дешифратор BCD → 10 линий (как 7442)',
+    'dec10',
+    'Цифра 0…9 превращается в «одну из десяти» линий. Для 10…15 все линии неактивны.',
+    { activeLow: true },
+    undefined,
+    '7442 decoder bcd дешифратор',
+  ),
+  entry(
+    'decoder416',
+    'decoder',
+    'select',
+    'Дешифратор 4→16 с разрешением (как 74154)',
+    'dec416',
+    'Из четырёх бит делает «один из шестнадцати»; вход EN включает дешифратор.',
+    { bits: 4, enable: true },
+    undefined,
+    '74154 decoder 4 to 16',
   ),
 
   entry(
