@@ -60,10 +60,10 @@ export function createApp(
       response.status(403).json({ error: 'Недопустимый адрес сервера.' });
       return;
     }
-    // Переход localhost → 127.0.0.1 (единый локальный адрес) приходит как cross-site навигация
-    // за страницей документа; API и вложенные кадры по-прежнему отклоняются.
+    // Переход по ссылке из другого сайта, мессенджера или письма приходит как cross-site навигация
+    // за страницей документа (так же, как localhost → 127.0.0.1). Отдать саму страницу безопасно:
+    // она статична. API и вложенные кадры по-прежнему отклоняются.
     const documentNavigation =
-      local &&
       request.method === 'GET' &&
       !request.path.startsWith('/api/') &&
       request.get('sec-fetch-mode') === 'navigate' &&

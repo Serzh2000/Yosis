@@ -245,6 +245,22 @@ test('standalone permits the current HTTP or HTTPS authority and blocks foreign 
     const blocked = await f.request('/api/session', { 'Sec-Fetch-Site': 'cross-site' });
     assert.equal(blocked.status, 403);
     assert.equal(blocked.cookies.length, 0, 'a cross-site request cannot create a guest');
+    const link = {
+      'Sec-Fetch-Site': 'cross-site',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Dest': 'document',
+    };
+    assert.equal(
+      (await f.request('/', link)).status,
+      200,
+      'a link from another site opens the page',
+    );
+    assert.equal((await f.request('/api/session', link)).status, 403, 'but the API stays closed');
+    assert.equal(
+      (await f.request('/', { ...link, 'Sec-Fetch-Dest': 'iframe' })).status,
+      403,
+      'and so do embedded frames',
+    );
     const proxied = await f.request('/api/session', {
       Origin: 'https://other.test',
       'X-Forwarded-Host': 'other.test',
