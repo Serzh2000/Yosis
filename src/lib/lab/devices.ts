@@ -111,6 +111,9 @@ export abstract class Device {
   }
 }
 
+/** A fixture of the bench that behaves like nothing: a breadboard has holes, not pins. */
+class Fixture extends Device {}
+
 class Light extends Device {
   protected update() {
     this.view = { b: this.pins.map((_, pin) => this.lit(pin)) };
@@ -563,6 +566,7 @@ class Uart extends Device {
 }
 
 const KINDS = {
+  breadboard: Fixture,
   light: Light,
   bicolor: Bicolor,
   scan: Scan,

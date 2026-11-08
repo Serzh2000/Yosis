@@ -200,6 +200,8 @@ process.on('message', (/** @type {YosysRequest} */ request) => {
 });
 
 async function handle(/** @type {YosysRequest} */ request) {
+  loggedBytes = 0;
+  buffer = '';
   try {
     send({ type: 'stage', stage: 'Загрузка Yosys WebAssembly' });
     const runYosys = await loadYosys();
@@ -244,7 +246,9 @@ async function handle(/** @type {YosysRequest} */ request) {
       flush();
       send({ type: 'lab', design: labDesign(textFile(labFiles, 'lab.json'), project.top) });
       send({ type: 'success' });
-      await disconnect();
+      // A pooled worker stays for the next project; Yosys starts every run from empty files.
+      if (request.reuse) send({ type: 'idle' });
+      else await disconnect();
       return;
     }
     files['rtl.ys'] = [

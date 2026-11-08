@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Maximize2,
-  Minus,
   Pause,
   Play,
-  Plus,
   Redo2,
   RotateCcw,
   StepForward,
@@ -17,31 +15,26 @@ import { validateProject } from '../../../shared/project-validation';
 import type { Diagnostic, Project } from '../../../shared/types';
 import { request } from '../../lib/api';
 import { applyPinEdit, readCst } from '../../lib/pin-planner';
-import {
-  BENCH,
-  WIRE_COLORS,
-  WIRE_COLOR_NAMES,
-  headerByFpga,
-  type Point,
-} from '../../lib/lab/bench';
 import { behaviourKey, partById, partPins, type PartDef } from '../../lib/lab/catalog';
 import { BOARD_CLOCK_HZ } from '../../lib/lab/devices';
 import {
-  PASTE_OFFSET,
   addPart,
-  connectWire,
-  disconnectPad,
+  addPartAt,
+  addWire,
   disconnectParts,
-  nudgeParts,
-  pasteParts,
+  duplicatePart,
+  movePart,
   removeItems,
-  rotateParts,
+  replugWire,
   setPartProps,
-  setAutoPower,
-  setWireBends,
   setWireColor,
+  terminalOwner,
+  turnPart,
 } from '../../lib/lab/layout-ops';
+import { defaultBench } from '../../lib/lab/bench';
+import { headerByFpga } from '../../lib/lab/pads';
 import {
+  BOARD_BUTTONS,
   BOARD_UART,
   LabRuntime,
   loadLayout,
@@ -49,15 +42,19 @@ import {
   type LabPart,
   type LabWire,
 } from '../../lib/lab/runtime';
+import { wireFpga, wirePins } from '../../lib/lab/wire-info';
 import { AssignPopover } from './AssignForm';
-import { Bench, type BenchCommands, type MenuTarget, type Pending } from './Bench';
 import { ContextMenu, type MenuItem } from './ContextMenu';
+import { LabScene, type SceneHandle } from './LabScene';
 import { Library } from './Library';
 import { PartProperties } from './PartProperties';
 import { SidePanel } from './SidePanel';
-import { NOTHING, type Selection } from './useBenchGestures';
+import { NOTHING, type Selection } from './selection';
 import { useLabHistory } from './useLabHistory';
 import { Dialog } from '../Dialog';
+import { resolveConnections, toProject } from './reference/bridge';
+import { actionFor, liveOf } from './reference/live';
+import { wirePalette } from './reference/src/mcu/scene/layout';
 import '../virtual-board.css';
 import './lab.css';
 
@@ -75,10 +72,18 @@ const SPEEDS = [
   ['20', '20 тактов/с'],
   ['2', '2 такта/с'],
 ] as const;
+const WIRE_COLOR_NAMES = [
+  'Оранжевый',
+  'Зелёный',
+  'Синий',
+  'Фиолетовый',
+  'Коралловый',
+  'Жёлтый',
+  'Бирюзовый',
+  'Коричневый',
+];
 /** About 30 redraws a second; the slack keeps every second 60 Hz frame from being skipped by jitter. */
 const REDRAW_INTERVAL_MS = 1000 / 30 - 4;
-const MIN_ZOOM = 0.25;
-const MAX_ZOOM = 2;
 const formatRate = (rate: number) =>
   rate >= 1e6
     ? `${(rate / 1e6).toFixed(1).replace('.', ',')} млн тактов/с`
@@ -98,17 +103,21 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
   const [muted, setMuted] = useState(false);
   const [, setTick] = useState(0);
   const [rate, setRate] = useState(0);
-  const [pending, setPending] = useState<Pending>(null);
-  const [selection, setSelection] = useState<Selection>(NOTHING);
+  const [pending, setPending] = useState('');
+  const [selectedId, setSelectedId] = useState('');
   const [assignError, setAssignError] = useState('');
   const [restart, setRestart] = useState(0);
-  const [fit, setFit] = useState(1);
   const [propertiesOf, setPropertiesOf] = useState<string | null>(null);
-  const [menu, setMenu] = useState<{ at: Point; label: string; items: MenuItem[] } | null>(null);
+  const [menu, setMenu] = useState<{
+    x: number;
+    y: number;
+    label: string;
+    items: MenuItem[];
+  } | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [popover, setPopover] = useState<{ wire: string; at: Point } | null>(null);
-  const viewport = useRef<HTMLDivElement>(null);
-  const clipboard = useRef<{ parts: LabPart[]; pasted: number }>({ parts: [], pasted: 0 });
+  const [popover, setPopover] = useState('');
+  const [notice, setNotice] = useState('');
+  const scene = useRef<SceneHandle>(null);
   const projectRef = useRef(project);
   projectRef.current = project;
 
@@ -121,9 +130,9 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
   historyRef.current = history;
   const layoutRef = useRef(layout);
   layoutRef.current = layout;
-  const selectionRef = useRef(selection);
-  selectionRef.current = selection;
-  const zoom = layout.zoom ?? fit;
+  const selectedRef = useRef(selectedId);
+  selectedRef.current = selectedId;
+  const connections = useMemo(() => resolveConnections(layout), [layout]);
 
   // A different project brings its own bench.
   const projectKey = project.id ?? project.name;
@@ -132,24 +141,30 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
     if (loadedFor.current === projectKey) return;
     loadedFor.current = projectKey;
     historyRef.current.reset(loadLayout(projectRef.current));
-    setSelection(NOTHING);
-    setPending(null);
+    setSelectedId('');
+    setPending('');
     setPropertiesOf(null);
-    setPopover(null);
+    setPopover('');
   }, [projectKey]);
 
   // Undo, a deleted part or a new project can leave the selection pointing at nothing.
   useEffect(() => {
-    const exists = new Set(layout.parts.map((part) => part.uid));
-    setSelection((value) => {
-      const parts = value.parts.filter((id) => exists.has(id));
-      const wire =
-        value.wire && layout.wires.some((item) => item.id === value.wire) ? value.wire : null;
-      return parts.length === value.parts.length && wire === value.wire ? value : { parts, wire };
-    });
+    const exists = new Set([
+      ...layout.parts.map((part) => part.uid),
+      ...layout.wires.map((wire) => wire.id),
+    ]);
+    setSelectedId((value) => (exists.has(value) ? value : ''));
     setPropertiesOf((value) => (value && exists.has(value) ? value : null));
-    setPending((value) => (value && 'part' in value && !exists.has(value.part) ? null : value));
+    setPending((value) =>
+      value && !exists.has(terminalOwner(value)) && terminalOwner(value) !== 'board' ? '' : value,
+    );
   }, [layout.parts, layout.wires]);
+  const selection: Selection = useMemo(() => {
+    if (layout.parts.some((part) => part.uid === selectedId))
+      return { parts: [selectedId], wire: null };
+    if (layout.wires.some((wire) => wire.id === selectedId)) return { parts: [], wire: selectedId };
+    return NOTHING;
+  }, [layout, selectedId]);
 
   // The gate-level form depends on the HDL only; pin assignments are applied in the browser.
   const hdl = useMemo(
@@ -224,11 +239,15 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
   const structure = useMemo(
     () =>
       JSON.stringify([
-        layout.parts.map((part) => [part.uid, part.def, behaviourKey(partDef(part), part.opts)]),
-        layout.wires.map((wire) => [wire.id, wire.part, wire.pin, wire.fpga]),
-        layout.autoPower !== false,
+        layout.parts.map((part) => [
+          part.uid,
+          part.def,
+          behaviourKey(partDef(part), part.opts),
+          part.mount ? [part.mount.on, part.mount.hole] : 0,
+        ]),
+        connections.wires.map((wire) => [wire.id, wire.fpga]),
       ]),
-    [layout],
+    [layout.parts, connections],
   );
   useEffect(() => {
     if (!design) {
@@ -305,244 +324,178 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
     [runtime, poke],
   );
 
-  // Until the user zooms, the whole bench is fitted into the panel.
-  useEffect(() => {
-    const element = viewport.current;
-    if (!element) return;
-    const measure = () => {
-      if (element.clientWidth > 0)
-        setFit(
-          Math.max(
-            MIN_ZOOM,
-            Math.min(1, element.clientWidth / BENCH.w, element.clientHeight / BENCH.h),
-          ),
-        );
+  // What the scene draws: the bench and, from the running design, the lights and controls.
+  const live = liveOf(runtime, layout);
+  const inputKey = JSON.stringify([...live.inputs]);
+  const scenery = useMemo(() => {
+    const base = toProject(layout, project.name);
+    return {
+      ...base,
+      parts: base.parts.map((part) => {
+        const value = live.inputs.get(part.id)?.value;
+        return value === undefined ? part : { ...part, value };
+      }),
     };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-  const zoomAnchor = useRef<{ bench: Point; client: Point } | null>(null);
-  const zoomAbout = useCallback(
-    (next: number, client: Point) => {
-      const box = viewport.current?.querySelector('.lab-bench')?.getBoundingClientRect();
-      const current = layoutRef.current.zoom ?? fit;
-      if (box)
-        zoomAnchor.current = {
-          bench: { x: (client.x - box.left) / current, y: (client.y - box.top) / current },
-          client,
-        };
-      historyRef.current.silent({
-        zoom: Math.round(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, next)) * 1000) / 1000,
-      });
-    },
-    [fit],
-  );
-  useLayoutEffect(() => {
-    const at = zoomAnchor.current;
-    zoomAnchor.current = null;
-    const element = viewport.current;
-    const box = element?.querySelector('.lab-bench')?.getBoundingClientRect();
-    if (!at || !element || !box) return;
-    // Keep the point under the cursor where it was.
-    element.scrollLeft += box.left + at.bench.x * zoom - at.client.x;
-    element.scrollTop += box.top + at.bench.y * zoom - at.client.y;
-  }, [zoom]);
-  const zoomCentered = (factor: number) => {
-    const box = viewport.current?.getBoundingClientRect();
-    if (box) zoomAbout(zoom * factor, { x: box.left + box.width / 2, y: box.top + box.height / 2 });
-  };
-  const showAll = useCallback(() => {
-    historyRef.current.silent({ zoom: undefined });
-    viewport.current?.scrollTo(0, 0);
-  }, []);
+    // `live.inputs` is a new map each time; its content is what `inputKey` says.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layout, project.name, inputKey]);
 
   // Undo and redo work wherever the focus is on this tab, except while typing text or in a window.
   useEffect(() => {
     if (!active) return;
     const keydown = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
       const target = event.target as Element | null;
       if (target?.closest?.('input, textarea, select, [contenteditable], [data-dialog]')) return;
-      if (event.code === 'KeyZ' || event.code === 'KeyY') {
+      if ((event.ctrlKey || event.metaKey) && !event.altKey) {
+        if (event.code === 'KeyZ' || event.code === 'KeyY') {
+          event.preventDefault();
+          if (event.code === 'KeyY' || event.shiftKey) historyRef.current.redo();
+          else historyRef.current.undo();
+        } else if (event.code === 'KeyD' && selectedRef.current) {
+          event.preventDefault();
+          duplicate();
+        }
+        return;
+      }
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        if (!selectedRef.current) return;
         event.preventDefault();
-        if (event.code === 'KeyY' || event.shiftKey) historyRef.current.redo();
-        else historyRef.current.undo();
+        remove();
+      } else if (event.code === 'KeyR') {
+        if (!selectedRef.current) return;
+        event.preventDefault();
+        rotate(!event.shiftKey);
+      } else if (event.key === 'Enter') {
+        const part = layoutRef.current.parts.find((item) => item.uid === selectedRef.current);
+        if (part) setPropertiesOf(part.uid);
+      } else if (event.key === 'Escape') {
+        setPending('');
+        setSelectedId('');
+        setPopover('');
       }
     };
     window.addEventListener('keydown', keydown);
     return () => window.removeEventListener('keydown', keydown);
+    // The commands read the bench through refs; they are the same on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
   // Editing. Each command works on the selection as it is when the command runs.
   const edit = () => historyRef.current;
-  const chosen = () => selectionRef.current.parts;
   const rotate = (clockwise: boolean) => {
-    if (chosen().length) edit().commit(rotateParts(edit().get(), chosen(), clockwise));
+    const part = edit()
+      .get()
+      .parts.find((item) => item.uid === selectedRef.current);
+    if (part) edit().commit(turnPart(edit().get(), part.uid, clockwise));
   };
   const remove = () => {
-    const { parts, wire } = selectionRef.current;
-    if (!parts.length && !wire) return;
-    edit().commit(removeItems(edit().get(), parts, wire));
-    setSelection(NOTHING);
-    // The part that had the focus is gone; keys must still reach the bench.
-    viewport.current?.focus({ preventScroll: true });
-  };
-  const copy = () => {
-    const parts = edit()
+    const id = selectedRef.current;
+    if (!id) return;
+    const isPart = edit()
       .get()
-      .parts.filter((part) => chosen().includes(part.uid));
-    if (parts.length) clipboard.current = { parts: structuredClone(parts), pasted: 0 };
-  };
-  const paste = () => {
-    const board = clipboard.current;
-    if (!board.parts.length) return;
-    board.pasted += 1;
-    const made = pasteParts(edit().get(), board.parts, PASTE_OFFSET * board.pasted);
-    edit().commit(made.layout);
-    setSelection({ parts: made.uids, wire: null });
+      .parts.some((part) => part.uid === id);
+    edit().commit(removeItems(edit().get(), isPart ? [id] : [], isPart ? null : id));
+    setSelectedId('');
+    scene.current?.focus();
   };
   const duplicate = () => {
-    const parts = edit()
-      .get()
-      .parts.filter((part) => chosen().includes(part.uid));
-    if (!parts.length) return;
-    const made = pasteParts(edit().get(), parts, PASTE_OFFSET);
+    const made = duplicatePart(edit().get(), selectedRef.current);
+    if (!made.uid) return;
     edit().commit(made.layout);
-    setSelection({ parts: made.uids, wire: null });
+    setSelectedId(made.uid);
   };
-  const commands: BenchCommands = {
-    rotate,
-    remove,
-    duplicate,
-    copy,
-    paste,
-    undo: () => edit().undo(),
-    redo: () => edit().redo(),
-    selectAll: () =>
-      setSelection({
-        parts: edit()
-          .get()
-          .parts.map((part) => part.uid),
-        wire: null,
-      }),
-    nudge: (dx, dy) => {
-      if (chosen().length) edit().commit(nudgeParts(edit().get(), chosen(), dx, dy), 'nudge');
-    },
-    openProperties: setPropertiesOf,
-    fit: showAll,
-  };
-  const onAdd = useCallback((id: string, at?: Point) => {
+  const onAdd = useCallback((id: string) => {
     if (!partById.has(id)) return;
-    const made = addPart(historyRef.current.get(), id, at);
+    const made = addPart(historyRef.current.get(), id);
     historyRef.current.commit(made.layout);
-    setSelection({ parts: [made.uid], wire: null });
+    setSelectedId(made.uid);
   }, []);
+  const onDrop = useCallback(
+    (id: string, spot: { x: number; y: number; mount: LabPart['mount'] | null } | null) => {
+      if (!partById.has(id)) return;
+      if (!spot) return onAdd(id);
+      const made = addPartAt(historyRef.current.get(), id, {
+        x: spot.x,
+        y: spot.y,
+        mount: spot.mount ?? null,
+      });
+      historyRef.current.commit(made.layout);
+      setSelectedId(made.uid);
+    },
+    [onAdd],
+  );
 
-  // Wiring by clicks: first the pin or the pad, then the other.
-  function onConnected(wireId: string, at: Point) {
-    setSelection({ parts: [], wire: wireId });
-    setPending(null);
-    setPopover({ wire: wireId, at });
-    setAssignError('');
-  }
-  function connectByClicks(part: string, pin: string, fpga: number) {
-    const made = connectWire(edit().get(), { part, pin, fpga });
+  // Wiring: drag from one terminal to another, or click the two of them in turn.
+  const connect = (from: string, to: string) => {
+    const made = addWire(edit().get(), from, to);
+    setPending('');
+    if (!made.wire) return;
     edit().commit(made.layout);
-    const pad = headerByFpga.get(fpga)!;
-    onConnected(made.wire.id, { x: pad.x, y: pad.y });
-  }
-  const pickPin = (part: string, pin: string) => {
-    if (pending && 'fpga' in pending) connectByClicks(part, pin, pending.fpga);
-    else setPending({ part, pin });
+    setSelectedId(made.wire.id);
+    setPopover(made.wire.id);
+    setAssignError('');
   };
-  const pickPad = (fpga: number) => {
-    if (pending && 'part' in pending) connectByClicks(pending.part, pending.pin, fpga);
-    else setPending({ fpga });
+  const onTerminal = (id: string) => {
+    if (!pending) setPending(id);
+    else if (pending === id) setPending('');
+    else connect(pending, id);
   };
 
   // Context menus.
-  function openMenu(target: MenuTarget, at: Point) {
-    const wireCount = (uid: string) =>
-      edit()
-        .get()
-        .wires.filter((wire) => wire.part === uid).length;
+  function openMenu(target: { type: string; id?: string } | null, x: number, y: number) {
     let label = 'Стол';
     let items: MenuItem[];
-    if (target.kind === 'part') {
-      const ids = chosen().includes(target.uid) ? chosen() : [target.uid];
+    if (target?.type === 'part') {
       const part = edit()
         .get()
-        .parts.find((item) => item.uid === target.uid);
-      label = part ? part.label || partDef(part).title : 'Деталь';
+        .parts.find((item) => item.uid === target.id);
+      if (!part) return;
+      setSelectedId(part.uid);
+      label = part.label || partDef(part).title;
+      const wired = edit()
+        .get()
+        .wires.some(
+          (wire) => terminalOwner(wire.from) === part.uid || terminalOwner(wire.to) === part.uid,
+        );
       items = [
-        ...(ids.length === 1
-          ? ([
-              {
-                label: 'Свойства…',
-                shortcut: 'Enter',
-                onSelect: () => setPropertiesOf(target.uid),
-              },
-              { kind: 'separator' },
-            ] as MenuItem[])
-          : []),
+        { label: 'Свойства…', shortcut: 'Enter', onSelect: () => setPropertiesOf(part.uid) },
+        { kind: 'separator' },
         { label: 'Повернуть по часовой', shortcut: 'R', onSelect: () => rotate(true) },
         { label: 'Повернуть против часовой', shortcut: 'Shift+R', onSelect: () => rotate(false) },
         { label: 'Дублировать', shortcut: 'Ctrl+D', onSelect: duplicate },
-        { label: 'Копировать', shortcut: 'Ctrl+C', onSelect: copy },
         {
           label: 'Отключить провода',
-          disabled: !ids.some((id) => wireCount(id)),
-          onSelect: () => edit().commit(disconnectParts(edit().get(), ids)),
+          disabled: !wired,
+          onSelect: () => edit().commit(disconnectParts(edit().get(), [part.uid])),
         },
         { kind: 'separator' },
-        {
-          label: ids.length > 1 ? 'Удалить выбранные' : 'Удалить',
-          shortcut: 'Delete',
-          danger: true,
-          onSelect: remove,
-        },
+        { label: 'Удалить', shortcut: 'Delete', danger: true, onSelect: remove },
       ];
-    } else if (target.kind === 'wire') {
+    } else if (target?.type === 'wire') {
       const wire = edit()
         .get()
         .wires.find((item) => item.id === target.id);
+      if (!wire) return;
+      setSelectedId(wire.id);
       label = 'Провод';
       items = [
         {
           kind: 'colors',
           label: 'Цвет провода',
-          value: wire?.color,
-          colors: WIRE_COLORS.map((value, index) => ({ value, label: WIRE_COLOR_NAMES[index] })),
-          onSelect: (color) => edit().commit(setWireColor(edit().get(), target.id, color)),
-        },
-        {
-          label: 'Убрать изгибы',
-          disabled: !wire?.bends?.length,
-          onSelect: () => edit().commit(setWireBends(edit().get(), target.id, [])),
+          value: wire.color,
+          colors: wirePalette.map((value, index) => ({ value, label: WIRE_COLOR_NAMES[index] })),
+          onSelect: (color) => edit().commit(setWireColor(edit().get(), wire.id, color)),
         },
         { kind: 'separator' },
         { label: 'Удалить', shortcut: 'Delete', danger: true, onSelect: remove },
       ];
-    } else if (target.kind === 'pad') {
-      label = `Контакт платы ${target.fpga}`;
-      items = [
-        {
-          label: 'Отключить провода от контакта',
-          disabled: !edit()
-            .get()
-            .wires.some((wire) => wire.fpga === target.fpga),
-          onSelect: () => edit().commit(disconnectPad(edit().get(), target.fpga)),
-        },
-        { label: 'Открыть в «Выводах»', onSelect: onOpenPins },
-      ];
     } else {
       items = [
-        ...(clipboard.current.parts.length
-          ? ([{ label: 'Вставить', shortcut: 'Ctrl+V', onSelect: paste }] as MenuItem[])
+        ...(target?.type === 'board'
+          ? ([{ label: 'Открыть в «Выводах»', onSelect: onOpenPins }] as MenuItem[])
           : []),
-        { label: 'Показать всё', shortcut: '0', onSelect: showAll },
+        { label: 'Показать всё', shortcut: '0', onSelect: () => scene.current?.fit() },
         {
           label: 'Убрать всё со стола',
           danger: true,
@@ -551,7 +504,7 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
         },
       ];
     }
-    setMenu({ at, label, items });
+    setMenu({ x, y, label, items });
   }
 
   const selectedWire = selection.wire
@@ -559,22 +512,20 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
     : undefined;
   const terminal = runtime?.devices.get(BOARD_UART);
   const boardTime = runtime ? runtime.sim.cycle / BOARD_CLOCK_HZ : 0;
-  const pendingText = !pending
-    ? ''
-    : 'fpga' in pending
-      ? `Выбран контакт платы ${pending.fpga}. Теперь нажмите вывод детали.`
-      : (() => {
-          const part = layout.parts.find((item) => item.uid === pending.part);
-          return `Выбран вывод ${pending.pin} детали «${part ? part.label || partDef(part).title : ''}». Теперь нажмите контакт на гребёнке платы.`;
-        })();
+  const pendingText = pending
+    ? `Выбран вывод ${pending.replace('board:', 'платы ').replace(/^(\w+):/, '$1, ')}. Теперь нажмите второй вывод.`
+    : '';
 
+  const selectedFpga = selectedWire ? wireFpga(connections, selectedWire) : undefined;
   // Signals that could go on the pad of the selected wire: right direction, not placed yet.
   const freeSignals = useMemo(() => {
     if (!design || !selectedWire) return [];
-    const owner = layout.parts.find((part) => part.uid === selectedWire.part);
+    const joined = wirePins(connections, selectedWire)[0];
+    const owner = joined && layout.parts.find((part) => part.uid === joined.part);
     const direction = owner
-      ? partPins(partDef(owner), owner.opts).find((pin) => pin[0] === selectedWire.pin)?.[2]
+      ? partPins(partDef(owner), owner.opts).find((pin) => pin[0] === joined.pin)?.[2]
       : undefined;
+    if (!direction) return [];
     const placed = new Set(
       readCst(project)
         .filter((item) => item.kind === 'IO_LOC')
@@ -592,9 +543,10 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
         ),
       )
       .filter((name) => !placed.has(name));
-  }, [design, selectedWire, layout.parts, project]);
+  }, [design, selectedWire, connections, layout, project]);
   function assign(signal: string, wire: LabWire) {
-    if (!design || !signal) return;
+    const fpga = wireFpga(connections, wire);
+    if (!design || !signal || fpga === undefined) return;
     const file = project.files.find((item) => item.name.endsWith('.cst'))?.name;
     if (!file) {
       setAssignError('В проекте нет файла .cst. Создайте его во вкладке «Выводы».');
@@ -610,7 +562,7 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
           direction: port.direction,
         })),
       );
-      onChange(applyPinEdit(project, signals, { signal, pin: wire.fpga, file, pull: 'NONE' }));
+      onChange(applyPinEdit(project, signals, { signal, pin: fpga, file, pull: 'NONE' }));
       setAssignError('');
     } catch (cause) {
       setAssignError(cause instanceof Error ? cause.message : String(cause));
@@ -621,8 +573,8 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
     ? layout.parts.find((part) => part.uid === propertiesOf)
     : undefined;
   const propertiesWires = useMemo(
-    () => layout.wires.filter((wire) => wire.part === propertiesOf),
-    [layout.wires, propertiesOf],
+    () => connections.wires.filter((wire) => wire.part === propertiesOf),
+    [connections, propertiesOf],
   );
   const changeProperties = useCallback(
     (change: { opts?: Record<string, unknown>; label?: string }, key: string) =>
@@ -635,18 +587,23 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
   const removeFromProperties = useCallback(() => {
     historyRef.current.commit((value) => removeItems(value, [propertiesOf!], null));
     setPropertiesOf(null);
-    setSelection(NOTHING);
-    setTimeout(() => viewport.current?.focus({ preventScroll: true }), 0);
+    setSelectedId('');
+    setTimeout(() => scene.current?.focus(), 0);
   }, [propertiesOf]);
   const closeProperties = useCallback(() => setPropertiesOf(null), []);
 
-  const popoverWire = popover ? layout.wires.find((wire) => wire.id === popover.wire) : undefined;
   const showPopover =
-    popover &&
-    popoverWire &&
+    selectedWire &&
+    popover === selectedWire.id &&
     runtime &&
-    selection.wire === popover.wire &&
-    !runtime.targets.has(popoverWire.fpga);
+    selectedFpga !== undefined &&
+    !headerByFpga.get(selectedFpga)?.rail &&
+    !runtime.targets.has(selectedFpga);
+
+  const showNotice = useCallback((text: string) => {
+    setNotice(text);
+    window.setTimeout(() => setNotice((value) => (value === text ? '' : value)), 6000);
+  }, []);
 
   return (
     <section className="lab-workspace" aria-label="Лаборатория">
@@ -695,17 +652,25 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
             ))}
           </select>
         </label>
-        <label
-          className="lab-pull"
-          title="Пока флажок стоит, детали питаются сами. Снимите его — у каждой детали появятся выводы VCC и GND: их нужно соединить с контактами 3V3 (или 5V) и GND платы, иначе деталь не работает."
-        >
-          <input
-            type="checkbox"
-            checked={layout.autoPower !== false}
-            onChange={(event) => history.commit(setAutoPower(history.get(), event.target.checked))}
-          />
-          Автопитание деталей
-        </label>
+        <div className="lab-tools lab-keys" role="group" aria-label="Кнопки платы">
+          {['S1', 'S2'].map((name, pin) => (
+            <button
+              key={name}
+              type="button"
+              className="button subtle"
+              disabled={!runtime}
+              title={`Кнопка ${name} на плате: держите нажатой`}
+              onPointerDown={(event) => {
+                event.currentTarget.setPointerCapture(event.pointerId);
+                act(BOARD_BUTTONS, 'set', { pin, on: true });
+              }}
+              onPointerUp={() => act(BOARD_BUTTONS, 'set', { pin, on: false })}
+              onPointerCancel={() => act(BOARD_BUTTONS, 'set', { pin, on: false })}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
         <div className="lab-tools" role="group" aria-label="Правка стола">
           <button
             type="button"
@@ -727,68 +692,51 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
           >
             <Redo2 size={17} />
           </button>
-        </div>
-        <div className="lab-tools" role="group" aria-label="Масштаб стола">
-          <button
-            type="button"
-            className="icon-button"
-            aria-label="Уменьшить"
-            title="Уменьшить (Ctrl+колесо вниз)"
-            onClick={() => zoomCentered(1 / 1.2)}
-          >
-            <Minus size={17} />
-          </button>
-          <span className="lab-zoom">{Math.round(zoom * 100)}%</span>
-          <button
-            type="button"
-            className="icon-button"
-            aria-label="Увеличить"
-            title="Увеличить (Ctrl+колесо вверх)"
-            onClick={() => zoomCentered(1.2)}
-          >
-            <Plus size={17} />
-          </button>
           <button
             type="button"
             className="button subtle"
             title="Показать весь стол (клавиша 0)"
-            onClick={showAll}
+            onClick={() => scene.current?.fit()}
           >
             <Maximize2 size={15} />
             Показать всё
           </button>
         </div>
-        <p className="lab-status" role="status">
-          {loading && !runtime
-            ? 'Готовим схему…'
-            : runtime
-              ? `${runtime.hasClock ? '' : 'Такта на выводе 4 нет · '}${
-                  running ? formatRate(rate) : 'пауза'
-                } · на плате прошло ${
-                  boardTime >= 1
+        <div className="lab-clock">
+          <p
+            className="lab-status"
+            role="status"
+            title={
+              runtime && running
+                ? `Схема считается на ${formatRate(rate)}. Настоящая плата делает ${Math.round(BOARD_CLOCK_HZ / 1e6)} млн тактов в секунду: браузер столько не успевает, поэтому время на плате идёт медленнее часов.`
+                : undefined
+            }
+          >
+            {loading && !runtime ? (
+              'Готовим схему…'
+            ) : runtime ? (
+              <>
+                {!runtime.hasClock && 'Такта на выводе 4 нет · '}
+                {!running && 'Пауза · '}
+                Время на плате:{' '}
+                <b>
+                  {boardTime >= 1
                     ? `${boardTime.toFixed(2).replace('.', ',')} с`
-                    : `${(boardTime * 1000).toFixed(2).replace('.', ',')} мс`
-                }`
-              : ''}
-          {runtime && running && speed === 'max' && rate > 0 && (
-            <small>
-              {' '}
-              ·{' '}
-              {rate > BOARD_CLOCK_HZ * 0.9
-                ? 'со скоростью настоящей платы'
-                : `в ${Math.round(BOARD_CLOCK_HZ / rate)} раз медленнее настоящей платы`}
-            </small>
-          )}
-        </p>
-        <button
-          type="button"
-          className="icon-button"
-          aria-label={muted ? 'Включить звук' : 'Выключить звук'}
-          title={muted ? 'Включить звук' : 'Выключить звук'}
-          onClick={() => setMuted((value) => !value)}
-        >
-          {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
-        </button>
+                    : `${(boardTime * 1000).toFixed(0)} мс`}
+                </b>
+              </>
+            ) : null}
+          </p>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label={muted ? 'Включить звук' : 'Выключить звук'}
+            title={muted ? 'Включить звук' : 'Выключить звук'}
+            onClick={() => setMuted((value) => !value)}
+          >
+            {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
+          </button>
+        </div>
       </header>
       {(problem || runtimeError) && (
         <div className="lab-problem" role="alert">
@@ -804,76 +752,79 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
             ))}
         </div>
       )}
-      {pending && (
+      {(pending || notice) && (
         <div className="lab-pending" role="status">
-          {pendingText}
-          <button type="button" className="lab-mini" onClick={() => setPending(null)}>
-            Отмена
+          {pending ? pendingText : notice}
+          <button
+            type="button"
+            className="lab-mini"
+            onClick={() => (pending ? setPending('') : setNotice(''))}
+          >
+            {pending ? 'Отмена' : 'Закрыть'}
           </button>
         </div>
       )}
       <div className="lab-columns">
         <Library onAdd={onAdd} />
-        <Bench
-          history={history}
-          runtime={runtime}
-          top={project.top}
-          zoom={zoom}
-          onZoomAbout={zoomAbout}
-          selection={selection}
-          onSelect={(next) => {
-            setSelection(next);
-            if (next.wire !== selection.wire) setAssignError('');
-          }}
-          onDropPart={onAdd}
-          onRemoveBend={(id, index) =>
-            edit().commit((current) =>
-              setWireBends(
-                current,
-                id,
-                (current.wires.find((wire) => wire.id === id)?.bends ?? []).filter(
-                  (_, at) => at !== index,
-                ),
-              ),
-            )
-          }
+        <LabScene
+          handle={scene}
+          project={scenery}
+          frame={live.frame}
+          solution={live.solution}
+          boardLeds={live.boardLeds}
+          boardKeys={live.boardKeys}
+          selected={selectedId}
           pending={pending}
-          onCancelPending={() => setPending(null)}
-          onPickPin={pickPin}
-          onPickPad={pickPad}
-          muted={muted || !running || !active}
-          act={act}
-          commands={commands}
-          onMenu={openMenu}
-          onConnected={onConnected}
-          viewport={viewport}
-          overlay={
-            <>
-              {!layout.parts.length && (
-                <p className="lab-empty">
-                  Кнопки S1, S2 и шесть светодиодов платы уже работают. Добавьте деталь из списка
-                  слева, затем нажмите её вывод и контакт на гребёнке платы — или потяните от вывода
-                  к контакту — и появится провод.
-                </p>
-              )}
-              {showPopover && (
-                <AssignPopover
-                  fpga={popoverWire.fpga}
-                  at={popover.at}
-                  zoom={zoom}
-                  signals={freeSignals}
-                  label="Сигнал для контакта"
-                  empty="В схеме нет подходящих свободных сигналов. Добавьте порт в верхний модуль."
-                  error={assignError}
-                  onAssign={(signal) => assign(signal, popoverWire)}
-                  onClose={() => setPopover(null)}
-                />
-              )}
-            </>
-          }
-        />
+          select={(id) => {
+            setSelectedId(id);
+            setAssignError('');
+            if (!id) setPopover('');
+          }}
+          terminal={onTerminal}
+          connect={connect}
+          replug={(wire, end, to) => edit().commit(replugWire(edit().get(), wire, end, to))}
+          move={(id, x, y, mount) => {
+            edit().commit(movePart(edit().get(), id, x, y, mount));
+            setSelectedId(id);
+          }}
+          context={(info) => openMenu(info.target, info.x, info.y)}
+          value={(id, value, index) => {
+            const part = layoutRef.current.parts.find((item) => item.uid === id);
+            const device = runtime?.devices.get(id);
+            if (!part || !device) return;
+            for (const [name, argument] of actionFor(part, device, value, index))
+              device.act(name, argument);
+            saveLayout(projectRef.current, layoutRef.current);
+            poke();
+          }}
+          cancel={() => setPending('')}
+          notice={showNotice}
+          boardKey={(id, down) => act(BOARD_BUTTONS, 'set', { pin: id === 'S1' ? 0 : 1, on: down })}
+          drop={onDrop}
+        >
+          {layout.parts.every((part) => partDef(part).kind === 'breadboard') && (
+            <p className="lab-empty">
+              Плата стоит на макетке, как на настоящем столе: её контакты выведены в отверстия, а
+              кнопки S1, S2 и шесть светодиодов уже работают. Добавьте деталь из списка слева: она
+              встанет на макетку правее платы. Соедините плюс (VCC) с 3V3, минус (GND) с GND, а
+              сигналы с нужными контактами платы.
+            </p>
+          )}
+          {showPopover && (
+            <AssignPopover
+              fpga={selectedFpga}
+              signals={freeSignals}
+              label="Сигнал для контакта"
+              empty="В схеме нет подходящих свободных сигналов. Добавьте порт в верхний модуль."
+              error={assignError}
+              onAssign={(signal) => assign(signal, selectedWire)}
+              onClose={() => setPopover('')}
+            />
+          )}
+        </LabScene>
         <SidePanel
           layout={layout}
+          connections={connections}
           selection={selection}
           runtime={runtime}
           freeSignals={freeSignals}
@@ -891,8 +842,8 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
       </div>
       {menu && (
         <ContextMenu
-          x={menu.at.x}
-          y={menu.at.y}
+          x={menu.x}
+          y={menu.y}
           label={menu.label}
           items={menu.items}
           onClose={() => setMenu(null)}
@@ -927,8 +878,8 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
               type="button"
               className="button stop"
               onClick={() => {
-                history.commit({ parts: [], wires: [], zoom: layout.zoom });
-                setSelection(NOTHING);
+                history.commit(defaultBench());
+                setSelectedId('');
                 setConfirmClear(false);
               }}
             >

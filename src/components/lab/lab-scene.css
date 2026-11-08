@@ -1,0 +1,203 @@
+/* The bench as the reference draws it: one WebGL canvas, an ink outline, flat labels and a few
+   cards over it. Colours come from the app's own variables. */
+.bench {
+  --bench-paper: var(--canvas);
+  --bench-paper-deep: color-mix(in srgb, var(--canvas) 86%, #000);
+  --bench-card: color-mix(in srgb, var(--panel) 94%, transparent);
+  --bench-line: var(--border);
+  --bench-ink: var(--text-soft);
+  --bench-navy: var(--text);
+  --bench-teal: var(--pad);
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    var(--bench-paper) 40%,
+    var(--bench-paper-deep) 100%
+  );
+  color: var(--bench-ink);
+  outline: none;
+  touch-action: none;
+  user-select: none;
+}
+.bench:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--bench-teal);
+}
+.bench-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.bench-pin-labels {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.bench-hint {
+  position: absolute;
+  left: 12px;
+  top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+  padding: 5px 12px;
+  border: 1px solid var(--bench-line);
+  border-radius: 999px;
+  background: var(--bench-card);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.bench-hint kbd {
+  min-width: 20px;
+  padding: 1px 5px;
+  border: 1px solid var(--bench-line);
+  border-radius: 5px;
+  background: var(--panel-raised);
+  color: var(--text);
+  font: 600 11px var(--font-mono);
+  text-align: center;
+}
+.bench-error {
+  position: absolute;
+  inset: 40% 10% auto;
+  margin: 0;
+  text-align: center;
+}
+.bench-viewbar {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--bench-line);
+  border-radius: 12px;
+  background: var(--bench-card);
+  box-shadow: var(--shadow);
+}
+.bench-viewbar button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--bench-ink);
+  cursor: pointer;
+}
+.bench-viewbar button:hover {
+  background: var(--accent-soft);
+  color: var(--bench-navy);
+}
+.bench-viewbar button[aria-pressed='true'],
+.bench-viewbar button.on {
+  background: var(--bench-teal);
+  color: var(--pad-text);
+}
+.bench-tooltip {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  transform: translate(10px, -50%);
+  max-width: 320px;
+  padding: 5px 9px;
+  border: 1px solid var(--bench-line);
+  border-radius: 8px;
+  background: var(--bench-card);
+  color: var(--text);
+  font-size: 12px;
+  pointer-events: none;
+  box-shadow: var(--shadow);
+}
+.bench-tooltip strong {
+  color: var(--bench-navy);
+  font-size: 12px;
+}
+.bench-tooltip span {
+  color: var(--bench-ink);
+  white-space: normal;
+}
+.bench-placement {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  border: 1px solid var(--bench-line);
+  border-radius: 10px;
+  background: var(--bench-card);
+  color: var(--text);
+  font-size: 12px;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: var(--shadow);
+}
+.bench-placement-valid {
+  border-color: var(--bench-teal);
+}
+.bench-placement-warning {
+  border-color: #e8b93a;
+}
+.bench-placement-invalid {
+  border-color: var(--danger);
+}
+.bench-card {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 190px;
+  max-width: 260px;
+  transform: translate(14px, -50%);
+  padding: 10px 12px;
+  border: 1px solid var(--bench-line);
+  border-radius: 10px;
+  background: var(--bench-card);
+  box-shadow: var(--shadow);
+  font-size: 12px;
+}
+/* Keyboard and screen-reader access to every pin, wire and control. */
+.bench-a11y {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.bench-a11y:focus-within {
+  z-index: 4;
+  width: auto;
+  height: auto;
+  left: 12px;
+  top: 44px;
+  max-height: 60%;
+  overflow: auto;
+  clip-path: none;
+  padding: 6px 10px;
+  border: 1px solid var(--bench-teal);
+  border-radius: 8px;
+  background: var(--bench-card);
+}
+.bench-a11y button {
+  margin: 0 2px;
+  font: inherit;
+}

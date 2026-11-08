@@ -42,7 +42,8 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ['**/components/**'],
+              // Сцена лаборатории (components/lab/reference) — самостоятельный слой без React: ему можно.
+              regex: '/components/(?!lab/reference/)',
               message: 'lib и hooks не импортируют components: вынесите общие типы в src/lib.',
             },
           ],

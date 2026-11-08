@@ -29,6 +29,12 @@ export const STORAGE_KEYS = {
   staleExampleDismissed: 'yosis.stale-example.dismissed.v1',
   /** localStorage: стол лаборатории проекта, по ключу на проект. */
   labLayout: (projectKey: string) => `yosis.lab.v1.${projectKey}`,
+  /** localStorage: левое меню свёрнуто до значков, `'1'` или `'0'`. */
+  railNarrow: 'yosis.nav.rail-narrow.v1',
+  /** localStorage: развёрнута ли группа вкладок «Настоящая плата», `'1'` или `'0'`. */
+  realBoardTabs: 'yosis.nav.real-board.v1',
+  /** localStorage: вид стола лаборатории, `{solid: boolean}`: объёмный или вид сверху. */
+  labView: 'yosis.lab.view.v1',
 } as const;
 
 /** Базы IndexedDB (не `Storage`, но тоже часть реестра: имя и версия схемы). */

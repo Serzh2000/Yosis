@@ -28,7 +28,7 @@ function topPortBits(source: string, top: string): string[] {
 }
 
 test('every built-in experiment fully constrains its actual top ports without pin conflicts', () => {
-  assert.equal(examples.length, 243);
+  assert.equal(examples.length, 275);
   assert.equal(new Set(examples.map((example) => example.id)).size, examples.length);
   for (const id of ['logic', 'counter', 'alu'])
     assert.ok(examples.some((example) => example.id === id));

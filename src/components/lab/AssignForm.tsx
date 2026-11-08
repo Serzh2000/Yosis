@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { BENCH, BOARD, type Point } from '../../lib/lab/bench';
 
 interface FormProps {
   /** Signals of the design that no pin uses yet and that could go on this contact. */
@@ -53,30 +52,17 @@ export function AssignForm({ signals, label, empty, error, onAssign }: FormProps
   );
 }
 
-/** A small card by the contact a wire was just dropped on, when no signal uses the contact. */
+/** A small card over the bench when a wire was just dropped on a contact no signal uses. */
 export function AssignPopover({
   fpga,
-  at,
-  zoom,
   onClose,
   ...form
-}: FormProps & { fpga: number; at: Point; zoom: number; onClose: () => void }) {
-  const below = at.y < BOARD.y + BOARD.h / 2;
-  // The card keeps its size on screen whatever the zoom of the bench.
-  const size = 1 / zoom;
-  const left = Math.max(4, Math.min(BENCH.w - 284 * size, at.x - 140 * size));
+}: FormProps & { fpga: number; onClose: () => void }) {
   return (
     <div
-      className="lab-popover"
+      className="lab-popover lab-popover-fixed"
       role="group"
       aria-label={`Назначить сигнал контакту ${fpga}`}
-      data-nodrag=""
-      style={{
-        left,
-        top: below ? at.y + 20 * size : at.y - 20 * size,
-        transform: `scale(${size})${below ? '' : ' translateY(-100%)'}`,
-      }}
-      onPointerDown={(event) => event.stopPropagation()}
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
           event.stopPropagation();

@@ -1,3 +1,4 @@
+import { withSupply } from '../src/lib/lab/supply';
 import assert from 'node:assert/strict';
 import test, { after } from 'node:test';
 import { LabManager } from '../server/lab';
@@ -19,7 +20,7 @@ async function start(id: string) {
   assert.equal(result.error, undefined, `${id}: ${JSON.stringify(result.diagnostics)}`);
   const layout = examplePreset(id);
   assert.ok(layout && layout.parts.length > 0, `${id} has a ready bench`);
-  const lab = new LabRuntime(result.design!, example.project, layout);
+  const lab = new LabRuntime(result.design!, example.project, withSupply(layout));
   for (const wire of layout.wires)
     assert.equal(lab.wireState(wire.id), 'ok', `${id}: wire ${wire.id} is connected`);
   const part = lab.devices.get('p1')!;
@@ -44,7 +45,8 @@ test('every part of the laboratory has at least two examples with a ready bench'
     for (const def of new Set(layout.parts.map((part) => part.def)))
       uses.set(def, (uses.get(def) ?? 0) + 1);
   }
-  for (const part of PARTS)
+  // A breadboard is the place the parts stand, not a part an example is about.
+  for (const part of PARTS.filter((item) => item.kind !== 'breadboard'))
     assert.ok((uses.get(part.id) ?? 0) >= 2, `${part.id}: ${uses.get(part.id) ?? 0} example(s)`);
   assert.equal(new Set(labExamples.map((example) => example.id)).size, labExamples.length);
 });

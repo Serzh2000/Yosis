@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/components/virtual-board.css"
+        ],
+        "createdAt": "2026-10-25T07:29:58.576Z",
+        "reason": "assistant: lines 1112-1113 are the silk-screen brackets around '20K' on the board drawing, not a card accent; file untouched this session"
+      }
+    ]
+  }
+}

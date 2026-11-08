@@ -77,7 +77,7 @@ export function friendlyCellName(name: string): string {
   if (!name.startsWith('$')) return name;
   const located = /^\$[^$]*\$(.+?):(\d+)(?:\.\d+(?:-\d+(?:\.\d+)?)?)?\$\d+$/.exec(name);
   if (located) {
-    const file = located[1].split(/[\/]/).pop();
+    const file = located[1].split('/').pop();
     return `${file} · строка ${located[2]}`;
   }
   return '';

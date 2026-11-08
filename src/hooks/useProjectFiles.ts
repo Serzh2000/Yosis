@@ -3,6 +3,7 @@ import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import type { Project, SourceFile } from '../../shared/types';
 import { starterCircuit } from '../../shared/schematic';
 import { planSchematicAddition } from '../lib/circuit-add';
+import { assignSchematicPins } from '../lib/circuit-board';
 import { canDeleteFile, newFileContent, workTabForFile } from '../lib/file-templates';
 import { cloneProject, validateProject } from '../lib/projects';
 import type { WorkTab } from '../lib/studio-tabs';
@@ -106,6 +107,8 @@ export function useProjectFiles({
       );
     else next.files.push({ name, content: newFileContent(name) });
     try {
+      if (fileDialog.kind !== 'rename' && name.endsWith('.ysch'))
+        next.files = assignSchematicPins(next, newFileContent(name)).files;
       validateProject(next);
     } catch (cause) {
       setFileError(cause instanceof Error ? cause.message : 'Некорректное имя файла.');
@@ -122,8 +125,10 @@ export function useProjectFiles({
     const plan = planSchematicAddition(project);
     if (!plan.ok) return;
     const next = cloneProject(project);
-    next.files.push({ name: plan.fileName, content: JSON.stringify(starterCircuit(), null, 2) });
+    const content = JSON.stringify(starterCircuit(), null, 2);
+    next.files.push({ name: plan.fileName, content });
     try {
+      next.files = assignSchematicPins(next, content).files;
       validateProject(next);
     } catch (cause) {
       onError(cause instanceof Error ? cause.message : 'Не удалось добавить схему.');

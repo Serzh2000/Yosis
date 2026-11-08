@@ -3,8 +3,12 @@ import type { Project } from '../../../shared/types';
 import { BUTTON_PINS, CLOCK_PIN, LED_PINS, UART_RX_PIN, UART_TX_PIN } from '../board-parts';
 import { readCst } from '../pin-planner';
 import { POWER_PINS, partById, type PartDef } from './catalog';
-import { headerByFpga } from './bench';
+import { headerByFpga } from './pads';
+import { defaultBench } from './bench';
 import { migrateLayout } from './migrate';
+import { resolveConnections, type Connections } from '../../components/lab/reference/bridge';
+import type { BoardDock } from '../../components/lab/reference/shared/mcu';
+import type { Mount, Turn } from '../../components/lab/reference/shared/mount';
 import { createDevice, type Device, type DeviceHost, type Options } from './devices';
 import { LabSim, type LabProbe } from './engine';
 import { registerBusDevices } from './bus';
@@ -14,39 +18,46 @@ import { localStore, STORAGE_KEYS } from '../storage';
 
 registerBusDevices();
 
-/** Which side of the part its pins are on: 0 bottom, 90 left, 180 top, 270 right. */
-export type Rot = 0 | 90 | 180 | 270;
+export type { Turn };
+/**
+ * A part on the bench. Its place is in the units of the reference's scene (see `partCenter`
+ * there); `turn` counts quarter turns.
+ */
 export interface LabPart {
   uid: string;
   def: string;
   x: number;
   y: number;
-  rot: Rot;
+  turn: Turn;
   /** Replaces the part's name on the bench. */
   label?: string;
+  /** Plugged into a breadboard: its pins are in neighbouring holes of one row, from `hole`. */
+  mount?: Mount;
   /** Saved properties (see the part's schema) and the state a running part keeps. */
   opts: Options;
 }
-/** A jumper between a pin of a part and a header pin of the board (its FPGA pin number). */
+/**
+ * A jumper between two terminals: a pin of a part (`led1:A`), a hole of a breadboard
+ * (`bb1:e12`) or a contact of the FPGA board (`board:75`, `board:3V3`).
+ */
 export interface LabWire {
   id: string;
-  part: string;
-  pin: string;
-  fpga: number;
+  from: string;
+  to: string;
   color?: string;
-  /** Points the pupil pulled the wire through, in order from the part to the board. */
-  bends?: { x: number; y: number }[];
 }
 export interface LabLayout {
   parts: LabPart[];
   wires: LabWire[];
-  /** Bench zoom, remembered per project. */
-  zoom?: number;
-  /**
-   * False gives every part supply pins (VCC, GND) that the pupil wires to the board; a part
-   * without both stays dead. Otherwise the bench powers the parts by itself.
-   */
-  autoPower?: boolean;
+  /** The FPGA board stands on this breadboard with its pins in the holes; loose when absent. */
+  dock?: BoardDock;
+}
+/** What the simulation sees of the wires: a pin of a part and the contact of the board it is joined to. */
+export interface ResolvedWire {
+  id: string;
+  part: string;
+  pin: string;
+  fpga: number;
 }
 export interface PinTarget {
   net: number;
@@ -96,7 +107,7 @@ const builtinDefs: Record<string, PartDef> = {
     note: '',
   },
 };
-const builtinWires: LabWire[] = [
+const builtinWires: ResolvedWire[] = [
   ...LED_PINS.map((fpga, index) => ({
     id: `@led${index}`,
     part: BOARD_LEDS,
@@ -143,7 +154,13 @@ export class LabRuntime implements DeviceHost {
   /** Parts whose supply pins are not both wired; they do nothing. */
   readonly unpowered = new Set<string>();
 
-  constructor(design: LabDesign, project: Project, layout: LabLayout) {
+  /** Which pins are joined to what, from the wires and the breadboards of the bench. */
+  readonly connections: Connections;
+
+  constructor(design: LabDesign, project: Project, bench: LabLayout) {
+    // Wires, breadboards and plugs all come down to: this pin is on that contact of the board.
+    this.connections = resolveConnections(bench);
+    const layout = { parts: bench.parts, wires: this.connections.wires };
     this.targets = pinTargets(design, project);
     const clock = this.targets.get(CLOCK_PIN);
     this.hasClock = clock?.direction === 'input';
@@ -171,15 +188,19 @@ export class LabRuntime implements DeviceHost {
       this.states.set(wire.id, right ? 'ok' : 'direction');
       if (right) fed.set(wire.part, (fed.get(wire.part) ?? new Set()).add(wire.pin));
     }
+    // Every part needs both supply wires; a breadboard is not a part that runs.
     for (const part of layout.parts)
-      if (part.opts.power === true && (fed.get(part.uid)?.size ?? 0) < POWER_PINS.length)
+      if (
+        partById.get(part.def)?.kind !== 'breadboard' &&
+        (fed.get(part.uid)?.size ?? 0) < POWER_PINS.length
+      )
         this.unpowered.add(part.uid);
     for (const wire of [...builtinWires, ...layout.wires]) {
       const device = this.devices.get(wire.part);
       if (!device) continue;
       if (
         POWER_PINS.some((pin) => pin[0] === wire.pin) &&
-        layout.parts.some((part) => part.uid === wire.part && part.opts.power === true)
+        layout.parts.some((part) => part.uid === wire.part)
       )
         continue;
       // A dead part neither listens nor drives; its signal wires are in place for later.
@@ -221,8 +242,23 @@ export class LabRuntime implements DeviceHost {
     this.frame(0);
   }
 
+  /** How a pin of a part (`uid:pin`) is joined, or how the net of a wire of the bench works. */
   wireState(id: string): WireState {
-    return this.states.get(id) ?? 'unassigned';
+    const own = this.states.get(id);
+    if (own) return own;
+    // A wire is as good as the pins of the parts that its net joins to the board.
+    const made = [...this.connections.netWires]
+      .filter(([, wires]) => wires.includes(id))
+      .flatMap(([pin]) => {
+        const state = this.states.get(pin);
+        return state ? [state] : [];
+      });
+    if (!made.length) return 'ok';
+    return made.includes('direction')
+      ? 'direction'
+      : made.includes('unassigned')
+        ? 'unassigned'
+        : 'ok';
   }
   cycle() {
     return this.sim.cycle;
@@ -272,7 +308,7 @@ export function loadLayout(project: Project): LabLayout {
   const preset = project.origin
     ? (examplePreset(project.origin.exampleId) ?? boardPreset(project))
     : undefined;
-  return preset ?? { parts: [], wires: [] };
+  return preset ?? defaultBench();
 }
 export function saveLayout(project: Project, layout: LabLayout) {
   // Без хранилища стол работает в этой сессии.

@@ -1,21 +1,17 @@
+import { withSupply } from '../src/lib/lab/supply';
+import { fromShort, type ShortBench } from './lab-layout';
 import assert from 'node:assert/strict';
 import test, { after } from 'node:test';
 import { LabManager } from '../server/lab';
 import { PARTS, PART_GROUPS, partById } from '../src/lib/lab/catalog';
 import { BOARD_CLOCK_HZ, createDevice } from '../src/lib/lab/devices';
-import {
-  BOARD_BUTTONS,
-  BOARD_LEDS,
-  BOARD_UART,
-  LabRuntime,
-  type LabLayout,
-} from '../src/lib/lab/runtime';
+import { BOARD_BUTTONS, BOARD_LEDS, BOARD_UART, LabRuntime } from '../src/lib/lab/runtime';
 import type { Project } from '../shared/types';
 
 const manager = new LabManager();
 after(() => manager.close());
 
-async function bench(source: string, cst: string, layout: LabLayout = { parts: [], wires: [] }) {
+async function bench(source: string, cst: string, layout: ShortBench = { parts: [], wires: [] }) {
   const project: Project = {
     name: 'lab',
     top: 'top',
@@ -28,7 +24,7 @@ async function bench(source: string, cst: string, layout: LabLayout = { parts: [
   const result = await manager.compile('tester', project, new AbortController().signal);
   assert.equal(result.error, undefined, JSON.stringify(result.diagnostics));
   const design = result.design!;
-  const lab = new LabRuntime(design, project, layout);
+  const lab = new LabRuntime(design, project, withSupply(fromShort(layout)));
   /** Value of a port of the design, whether or not it is on a pin. */
   const read = (name: string) =>
     design.ports
@@ -50,7 +46,11 @@ test('the catalogue offers at least fifty distinct parts in every group', () => 
       group,
     );
   for (const part of PARTS) {
-    assert.ok(part.pins.length > 0 && part.note.length > 10, part.id);
+    // A breadboard has holes, not pins.
+    assert.ok(
+      (part.kind === 'breadboard' || part.pins.length > 0) && part.note.length > 10,
+      part.id,
+    );
     assert.equal(new Set(part.pins.map((pin) => pin[0])).size, part.pins.length, part.id);
   }
 });
@@ -86,11 +86,12 @@ test('wires to unassigned pins and against the direction are reported', async ()
       parts: [
         { uid: 'led', def: 'led', x: 0, y: 0, rot: 0, opts: {} },
         { uid: 'btn', def: 'button', x: 0, y: 0, rot: 0, opts: {} },
+        { uid: 'btn2', def: 'button', x: 0, y: 0, rot: 0, opts: {} },
       ],
       wires: [
         { id: 'free', part: 'led', pin: 'A', fpga: 42 },
         { id: 'wrong', part: 'btn', pin: 'OUT', fpga: 80 },
-        { id: 'good', part: 'btn', pin: 'OUT', fpga: 75 },
+        { id: 'good', part: 'btn2', pin: 'OUT', fpga: 75 },
       ],
     },
   );

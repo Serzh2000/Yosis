@@ -67,7 +67,7 @@ export function useLabHistory(initial: () => LabLayout, persist: (layout: LabLay
         const step = undoStep(s.history, s.present);
         if (!step) return;
         s.history = step.history;
-        const next = { ...step.present, zoom: s.present.zoom, autoPower: s.present.autoPower };
+        const next = step.present;
         show(next);
         persistRef.current(next);
       },
@@ -76,7 +76,7 @@ export function useLabHistory(initial: () => LabLayout, persist: (layout: LabLay
         const step = redoStep(s.history, s.present);
         if (!step) return;
         s.history = step.history;
-        const next = { ...step.present, zoom: s.present.zoom, autoPower: s.present.autoPower };
+        const next = step.present;
         show(next);
         persistRef.current(next);
       },

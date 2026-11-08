@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { compileCircuit, parseCircuit, starterCircuit } from '../shared/schematic';
+import { compileCircuit, parseCircuit } from '../shared/schematic';
+import { genericStarter as starterCircuit } from './circuit-fixtures';
 import { runVerilog } from './circuit-harness';
 
 /**

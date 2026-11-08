@@ -5,6 +5,7 @@ import { moduleDeclarations } from './verilog-modules';
 import { cloneProject, validateProject } from './projects';
 import { markExampleOrigin } from './example-origin';
 import { starterCircuit } from '../../shared/schematic';
+import { assignSchematicPins } from './circuit-board';
 
 export interface WizardSettings {
   start: string;
@@ -79,20 +80,23 @@ export const wizardStartingPoints = [
   {
     id: 'schematic',
     title: 'Конструктор логических элементов',
-    description: 'Вход → NOT → LED. Соединяйте элементы без ручного Verilog.',
-    project: {
-      name: 'my-circuit',
-      top: 'top',
-      board: 'tangnano20k',
-      files: [
-        { name: 'top.ysch', content: JSON.stringify(starterCircuit(), null, 2) },
-        {
-          name: 'board.cst',
-          content:
-            '// Кнопка S1 нажата = 1. NOT превращает 1 в активный уровень LED.\nIO_LOC "button" 88;\nIO_PORT "button" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;\n// LED0 светится при 0.\nIO_LOC "led_n" 15;\nIO_PORT "led_n" IO_TYPE=LVCMOS33;\n',
-        },
-      ],
-    } as Project,
+    description: 'Кнопка S1 → светодиод LED0. Соединяйте элементы без ручного Verilog.',
+    project: assignSchematicPins(
+      {
+        name: 'my-circuit',
+        top: 'top',
+        board: 'tangnano20k',
+        files: [
+          { name: 'top.ysch', content: JSON.stringify(starterCircuit(), null, 2) },
+          {
+            name: 'board.cst',
+            content:
+              '// Выводы платы для элементов схемы назначает Конструктор: правьте их во вкладке «Выводы».\n',
+          },
+        ],
+      } as Project,
+      JSON.stringify(starterCircuit()),
+    ),
   },
   {
     id: 'blank',

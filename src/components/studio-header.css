@@ -180,6 +180,24 @@
   color: color-mix(in srgb, var(--chrome-soft) 72%, var(--chrome));
   font-size: 12px;
 }
+.sh-tab-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px 3px;
+  color: color-mix(in srgb, var(--chrome-soft) 72%, var(--chrome));
+  font-size: 12px;
+  text-align: left;
+}
+.sh-tab-group-toggle:hover:not(:disabled) {
+  color: var(--chrome-text);
+}
+.sh-tab-group-toggle:disabled {
+  cursor: default;
+}
+.sh-tab-group-toggle .sh-via {
+  margin-left: auto;
+}
 .sh-tab,
 .sh-files {
   display: flex;
@@ -281,6 +299,7 @@
   }
   .sh-brand strong,
   .sh-tab-group-label,
+  .sh-tab-group-toggle > span,
   .sh-tab > span,
   .sh-tab small,
   .sh-files > span,
@@ -309,6 +328,54 @@
   .sh-tab-group + .sh-tab-group {
     padding-top: 8px;
     border-top: 1px solid var(--chrome-border);
+  }
+}
+/* The same folded rail, when the pupil folds it on a wide screen. */
+.studio.rail-narrow {
+  --rail-width: 52px;
+}
+.studio.rail-narrow .sh-brand {
+  width: auto;
+}
+.studio.rail-narrow .sh-brand strong,
+.studio.rail-narrow .sh-tab-group-label,
+.studio.rail-narrow .sh-tab-group-toggle > span,
+.studio.rail-narrow .sh-tab > span,
+.studio.rail-narrow .sh-tab small,
+.studio.rail-narrow .sh-files > span,
+.studio.rail-narrow .sh-btn.primary kbd {
+  display: none;
+}
+.studio.rail-narrow .sh-nav {
+  padding-inline: 6px;
+}
+.studio.rail-narrow .sh-tab,
+.studio.rail-narrow .sh-files {
+  position: relative;
+  justify-content: center;
+  padding: 0;
+}
+.studio.rail-narrow .sh-tab .sh-via {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+}
+.studio.rail-narrow .sh-tabs {
+  gap: 8px;
+}
+.studio.rail-narrow .sh-tab-group + .sh-tab-group {
+  padding-top: 8px;
+  border-top: 1px solid var(--chrome-border);
+}
+
+.sh-rail-toggle {
+  margin-top: 4px;
+}
+@media (max-width: 1179px) {
+  .sh-rail-toggle {
+    display: none;
   }
 }
 @media (max-width: 899px) {

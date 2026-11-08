@@ -87,8 +87,9 @@ tests/    node:test; e2e/ — Playwright
 | `YOSIS_TRUSTED_PROXY_HOPS`                                                              | число доверенных прокси для определения адреса клиента          |
 | `YOSIS_MAX_USER_JOBS`, `YOSIS_MAX_JOBS_PER_HOUR`                                        | лимиты заданий на пользователя                                  |
 | `YOSIS_BUILD_CONCURRENCY`, `YOSIS_SIMULATION_CONCURRENCY`, `YOSIS_PHYSICAL_CONCURRENCY` | параллельные задания, 1–8                                       |
+| `YOSIS_SYNTAX_CONCURRENCY`, `YOSIS_LAB_CONCURRENCY`                                     | воркеры проверки и лаборатории, 1–8 (по умолчанию треть ядер)   |
 | `YOSIS_JOB_RETAIN_COUNT`, `YOSIS_JOB_RETAIN_DAYS`, `YOSIS_JOB_RETAIN_MB`                | политика хранения заданий                                       |
-| `YOSIS_PREWARM`                                                                         | `0` — не держать прогретый воркер Yosys                         |
+| `YOSIS_PREWARM`                                                                         | `0` — не держать прогретые воркеры Yosys                        |
 | `YOSIS_IVERILOG`, `YOSIS_VVP`, `IVERILOG_PATH`, `VVP_PATH`, `IVERILOG_LIB`              | пути к Icarus Verilog                                           |
 | `YOSIS_NEXTPNR`, `YOSIS_GOWIN_PACK`, `YOSIS_PYTHON`                                     | пути к nextpnr и упаковщику Gowin                               |
 | `YOSIS_OPENFPGALOADER`, `YOSIS_GOWIN_PROGRAMMER`                                        | программаторы для локального помощника                          |

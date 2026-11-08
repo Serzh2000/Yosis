@@ -36,6 +36,11 @@ export function createApp(
   const userStore = new UserStore(path.join(path.dirname(manager.root), '.users'));
   const syntax = new SyntaxManager();
   const lab = new LabManager();
+  lab.knownCheck = (project) => syntax.known(project);
+  app.locals.prewarm = () => {
+    syntax.prewarm();
+    lab.prewarm();
+  };
   app.locals.close = () => {
     syntax.close();
     lab.close();
@@ -356,11 +361,14 @@ export function startServer() {
   const manager = new BuildManager(path.join(dataDirectory, '.builds'));
   const simulations = new SimulationManager(path.join(dataDirectory, '.simulations'));
   const physical = new PhysicalManager(path.join(dataDirectory, '.physical'), manager);
-  if (process.env.YOSIS_PREWARM !== '0') manager.prewarm();
+  if (process.env.YOSIS_PREWARM !== '0') {
+    manager.prewarm();
+  }
   void Promise.all([manager.prune(), simulations.prune(), physical.prune()]).catch((error) =>
     console.error('Не удалось очистить завершённые задания:', error),
   );
   const app = createApp(manager, production, simulations, physical, options);
+  if (process.env.YOSIS_PREWARM !== '0') app.locals.prewarm();
   const server = app.listen(port, host, (error?: Error) => {
     if (error) {
       console.error(`Не удалось запустить API на порту ${port}: ${error.message}`);

@@ -18,11 +18,17 @@ export interface YosysRequest {
   project?: Project;
   lab?: boolean;
   prepareSimulation?: boolean;
+  /** После задания не завершаться, а ответить `idle` и ждать следующее. */
+  reuse?: boolean;
 }
 
 /** Запрос к `syntax-runner.mjs`: проверить синтаксис без полного синтеза. */
 export interface SyntaxRequest {
-  project: Project;
+  /** Прогрев: загрузить Yosys заранее, до первой проверки. */
+  warm?: boolean;
+  project?: Project;
+  /** После проверки не завершаться, а ответить `idle` и ждать следующую. */
+  reuse?: boolean;
 }
 
 /** Запрос к `physical-yosys-runner.mjs`: плоский нетлист для nextpnr. */
@@ -38,7 +44,9 @@ export type CommonWorkerMessage =
   /** Успешное завершение; после него воркер закрывает канал. */
   | { type: 'success' }
   /** Неудача синтеза или проверки. */
-  | { type: 'failure'; error: string };
+  | { type: 'failure'; error: string }
+  /** Задание закончено, воркер жив и готов к следующему (только при `reuse`). */
+  | { type: 'idle' };
 
 /** Сообщения `yosys-runner.mjs`. */
 export type YosysWorkerMessage =
@@ -56,7 +64,7 @@ export type YosysWorkerMessage =
     };
 
 /** Сообщения `syntax-runner.mjs`. */
-export type SyntaxWorkerMessage = CommonWorkerMessage;
+export type SyntaxWorkerMessage = CommonWorkerMessage | { type: 'warm' };
 
 /** Сообщения `physical-yosys-runner.mjs` (собственный вид ответа: `flat` и `error`). */
 export type FlattenWorkerMessage =

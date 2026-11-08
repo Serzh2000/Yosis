@@ -1,4 +1,4 @@
-import { headerByFpga } from './bench';
+import { headerByFpga } from './pads';
 import type { PinDir } from './catalog';
 import type { PinTarget } from './runtime';
 

@@ -1,7 +1,8 @@
+import { padTerminal } from './pads';
+import { addMissing, withSupply } from './supply';
 import { LED_COLORS, partById, partPins } from './catalog';
-import { defaultRot } from './bench';
 import type { Options } from './devices';
-import type { LabLayout, LabPart, LabWire, Rot } from './runtime';
+import type { LabLayout, LabPart, LabWire, Turn } from './runtime';
 
 const color = (name: string) => LED_COLORS.find((item) => item.label === name)!.value;
 const CAPS = { red: '#e5484d', green: '#30a46c', blue: '#3e63dd', yellow: '#f5c518' };
@@ -54,61 +55,87 @@ export const LEGACY_PARTS: Record<string, Legacy> = {
   analyzer8: { def: 'analyzer', opts: { channels: 8 } },
 };
 
-const isRot = (value: unknown): value is Rot =>
-  value === 0 || value === 90 || value === 180 || value === 270;
+const isTurn = (value: unknown): value is Turn =>
+  value === 0 || value === 1 || value === 2 || value === 3;
+
+/** A wire of the first format: a pin of a part and a contact of the board by its number. */
+interface OldWire {
+  id?: unknown;
+  part?: unknown;
+  pin?: unknown;
+  fpga?: unknown;
+  color?: unknown;
+}
 
 /**
  * A saved bench in any earlier format, turned into the current one: variants are mapped to
- * their merged part with properties, parts get a rotation, wires follow renamed pins.
- * Returns null when the value is not a bench at all.
+ * their merged part with properties, wires become wires between terminals, and a bench that
+ * was powered by the table gets its supply wired. Benches of the first format had their own
+ * coordinates (a flat table), which have no meaning on the new one: their parts are set out
+ * again, keeping which pin is wired to which contact. Returns null when the value is not a
+ * bench at all.
  */
 export function migrateLayout(raw: unknown): LabLayout | null {
-  const value = raw as { parts?: unknown; wires?: unknown; zoom?: unknown } | null;
+  const value = raw as { parts?: unknown; wires?: unknown } | null;
   if (!value || !Array.isArray(value.parts) || !Array.isArray(value.wires)) return null;
   const renamed = new Map<string, Record<string, string>>();
   const parts: LabPart[] = [];
-  for (const item of value.parts as Partial<LabPart>[]) {
+  let flat = false;
+  for (const item of value.parts as (Partial<LabPart> & { rot?: unknown })[]) {
     if (typeof item?.def !== 'string' || typeof item.uid !== 'string') continue;
     const legacy = LEGACY_PARTS[item.def];
     const def = partById.get(legacy?.def ?? item.def);
     if (!def) continue;
     // The saved state wins over what the old variant implied (an edited polarity, say).
-    const opts: Options = { ...legacy?.opts, ...(item.opts as Options | undefined) };
-    const x = Number.isFinite(item.x) ? item.x! : 0;
-    const y = Number.isFinite(item.y) ? item.y! : 0;
+    const { power: _power, ...kept } = { ...legacy?.opts, ...(item.opts as Options | undefined) };
+    const opts: Options = kept;
     if (legacy?.pins) renamed.set(item.uid, legacy.pins);
+    if (item.rot !== undefined) flat = true;
+    const mount =
+      typeof item.mount?.on === 'string' && typeof item.mount.hole === 'string'
+        ? { on: item.mount.on, hole: item.mount.hole }
+        : undefined;
     parts.push({
       uid: item.uid,
       def: def.id,
-      x,
-      y,
-      // Before rotation existed, parts below the board turned their pins up.
-      rot: isRot(item.rot) ? item.rot : defaultRot(def, opts, y),
+      x: Number.isFinite(item.x) ? item.x! : 0,
+      y: Number.isFinite(item.y) ? item.y! : 0,
+      turn: isTurn(item.turn) ? item.turn : 0,
       ...(typeof item.label === 'string' && item.label ? { label: item.label } : {}),
+      ...(mount && !flat ? { mount } : {}),
       opts,
     });
   }
   const wires: LabWire[] = [];
-  for (const wire of value.wires as Partial<LabWire>[]) {
-    const part = parts.find((item) => item.uid === wire?.part);
+  const known = new Set(parts.map((part) => part.uid));
+  for (const wire of value.wires as (Partial<LabWire> & OldWire)[]) {
+    const color = typeof wire?.color === 'string' ? { color: wire.color } : {};
+    const id = typeof wire?.id === 'string' ? wire.id : `wire-${wires.length}`;
+    if (typeof wire.from === 'string' && typeof wire.to === 'string') {
+      // Both ends have to be somewhere: a part that is gone takes its wires with it.
+      const owners = [wire.from, wire.to].map((end) => end.slice(0, end.indexOf(':')));
+      if (owners.every((owner) => owner === 'board' || known.has(owner)))
+        wires.push({ id, from: wire.from, to: wire.to, ...color });
+      continue;
+    }
+    // The first format.
+    const part = parts.find((item) => item.uid === wire.part);
     if (!part || typeof wire.pin !== 'string' || typeof wire.fpga !== 'number') continue;
     const pin = renamed.get(part.uid)?.[wire.pin] ?? wire.pin;
     const def = partById.get(part.def)!;
     if (!partPins(def, part.opts).some((item) => item[0] === pin)) continue;
-    wires.push({
-      id: String(wire.id),
-      part: part.uid,
-      pin,
-      fpga: wire.fpga,
-      ...(typeof wire.color === 'string' ? { color: wire.color } : {}),
-      ...(Array.isArray(wire.bends) &&
-      wire.bends.length &&
-      wire.bends.every((bend) => Number.isFinite(bend?.x) && Number.isFinite(bend?.y))
-        ? { bends: wire.bends.map((bend) => ({ x: bend.x, y: bend.y })) }
-        : {}),
-    });
+    wires.push({ id, from: `${part.uid}:${pin}`, to: padTerminal(wire.fpga), ...color });
   }
-  const zoom = typeof value.zoom === 'number' && value.zoom > 0 ? value.zoom : undefined;
-  const manual = (value as { autoPower?: unknown }).autoPower === false;
-  return { parts, wires, ...(zoom ? { zoom } : {}), ...(manual ? { autoPower: false } : {}) };
+  const dock = (value as { dock?: { on?: unknown; column?: unknown } }).dock;
+  const docked =
+    typeof dock?.on === 'string' &&
+    Number.isInteger(dock.column) &&
+    parts.some((part) => part.uid === dock.on);
+  const layout: LabLayout = {
+    parts,
+    wires,
+    ...(docked ? { dock: { on: dock.on as string, column: dock.column as number } } : {}),
+  };
+  // A flat bench is set out again; one in the current format stays as it is.
+  return flat ? withSupply(addMissing(layout)) : layout;
 }

@@ -51,11 +51,12 @@ test('every bus part is in the catalogue with a title, a note, unique pins and a
 
 test('properties choose pins, size and picture of the bus parts', () => {
   const lcd = partById.get('lcd-parallel')!;
+  // The signal pins come first, the plus and the minus of every part after them.
   assert.deepEqual(
     partPins(lcd, {}).map((pin) => pin[0]),
-    ['RS', 'E', 'D4', 'D5', 'D6', 'D7'],
+    ['RS', 'E', 'D4', 'D5', 'D6', 'D7', 'VCC', 'GND'],
   );
-  assert.equal(partPins(lcd, { bus: 8 }).length, 10);
+  assert.equal(partPins(lcd, { bus: 8 }).length, 10 + 2);
   assert.equal(resolvePart(lcd, { size: '20x4' }).params.rows, 4);
   assert.equal(resolvePart(partById.get('max7219')!, { mode: 'digits' }).shape, 'bus-digits');
   assert.equal(resolvePart(partById.get('max7219')!, {}).shape, 'bus-matrix');

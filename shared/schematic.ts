@@ -617,16 +617,14 @@ export function emptyCircuit(): CircuitDocument {
 }
 export function starterCircuit(): CircuitDocument {
   const doc = emptyCircuit();
+  // The board's own button and LED: their pins are assigned in the .cst by the editor, and the
+  // LED's inversion is added by the block, so nothing here needs a hand-written constraint.
   for (const [kind, name, x, params] of [
-    ['input', 'button', 80, {}],
-    ['buf', 'invert', 340, { invert: true }],
-    ['output', 'led_n', 600, {}],
+    ['button', 's1', 80, { which: 's1' }],
+    ['led', 'led0', 400, { index: 0 }],
   ] as const) {
     doc.nodes.push({ ...newCircuitNode(doc, kind, params), name, x, y: 220 });
   }
-  doc.wires = [
-    { id: 'w1', from: { node: 'n1', pin: 'Y' }, to: { node: 'n2', pin: 'A' } },
-    { id: 'w2', from: { node: 'n2', pin: 'Y' }, to: { node: 'n3', pin: 'A' } },
-  ];
+  doc.wires = [{ id: 'w1', from: { node: 'n1', pin: 'Y' }, to: { node: 'n2', pin: 'A' } }];
   return doc;
 }

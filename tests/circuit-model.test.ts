@@ -16,11 +16,11 @@ import {
   newLibraryNode,
   parseCircuit,
   removeCircuitNode,
-  starterCircuit,
   type CircuitDocument,
   type CircuitNode,
   type BlockKind,
 } from '../shared/schematic';
+import { genericStarter as starterCircuit } from './circuit-fixtures';
 import {
   alignNodes,
   normalizeParams,
@@ -83,7 +83,9 @@ test('schematic wizard preserves board contracts and materializes a custom modul
     compiled = materializeCircuitProject(project);
   assert.equal(getProjectSnapshot(project), snapshot);
   assert.match(compiled.files.find((file) => file.name === 'top.v')!.content, /module my_device/);
-  assert.match(compiled.files[0].content, /IO_LOC "button" 88/);
+  assert.match(compiled.files[0].content, /IO_LOC "s1" 88/);
+  assert.match(compiled.files[0].content, /IO_LOC "led0" 15/);
+  assert.doesNotMatch(compiled.files[0].content, /IO_LOC "(button|led_n)"/);
   assert.equal(validateProject(project).files.length, 2);
 });
 test('incomplete drafts persist, but cannot generate an old or fabricated circuit', () => {

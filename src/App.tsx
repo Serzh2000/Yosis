@@ -18,6 +18,7 @@ import { SourceWorkspaces } from './components/workspaces/SourceWorkspaces';
 import { StudioNotices } from './components/workspaces/StudioNotices';
 import { StudioStatusBar } from './components/workspaces/StudioStatusBar';
 import { useBuild } from './hooks/useBuild';
+import { useRailNarrow } from './hooks/useRailNarrow';
 import { useHardwareState } from './hooks/useHardwareState';
 import { useHealth } from './hooks/useHealth';
 import { useNetlistSelection, useNetlistView } from './hooks/useNetlistView';
@@ -71,6 +72,7 @@ export default function App() {
     (next, savePrevious) => openProjectRef.current(next, savePrevious),
     [],
   );
+  const rail = useRailNarrow();
   const { workTab, setWorkTab, lessonId, setLessonId, visited } = useStudioRoute({
     initialRoute,
     ready,
@@ -224,7 +226,7 @@ export default function App() {
       </div>
     );
   return (
-    <div className="studio" data-theme={theme}>
+    <div className={`studio ${rail.narrow ? 'rail-narrow' : ''}`} data-theme={theme}>
       {missionOpen && (
         <MissionHost
           project={project}
@@ -276,6 +278,8 @@ export default function App() {
       <StudioNavigation
         tab={workTab}
         onChange={setWorkTab}
+        narrow={rail.narrow}
+        onToggleNarrow={rail.toggle}
         fileManagerOpen={files.fileManagerOpen}
         filesAvailable={files.usesProjectFiles}
         onToggleFiles={() => files.setFileManagerOpen(!files.fileManagerOpen)}

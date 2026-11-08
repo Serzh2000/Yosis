@@ -45,20 +45,22 @@ function Digit({ levels, color }: { levels: number[]; color: string }) {
     filter: b > 0.3 ? `drop-shadow(0 0 3px ${color})` : undefined,
   });
   return (
-    <svg className="lab-digit" viewBox="0 0 46 68" aria-hidden="true">
-      {SEGMENT_RECTS.map(([x, y, w, h], index) => (
-        <rect
-          key={index}
-          x={x}
-          y={y}
-          width={w}
-          height={h}
-          rx="2.5"
-          style={fill(levels[index] ?? 0)}
-        />
-      ))}
-      <circle cx="42" cy="62" r="3" style={fill(levels[7] ?? 0)} />
-    </svg>
+    <div className="lab-digit" aria-hidden="true">
+      <svg viewBox="0 0 46 68">
+        {SEGMENT_RECTS.map(([x, y, w, h], index) => (
+          <rect
+            key={index}
+            x={x}
+            y={y}
+            width={w}
+            height={h}
+            rx="2.5"
+            style={fill(levels[index] ?? 0)}
+          />
+        ))}
+        <circle cx="42" cy="62" r="3" style={fill(levels[7] ?? 0)} />
+      </svg>
+    </div>
   );
 }
 

@@ -62,8 +62,11 @@ export class JobQueue<T> {
   }
 }
 
-export function executorCount(name: 'build' | 'simulation' | 'physical') {
-  const raw = process.env[`YOSIS_${name.toUpperCase()}_CONCURRENCY`] ?? '1';
+export function executorCount(
+  name: 'build' | 'simulation' | 'physical' | 'syntax' | 'lab',
+  fallback = 1,
+) {
+  const raw = process.env[`YOSIS_${name.toUpperCase()}_CONCURRENCY`] ?? String(fallback);
   const value = Number(raw);
   if (!Number.isInteger(value) || value < 1 || value > 8)
     throw new Error(`YOSIS_${name.toUpperCase()}_CONCURRENCY должен быть от 1 до 8.`);

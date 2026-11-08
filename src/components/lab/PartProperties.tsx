@@ -7,13 +7,14 @@ import {
   type PartProp,
   type PropValue,
 } from '../../lib/lab/catalog';
-import type { LabPart, LabWire, PinTarget } from '../../lib/lab/runtime';
+import { headerByFpga } from '../../lib/lab/pads';
+import type { LabPart, PinTarget, ResolvedWire } from '../../lib/lab/runtime';
 import { Dialog } from '../Dialog';
 
 interface Props {
   part: LabPart;
   def: PartDef;
-  wires: readonly LabWire[];
+  wires: readonly ResolvedWire[];
   targets: ReadonlyMap<number, PinTarget> | undefined;
   /** Called for every change; the bench shows it at once. */
   onChange: (change: { opts?: Record<string, unknown>; label?: string }, key: string) => void;
@@ -172,13 +173,14 @@ export const PartProperties = memo(function PartProperties({
         <tbody>
           {pins.map((pin) => {
             const wire = wires.find((item) => item.pin === pin[0]);
-            const target = wire ? targets?.get(wire.fpga) : undefined;
+            const rail = wire ? headerByFpga.get(wire.fpga)?.rail : undefined;
+            const target = wire && !rail ? targets?.get(wire.fpga) : undefined;
             return (
               <tr key={pin[0]}>
                 <th scope="row">{pin[1]}</th>
                 <td>{pin[2] === 'in' ? 'вход' : pin[2] === 'io' ? 'двунаправл.' : 'выход'}</td>
-                <td>{wire ? wire.fpga : 'не подключён'}</td>
-                <td>{wire ? (target?.signal ?? 'не назначен') : '—'}</td>
+                <td>{wire ? (rail ?? wire.fpga) : 'не подключён'}</td>
+                <td>{wire && !rail ? (target?.signal ?? 'не назначен') : '—'}</td>
               </tr>
             );
           })}

@@ -3,6 +3,17 @@ import type { Diagnostic, Project } from '../../shared/types';
 import { request } from '../lib/api';
 import { getProjectSnapshot, validateProject } from '../lib/projects';
 
+/** Answers already received, by the sources they were for: going back to earlier text needs no request. */
+const answered = new Map<string, Diagnostic[]>();
+const MAX_ANSWERED = 30;
+const sourcesOf = (project: Project) =>
+  JSON.stringify([
+    project.top,
+    project.files
+      .filter((file) => !/\.(cst|sdc)$/i.test(file.name))
+      .map((file) => [file.name, file.content]),
+  ]);
+
 export function useSyntaxCheck(project: Project, enabled: boolean, synthesisBusy: boolean) {
   const [diagnostics, setDiagnostics] = useState<Diagnostic[]>([]);
   const [state, setState] = useState<'waiting' | 'checking' | 'checked' | 'unavailable'>('waiting');
@@ -23,6 +34,13 @@ export function useSyntaxCheck(project: Project, enabled: boolean, synthesisBusy
       return () => controller.abort();
     }
     const snapshot = getProjectSnapshot(validated);
+    const key = sourcesOf(validated);
+    const known = answered.get(key);
+    if (known) {
+      setDiagnostics(known);
+      setState('checked');
+      return () => controller.abort();
+    }
     setState('waiting');
     const timer = window.setTimeout(() => {
       setState('checking');
@@ -39,6 +57,11 @@ export function useSyntaxCheck(project: Project, enabled: boolean, synthesisBusy
             snapshot !== getProjectSnapshot(project)
           )
             return;
+          // A check cut short is not an answer about the text.
+          if (!result.error || result.diagnostics.some((item) => item.severity === 'error')) {
+            answered.set(key, result.diagnostics);
+            if (answered.size > MAX_ANSWERED) answered.delete(answered.keys().next().value!);
+          }
           setDiagnostics(result.diagnostics);
           setState('checked');
         })

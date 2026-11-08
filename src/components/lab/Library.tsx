@@ -9,7 +9,9 @@ export const PART_DRAG_TYPE = 'application/x-yosis-lab-part';
 /** The list of parts does not depend on the running design, so it is drawn once. */
 export const Library = memo(function Library({ onAdd }: { onAdd: (id: string) => void }) {
   const [query, setQuery] = useState('');
-  const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set([PART_GROUPS[0]]));
+  const [open, setOpen] = useState<ReadonlySet<string>>(
+    () => new Set(['Макетные платы', 'Светодиоды']),
+  );
   const found = query.trim().toLowerCase();
   return (
     <aside className="lab-library" aria-label="Детали">

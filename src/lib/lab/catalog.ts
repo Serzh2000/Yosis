@@ -4,6 +4,7 @@ import { BUS_PARTS } from './catalog-bus';
  * look, pins and defaults. Variants of one real thing (colour, polarity, number of
  * digits) are properties of a single part, not separate parts. */
 export type PartKind =
+  | 'breadboard'
   | 'light'
   | 'bicolor'
   | 'scan'
@@ -80,6 +81,7 @@ export interface PartDef {
 }
 
 export const PART_GROUPS = [
+  'Макетные платы',
   'Светодиоды',
   'Индикаторы',
   'Кнопки и переключатели',
@@ -179,19 +181,26 @@ export function resolvePart(def: PartDef, opts: PartOptions): Resolved {
   }
   return result;
 }
-/** Supply pins a part gets on the bench when the pupil wires the power by hand. */
+/** Supply pins every part has on the bench: it works only when both are wired. */
 export const POWER_PINS: readonly PinDef[] = [
   ['VCC', 'VCC', 'vcc'],
   ['GND', 'GND', 'gnd'],
 ];
 /**
- * Pins of a part as it stands on the bench. The signal pins come from the part itself;
- * `opts.power` adds the two supply pins after them, so signal pin numbers never change.
+ * Pins of a part as it stands on the bench. The signal pins come from the part itself and
+ * the two supply pins follow them, so signal pin numbers never change. A breadboard has holes,
+ * not pins.
  */
-export const partPins = (def: PartDef, opts: PartOptions): readonly PinDef[] =>
-  opts.power === true
-    ? [...resolvePart(def, opts).pins, ...POWER_PINS]
-    : resolvePart(def, opts).pins;
+export function partPins(def: PartDef, opts: PartOptions): readonly PinDef[] {
+  if (def.kind === 'breadboard') return NO_PINS;
+  const own = resolvePart(def, opts).pins;
+  // The same properties give the very same list, so that lists can be compared cheaply.
+  let full = withSupply.get(own);
+  if (!full) withSupply.set(own, (full = [...own, ...POWER_PINS]));
+  return full;
+}
+const NO_PINS: readonly PinDef[] = [];
+const withSupply = new WeakMap<readonly PinDef[], readonly PinDef[]>();
 
 /** Properties that need the design to be rebuilt when they change (not looks or speeds). */
 export function behaviourKey(def: PartDef, opts: PartOptions): string {
@@ -271,6 +280,27 @@ const WINDOW_OPTIONS = [200, 2000, 20_000, 200_000, 2_000_000, 27_000_000].map((
 }));
 
 export const PARTS: readonly PartDef[] = [
+  part({
+    id: 'breadboard',
+    title: 'Макетная плата',
+    group: 'Макетные платы',
+    kind: 'breadboard',
+    shape: 'breadboard',
+    props: [
+      {
+        key: 'columns',
+        label: 'Размер',
+        type: 'select',
+        options: [
+          { value: 30, label: 'Половинка · 30 столбцов' },
+          { value: 63, label: 'Полноразмерная · 63 столбца' },
+        ],
+        default: 30,
+      },
+    ],
+    derive: (values) => ({ params: { columns: values.columns } }),
+    note: 'Беспаечная плата: деталь ставят ножками в отверстия, а отверстия соединяют проводами с контактами платы. Пять отверстий столбца a–e (и f–j) соединены, длинные полосы по краям — шины питания.',
+  }),
   part({
     id: 'led',
     title: 'Светодиод',
@@ -636,6 +666,22 @@ export const PARTS: readonly PartDef[] = [
   sensor('vibration', 'Датчик вибрации', '〰', 'покой', 'удар'),
   sensor('light', 'Датчик освещённости', '☀', 'темно', 'светло'),
   sensor('line', 'Датчик линии', '▬', 'белое', 'линия'),
+  sensor('collision', 'Датчик столкновения', '⬤', 'свободно', 'касание'),
+  sensor('knock', 'Датчик удара KY-031', '✊', 'тихо', 'удар'),
+  sensor('shock', 'Датчик встряски KY-002', '≋', 'покой', 'встряска'),
+  sensor('mercury', 'Ртутный датчик наклона KY-017', '◐', 'ровно', 'наклон'),
+  sensor('metal', 'Касание металла KY-036', '⌁', 'нет касания', 'касание'),
+  sensor('radar', 'Радар движения RCWL-0516', '◎', 'пусто', 'движение'),
+  sensor('door', 'Магнитный датчик двери MC-38', '▥', 'дверь закрыта', 'дверь открыта'),
+  sensor('rain', 'Датчик дождя YL-83', '☔', 'сухо', 'дождь'),
+  sensor('mq2', 'Датчик газа MQ-2', '☁', 'воздух чистый', 'газ'),
+  sensor('mq3', 'Датчик алкоголя MQ-3', '🍷', 'воздух чистый', 'пары'),
+  sensor('mq7', 'Датчик угарного газа MQ-7', '☠', 'воздух чистый', 'угарный газ'),
+  sensor('mq135', 'Качество воздуха MQ-135', '🌫', 'воздух чистый', 'загрязнение'),
+  sensor('heat', 'Датчик температуры KY-028', '🌡', 'прохладно', 'жарко'),
+  sensor('hall49', 'Датчик Холла 49E', 'Ⓗ', 'поля нет', 'поле есть'),
+  sensor('soil', 'Датчик влажности почвы', '🌱', 'сухо', 'влажно'),
+  sensor('uv', 'УФ-датчик GUVA-S12SD', '☼', 'нет УФ', 'есть УФ'),
   part({
     id: 'buzzer',
     title: 'Зуммер',

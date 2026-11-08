@@ -510,6 +510,26 @@ const ICONS: Record<string, (def: PartDef) => ReactNode> = {
       ))}
     </>
   ),
+  breadboard: () => (
+    <>
+      <rect x="3" y="4" width="42" height="28" rx="2.5" fill="#e9e3d3" />
+      <rect x="4" y="15" width="40" height="3" fill="#cfc8b6" />
+      <rect x="6" y="6.4" width="36" height="0.9" fill="#d4403a" />
+      <rect x="6" y="28.8" width="36" height="0.9" fill="#2f5fcf" />
+      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap((column) =>
+        [9, 12, 20, 23].map((y) => (
+          <rect
+            key={`${column}-${y}`}
+            x={6.4 + column * 3.8}
+            y={y}
+            width="1.7"
+            height="1.7"
+            fill="#2a2927"
+          />
+        )),
+      )}
+    </>
+  ),
   'bus-ps2': () => (
     <>
       <rect x="3" y="9" width="42" height="18" rx="2" fill={CHIP} />

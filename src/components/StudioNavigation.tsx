@@ -1,10 +1,14 @@
-import { useRef, type KeyboardEvent } from 'react';
+import { useRef, useState, type KeyboardEvent } from 'react';
 import {
   Activity,
+  ChevronDown,
+  ChevronRight,
   CircuitBoard,
   Code2,
   Cpu,
   Folder,
+  PanelLeftClose,
+  PanelLeftOpen,
   GitBranch,
   GraduationCap,
   Layers3,
@@ -13,6 +17,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { getTabDestination } from '../lib/accessibility';
+import { localStore, STORAGE_KEYS } from '../lib/storage';
 import { studioTabs, type WorkspaceStatus, type WorkTab } from '../lib/studio-tabs';
 
 export type { WorkspaceStatus };
@@ -30,13 +35,14 @@ const tabIcons: Record<WorkTab, LucideIcon> = {
 };
 export const workspaceTabs: { id: WorkTab; label: string; icon: LucideIcon; caption: string }[] =
   studioTabs.map((item) => ({ ...item, icon: tabIcons[item.id] }));
-const groups: { label: string; tabs: WorkTab[] }[] = [
+const groups: { label: string; tabs: WorkTab[]; collapsible?: boolean }[] = [
   { label: 'Узнать', tabs: ['lessons'] },
   { label: 'Создать', tabs: ['code', 'design', 'constraints'] },
   { label: 'Проверить', tabs: ['rtl', 'simulation', 'virtual'] },
-  { label: 'Собрать', tabs: ['technology', 'chip'] },
-  { label: 'Плата', tabs: ['board'] },
+  // Everything up to the Лаборатория works without a board; these are for the real one.
+  { label: 'Настоящая плата', tabs: ['technology', 'chip', 'board'], collapsible: true },
 ];
+const savedOpen = () => localStore.getItem(STORAGE_KEYS.realBoardTabs) === '1';
 const statuses = {
   success: { label: 'Готово' },
   error: { label: 'Ошибка' },
@@ -45,6 +51,9 @@ const statuses = {
 } as const;
 
 export interface StudioNavigationProps {
+  /** The menu is folded to icons. */
+  narrow?: boolean;
+  onToggleNarrow?: () => void;
   tab: WorkTab;
   onChange: (tab: WorkTab) => void;
   fileManagerOpen: boolean;
@@ -59,6 +68,8 @@ export interface StudioNavigationProps {
 }
 
 export function StudioNavigation({
+  narrow = false,
+  onToggleNarrow,
   tab,
   onChange,
   fileManagerOpen,
@@ -69,8 +80,22 @@ export function StudioNavigation({
   physicalStatus,
   schematicAvailable = true,
 }: StudioNavigationProps) {
-  const visible = workspaceTabs.filter((item) => item.id !== 'design' || schematicAvailable);
+  const [opened, setOpened] = useState(savedOpen);
   const tabs = useRef<HTMLElement>(null);
+  const hasTab = (group: (typeof groups)[number], id: WorkTab) => group.tabs.includes(id);
+  // A group that is folded away still shows the tab that is open in it.
+  const folded = (group: (typeof groups)[number]) =>
+    !!group.collapsible && !opened && !hasTab(group, tab);
+  const visible = workspaceTabs.filter(
+    (item) =>
+      (item.id !== 'design' || schematicAvailable) &&
+      !groups.some((group) => folded(group) && hasTab(group, item.id)),
+  );
+  const toggle = () =>
+    setOpened((value) => {
+      localStore.setItem(STORAGE_KEYS.realBoardTabs, value ? '0' : '1');
+      return !value;
+    });
   function handleKeys(event: KeyboardEvent<HTMLButtonElement>, id: WorkTab) {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     const next = getTabDestination(
@@ -95,12 +120,39 @@ export function StudioNavigation({
       >
         {groups.map((group) => {
           const items = group.tabs.filter((id) => visible.some((item) => item.id === id));
-          if (!items.length) return null;
+          const closed = folded(group);
+          if (!items.length && !closed) return null;
+          const busy = [physicalStatus, synthesisStatus].find(
+            (value) => value === 'busy' || value === 'error',
+          );
           return (
             <div className="sh-tab-group" role="presentation" key={group.label}>
-              <span className="sh-tab-group-label" aria-hidden="true">
-                {group.label}
-              </span>
+              {group.collapsible ? (
+                <button
+                  type="button"
+                  className="sh-tab-group-toggle"
+                  aria-expanded={!closed}
+                  title={
+                    closed
+                      ? 'Показать вкладки для настоящей платы'
+                      : 'Свернуть вкладки настоящей платы'
+                  }
+                  onClick={toggle}
+                  disabled={!closed && hasTab(group, tab)}
+                >
+                  {closed ? (
+                    <ChevronRight size={13} aria-hidden="true" />
+                  ) : (
+                    <ChevronDown size={13} aria-hidden="true" />
+                  )}
+                  <span>{group.label}</span>
+                  {closed && busy && <i className={`sh-via ${busy}`} aria-hidden="true" />}
+                </button>
+              ) : (
+                <span className="sh-tab-group-label" aria-hidden="true">
+                  {group.label}
+                </span>
+              )}
               {items.map((id) => {
                 const item = workspaceTabs.find((candidate) => candidate.id === id)!;
                 const status =
@@ -141,6 +193,23 @@ export function StudioNavigation({
           );
         })}
       </nav>
+      {onToggleNarrow && (
+        <button
+          type="button"
+          className="sh-files sh-rail-toggle"
+          aria-label={narrow ? 'Развернуть меню' : 'Свернуть меню'}
+          title={narrow ? 'Показать названия вкладок' : 'Оставить в меню только значки'}
+          aria-pressed={narrow}
+          onClick={onToggleNarrow}
+        >
+          {narrow ? (
+            <PanelLeftOpen size={17} aria-hidden="true" />
+          ) : (
+            <PanelLeftClose size={17} aria-hidden="true" />
+          )}
+          <span>Свернуть меню</span>
+        </button>
+      )}
       <button
         type="button"
         className={`sh-files ${fileManagerOpen && filesAvailable ? 'active' : ''} ${filesAvailable ? '' : 'unavailable'}`}

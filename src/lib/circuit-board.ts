@@ -1,10 +1,17 @@
 import type { Project } from '../../shared/types';
 import {
+  blocks,
   boardAssignments,
+  parseCircuit,
   type BoardAssignment,
   type CircuitDocument,
 } from '../../shared/schematic';
 import { applyPinEdit, assignedPins, readCst, type PlannerSignal } from './pin-planner';
+
+/** A project with the pins of the board blocks of its schematic already assigned in the .cst. */
+export function assignSchematicPins(project: Project, schematic: string): Project {
+  return syncBoardConstraints(project, null, parseCircuit(schematic)).project;
+}
 
 export interface BoardSync {
   project: Project;
@@ -55,6 +62,12 @@ export function syncBoardConstraints(
     const assignments = boardAssignments({ ...next, nodes: [node] });
     return assignments.map((item) => ({ name: item.signal, direction: item.direction }));
   });
+  // Every port of the circuit, board blocks and plain input/output alike: a pin held by one of
+  // them is in use, however the .cst got there.
+  const ports = new Set(
+    next.nodes.filter((node) => blocks[node.kind].port).map((node) => node.name),
+  );
+  const isPort = (signal: string) => ports.has(signal.replace(/\[\d+\]$/, ''));
   const assigned: string[] = [],
     problems: string[] = [];
   let current = project;
@@ -78,20 +91,16 @@ export function syncBoardConstraints(
         value.signal !== item.signal &&
         assignedPins([value]).includes(item.pin),
     );
-    if (holder && signals.some((signal) => signal.name === holder.signal)) {
+    if (holder && isPort(holder.signal)) {
       problems.push(
         `Вывод ${item.pin} уже занят портом ${holder.signal}. Для ${item.signal} назначение не добавлено.`,
       );
       continue;
     }
     try {
-      if (holder)
-        current = applyPinEdit(current, [{ name: holder.signal, direction: item.direction }], {
-          signal: holder.signal,
-          pin: null,
-          file,
-          pull: 'NONE',
-        });
+      // The pin was held by a name that is no longer a port of the circuit: the whole stale
+      // assignment goes, not only its IO_LOC, or an IO_PORT line without a pin stays behind.
+      if (holder) current = removeSignal(current, holder.signal);
       current = applyPinEdit(current, signals, {
         signal: item.signal,
         pin: item.pin,

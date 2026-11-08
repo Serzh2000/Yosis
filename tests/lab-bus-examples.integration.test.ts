@@ -1,3 +1,4 @@
+import { withSupply } from '../src/lib/lab/supply';
 import assert from 'node:assert/strict';
 import test, { after } from 'node:test';
 import { LabManager } from '../server/lab';
@@ -20,9 +21,13 @@ async function start(id: string) {
   assert.equal(result.error, undefined, `${id}: ${JSON.stringify(result.diagnostics)}`);
   const layout = examplePreset(id);
   assert.ok(layout && layout.parts.length > 0, `${id} has a ready bench`);
-  const lab = new LabRuntime(result.design!, example.project, layout);
+  const lab = new LabRuntime(result.design!, example.project, withSupply(layout));
   for (const wire of layout.wires)
-    assert.equal(lab.wireState(wire.id), 'ok', `${id}: wire ${wire.id} (${wire.pin}) is connected`);
+    assert.equal(
+      lab.wireState(wire.id),
+      'ok',
+      `${id}: wire ${wire.id} (${wire.from} — ${wire.to}) is connected`,
+    );
   const device = (uid: string) => lab.devices.get(uid)!;
   const leds = () => device(BOARD_LEDS).view.b as number[];
   const text = () => device(BOARD_UART).view.text as string;
@@ -57,7 +62,7 @@ const shown = (device: Device) =>
     .join('');
 
 test('the example library has the protocol examples, each with a ready bench and a lesson', () => {
-  assert.equal(labExamples.length, 135);
+  assert.equal(labExamples.length, 167);
   for (const example of labExamples) {
     assert.ok(examples.includes(example), example.id);
     assert.ok(examplePreset(example.id), `${example.id}: bench`);
@@ -126,12 +131,13 @@ test('DS1307 clock on the TM1637: the hours and minutes follow the clock written
 test('EEPROM counter: the number grows with every start because the chip keeps its bytes', async () => {
   const first = await start('eeprom-counter');
   until(first.lab, () => first.leds()[0] > 0.9, 3_000_000, 'the first run');
-  const memory = first.layout.parts[0].opts.data as number[];
+  const memory = first.layout.parts.find((part) => part.def === 'eeprom-24c02')!.opts
+    .data as number[];
   assert.equal(memory[0], 1);
   // A new run with the same part keeps what the chip stored.
   const { example } = { example: examples.find((item) => item.id === 'eeprom-counter')! };
   const again = await manager.compile('tester', example.project, new AbortController().signal);
-  const lab = new LabRuntime(again.design!, example.project, first.layout);
+  const lab = new LabRuntime(again.design!, example.project, withSupply(first.layout));
   until(
     lab,
     () => (lab.devices.get(BOARD_LEDS)!.view.b as number[])[1] > 0.9,

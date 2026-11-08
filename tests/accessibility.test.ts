@@ -31,7 +31,12 @@ test('dialog focus wraps both ends and recovers focus that left the dialog', () 
 });
 
 test('all workspaces keep Files and expose named tabs with one keyboard stop', () => {
+  // The real-board group is folded away until one of its tabs is open.
+  const boardTabs = ['technology', 'chip', 'board'];
   for (const tab of workspaceTabs) {
+    const shown = workspaceTabs.filter(
+      (item) => !boardTabs.includes(item.id) || boardTabs.includes(tab.id),
+    );
     const html = renderToStaticMarkup(
       createElement(StudioNavigation, {
         tab: tab.id,
@@ -45,15 +50,17 @@ test('all workspaces keep Files and expose named tabs with one keyboard stop', (
     );
     assert.match(html, /aria-label="Файлы проекта"/);
     assert.match(html, /aria-controls="project-files"/);
-    assert.equal((html.match(/role="tab"/g) ?? []).length, workspaceTabs.length);
+    assert.equal((html.match(/role="tab"/g) ?? []).length, shown.length);
     assert.equal((html.match(/tabindex="0"/g) ?? []).length, 1);
     assert.equal((html.match(/aria-selected="true"/g) ?? []).length, 1);
-    for (const target of workspaceTabs) {
+    for (const target of shown) {
       assert.match(html, new RegExp(`id="tab-${target.id}"`));
       assert.match(html, new RegExp(`aria-controls="panel-${target.id}"`));
     }
-    assert.match(html, /Gowin · Нужна новая сборка/);
-    assert.match(html, /Кристалл · Ошибка/);
+    if (boardTabs.includes(tab.id)) {
+      assert.match(html, /Gowin · Нужна новая сборка/);
+      assert.match(html, /Кристалл · Ошибка/);
+    }
   }
 });
 

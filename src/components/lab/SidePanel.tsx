@@ -1,13 +1,17 @@
 import { RotateCw, SlidersHorizontal, Trash2, X } from 'lucide-react';
+import type { Connections } from './reference/bridge';
+import { pinLink, wireFpga, wirePins } from '../../lib/lab/wire-info';
+import { headerByFpga } from '../../lib/lab/pads';
 import { partPins, sanitize, type PartDef } from '../../lib/lab/catalog';
 import type { Device } from '../../lib/lab/devices';
 import type { LabLayout, LabPart, LabRuntime, LabWire } from '../../lib/lab/runtime';
 import { AssignForm } from './AssignForm';
 import { PartBody } from './PartView';
-import type { Selection } from './useBenchGestures';
+import type { Selection } from './selection';
 
 interface Props {
   layout: LabLayout;
+  connections: Connections;
   selection: Selection;
   runtime: LabRuntime | null;
   freeSignals: readonly string[];
@@ -37,9 +41,22 @@ function summary(def: PartDef, part: LabPart): string[] {
   });
 }
 
+/** A terminal of a wire as a person reads it. */
+function terminalText(terminal: string, layout: LabLayout, partDef: (part: LabPart) => PartDef) {
+  const at = terminal.indexOf(':');
+  const owner = terminal.slice(0, at);
+  const name = terminal.slice(at + 1);
+  if (owner === 'board') return `плата, ${/^\d+$/.test(name) ? `контакт ${name}` : name}`;
+  const part = layout.parts.find((item) => item.uid === owner);
+  if (!part) return terminal;
+  const def = partDef(part);
+  return def.kind === 'breadboard' ? `макетка, ${name}` : `${part.label || def.title}, ${name}`;
+}
+
 /** What is selected on the bench: the wire or part, its pins, and what to do with it. */
 export function SidePanel({
   layout,
+  connections,
   selection,
   runtime,
   freeSignals,
@@ -64,38 +81,54 @@ export function SidePanel({
         {wire ? (
           (() => {
             const state = runtime?.wireState(wire.id) ?? 'ok';
-            const target = runtime?.targets.get(wire.fpga);
-            const owner = layout.parts.find((item) => item.uid === wire.part);
-            const wireDef = owner && partDef(owner);
-            const input =
-              wireDef && owner
-                ? partPins(wireDef, owner.opts).find((pin) => pin[0] === wire.pin)?.[2] === 'in'
-                : false;
+            const fpga = wireFpga(connections, wire);
+            const target = fpga === undefined ? undefined : runtime?.targets.get(fpga);
+            const joined = wirePins(connections, wire)[0];
+            const owner = joined && layout.parts.find((item) => item.uid === joined.part);
+            const ownerDef = owner && partDef(owner);
+            const input = ownerDef
+              ? partPins(ownerDef, owner.opts).find((pin) => pin[0] === joined.pin)?.[2] === 'in'
+              : false;
+            const rail = joined && headerByFpga.get(joined.fpga)?.rail;
             return (
               <>
                 <h3>Провод</h3>
                 <p>
-                  Контакт платы <b>{wire.fpga}</b> ↔ {owner?.label || wireDef?.title}, вывод{' '}
-                  <b>{wire.pin}</b>
+                  {terminalText(wire.from, layout, partDef)} ↔{' '}
+                  {terminalText(wire.to, layout, partDef)}
                 </p>
-                {state === 'ok' && (
+                {!joined && (
+                  <p className="lab-warn">
+                    Провод пока не доходит до вывода детали: подключите второй конец.
+                  </p>
+                )}
+                {joined && rail && (
                   <p className="lab-ok">
-                    Сигнал <code>{target?.signal}</code>{' '}
+                    Питание {rail}: вывод {joined.pin} детали «{owner?.label || ownerDef?.title}».
+                  </p>
+                )}
+                {joined && !rail && state === 'ok' && (
+                  <p className="lab-ok">
+                    {target ? (
+                      <>
+                        Сигнал <code>{target.signal}</code>{' '}
+                      </>
+                    ) : (
+                      'Сигнал '
+                    )}
                     {input ? 'идёт из схемы в деталь.' : 'идёт от детали в схему.'}
                   </p>
                 )}
-                {state === 'direction' && (
+                {joined && state === 'direction' && (
                   <p className="lab-warn">
-                    На контакте {wire.fpga} — {target?.direction === 'output' ? 'выход' : 'вход'}{' '}
-                    схемы <code>{target?.signal}</code>, а этот вывод детали —{' '}
+                    На контакте {fpga} — {target?.direction === 'output' ? 'выход' : 'вход'} схемы{' '}
+                    <code>{target?.signal}</code>, а этот вывод детали —{' '}
                     {input ? 'тоже вход' : 'тоже выход'}. Провод ничего не передаёт.
                   </p>
                 )}
-                {state === 'unassigned' && runtime && (
+                {joined && !rail && state === 'unassigned' && runtime && (
                   <>
-                    <p className="lab-warn">
-                      Контакт {wire.fpga} не назначен ни одному сигналу схемы.
-                    </p>
+                    <p className="lab-warn">Контакт {fpga} не назначен ни одному сигналу схемы.</p>
                     <AssignForm
                       signals={freeSignals}
                       label="Сигнал схемы"
@@ -127,19 +160,27 @@ export function SidePanel({
             )}
             <ul className="lab-pinlist">
               {partPins(def, part.opts).map((pin) => {
-                const wired = layout.wires.find(
-                  (item) => item.part === part.uid && item.pin === pin[0],
-                );
-                const signal = wired && runtime?.targets.get(wired.fpga)?.signal;
+                const wired = pinLink(connections, part.uid, pin[0]);
+                const rail = wired && headerByFpga.get(wired.fpga)?.rail;
+                const signal =
+                  wired && !rail ? runtime?.targets.get(wired.fpga)?.signal : undefined;
                 return (
                   <li key={pin[0]}>
                     <b>{pin[1]}</b>
                     <span>
-                      {pin[2] === 'in' ? 'вход' : pin[2] === 'out' ? 'выход' : 'двунаправл.'}
+                      {pin[0] === 'VCC' || pin[0] === 'GND'
+                        ? 'питание'
+                        : pin[2] === 'in'
+                          ? 'вход'
+                          : pin[2] === 'out'
+                            ? 'выход'
+                            : 'двунаправл.'}
                     </span>
                     <em>
                       {wired
-                        ? `контакт ${wired.fpga}${signal ? ` · ${signal}` : ''}`
+                        ? rail
+                          ? `питание ${rail}`
+                          : `контакт ${wired.fpga}${signal ? ` · ${signal}` : ''}`
                         : 'не подключён'}
                     </em>
                   </li>
@@ -165,10 +206,7 @@ export function SidePanel({
         ) : parts.length > 1 ? (
           <>
             <h3>Выбрано деталей: {parts.length}</h3>
-            <p>
-              Перетаскивайте любую из них: переедут все. Стрелки сдвигают на шаг сетки, R
-              поворачивает, Delete убирает.
-            </p>
+            <p>R поворачивает, Delete убирает.</p>
             <div className="lab-card-actions">
               <button type="button" className="button subtle" onClick={onRotate}>
                 <RotateCw size={14} /> Повернуть
@@ -182,9 +220,17 @@ export function SidePanel({
           <>
             <h3>Как пользоваться</h3>
             <ol className="lab-howto">
-              <li>Нажмите деталь в списке слева — она появится на столе.</li>
               <li>
-                Нажмите вывод детали и контакт на гребёнке платы, или потяните от вывода к контакту.
+                Нажмите деталь в списке слева — она встанет на макетную плату, или перетащите её на
+                стол.
+              </li>
+              <li>
+                У каждой детали есть плюс и минус: соедините VCC с 3V3 (или 5V), а GND — с GND платы
+                проводами. Без питания деталь не работает.
+              </li>
+              <li>
+                Потяните от вывода детали, отверстия макетки или контакта платы к другому контакту —
+                появится провод.
               </li>
               <li>
                 Если контакт ещё не назначен сигналу, выберите сигнал: в этой панели или у места,
@@ -192,8 +238,8 @@ export function SidePanel({
               </li>
             </ol>
             <p>
-              Деталь двигают за любое место, кроме кнопок на ней. Правая кнопка мыши открывает меню,
-              двойной щелчок — свойства. Ctrl+колесо меняет масштаб, 0 показывает весь стол.
+              Q и E поворачивают стол, колесо меняет масштаб, 0 показывает весь стол. Правая кнопка
+              мыши открывает меню.
             </p>
           </>
         )}
