@@ -122,5 +122,30 @@ foreach ($dirs as $dir) {
     ]);
     echo "Создано: $title (cmid={$info->coursemodule}, файл ученика $filename)\n";
 }
+// Второй проход (работает и для уже существующих заданий): обновляет скрипты проверки и записывает
+// в каждое задание подсказку «что дальше», которую проверка показывает после успешной сдачи.
+$titles = [];
+foreach ($dirs as $dir) {
+    $titles[] = trim(file_get_contents("$dir/title.txt"));
+}
+foreach ($dirs as $i => $dir) {
+    $record = $DB->get_record('vpl', ['course' => $course->id, 'name' => $titles[$i]], '*', MUST_EXIST);
+    $cm = get_coursemodule_from_instance('vpl', $record->id, $course->id, false, MUST_EXIST);
+    if (isset($titles[$i + 1])) {
+        $nextrecord = $DB->get_record('vpl', ['course' => $course->id, 'name' => $titles[$i + 1]], '*', MUST_EXIST);
+        $nextcm = get_coursemodule_from_instance('vpl', $nextrecord->id, $course->id, false, MUST_EXIST);
+        $next = "откройте следующее задание «{$titles[$i + 1]}» в курсе или по ссылке "
+            . "$CFG->wwwroot/mod/vpl/view.php?id={$nextcm->id}";
+    } else {
+        $next = 'это было последнее задание курса, вы молодец!';
+    }
+    $vpl = new mod_vpl($cm->id);
+    $vpl->get_execution_fgm()->addallfiles([
+        'next.txt' => $next . "\n",
+        'vpl_evaluate.sh' => $common['vpl_evaluate.sh'],
+        'vpl_run.sh' => $common['vpl_run.sh'],
+    ]);
+    $vpl->get_execution_fgm()->setfilekeeplist(['tb.v', 'next.txt']);
+}
 rebuild_course_cache($course->id, true);
 echo "Готово. Курс скрыт: https://cdod.sakoryagin.ru/course/view.php?id={$course->id}\n";
