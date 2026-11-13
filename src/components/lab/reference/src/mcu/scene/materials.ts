@@ -4,7 +4,7 @@ import * as THREE from 'three';
 export type Pick =
   | { type: 'board' }
   | { type: 'part'; id: string }
-  | { type: 'control'; id: string; knob?: number }
+  | { type: 'control'; id: string; knob?: number; bit?: number; key?: number }
   /** One of the two keys of the FPGA board itself. */
   | { type: 'board-key'; id: 'S1' | 'S2' }
   | { type: 'wire'; id: string }

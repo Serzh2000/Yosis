@@ -26,8 +26,8 @@ export const LOOKS: Record<string, PartKind> = {
   counter: 'tm1637',
   button: 'btnmod',
   'sw-slide': 'slideswitch',
-  'sw-toggle': 'switch',
-  'sw-rocker': 'switch',
+  'sw-toggle': 'toggleswitch',
+  'sw-rocker': 'rockerswitch',
   dip: 'dip',
   keypad: 'keypad',
   encoder: 'encoder',
@@ -92,7 +92,7 @@ export const LOOKS: Record<string, PartKind> = {
   'hc-sr04': 'hcsr04',
   dht11: 'dht11',
   'ir-receiver': 'irremote',
-  'ps2-keyboard': 'nunchuk',
+  'ps2-keyboard': 'ps2keyboard',
 };
 /** A part with no model of its own is drawn as a plain module with a chip. */
 const FALLBACK: PartKind = 'mcp4725';
@@ -104,9 +104,11 @@ const FALLBACK: PartKind = 'mcp4725';
 export function kindFor(def: PartDef, opts: PartOptions): PartKind {
   if (def.kind === 'breadboard') return 'breadboard';
   const pins = partPins(def, opts).map((pin) => pin[0]);
-  const key = `y:${def.id}:${pins.join(',')}` as PartKind;
+  // A button with a latch is the reference's latching button; the picture follows the property.
+  const look =
+    def.id === 'button' && opts.latching ? ('latchbtn' as PartKind) : (LOOKS[def.id] ?? FALLBACK);
+  const key = `y:${def.id}:${look}:${pins.join(',')}` as PartKind;
   if (partCatalog[key]) return key;
-  const look = LOOKS[def.id] ?? FALLBACK;
   const base = partCatalog[look];
   partCatalog[key] = {
     ...base,

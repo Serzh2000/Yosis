@@ -7,7 +7,15 @@ import { PartIcon } from './PartIcon';
 export const PART_DRAG_TYPE = 'application/x-yosis-lab-part';
 
 /** The list of parts does not depend on the running design, so it is drawn once. */
-export const Library = memo(function Library({ onAdd }: { onAdd: (id: string) => void }) {
+export const Library = memo(function Library({
+  onAdd,
+  allowed,
+}: {
+  onAdd: (id: string) => void;
+  /** Only these parts are offered; all of them when absent (a textbook page may narrow the choice). */
+  allowed?: readonly string[];
+}) {
+  const offered = allowed ? PARTS.filter((part) => allowed.includes(part.id)) : PARTS;
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<ReadonlySet<string>>(
     () => new Set(['Макетные платы', 'Светодиоды']),
@@ -20,13 +28,13 @@ export const Library = memo(function Library({ onAdd }: { onAdd: (id: string) =>
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder={`Найти среди ${PARTS.length} деталей`}
+          placeholder={`Найти среди ${offered.length} деталей`}
           aria-label="Поиск детали"
         />
       </label>
       <div className="lab-library-list">
         {PART_GROUPS.map((group) => {
-          const parts = PARTS.filter(
+          const parts = offered.filter(
             (part) =>
               part.group === group &&
               (!found || `${part.title} ${part.note}`.toLowerCase().includes(found)),
@@ -80,6 +88,46 @@ export const Library = memo(function Library({ onAdd }: { onAdd: (id: string) =>
           );
         })}
       </div>
+    </aside>
+  );
+});
+
+/**
+ * The parts a textbook page offers, on a shelf at the foot of the scene. Each is added by a click or
+ * dragged out onto the table, like a card of the library.
+ */
+export const PartsShelf = memo(function PartsShelf({
+  parts,
+  onAdd,
+}: {
+  parts: readonly string[];
+  onAdd: (id: string) => void;
+}) {
+  const offered = PARTS.filter((part) => parts.includes(part.id));
+  if (!offered.length) return null;
+  return (
+    <aside className="lab-shelf" aria-label="Детали страницы">
+      <span className="lab-shelf-title">Детали</span>
+      {offered.map((part) => (
+        <button
+          key={part.id}
+          type="button"
+          className="lab-shelf-item"
+          title={`${part.title}. ${part.note}`}
+          aria-label={`Добавить деталь: ${part.title}`}
+          onClick={() => onAdd(part.id)}
+          draggable
+          onDragStart={(event) => {
+            event.dataTransfer.setData(PART_DRAG_TYPE, part.id);
+            event.dataTransfer.effectAllowed = 'copy';
+            const icon = event.currentTarget.querySelector('svg');
+            if (icon) event.dataTransfer.setDragImage(icon, 36, 27);
+          }}
+        >
+          <PartIcon def={part} />
+          <strong>{part.title}</strong>
+        </button>
+      ))}
     </aside>
   );
 });

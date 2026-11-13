@@ -21,6 +21,7 @@
 \begin{titlepage}
 \begin{tikzpicture}[remember picture, overlay]
   \fill[FpgaDark] (current page.north west) rectangle ([yshift=-11cm]current page.north east);
+  \fill[FpgaOrange] ([yshift=-11cm]current page.north west) rectangle ([yshift=-11.18cm]current page.north east);
   % декоративная «матрица» логических блоков
   \foreach \x in {0,...,15} \foreach \y in {0,...,5} {
     \pgfmathsetmacro{\op}{mod(\x*7+\y*13,10)/12+0.1}

@@ -1,5 +1,6 @@
 import { BOARD_CLOCK_HZ, type Device } from '../../../lib/lab/devices';
 import { headerByFpga } from '../../../lib/lab/pads';
+import { PS2_KEY_IDS } from './shared/ps2-layout';
 import {
   BOARD_BUTTONS,
   BOARD_LEDS,
@@ -250,11 +251,31 @@ export function inputOf(part: LabPart, device: Device | undefined): number | und
       const top = device.params.max as number;
       return Math.round(((view.value as number | undefined) ?? 0) * (max / top));
     }
+    case 'encoder': {
+      // The scene's knob turns over -100 … 100 clicks; the device itself counts without a limit.
+      const { min, max } = range(part);
+      return Math.min(max, Math.max(min, (view.position as number | undefined) ?? 0));
+    }
+    case 'keypad': {
+      // The key held down, 1 … rows × columns by rows, or 0 for none.
+      const keys = device.params.keys as string[];
+      const held = ((view.pressed as string[] | undefined) ?? [])[0];
+      if (!held) return 0;
+      const [row, column] = held.split(',').map(Number);
+      return row! * keys[0]!.length + column! + 1;
+    }
+  }
+  if (device.params.model === 'ps2') {
+    const held = heldKey.get(device);
+    return held ? PS2_KEY_IDS.indexOf(held) + 1 : 0;
   }
   const option = OPTIONS[device.params.model as string];
   if (option) return Number(device.opts[option.key] ?? option.value);
   return undefined;
 }
+
+/** The key of a PS/2 keyboard that is held down now, by device: the keyboard keeps no such state. */
+const heldKey = new WeakMap<Device, string>();
 
 /** Bus sensors whose value the scene sets with a slider: the option the device keeps it in. */
 const OPTIONS: Record<string, { key: string; value: number; act: string }> = {
@@ -293,8 +314,38 @@ export function actionFor(
       const scaled = Math.round((value * top) / range(part).max);
       return [['step', scaled - ((view.value as number | undefined) ?? 0)]];
     }
+    case 'encoder': {
+      // Each click of the knob is one detent: a full quadrature period on A and B.
+      const now = (view.position as number | undefined) ?? 0,
+        clicks = Math.max(-50, Math.min(50, Math.round(value) - now));
+      return Array.from({ length: Math.abs(clicks) }, () => ['turn', Math.sign(clicks)]);
+    }
+    case 'keypad': {
+      const keys = device.params.keys as string[],
+        columns = keys[0]!.length,
+        actions: [string, unknown][] = [];
+      for (const held of (view.pressed as string[] | undefined) ?? [])
+        actions.push(['key', { key: held, on: false }]);
+      if (value > 0)
+        actions.push([
+          'key',
+          { key: `${Math.floor((value - 1) / columns)},${(value - 1) % columns}`, on: true },
+        ]);
+      return actions;
+    }
   }
   void index;
+  if (device.params.model === 'ps2') {
+    // The key held down is remembered, so that letting it go sends the release of that key.
+    const actions: [string, unknown][] = [],
+      before = heldKey.get(device);
+    if (before) actions.push(['key', { id: before, on: false }]);
+    const next = value > 0 ? PS2_KEY_IDS[Math.round(value) - 1] : undefined;
+    if (next) actions.push(['key', { id: next, on: true }]);
+    if (next) heldKey.set(device, next);
+    else heldKey.delete(device);
+    return actions;
+  }
   const option = OPTIONS[device.params.model as string];
   return option ? [[option.act, value]] : [];
 }

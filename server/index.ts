@@ -18,6 +18,12 @@ import { workspace, dataDirectory } from './paths';
 import { DebuggerBackupStore, createDebuggerBackupRouter } from './debugger-backup-store';
 import { SyntaxManager } from './syntax';
 import { LabManager } from './lab';
+import {
+  AccountStore,
+  createAccountsRouter,
+  ensureTeacher,
+  resolveAccountsFile,
+} from './accounts';
 
 const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 const DEVELOPMENT_ORIGINS = new Set(['http://127.0.0.1:5173', 'http://localhost:5173']);
@@ -28,6 +34,7 @@ export function createApp(
   simulations = new SimulationManager(path.join(path.dirname(manager.root), '.simulations')),
   physical = new PhysicalManager(path.join(path.dirname(manager.root), '.physical'), manager),
   options: ApiOptions = environmentApiOptions(),
+  accounts?: AccountStore,
 ) {
   const app = express();
   const security = new ApiSecurity(options);
@@ -107,6 +114,8 @@ export function createApp(
     if (request.path.startsWith('/api/')) response.setHeader('Cache-Control', 'no-store');
     next();
   });
+  // Accounts of the textbook (sign-in, progress, the teacher's cabinet) read small bodies of their own.
+  if (accounts) app.use('/api', createAccountsRouter(accounts));
   app.use(express.json({ limit: '3mb', strict: true }));
   app.post('/api/session', (request, response) => security.login(request, response));
   app.use('/api', (request, response, next) => {
@@ -367,7 +376,9 @@ export function startServer() {
   void Promise.all([manager.prune(), simulations.prune(), physical.prune()]).catch((error) =>
     console.error('Не удалось очистить завершённые задания:', error),
   );
-  const app = createApp(manager, production, simulations, physical, options);
+  const accounts = new AccountStore(resolveAccountsFile(dataDirectory));
+  void ensureTeacher(accounts);
+  const app = createApp(manager, production, simulations, physical, options, accounts);
   if (process.env.YOSIS_PREWARM !== '0') app.locals.prewarm();
   const server = app.listen(port, host, (error?: Error) => {
     if (error) {
@@ -393,7 +404,12 @@ export function startServer() {
       const timeout = setTimeout(() => server.closeAllConnections(), 10000);
       timeout.unref();
       app.locals.close();
-      await Promise.allSettled([manager.close(), simulations.close(), physical.close()]);
+      await Promise.allSettled([
+        manager.close(),
+        simulations.close(),
+        physical.close(),
+        accounts.flush(),
+      ]);
       await closed;
       clearTimeout(timeout);
       process.removeListener('SIGINT', shutdown);

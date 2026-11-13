@@ -2,7 +2,7 @@
 // shadows from a dedicated shadow light, an ink outline pass and on-demand rendering.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { partCatalog, partPinNames } from '../../../shared/catalog';
+import { lookOf, partCatalog, partPinNames } from '../../../shared/catalog';
 import type { McuBoardId } from '../../../shared/mcu';
 import {
   mcuBoards,
@@ -174,7 +174,12 @@ type Mode =
       moved: boolean;
       last: number;
     }
-  | { kind: 'slide'; id: string; x: number; value: number };
+  | { kind: 'slide'; id: string; x: number; value: number }
+  /** A joystick held: its lean is read from how far the pointer moved. */
+  | { kind: 'stick'; id: string; x: number; y: number; bits: number; moved: boolean };
+
+/** The press of a joystick as the bit of its value (up, down, left and right are bits 0 … 3). */
+const JOYSTICK_PRESS = 16;
 
 /** Bounds of the outlined meshes only: glows and beams would inflate a plain bounding box. */
 function solidBox(object: THREE.Object3D) {
@@ -1690,6 +1695,7 @@ export class Stage {
     }
     for (const { model, tool } of this.tools.values())
       if (model.update(clock, tool)) toolsMoving = true;
+    if (this.board?.animate?.(clock)) toolsMoving = true;
     if (toolsMoving && !this.disposed) this.frameRequest ||= requestAnimationFrame(this.frameLoop);
     if (this.flash) {
       this.updateStrips();
@@ -1969,12 +1975,24 @@ export class Stage {
         this.beginDial(part, pick.knob, point);
         return;
       }
-      const control = partCatalog[part.kind].control;
-      if (control.kind === 'momentary') {
+      const control = partCatalog[part.kind].control,
+        look = lookOf(part.kind);
+      if (pick.bit !== undefined) {
+        // One slider of a DIP switch (or one touch pad): a click flips its bit.
+        this.events.value(part.id, part.value ^ (1 << pick.bit));
+      } else if (pick.key !== undefined) {
+        // A key of a keypad is held down while the button is held; its number is the value.
+        this.events.value(part.id, pick.key);
+        this.mode = { kind: 'press', id: part.id };
+      } else if (look === 'joystick') {
+        // Dragging the stick leans it (up, down, left, right); a plain click presses it.
+        this.events.value(part.id, JOYSTICK_PRESS);
+        this.mode = { kind: 'stick', id: part.id, ...point, bits: JOYSTICK_PRESS, moved: false };
+      } else if (control.kind === 'momentary') {
         this.events.value(part.id, 1);
         this.mode = { kind: 'press', id: part.id };
       } else if (control.kind === 'toggle') this.events.value(part.id, part.value ? 0 : 1);
-      else if (part.kind === 'potentiometer' || part.kind === 'encoder') {
+      else if (look === 'potentiometer' || look === 'potmod' || look === 'encoder') {
         const center = this.project(partLayout(part).center);
         this.mode = {
           kind: 'knob',
@@ -1982,7 +2000,7 @@ export class Stage {
           angle: Math.atan2(point.y - center.y, point.x - center.x),
           value: part.value,
         };
-      } else if (part.kind === 'slidepot')
+      } else if (look === 'slidepot')
         this.mode = { kind: 'slide', id: part.id, x: point.x, value: part.value };
       return;
     }
@@ -2186,6 +2204,21 @@ export class Stage {
         }
         return;
       }
+      case 'stick': {
+        const dx = point.x - mode.x,
+          dy = point.y - mode.y;
+        if (!mode.moved && Math.hypot(dx, dy) < 8) return;
+        mode.moved = true;
+        // Past a small dead zone the stick leans towards the pointer; the press is let go.
+        const bits =
+          (dy < -10 ? 1 : 0) | (dy > 10 ? 2 : 0) | (dx < -10 ? 4 : 0) | (dx > 10 ? 8 : 0);
+        // The value's bits are UP, DN, LT, RT, OK in the device's pin order.
+        if (bits !== mode.bits) {
+          mode.bits = bits;
+          this.events.value(mode.id, bits);
+        }
+        return;
+      }
       case 'slide': {
         const part = input.project.parts.find((item) => item.id === mode.id);
         if (!part) return;
@@ -2251,10 +2284,26 @@ export class Stage {
             if (!same) this.events.move(part.id, origin.x, origin.y, mode.mount);
             else this.syncContent(input.project);
           }
+        } else {
+          // A plain click on a sensor module, which has no knob of its own, trips it or lets it go.
+          const part = input.project.parts.find((item) => item.id === mode.id),
+            control = part && partCatalog[part.kind].control;
+          if (part && control?.scenario && !this.parts.get(part.id)?.model.control) {
+            if (control.kind === 'toggle' || control.kind === 'momentary')
+              this.events.value(part.id, part.value ? 0 : 1);
+            else if (control.kind === 'range' && part.kind.startsWith('y:sensor-')) {
+              const min = control.min ?? 0,
+                max = control.max ?? 1;
+              this.events.value(part.id, part.value >= (min + max) / 2 ? min : max);
+            }
+          }
         }
         break;
       }
       case 'press':
+        this.events.value(mode.id, 0);
+        break;
+      case 'stick':
         this.events.value(mode.id, 0);
         break;
       case 'boardkey':
@@ -2554,6 +2603,34 @@ export class Stage {
       this.wheelBuffer = 0;
       if (next !== now) this.events.value(knob.part.id, next, KNOBS[knob.index]!.dial.extra);
       return;
+    }
+    // The wheel over a part's own control (encoder, potentiometer, slider, switch) moves it a step.
+    if (
+      over?.type === 'control' &&
+      over.knob === undefined &&
+      over.key === undefined &&
+      over.bit === undefined &&
+      lookOf(this.input?.project.parts.find((item) => item.id === over.id)?.kind ?? 'led') !==
+        'joystick'
+    ) {
+      const part = this.input?.project.parts.find((item) => item.id === over.id);
+      const control = part && partCatalog[part.kind].control;
+      if (part && control && (control.kind === 'range' || control.kind === 'toggle')) {
+        this.wheelBuffer += event.deltaY;
+        if (Math.abs(this.wheelBuffer) < 40) return;
+        const up = this.wheelBuffer < 0;
+        this.wheelBuffer = 0;
+        if (control.kind === 'toggle') {
+          this.events.value(part.id, up ? 1 : 0);
+          return;
+        }
+        const min = control.min ?? 0,
+          max = control.max ?? 1023,
+          step = Math.max(control.step ?? 1, Math.round((max - min) / 50));
+        const next = THREE.MathUtils.clamp(part.value + (up ? step : -step), min, max);
+        if (next !== part.value) this.events.value(part.id, next);
+        return;
+      }
     }
     // The wheel over a hand turns it, 15° a notch (Shift raises it) instead of zooming the bench.
     if (over?.type === 'tool' && this.tools.get(over.id)?.kind === 'hand') {

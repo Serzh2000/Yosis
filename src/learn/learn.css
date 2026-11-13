@@ -1,0 +1,886 @@
+/* The lesson screen: the desk takes the whole screen, the card of the step is a window on it.
+   Colours come from the studio's tokens; the cabinets' own names are mapped here. */
+:root {
+  --ink: var(--text);
+  --ink-2: var(--text-soft);
+  --ink-3: var(--muted);
+  --rule: var(--border);
+  --rule-strong: color-mix(in srgb, var(--border) 60%, var(--text));
+  --card: var(--panel);
+  --bad: var(--danger);
+  --ok: var(--success);
+  --warn-ink: var(--warning);
+  --warn-face: var(--warning-soft);
+  --warn-rule: color-mix(in srgb, var(--warning) 40%, var(--border));
+  --key: var(--pad);
+  --key-hi: var(--pad-strong);
+  --face: var(--panel);
+  --face-hi: var(--panel-raised);
+  --face-lo: var(--surface);
+  --stroke: var(--border);
+  --scrim: #0a1a1580;
+  --ink-line: var(--border);
+  --ink-drop: #0000004d;
+  --sans: var(--font-ui);
+  --radius: var(--radius-control);
+  --card-width: 404px;
+  --card-gap: 18px;
+}
+
+.learn-root {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-ui);
+  overflow: hidden;
+}
+.learn-root [hidden] {
+  display: none !important;
+}
+
+/* ---- The bar over the desk ---- */
+.learn-top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 12px;
+  background: var(--chrome);
+  color: var(--chrome-text);
+  border-bottom: 1px solid var(--chrome-border);
+}
+.learn-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.learn-brand span,
+.learn-book-title {
+  color: var(--chrome-soft);
+  font-size: 14px;
+}
+.learn-book-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 12px;
+  border-left: 1px solid var(--chrome-border);
+}
+.learn-top-space {
+  flex: 1;
+}
+.learn-views {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--chrome-border);
+  border-radius: 999px;
+  background: var(--chrome-raised);
+}
+.learn-views button {
+  height: 28px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--chrome-soft);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.learn-views button[aria-pressed='true'] {
+  background: var(--pad);
+  color: var(--pad-text);
+}
+.learn-top-button {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--chrome-border);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--chrome-text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.learn-top-button:hover {
+  background: var(--chrome-raised);
+}
+
+/* ---- The desk: the work of the page or the board, over the whole screen ---- */
+.learn-desk {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.desk-view {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+/* The card lies over the board, as over a scene; an editor makes room for it instead. */
+.desk-view:not(.desk-bench) {
+  padding: 12px 14px 12px calc(var(--card-width) + var(--card-gap) * 2);
+}
+.card-folded .desk-view:not(.desk-bench) {
+  padding-left: 14px;
+}
+.desk-bench > * {
+  flex: 1;
+  min-height: 0;
+}
+.desk-note,
+.desk-empty {
+  margin: auto;
+  max-width: 46ch;
+  text-align: center;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* ---- The card of the step ---- */
+.lc {
+  position: absolute;
+  left: var(--card-gap);
+  top: 64px;
+  z-index: 8;
+  width: min(var(--card-width), calc(100% - 36px));
+  max-height: calc(100% - 82px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rule-strong);
+  border-radius: 14px;
+  background: var(--face);
+  color: var(--ink);
+  box-shadow: 0 18px 44px var(--ink-drop);
+  overflow: hidden;
+}
+.lc-head {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--rule);
+}
+.lc-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 32px;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+.lc-tools:active {
+  cursor: grabbing;
+}
+.lc-tools small {
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.lc-tool-buttons {
+  display: flex;
+  gap: 2px;
+}
+.lc-tool-buttons button,
+.acct-nav-dot {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.lc-tool-buttons button:hover,
+.acct-nav-dot:hover {
+  background: var(--face-lo);
+  color: var(--ink);
+}
+.lc-head h2 {
+  margin: 4px 0 12px;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+.lc-route {
+  display: grid;
+  grid-template-columns: repeat(var(--stops, 3), minmax(0, 1fr));
+  gap: 4px;
+}
+.lc-stop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.lc-stop.is-now {
+  background: color-mix(in srgb, var(--key) 16%, var(--face));
+  color: var(--ink);
+}
+.lc-stop.is-done {
+  color: var(--ok);
+}
+.lc-stop-n {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+}
+.lc-stop-text {
+  display: grid;
+  min-width: 0;
+  line-height: 1.2;
+}
+.lc-stop-text b {
+  font-size: 13px;
+}
+.lc-stop-text small {
+  display: none;
+  font-size: 11.5px;
+}
+.lc-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 20px 20px 24px;
+  font-size: 15.5px;
+  line-height: 1.55;
+  scrollbar-width: thin;
+  animation: lc-enter 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes lc-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lc-body {
+    animation: none;
+  }
+}
+.lc-page-title {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+.lc-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.lc-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--rule);
+}
+.lc-foot button,
+.lc-confirm button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.lc-foot button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.lc-foot .lc-next {
+  background: var(--key);
+  border-color: var(--key-hi);
+  color: var(--pad-text);
+  font-weight: 600;
+}
+.lc-count {
+  color: var(--ink-3);
+  font-size: 14px;
+}
+.lc.is-folded .lc-route,
+.lc.is-folded .lc-body,
+.lc.is-folded .lc-foot {
+  display: none;
+}
+.lc.is-folded .lc-head h2 {
+  margin-bottom: 0;
+  font-size: 20px;
+}
+.lc :focus-visible {
+  outline: 2px solid var(--key);
+  outline-offset: 2px;
+}
+.lc-confirm {
+  position: absolute;
+  inset: auto 12px 64px;
+  z-index: 6;
+  padding: 14px;
+  border: 1.5px solid var(--warn-rule);
+  border-radius: 12px;
+  background: var(--warn-face);
+  color: var(--ink);
+  box-shadow: 0 10px 28px var(--ink-drop);
+}
+.lc-confirm p {
+  margin: 0 0 10px;
+}
+.lc-confirm-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* The task of the step. */
+.lc-task {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: 12px;
+  background: var(--card);
+}
+.lc-task.done {
+  border-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 12%, var(--card));
+}
+.lc-task-mark {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--key);
+  border-radius: 50%;
+  color: #fff;
+}
+.lc-task.done .lc-task-mark {
+  border-color: var(--ok);
+  background: var(--ok);
+}
+.lc-task-body {
+  min-width: 0;
+}
+.lc-task-body p {
+  margin: 0 0 6px;
+}
+.lc-task-note {
+  color: var(--ink-2);
+  font-size: 14px;
+}
+.lc-task-line.failed,
+.lc-task-line.error {
+  color: var(--bad);
+}
+.lc-task-line.passed {
+  color: var(--ok);
+}
+.lc-checklist {
+  list-style: none;
+  margin: 8px 0 4px;
+  padding: 0;
+}
+.lc-checklist li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 4px 0;
+  color: var(--ink-2);
+}
+.lc-checklist li.on {
+  color: var(--ink);
+}
+.lc-check-mark {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--rule-strong);
+  border-radius: 50%;
+  color: #fff;
+}
+.lc-checklist li.on .lc-check-mark {
+  background: var(--ok);
+  border-color: var(--ok);
+}
+
+/* Blocks of a page. */
+.learn-text {
+  max-width: 62ch;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.learn-text p {
+  margin: 0 0 12px;
+}
+.learn-text p:last-child {
+  margin-bottom: 0;
+}
+.learn-text ul {
+  margin: 0 0 12px;
+  padding-left: 22px;
+}
+.learn-text code,
+.learn-parts strong {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 1px 5px;
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  background: var(--card);
+}
+.learn-parts strong {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.learn-code {
+  margin: 0;
+}
+.learn-code pre {
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--card);
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.learn-code figcaption {
+  margin-bottom: 6px;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+.learn-code .button {
+  height: 32px;
+}
+.learn-figure {
+  margin: 0;
+}
+.learn-figure img {
+  max-width: 100%;
+  border-radius: 10px;
+}
+.learn-quiz-q {
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+.learn-quiz-options {
+  display: grid;
+  gap: 8px;
+}
+.learn-option {
+  text-align: left;
+  padding: 10px 14px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.learn-option:hover {
+  border-color: var(--key);
+}
+.learn-option.right {
+  border-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 14%, var(--card));
+}
+.learn-option.wrong {
+  border-color: var(--bad);
+  background: var(--danger-soft);
+}
+.learn-quiz-note {
+  margin: 10px 0 0;
+}
+.learn-quiz-note.right {
+  color: var(--ok);
+}
+.learn-quiz-note.wrong {
+  color: var(--bad);
+}
+.learn-parts {
+  margin: 0;
+  color: var(--ink-2);
+}
+.learn-note {
+  color: var(--muted);
+}
+
+/* ---- The work on the desk: an editor, its bar, and the result of a check ---- */
+.learn-sim {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.learn-sim-editor,
+.learn-circuit {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+  background: var(--canvas);
+}
+.learn-sim-editor > *,
+.learn-circuit > * {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+.learn-sim-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: var(--panel);
+}
+.learn-ok {
+  color: var(--success);
+  font-size: 13px;
+}
+.learn-sim-error {
+  margin: 0;
+  color: var(--danger);
+}
+.learn-verdicts {
+  flex: none;
+  max-height: 30%;
+  overflow: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.learn-verdicts li {
+  display: grid;
+  gap: 2px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--canvas);
+  font-size: 14px;
+}
+.learn-verdicts li.right {
+  border-color: color-mix(in srgb, var(--success) 55%, var(--border));
+  background: color-mix(in srgb, var(--success) 10%, var(--canvas));
+}
+.learn-verdicts li.wrong {
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+  background: var(--danger-soft);
+}
+.learn-verdicts li span {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+.learn-verdicts li.summary {
+  font-weight: 600;
+}
+
+/* ---- The map of the course ---- */
+.map {
+  position: fixed;
+  inset: 44px 0 0 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+}
+.map-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px clamp(18px, 6vw, 80px) 8px;
+}
+.map-head h2 {
+  margin: 0;
+  font-size: 24px;
+}
+.map-head button {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+}
+.map-body {
+  flex: 1;
+  overflow: auto;
+  padding: 8px clamp(18px, 6vw, 80px) 40px;
+  display: grid;
+  align-content: start;
+  gap: 22px;
+}
+.map-books {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.map-books button {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  min-width: 220px;
+  padding: 12px 16px 14px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+}
+.map-books button[aria-pressed='true'] {
+  border-color: var(--key);
+}
+.map-books button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.map-books small {
+  color: var(--ink-3);
+}
+.map-books i {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 4px;
+  background: var(--key);
+}
+.map h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.map ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+}
+.map section button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  column-gap: 8px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--rule);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.map section button:hover {
+  border-color: var(--key);
+}
+.map section button.now {
+  border-color: var(--key);
+  background: color-mix(in srgb, var(--key) 12%, var(--card));
+}
+.map section button small {
+  grid-column: 2;
+  color: var(--ink-3);
+}
+.map-mark {
+  text-align: center;
+  color: var(--ink-3);
+}
+.map-mark.done {
+  color: var(--ok);
+}
+.map-mark.started {
+  color: var(--key);
+}
+
+/* ---- The stamp of a done task ---- */
+.learn-success {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.learn-success-card {
+  pointer-events: auto;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 22px 30px 20px;
+  border: 1.5px solid var(--ok);
+  border-radius: 16px;
+  background: var(--face);
+  box-shadow: 0 24px 60px var(--ink-drop);
+  animation: learn-stamp 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.learn-success-card h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.learn-success-seal {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ok);
+  color: #fff;
+}
+.learn-success-kicker {
+  color: var(--ok);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.learn-success-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.learn-success-row button {
+  height: 36px;
+  padding: 0 14px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.learn-success-row .learn-success-next {
+  background: var(--key);
+  border-color: var(--key-hi);
+  color: var(--pad-text);
+  font-weight: 600;
+}
+@keyframes learn-stamp {
+  from {
+    opacity: 0;
+    transform: scale(1.25) rotate(-3deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .learn-success-card {
+    animation: none;
+  }
+}
+
+/* ---- A narrow screen: the card goes above the desk instead of over it ---- */
+@media (max-width: 900px) {
+  .learn-root {
+    height: auto;
+    min-height: 100dvh;
+    overflow: auto;
+  }
+  .learn-views {
+    position: static;
+    transform: none;
+  }
+  .learn-desk {
+    display: flex;
+    flex-direction: column;
+  }
+  .lc {
+    position: static;
+    width: auto;
+    max-height: none;
+    margin: 10px;
+    order: -1;
+  }
+  .desk-view,
+  .desk-view:not(.desk-bench) {
+    position: relative;
+    inset: auto;
+    min-height: 70vh;
+    padding: 0 10px 10px;
+  }
+  .learn-book-title {
+    display: none;
+  }
+}
+
+.lc-hint {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border: 1px solid var(--warn-rule);
+  border-radius: 8px;
+  background: var(--warn-face);
+  font-size: 14px;
+}
+.lc-hint-button {
+  margin-top: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.lc-hint-button:hover {
+  border-color: var(--key);
+}

@@ -48,7 +48,7 @@ const baseConfig: SimulationConfig = {
 function project(name: string, content: string): Project {
   return { name, top: 'top', board: 'tangnano20k', files: [{ name: 'top.v', content }] };
 }
-function combinationalCases(inputs: Record<string, string>[], expected: string[]): LessonCase[] {
+export function combinationalCases(inputs: Record<string, string>[], expected: string[]): LessonCase[] {
   return inputs.map((values, cycle) => ({
     title: `Случай ${cycle + 1}`,
     cycle,
@@ -56,7 +56,7 @@ function combinationalCases(inputs: Record<string, string>[], expected: string[]
     expected: expected[cycle],
   }));
 }
-function config(cases: LessonCase[]): SimulationConfig {
+export function config(cases: LessonCase[]): SimulationConfig {
   return {
     ...baseConfig,
     cycles: cases.length + 1,

@@ -31,7 +31,7 @@
 % --- Абзацы ---
 \usepackage{indentfirst}
 \usepackage{setspace}
-\setstretch{1.2}
+\setstretch{1.15}
 \setlength{\parindent}{1.25cm}
 \setlength{\parskip}{3pt plus 1pt}
 
@@ -46,17 +46,17 @@
 
 % --- Цвета ---
 \usepackage[table]{xcolor}
-\definecolor{FpgaBlue}{RGB}{0, 91, 187}
-\definecolor{FpgaDark}{RGB}{22, 43, 58}
-\definecolor{FpgaOrange}{RGB}{255, 140, 0}
-\definecolor{FpgaGreen}{RGB}{0, 140, 70}
+\definecolor{FpgaBlue}{RGB}{14, 107, 78}
+\definecolor{FpgaDark}{RGB}{14, 33, 27}
+\definecolor{FpgaOrange}{RGB}{214, 158, 20}
+\definecolor{FpgaGreen}{RGB}{84, 138, 38}
 \definecolor{FpgaRed}{RGB}{200, 30, 45}
 \definecolor{FpgaPurple}{RGB}{120, 40, 160}
-\definecolor{FpgaLight}{RGB}{242, 246, 252}
-\definecolor{FpgaGray}{RGB}{120, 120, 125}
+\definecolor{FpgaLight}{RGB}{237, 244, 240}
+\definecolor{FpgaGray}{RGB}{110, 125, 118}
 \definecolor{BoardGreen}{RGB}{20, 90, 60}
 \definecolor{ChipBlack}{RGB}{35, 35, 40}
-\definecolor{CodeBack}{RGB}{248, 249, 251}
+\definecolor{CodeBack}{RGB}{247, 249, 248}
 \definecolor{CodeComment}{RGB}{0, 128, 0}
 \definecolor{CodeKeyword}{RGB}{0, 60, 170}
 \definecolor{CodeString}{RGB}{170, 60, 0}
@@ -84,14 +84,16 @@
 \cfoot{\pagemark}
 \setkomafont{pageheadfoot}{\sffamily\small\color{FpgaDark}}
 \setkomafont{pagenumber}{\sffamily\bfseries\color{FpgaBlue}}
-\setkomafont{chapter}{\sffamily\huge\bfseries\color{FpgaBlue}}
-\setkomafont{section}{\sffamily\Large\bfseries\color{FpgaBlue}}
-\setkomafont{subsection}{\sffamily\large\bfseries\color{FpgaDark}}
+\setkomafont{chapter}{\sffamily\LARGE\bfseries\color{FpgaDark}}
+\setkomafont{section}{\sffamily\Large\bfseries\color{FpgaDark}}
+\setkomafont{subsection}{\sffamily\large\bfseries\color{FpgaBlue}}
 \setkomafont{subsubsection}{\sffamily\normalsize\bfseries\color{FpgaOrange}}
 \setkomafont{paragraph}{\sffamily\bfseries\color{FpgaDark}}
 \setkomafont{part}{\sffamily\Huge\bfseries\color{FpgaBlue}}
 \renewcommand*{\chapterformat}{%
   \colorbox{FpgaBlue}{\color{white}\,\thechapter\,}\enskip}
+\RedeclareSectionCommand[beforeskip=2.2ex plus .4ex, afterskip=1.1ex plus .2ex]{section}
+\RedeclareSectionCommand[beforeskip=1.8ex plus .3ex, afterskip=.8ex plus .2ex]{subsection}
 
 % --- Списки и таблицы ---
 \usepackage{enumitem}
@@ -129,17 +131,21 @@
   minted options={fontsize=\small, breaklines=true, tabsize=4},
   listing file={#2}, title={#3}}
 \newtcolorbox{infobox}[1][Справка]{
-  enhanced, breakable, colback=FpgaLight, colframe=FpgaBlue,
-  fonttitle=\sffamily\bfseries, title={#1}, arc=2mm, boxrule=0.8pt}
+  enhanced, breakable, colback=FpgaLight, colframe=FpgaBlue, frame hidden,
+  borderline west={3pt}{0pt}{FpgaBlue}, sharp corners=east, arc=1.5mm, boxrule=0pt,
+  colbacktitle=FpgaBlue!14, coltitle=FpgaDark, fonttitle=\sffamily\bfseries, title={#1}}
 \newtcolorbox{warnbox}[1][Внимание!]{
-  enhanced, breakable, colback=orange!6, colframe=FpgaOrange,
-  fonttitle=\sffamily\bfseries, title={#1}, arc=2mm, boxrule=0.8pt}
+  enhanced, breakable, colback=orange!6, colframe=FpgaOrange, frame hidden,
+  borderline west={3pt}{0pt}{FpgaOrange}, sharp corners=east, arc=1.5mm, boxrule=0pt,
+  colbacktitle=FpgaOrange!14, coltitle=FpgaDark, fonttitle=\sffamily\bfseries, title={#1}}
 \newtcolorbox{taskbox}[1][Задание]{
-  enhanced, breakable, colback=green!4, colframe=FpgaGreen,
-  fonttitle=\sffamily\bfseries, title={#1}, arc=2mm, boxrule=0.8pt}
+  enhanced, breakable, colback=green!4, colframe=FpgaGreen, frame hidden,
+  borderline west={3pt}{0pt}{FpgaGreen}, sharp corners=east, arc=1.5mm, boxrule=0pt,
+  colbacktitle=FpgaGreen!14, coltitle=FpgaDark, fonttitle=\sffamily\bfseries, title={#1}}
 \newtcolorbox{ideabox}[1][Главная мысль]{
-  enhanced, breakable, colback=purple!4, colframe=FpgaPurple,
-  fonttitle=\sffamily\bfseries, title={#1}, arc=2mm, boxrule=0.8pt}
+  enhanced, breakable, colback=purple!4, colframe=FpgaPurple, frame hidden,
+  borderline west={3pt}{0pt}{FpgaPurple}, sharp corners=east, arc=1.5mm, boxrule=0pt,
+  colbacktitle=FpgaPurple!14, coltitle=FpgaDark, fonttitle=\sffamily\bfseries, title={#1}}
 
 % --- Прочее ---
 \usepackage{siunitx}

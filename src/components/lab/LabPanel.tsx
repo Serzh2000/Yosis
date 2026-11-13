@@ -39,6 +39,7 @@ import {
   LabRuntime,
   loadLayout,
   saveLayout,
+  type LabLayout,
   type LabPart,
   type LabWire,
 } from '../../lib/lab/runtime';
@@ -46,13 +47,13 @@ import { wireFpga, wirePins } from '../../lib/lab/wire-info';
 import { AssignPopover } from './AssignForm';
 import { ContextMenu, type MenuItem } from './ContextMenu';
 import { LabScene, type SceneHandle } from './LabScene';
-import { Library } from './Library';
+import { Library, PartsShelf } from './Library';
 import { PartProperties } from './PartProperties';
 import { SidePanel } from './SidePanel';
 import { NOTHING, type Selection } from './selection';
 import { useLabHistory } from './useLabHistory';
 import { Dialog } from '../Dialog';
-import { resolveConnections, toProject } from './reference/bridge';
+import { resolveConnections, toProject, type Connections } from './reference/bridge';
 import { actionFor, liveOf } from './reference/live';
 import { wirePalette } from './reference/src/mcu/scene/layout';
 import '../virtual-board.css';
@@ -64,6 +65,15 @@ interface Props {
   active: boolean;
   onChange: (project: Project) => void;
   onOpenPins: () => void;
+  /** A textbook page looks at the bench: it is told the layout and the wires after every change. */
+  onBench?: (state: { layout: LabLayout; connections: Connections }) => void;
+  /** The parts the library offers; all of them when absent. */
+  allowedParts?: readonly string[];
+  /**
+   * Only the scene: no library or side panel, as in a textbook. The parts the page offers lie on a
+   * shelf at the foot of the scene, and what is selected is described in a card over it.
+   */
+  sceneOnly?: boolean;
 }
 const SPEEDS = [
   ['max', 'как можно быстрее'],
@@ -92,7 +102,15 @@ const formatRate = (rate: number) =>
       : `${Math.round(rate)} тактов/с`;
 const partDef = (part: LabPart): PartDef => partById.get(part.def)!;
 
-export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
+export function LabPanel({
+  project,
+  active,
+  onChange,
+  onOpenPins,
+  onBench,
+  allowedParts,
+  sceneOnly = false,
+}: Props) {
   const [design, setDesign] = useState<LabDesign | null>(null);
   const [problem, setProblem] = useState<{ error: string; diagnostics: Diagnostic[] } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -133,6 +151,9 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
   const selectedRef = useRef(selectedId);
   selectedRef.current = selectedId;
   const connections = useMemo(() => resolveConnections(layout), [layout]);
+  const onBenchRef = useRef(onBench);
+  onBenchRef.current = onBench;
+  useEffect(() => onBenchRef.current?.({ layout, connections }), [layout, connections]);
 
   // A different project brings its own bench.
   const projectKey = project.id ?? project.name;
@@ -764,8 +785,8 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
           </button>
         </div>
       )}
-      <div className="lab-columns">
-        <Library onAdd={onAdd} />
+      <div className={'lab-columns' + (sceneOnly ? ' scene-only' : '')}>
+        {sceneOnly ? null : <Library onAdd={onAdd} allowed={allowedParts} />}
         <LabScene
           handle={scene}
           project={scenery}
@@ -802,14 +823,6 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
           boardKey={(id, down) => act(BOARD_BUTTONS, 'set', { pin: id === 'S1' ? 0 : 1, on: down })}
           drop={onDrop}
         >
-          {layout.parts.every((part) => partDef(part).kind === 'breadboard') && (
-            <p className="lab-empty">
-              Плата стоит на макетке, как на настоящем столе: её контакты выведены в отверстия, а
-              кнопки S1, S2 и шесть светодиодов уже работают. Добавьте деталь из списка слева: она
-              встанет на макетку правее платы. Соедините плюс (VCC) с 3V3, минус (GND) с GND, а
-              сигналы с нужными контактами платы.
-            </p>
-          )}
           {showPopover && (
             <AssignPopover
               fpga={selectedFpga}
@@ -822,23 +835,28 @@ export function LabPanel({ project, active, onChange, onOpenPins }: Props) {
             />
           )}
         </LabScene>
-        <SidePanel
-          layout={layout}
-          connections={connections}
-          selection={selection}
-          runtime={runtime}
-          freeSignals={freeSignals}
-          assignError={assignError}
-          terminal={terminal}
-          actTerminal={(name, value) => act(BOARD_UART, name, value)}
-          onAssign={assign}
-          onOpenPins={onOpenPins}
-          onOpenProperties={setPropertiesOf}
-          onRotate={() => rotate(true)}
-          onRemove={remove}
-          onClear={() => setConfirmClear(true)}
-          partDef={partDef}
-        />
+        {sceneOnly && allowedParts ? (
+          <PartsShelf parts={allowedParts.filter((id) => id !== 'breadboard')} onAdd={onAdd} />
+        ) : null}
+        {sceneOnly && !selectedId ? null : (
+          <SidePanel
+            layout={layout}
+            connections={connections}
+            selection={selection}
+            runtime={runtime}
+            freeSignals={freeSignals}
+            assignError={assignError}
+            terminal={terminal}
+            actTerminal={(name, value) => act(BOARD_UART, name, value)}
+            onAssign={assign}
+            onOpenPins={onOpenPins}
+            onOpenProperties={setPropertiesOf}
+            onRotate={() => rotate(true)}
+            onRemove={remove}
+            onClear={() => setConfirmClear(true)}
+            partDef={partDef}
+          />
+        )}
       </div>
       {menu && (
         <ContextMenu

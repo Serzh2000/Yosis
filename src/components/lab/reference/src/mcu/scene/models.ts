@@ -14,7 +14,8 @@ import {
   screw,
 } from './package-art';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { partCatalog, partPinNames, partValues, lookOf } from '../../../shared/catalog';
+import { partCatalog, partPinNames, lookOf } from '../../../shared/catalog';
+import { PS2_KEY_LAYOUT } from '../../../shared/ps2-layout';
 import { breadboardRows } from '../../../shared/breadboard';
 import { discreteKinds, leadOffsets, uprightKinds } from '../../../shared/mount';
 import {
@@ -277,6 +278,8 @@ export interface BoardModel extends Model {
   setBoardLeds?: (levels: readonly number[]) => void;
   /** Which of the board's keys are held down, S1 then S2. */
   setBoardKeys?: (pressed: readonly boolean[]) => void;
+  /** Eases the moving parts of the board; true while something still moves. */
+  animate?: (now: number) => boolean;
 }
 
 interface Ink {
@@ -397,6 +400,22 @@ function componentPrint(board: McuBoardId, width: number, depth: number, s3: boo
     t('3V3 5V GND', x0 + (s3 ? 26 : 22), -6.8, 0.6),
   ];
 }
+/** A small transparent picture of a key's letter, for the top of its cap. */
+function keyLabel(text: string) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 64;
+  const context = canvas.getContext('2d');
+  if (context && text) {
+    context.fillStyle = '#2a2d35';
+    context.font = `700 ${text.length > 1 ? 30 : 38}px system-ui, sans-serif`;
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText(text, 32, 34);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
 export function buildBoard(layout: BoardLayout, variant?: ModuleVariant): BoardModel {
   const group = new THREE.Group(),
     { width, depth, center } = layout,
@@ -445,9 +464,17 @@ export function buildBoard(layout: BoardLayout, variant?: ModuleVariant): BoardM
     shadows.push(toPaint(x, z, size * 1.42, size * 1.42));
   };
   const smallButton = (x: number, z: number, key?: 'S1' | 'S2') => {
-    const body = box(4.4, 1.2, 3.4, mat('#d4d3c9', 0.4, 0.3), x, top, z);
-    const cap = cylinder(1.15, 0.6, mat('#efece2'), x, top + 1.2, z, 20);
-    group.add(body, cap);
+    const body = box(4.4, 1.3, 3.4, mat('#d4d3c9', 0.4, 0.3), x, top, z);
+    // The cap stands 0.9 above the shell and sinks into it when pressed; a dark ring marks the gap.
+    const cap = cylinder(1.15, 0.9, mat('#efece2'), x, top + 1.3, z, 20);
+    const gap = new THREE.Mesh(
+      new THREE.RingGeometry(1.15, 1.45, 24),
+      own(new THREE.MeshStandardMaterial({ color: '#2b2d2c', roughness: 0.7 })),
+    );
+    gap.rotation.x = -Math.PI / 2;
+    gap.position.set(x, top + 1.33, z);
+    flat(gap);
+    group.add(body, cap, gap);
     for (const sx of [-1, 1])
       for (const sz of [-1, 1])
         group.add(flat(box(0.7, 0.3, 0.7, metal(), x + sx * 2.3, top, z + sz * 1.3)));
@@ -463,6 +490,7 @@ export function buildBoard(layout: BoardLayout, variant?: ModuleVariant): BoardM
   let onLed: ReturnType<typeof smdLed>, pinLed: ReturnType<typeof smdLed> | undefined;
   const tangLeds: ReturnType<typeof tangLed>[] = [];
   let setKeys: ((pressed: readonly boolean[]) => void) | undefined;
+  let animateKeys: ((now: number) => boolean) | undefined;
   if (layout.board === 'uno') {
     usbSocket(group, -width / 2 + 6, top, -11, 'B');
     // Hollow power connector, opening towards the left edge.
@@ -571,8 +599,26 @@ export function buildBoard(layout: BoardLayout, variant?: ModuleVariant): BoardM
     const w = width / 2;
     usbSocket(group, -w + 4.2, top, 0, 'C');
     const keyCaps = [smallButton(-w + 12.5, 6.8, 'S1')!, smallButton(-w + 12.5, -6.8, 'S2')!];
-    setKeys = (pressed) =>
-      keyCaps.forEach((cap, i) => (cap.position.y = top + (pressed[i] ? 0.75 : 1.2)));
+    // The caps travel 0.55 down and back with a short ease, so a press can be seen and felt.
+    const travel = keyCaps.map(() => 0),
+      goal = keyCaps.map(() => 0);
+    let last = 0;
+    setKeys = (pressed) => keyCaps.forEach((_, i) => (goal[i] = pressed[i] ? 1 : 0));
+    animateKeys = (now) => {
+      const dt = last ? Math.min(64, now - last) : 16;
+      last = now;
+      let moving = false;
+      keyCaps.forEach((cap, i) => {
+        const step = goal[i]! - travel[i]!;
+        if (Math.abs(step) > 0.01) {
+          travel[i]! += step * (1 - Math.exp(-dt / 25));
+          moving = true;
+        } else travel[i] = goal[i]!;
+        cap.position.y = top + 1.3 - 0.55 * travel[i]!;
+      });
+      if (!moving) last = 0;
+      return moving;
+    };
     // The FPGA: a square package with its marking, the largest part on the board.
     add(box(11.2, 1.5, 11.2, mat('#17181d', 0.5), -w + 22, top, 0), 11.2, 11.2);
     group.add(
@@ -864,6 +910,7 @@ export function buildBoard(layout: BoardLayout, variant?: ModuleVariant): BoardM
     setPowerLed: onLed.set,
     setBoardLeds: (levels) => tangLeds.forEach((led, i) => led.set(levels[i] ?? 0)),
     setBoardKeys: (pressed) => setKeys?.(pressed),
+    animate: (now) => animateKeys?.(now) ?? false,
   };
 }
 
@@ -1591,6 +1638,90 @@ const kitDetail: Partial<Record<string, Detail>> = {
     b.updates.push(({ part }) => {
       const [x = 128, y = 128] = (part ?? b.part).values ?? [];
       stick.rotation.set(((y - 128) / 128) * 0.4, 0, -((x - 128) / 128) * 0.4);
+    });
+  },
+  ps2keyboard: (b) => {
+    // A compact keyboard: a case, 44 keys with their letters and three indicator lights. Each key
+    // is a control: held down it reports its place in the list of PS2_KEY_LAYOUT.
+    const unit = 4.2,
+      width = 13 * unit + 3,
+      depth = PS2_KEY_LAYOUT.length * unit + 3;
+    const centre = -6;
+    add(b, box(width, 2.4, depth, mat('#d9d5c7', 0.55), 0, b.top, centre), width, depth);
+    b.group.add(flat(box(width - 2, 0.2, depth - 2, mat('#bdb8a8', 0.6), 0, b.top + 2.4, centre)));
+    const caps: THREE.Group[] = [];
+    let index = 0;
+    PS2_KEY_LAYOUT.forEach((row, r) => {
+      let x = -width / 2 + 2.2;
+      const z = centre + (r - (PS2_KEY_LAYOUT.length - 1) / 2) * unit;
+      for (const key of row) {
+        if ('gap' in key) {
+          x += key.gap * unit;
+          continue;
+        }
+        const span = key.width * unit,
+          wide = key.width > 1.2;
+        index += 1;
+        const cap = new THREE.Group();
+        cap.position.set(x + span / 2 - 0.25, b.top + 2.4, z);
+        const body = box(
+          span - 0.5,
+          1.3,
+          unit - 0.5,
+          mat(wide ? '#a9a699' : '#eeebe0', 0.5),
+          0,
+          0,
+          0,
+        );
+        const print = new THREE.Mesh(
+          new THREE.PlaneGeometry(unit - 1.2, unit - 1.2),
+          own(
+            new THREE.MeshBasicMaterial({
+              map: keyLabel(key.label),
+              transparent: true,
+              depthWrite: false,
+            }),
+          ),
+        );
+        print.rotation.x = -Math.PI / 2;
+        print.position.y = 1.32;
+        flat(print);
+        cap.add(body, flat(print));
+        const pad = box(span, 2, unit, mat('#ffffff'), 0, 0.2, 0);
+        pad.visible = false;
+        cap.add(pad);
+        for (const piece of [body, pad])
+          setPick(piece, { type: 'control', id: b.part.id, key: index });
+        b.group.add(cap);
+        caps.push(cap);
+        x += span;
+      }
+    });
+    // The three indicators of a keyboard (Num, Caps, Scroll) are dark: the model has no lock keys.
+    for (const i of [-1, 0, 1])
+      b.group.add(
+        flat(
+          box(
+            1.6,
+            0.3,
+            0.8,
+            mat('#3a5a42', 0.5),
+            width / 2 - 8 + i * 2.6,
+            b.top + 2.4,
+            centre - depth / 2 + 1.4,
+          ),
+        ),
+      );
+    b.updates.push(({ part }) => {
+      let moving = false;
+      const held = (part ?? b.part).value;
+      caps.forEach((cap, i) => {
+        const goal = b.top + 2.4 - (held === i + 1 ? 0.7 : 0),
+          next = cap.position.y + (goal - cap.position.y) * 0.5;
+        cap.position.y = Math.abs(goal - next) < 0.02 ? goal : next;
+        if (cap.position.y !== goal) moving = true;
+      });
+      return moving;
     });
   },
   lanalyzer: (b) => {
@@ -2371,32 +2502,109 @@ function partBody(build: Build, value: number) {
     }
     case 'switch':
     case 'slideswitch': {
-      add(build, box(12, 5, 6, mat('#2c2f3a', 0.5), 0, top, -3), 12, 6);
-      const lever = box(2.4, 4, 2.4, mat(palette.metal, 0.4, 0.5), 0, 0, 0);
+      // Slide switch SS12D00: a metal can with a dark slot and a ribbed knob that runs in it.
+      add(build, box(12, 4, 6, mat('#b9bec4', 0.35, 0.7), 0, top, -3), 12, 6);
+      build.group.add(flat(box(8.6, 0.2, 1.8, mat('#15171c', 0.8), 0, top + 4, -3)));
       const holder = new THREE.Group();
-      holder.add(lever);
-      holder.position.set(0, top + 5, -3);
+      holder.add(box(3.4, 2.6, 2.4, mat('#2c2f3a', 0.5), 0, 0, 0));
+      for (const rib of [-1, 0, 1])
+        holder.add(flat(box(0.35, 0.3, 2.5, mat('#454a58', 0.5), rib * 0.9, 2.6, 0)));
+      holder.position.set(0, top + 4, -3);
       build.group.add(holder);
       setPick(holder, { type: 'control', id: part.id });
       build.control = holder;
+      let slide = build.part.value ? 1 : 0;
       build.updates.push(() => {
-        holder.position.x = build.part.value ? 2.5 : -2.5;
+        const goal = build.part.value ? 1 : 0;
+        slide += (goal - slide) * 0.4;
+        if (Math.abs(goal - slide) < 0.02) slide = goal;
+        holder.position.x = (slide - 0.5) * 5;
+        return slide !== goal;
+      });
+      return;
+    }
+    case 'toggleswitch': {
+      // Toggle switch: a square body, a hex nut on a threaded barrel and a lever that flips.
+      add(build, box(10, 5, 8, mat('#2c2f3a', 0.5), 0, top, -4), 10, 8);
+      build.group.add(cylinder(2.6, 3.2, mat(palette.metal, 0.35, 0.65), 0, top + 5, -4, 18));
+      build.group.add(cylinder(3.4, 1.2, mat('#aeb3ba', 0.35, 0.7), 0, top + 8.2, -4, 6));
+      const holder = new THREE.Group();
+      holder.add(cylinder(0.9, 9, mat('#cfd3d9', 0.3, 0.75), 0, 0, 0, 12));
+      holder.add(cylinder(1.5, 2.2, mat('#e7e9ec', 0.3, 0.6), 0, 9, 0, 14));
+      holder.position.set(0, top + 9.4, -4);
+      build.group.add(holder);
+      setPick(holder, { type: 'control', id: part.id });
+      build.control = holder;
+      let tilt = build.part.value ? 1 : -1;
+      build.updates.push(() => {
+        const goal = build.part.value ? 1 : -1;
+        tilt += (goal - tilt) * 0.4;
+        if (Math.abs(goal - tilt) < 0.02) tilt = goal;
+        holder.rotation.z = -tilt * 0.45;
+        return tilt !== goal;
+      });
+      return;
+    }
+    case 'rockerswitch': {
+      // Rocker switch: a black bezel and a rocker that tips about its middle, lit when on.
+      add(build, box(13, 5, 9, mat('#1d1f25', 0.55), 0, top, -4.5), 13, 9);
+      const rocker = new THREE.Group();
+      const faceMat = own(new THREE.MeshStandardMaterial({ color: '#c8352c', roughness: 0.45 }));
+      const face = new THREE.Mesh(new THREE.BoxGeometry(10.6, 2.4, 7), faceMat);
+      face.castShadow = true;
+      rocker.add(face);
+      rocker.add(flat(box(0.5, 0.2, 5.2, mat('#f3efe6', 0.5), 3, 1.2, 0)));
+      const ring = flat(cylinder(1, 0.2, mat('#f3efe6', 0.5), -3, 1.2, 0, 16));
+      rocker.add(ring);
+      rocker.position.set(0, top + 5.2, -4.5);
+      build.group.add(rocker);
+      setPick(rocker, { type: 'control', id: part.id });
+      build.control = rocker;
+      let tilt = build.part.value ? 1 : -1;
+      build.updates.push(() => {
+        const goal = build.part.value ? 1 : -1;
+        tilt += (goal - tilt) * 0.4;
+        if (Math.abs(goal - tilt) < 0.02) tilt = goal;
+        rocker.rotation.z = -tilt * 0.2;
+        faceMat.color.set(tilt > 0 ? '#e0453a' : '#8f2a24');
+        return tilt !== goal;
       });
       return;
     }
     case 'dip': {
-      const bits = partCatalog.dip.control.bits ?? partCatalog.dip.pins.length / 2;
-      add(build, box(bits * 2.54 + 2, 4, 9, mat('#d64a3a', 0.5), 0, top, -4), bits * 2.54 + 2, 9);
+      // The laboratory's DIP has one pin per slider; the reference's own has an A/B pair each.
+      const bits = Math.max(
+        1,
+        part.kind === 'dip'
+          ? (partCatalog.dip.control.bits ?? partCatalog.dip.pins.length / 2)
+          : partCatalog[part.kind].pins.filter((name) => name !== 'VCC' && name !== 'GND').length,
+      );
+      const length = bits * 2.54 + 2;
+      add(build, box(length, 4, 9, mat('#d64a3a', 0.5), 0, top, -4), length, 9);
+      // Every slider sits in its own recess and is a control of its own: a click flips it.
       const knobs: THREE.Mesh[] = [];
-      for (let i = 0; i < Math.max(1, bits); i++) {
-        const knob = box(1.2, 1, 2, mat('#f6f2ea', 0.5), (i - (bits - 1) / 2) * PITCH, top + 4, -4);
-        build.group.add(knob);
+      for (let i = 0; i < bits; i++) {
+        const x = (i - (bits - 1) / 2) * PITCH;
+        build.group.add(flat(box(1.7, 0.2, 5.2, mat('#7d2a21', 0.7), x, top + 4, -4)));
+        const knob = box(1.4, 1.2, 2.2, mat('#f6f2ea', 0.5), x, top + 4, -4);
+        // A wider invisible pad catches the click, as the board's own keys have.
+        const pad = box(2.2, 2, 5.6, mat('#ffffff'), x, top + 4, -4);
+        pad.visible = false;
+        build.group.add(knob, pad);
+        for (const piece of [knob, pad]) setPick(piece, { type: 'control', id: part.id, bit: i });
         knobs.push(knob);
       }
+      const slide = knobs.map((_, i) => ((build.part.value >> i) & 1 ? 1 : 0));
       build.updates.push(() => {
-        knobs.forEach(
-          (knob, i) => (knob.position.z = -4 + ((build.part.value >> i) & 1 ? -1.6 : 1.6)),
-        );
+        let moving = false;
+        knobs.forEach((knob, i) => {
+          const goal = (build.part.value >> i) & 1 ? 1 : 0;
+          slide[i]! += (goal - slide[i]!) * 0.45;
+          if (Math.abs(goal - slide[i]!) < 0.02) slide[i] = goal;
+          else moving = true;
+          knob.position.z = -4 + (0.5 - slide[i]!) * 3.2;
+        });
+        return moving;
       });
       return;
     }
@@ -2408,10 +2616,24 @@ function partBody(build: Build, value: number) {
       const cap = cylinder(6, 6, mat('#2f3547', 0.6), 0, 8, 0);
       stick.add(cap);
       build.group.add(stick);
+      setPick(stick, { type: 'control', id: part.id });
+      build.control = stick;
+      // The value is the five directions as bits: up, down, left, right, press.
+      let tiltX = 0,
+        tiltZ = 0,
+        sink = 0;
       build.updates.push(() => {
-        const [x = 512, y = 512] = partValues(build.part);
-        stick.rotation.z = -((x - 512) / 512) * 0.4;
-        stick.rotation.x = ((y - 512) / 512) * 0.4;
+        const bits = build.part.value;
+        const goalZ = ((bits >> 3) & 1) - ((bits >> 2) & 1),
+          goalX = ((bits >> 1) & 1) - (bits & 1),
+          goalSink = (bits >> 4) & 1;
+        tiltZ += (goalZ - tiltZ) * 0.45;
+        tiltX += (goalX - tiltX) * 0.45;
+        sink += (goalSink - sink) * 0.45;
+        stick.rotation.z = -tiltZ * 0.4;
+        stick.rotation.x = tiltX * 0.4;
+        stick.position.y = top + 10 - sink * 1.2;
+        return Math.abs(goalZ - tiltZ) + Math.abs(goalX - tiltX) + Math.abs(goalSink - sink) > 0.03;
       });
       return;
     }
@@ -2423,23 +2645,45 @@ function partBody(build: Build, value: number) {
         build.width - 6,
         build.depth - 8,
       );
-      const cols = kind === 'keypad3x4' ? 3 : 4,
-        rows = 4,
-        kw = (build.width - 12) / cols,
+      // The laboratory's keypad comes as 4×4, 3×4 or 1×4: the pins say how many rows and columns.
+      const names = partCatalog[part.kind].pins,
+        cols = Math.max(1, names.filter((name) => name.startsWith('C')).length),
+        rows = Math.max(1, names.filter((name) => name.startsWith('R')).length);
+      void kind;
+      const kw = (build.width - 12) / cols,
         kd = (build.depth - 14) / rows;
+      // Each key is a control of its own: held down it reports its number (1 … 16, by rows).
+      const caps: THREE.Mesh[] = [];
       for (let r = 0; r < rows; r++)
-        for (let c = 0; c < cols; c++)
-          build.group.add(
-            box(
-              kw * 0.78,
-              1.2,
-              kd * 0.72,
-              mat(c === 3 ? '#d64a3a' : '#e9e4d6', 0.6),
-              (c - (cols - 1) / 2) * kw,
-              top + 0.6,
-              -2 + (r - 1.5) * kd,
-            ),
+        for (let c = 0; c < cols; c++) {
+          const x = (c - (cols - 1) / 2) * kw,
+            z = -2 + (r - (rows - 1) / 2) * kd;
+          const cap = box(
+            kw * 0.78,
+            1.2,
+            kd * 0.72,
+            mat(c === 3 && cols === 4 ? '#d64a3a' : '#e9e4d6', 0.6),
+            x,
+            top + 0.6,
+            z,
           );
+          const pad = box(kw, 2, kd, mat('#ffffff'), x, top + 0.6, z);
+          pad.visible = false;
+          build.group.add(cap, pad);
+          for (const piece of [cap, pad])
+            setPick(piece, { type: 'control', id: part.id, key: r * cols + c + 1 });
+          caps.push(cap);
+        }
+      build.updates.push(() => {
+        let moving = false;
+        caps.forEach((cap, i) => {
+          const goal = build.part.value === i + 1 ? top + 0.1 : top + 0.6,
+            next = cap.position.y + (goal - cap.position.y) * 0.5;
+          cap.position.y = Math.abs(goal - next) < 0.02 ? goal : next;
+          if (cap.position.y !== goal) moving = true;
+        });
+        return moving;
+      });
       return;
     }
     case 'potentiometer':

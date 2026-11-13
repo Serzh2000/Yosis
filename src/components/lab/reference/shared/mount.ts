@@ -43,6 +43,8 @@ const leadColumns: Partial<Record<PartKind, Lead[]>> = {
   trimpot: [0, 1, 2],
   piezo: [0, 3],
   switch: [0, 2],
+  toggleswitch: [0, 2],
+  rockerswitch: [0, 2],
   // Common-cathode digit, pins A..G, DP, COM; top row G F COM A B, bottom row E D COM C DP.
   seg7: [0, 1, [0, 1], [-2, 1], [-3, 1], -2, -3, [1, 1], -1],
   // Switch n joins nA (top row) with nB straight across the gap.
