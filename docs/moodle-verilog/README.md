@@ -10,7 +10,7 @@
 | --- | --- |
 | Плагин | `/var/www/fastuser/data/www/cdod.sakoryagin.ru/public/mod/vpl` |
 | Песочница | сервис `vpl-jail-system` (`systemctl status vpl-jail-system`), конфиг `/etc/vpl/vpl-jail-system.conf`, журнал `/var/log/vpl/vpl-jail-system.log` |
-| Адрес песочницы | только `127.0.0.1:8180` с секретным путём; секрет лежит в `/root/vpl/urlpath.txt` и записан в настройке Moodle `mod_vpl/jail_servers` |
+| Адрес песочницы | сама слушает только `127.0.0.1:8180`; наружу открыта через nginx сайта по `https://cdod.sakoryagin.ru/<секрет>` (см. `nginx-vpl.conf`); секрет лежит в `/root/vpl/urlpath.txt` и записан в настройке Moodle `mod_vpl/jail_servers` |
 | Лимиты | 120 с, 512 МБ, 100 процессов на запуск |
 | Бэкапы базы | `/root/moodle-db-before-vpl-20261113.sql.gz`, `/root/moodle-db-before-course-20261113.sql.gz` |
 
@@ -88,6 +88,14 @@ CHECK FAIL при a=1 b=1 ожидалось y=0, получено y=1
 ```sh
 python3 patch_vpl_open_editor.py /var/www/fastuser/data/www/cdod.sakoryagin.ru/public/mod/vpl
 ```
+
+## Почему песочница открыта через nginx
+
+При «Оценить» и «Запуск» страница в браузере ученика подключается к песочнице по WebSocket. Если в
+`mod_vpl/jail_servers` указать `127.0.0.1`, браузер полезет на компьютер ученика и спросит про доступ к
+локальной сети. Поэтому адрес публичный (`https://cdod.sakoryagin.ru/<секрет>`), а nginx передаёт
+запросы на `127.0.0.1:8180`. Конфигурация: `nginx-vpl.conf`. Заголовок `Server` песочницы нужно
+пропускать как есть (`proxy_pass_header Server`), иначе VPL считает сервер устаревшим.
 
 ## Подводные камни
 
