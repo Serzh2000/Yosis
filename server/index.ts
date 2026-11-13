@@ -18,12 +18,7 @@ import { workspace, dataDirectory } from './paths';
 import { DebuggerBackupStore, createDebuggerBackupRouter } from './debugger-backup-store';
 import { SyntaxManager } from './syntax';
 import { LabManager } from './lab';
-import {
-  AccountStore,
-  createAccountsRouter,
-  ensureTeacher,
-  resolveAccountsFile,
-} from './accounts';
+import { AccountStore, createAccountsRouter, ensureTeacher, resolveAccountsFile } from './accounts';
 
 const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 const DEVELOPMENT_ORIGINS = new Set(['http://127.0.0.1:5173', 'http://localhost:5173']);
