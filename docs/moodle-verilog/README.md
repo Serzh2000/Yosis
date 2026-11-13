@@ -151,6 +151,13 @@ sudo -u fastuser php -d max_input_vars=5000 create_quizzes.php /путь/к/Mood
 Moodle сам не пускает запросы на `127.0.0.1` и порты кроме 80/443 (настройки безопасности `curlsecurityblockedhosts`,
 `curlsecurityallowedport`), поэтому Jobe открыт через nginx, а глобальные настройки не менялись.
 
+Плагин поведения `qbehaviour_adaptive_adapted_for_coderunner` на Moodle 5.2 требует правки (`coderunner/patch_behaviour.py`):
+без неё после завершения теста выпадает «Class "qbehaviour_adaptive_type" not found». После обновления плагина применить снова:
+
+```sh
+python3 patch_behaviour.py /var/www/fastuser/data/www/cdod.sakoryagin.ru/public/question/behaviour/adaptive_adapted_for_coderunner
+```
+
 Сборка и запуск песочницы:
 
 ```sh
