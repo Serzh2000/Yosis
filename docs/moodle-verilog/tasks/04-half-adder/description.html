@@ -1,0 +1,9 @@
+<p>Сложим два одноразрядных числа a и b. Результат может быть от 0 до 2, то есть <code>10</code> в двоичной записи: нужны два выхода.</p>
+<ul>
+<li><code>sum</code>: младший разряд суммы;</li>
+<li><code>carry</code>: перенос в старший разряд (1, когда 1 + 1).</li>
+</ul>
+<table border="1" cellpadding="6"><tr><th>a</th><th>b</th><th>carry</th><th>sum</th></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><td>0</td><td>1</td><td>0</td><td>1</td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td>1</td></tr><tr><td>1</td><td>1</td><td>1</td><td>0</td></tr></table>
+<p><b>Подсказка.</b> <code>sum</code> равен 1, когда входы <b>разные</b>. Это элемент «исключающее ИЛИ», знак <code>^</code>. А <code>carry</code> равен 1, когда <b>оба</b> входа равны 1: это уже знакомое И.</p>

@@ -9,13 +9,15 @@
 # Тестбенч печатает по одной строке на проверку:
 #   CHECK PASS <имя>
 #   CHECK FAIL <имя>: ожидалось X, получено Y
-# Оценка = 100 * число PASS / (PASS + FAIL). Если тестбенч не напечатал ни одной
-# строки CHECK, оценка 0. Ошибка компиляции — 0 и текст ошибки в комментарии.
+# Оценка = VPL_GRADEMAX * число PASS / (PASS + FAIL), то есть в шкале самого задания.
+# Если тестбенч не напечатал ни одной строки CHECK, оценка 0.
+# Ошибка компиляции — 0 и текст ошибки с подсказкой в комментарии.
 
 cat > vpl_execution <<'EOF'
 #!/bin/bash
 MAXLINES=40
 TL=10
+GRADEMAX=${VPL_GRADEMAX:-100}
 
 show() { printf 'Comment :=>>%s\n' "$1"; }
 grade() { printf 'Grade :=>>%s\n' "$1"; }
@@ -36,8 +38,14 @@ if grep -n -E '\$(system|fopen|fwrite|fdisplay|fscanf|readmem[bh]|dumpfile)' $ST
 fi
 
 if ! iverilog -g2012 -Wall -Wno-timescale -o sim.vvp tb.v $STUDENT 2> compile.txt; then
-  show "Ошибка компиляции:"
+  show "Не удалось собрать схему. Сообщение компилятора:"
   head -n $MAXLINES compile.txt | while IFS= read -r l; do show "  $l"; done
+  if grep -q 'syntax error' compile.txt; then
+    show "Подсказка: «syntax error» обычно значит, что где-то пропущено выражение или забыта «;» в конце строки. Посмотрите на строку, номер которой указан выше, и на предыдущую."
+  fi
+  if grep -q -E 'Unknown module type|Unable to bind' compile.txt; then
+    show "Подсказка: не найден модуль или сигнал. Проверьте, что имя модуля и имена входов и выходов совпадают с заданием."
+  fi
   grade 0
   exit 0
 fi
@@ -50,7 +58,7 @@ fi
 timeout $TL vvp -n sim.vvp > run.txt 2> run.err
 code=$?
 if [ $code -eq 124 ]; then
-  show "Симуляция не завершилась за $TL с (возможна бесконечная петля или нет \$finish)"
+  show "Симуляция не завершилась за $TL с (возможна бесконечная петля)"
 fi
 
 pass=$(grep -c '^CHECK PASS' run.txt)
@@ -59,12 +67,13 @@ total=$((pass + fail))
 
 grep '^CHECK FAIL' run.txt | head -n $MAXLINES | while IFS= read -r l; do show "$l"; done
 if [ $total -eq 0 ]; then
-  show "Тестбенч не выдал ни одной проверки. Проверьте имя модуля и порты."
+  show "Проверка не выдала ни одного результата. Проверьте имя модуля и порты."
   grade 0
   exit 0
 fi
 show "Пройдено проверок: $pass из $total"
-grade $((100 * pass / total))
+# Оценка в шкале задания, с точностью до сотых
+grade $(awk -v p=$pass -v t=$total -v m=$GRADEMAX 'BEGIN { printf "%.2f", m * p / t }')
 exit 0
 EOF
 chmod +x vpl_execution
