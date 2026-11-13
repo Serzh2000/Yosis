@@ -9,7 +9,9 @@ define('CLI_SCRIPT', true);
 $moodle = $argv[1] ?? '';
 $xmlfile = $argv[2] ?? '';
 $shortname = $argv[3] ?? 'VerilogStart';
-$jobehost = '127.0.0.1:4000';
+// Необязательно: путь «Раздел|Подраздел» для тестов и параметры: hidden (создать скрытыми), nosuffix (без « (CodeRunner)»).
+$sectionpath = !empty($argv[4]) ? explode('|', $argv[4]) : null;
+$options = !empty($argv[5]) ? explode(',', $argv[5]) : [];
 $passgrade = 60;
 if (!is_file("$moodle/config.php") || !is_file($xmlfile)) {
     fwrite(STDERR, "Использование: php create_quizzes.php <папка Moodle> <questions.xml> [имя курса]\n");
@@ -36,8 +38,7 @@ $coursecontext = context_course::instance($course->id);
 $qbankcm = \core_question\local\bank\question_bank_helper::get_default_open_instance_system_type($course, true);
 $qbankcontext = context_module::instance($qbankcm->id);
 
-// Песочница Jobe работает рядом с Moodle и доступна только ему.
-set_config('jobe_host', $jobehost, 'qtype_coderunner');
+// Адрес песочницы Jobe (qtype_coderunner/jobe_host) здесь не трогаем: он настроен отдельно, см. README.
 
 // Импорт вопросов, если их ещё нет.
 $names = [];
@@ -80,17 +81,51 @@ if (!$find($names[0])) {
     echo "Вопросы уже есть в курсе\n";
 }
 
-// Раздел для тестов.
-course_create_sections_if_missing($course, [2]);
-$section = $DB->get_record('course_sections', ['course' => $course->id, 'section' => 2], '*', MUST_EXIST);
-if (empty($section->name)) {
-    $DB->set_field('course_sections', 'name', 'Задания с проверкой кода (CodeRunner)', ['id' => $section->id]);
+// Раздел для тестов: либо подраздел по пути «Раздел|Подраздел», либо раздел 2 курса.
+if ($sectionpath) {
+    $mi = get_fast_modinfo($course->id, 0);
+    $current = null;
+    foreach ($mi->get_section_info_all() as $s) {
+        if (empty($s->component) && get_section_name($course, $s) === $sectionpath[0]) {
+            $current = $s;
+        }
+    }
+    foreach (array_slice($sectionpath, 1) as $subname) {
+        $next = null;
+        foreach (($mi->sections[$current->section] ?? []) as $cmid) {
+            $cm = $mi->get_cm($cmid);
+            if ($cm->modname === 'subsection' && $cm->name === $subname) {
+                foreach ($mi->get_section_info_all() as $s) {
+                    if (($s->component ?? '') === 'mod_subsection' && (int)$s->itemid === (int)$cm->instance) {
+                        $next = $s;
+                    }
+                }
+            }
+        }
+        if (!$next) {
+            fwrite(STDERR, "Не найден подраздел $subname\n");
+            exit(1);
+        }
+        $current = $next;
+    }
+    if (!$current) {
+        fwrite(STDERR, "Не найден раздел\n");
+        exit(1);
+    }
+    $sectionnum = $current->section;
+} else {
+    course_create_sections_if_missing($course, [2]);
+    $section = $DB->get_record('course_sections', ['course' => $course->id, 'section' => 2], '*', MUST_EXIST);
+    if (empty($section->name)) {
+        $DB->set_field('course_sections', 'name', 'Задания с проверкой кода (CodeRunner)', ['id' => $section->id]);
+    }
+    $sectionnum = 2;
 }
 
 $moduleid = $DB->get_field('modules', 'id', ['name' => 'quiz'], MUST_EXIST);
 $previousgradeitem = null;
 foreach ($names as $name) {
-    $quizname = $name . ' (CodeRunner)';
+    $quizname = in_array('nosuffix', $options, true) ? $name : $name . ' (CodeRunner)';
     $existing = $DB->get_record('quiz', ['course' => $course->id, 'name' => $quizname]);
     if ($existing) {
         echo "Пропуск (уже есть): $quizname\n";
@@ -109,8 +144,8 @@ foreach ($names as $name) {
     $info->modulename = 'quiz';
     $info->module = $moduleid;
     $info->course = $course->id;
-    $info->section = 2;
-    $info->visible = 1;
+    $info->section = $sectionnum;
+    $info->visible = in_array('hidden', $options, true) ? 0 : 1;
     $info->visibleoncoursepage = 1;
     $info->cmidnumber = '';
     $info->groupmode = 0;
