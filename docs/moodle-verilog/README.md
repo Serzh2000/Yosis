@@ -118,3 +118,36 @@ python3 patch_vpl_open_editor.py /var/www/fastuser/data/www/cdod.sakoryagin.ru/p
 | `y = ~a` вместо `y = a` | 0, в комментарии строки с ожидаемыми и полученными значениями |
 | незаконченное `assign y = ;` | 0 и подсказка про «;» |
 | мультиплексор с перепутанными входами | 50 (4 из 8) |
+
+## CodeRunner: задания в виде теста (вариант без VPL)
+
+Тот же курс, раздел 2: пять тестов «Задание N (CodeRunner)». Условие и окно с кодом на одной странице,
+кнопка «Проверить» показывает таблицу «Что подали / Ожидалось / Получено». Когда все проверки зелёные,
+ученик нажимает «Закончить попытку…», оценка записывается в журнал и открывается следующий тест (от 60 из 100).
+
+Как устроено:
+
+| Что | Где |
+| --- | --- |
+| Плагины | `qtype_coderunner` 5.10.9 и `qbehaviour_adaptive_adapted_for_coderunner` |
+| Песочница | Docker-контейнер `jobe` (образ `yosis-jobe`, `jobe/Dockerfile`), только `127.0.0.1:4000`; язык `verilog` добавлен классом `jobe/VerilogTask.php` |
+| Доступ Moodle | `https://cdod.sakoryagin.ru/jobe-<секрет>` через nginx (`/etc/nginx/fastpanel2-sites/fastuser/cdod.sakoryagin.ru.includes`) и API-ключ; секрет и ключ в `/root/vpl/jobe-path.txt` и `/root/vpl/jobe-key.txt`, в Moodle: `qtype_coderunner/jobe_host`, `jobe_apikey` |
+| Вопросы | `coderunner/gen_questions.py` делает `questions.xml` из `tasks/`, `coderunner/create_quizzes.php` импортирует вопросы и создаёт тесты |
+
+Moodle сам не пускает запросы на `127.0.0.1` и порты кроме 80/443 (настройки безопасности `curlsecurityblockedhosts`,
+`curlsecurityallowedport`), поэтому Jobe открыт через nginx, а глобальные настройки не менялись.
+
+Сборка и запуск песочницы:
+
+```sh
+docker build -t yosis-jobe jobe/
+docker run -d --name jobe --restart unless-stopped --memory 1g --cpus 1 -p 127.0.0.1:4000:80 yosis-jobe
+```
+
+Базовый образ берётся из зеркала `cr.yandex/mirror/library/debian:12-slim`: прямые образы docker.io на сервере
+отдают битые слои. Включение API-ключа (внутри контейнера, `app/Config/Jobe.php`) делается вручную и пропадёт, если
+контейнер пересоздать.
+
+Тест вопроса: тест подаёт входы фрагментом (`a = 1;`), шаблон оборачивает ответ ученика и фрагмент в тестбенч,
+печатает выходы (`y=1`), сравнивается с ожидаемым выводом. Шаблон и тесты для каждого задания генерирует
+`gen_questions.py`.

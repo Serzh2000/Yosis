@@ -1,0 +1,606 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+<question type="category"><category><text>$course$/top/Verilog</text></category></question>
+
+<question type="coderunner">
+  <name><text>VERILOG_TB</text></name>
+  <questiontext format="html"><text>Прототип: Verilog, ответ ученика плюс тестбенч из шаблона вопроса.</text></questiontext>
+  <generalfeedback format="html"><text></text></generalfeedback>
+  <defaultgrade>1.0000000</defaultgrade>
+  <penalty>0.0000000</penalty>
+  <hidden>0</hidden>
+  <coderunnertype>verilog_tb</coderunnertype>
+  <prototypetype>2</prototypetype>
+  <allornothing>0</allornothing>
+  <penaltyregime>0</penaltyregime>
+  <precheck>0</precheck>
+  <hidecheck>0</hidecheck>
+  <showsource>0</showsource>
+  <answerboxlines>14</answerboxlines>
+  <answerboxcolumns>90</answerboxcolumns>
+  <answerpreload></answerpreload>
+  <globalextra></globalextra>
+  <useace>1</useace>
+  <resultcolumns></resultcolumns>
+  <template>{{ STUDENT_ANSWER }}</template>
+  <iscombinatortemplate>0</iscombinatortemplate>
+  <allowmultiplestdins>0</allowmultiplestdins>
+  <answer></answer>
+  <validateonsave>0</validateonsave>
+  <testsplitterre></testsplitterre>
+  <language>verilog</language>
+  <acelang>verilog</acelang>
+  <sandbox></sandbox>
+  <grader>EqualityGrader</grader>
+  <cputimelimitsecs></cputimelimitsecs>
+  <memlimitmb></memlimitmb>
+  <sandboxparams></sandboxparams>
+  <templateparams></templateparams>
+  <hoisttemplateparams>1</hoisttemplateparams>
+  <extractcodefromjson>1</extractcodefromjson>
+  <templateparamslang>None</templateparamslang>
+  <templateparamsevalpertry>0</templateparamsevalpertry>
+  <templateparamsevald>{}</templateparamsevald>
+  <twigall>0</twigall>
+  <uiplugin>ace</uiplugin>
+  <uiparameters></uiparameters>
+  <attachments>0</attachments>
+  <attachmentsrequired>0</attachmentsrequired>
+  <maxfilesize>10240</maxfilesize>
+  <filenamesregex></filenamesregex>
+  <filenamesexplain></filenamesexplain>
+  <displayfeedback>1</displayfeedback>
+  <giveupallowed>0</giveupallowed>
+  <prototypeextra></prototypeextra>
+  <testcases>
+    <testcase testtype="0" useasexample="0" hiderestiffail="0" mark="1.0000000">
+      <testcode><text></text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text></text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+  </testcases>
+</question>
+<question type="coderunner">
+  <name><text>Задание 1. Провод</text></name>
+  <questiontext format="html"><text><![CDATA[<p><b>Verilog</b> описывает не программу, а схему: какие провода и элементы соединены. Начнём с самого простого.</p>
+<p>У модуля <code>wire_demo</code> есть вход <code>a</code> и выход <code>y</code>. Нужно соединить их проводом: что на входе, то и на выходе.</p>
+<table border="1" cellpadding="6"><tr><th>a</th><th>y</th></tr><tr><td>0</td><td>0</td></tr><tr><td>1</td><td>1</td></tr></table>
+<p><b>Как это записать.</b> Команда <code>assign</code> («присвоить») соединяет выход с выражением: <code>assign y = a;</code></p>
+<p>В заготовке пропущена правая часть. Допишите её и не забудьте <code>;</code> в конце. Потом нажмите «Оценить».</p>
+<p><b>Что делать.</b> Допишите код в окне ниже и нажмите «Проверить». Когда все проверки зелёные, нажмите «Закончить попытку…» внизу страницы: так оценка запишется в журнал и откроется следующее задание.</p>]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[<p>Верно! Теперь закончите попытку и переходите к следующему заданию.</p>]]></text></generalfeedback>
+  <defaultgrade>1.0000000</defaultgrade>
+  <penalty>0.0000000</penalty>
+  <hidden>0</hidden>
+  <coderunnertype>verilog_tb</coderunnertype>
+  <prototypetype>0</prototypetype>
+  <allornothing>0</allornothing>
+  <penaltyregime>0</penaltyregime>
+  <precheck>0</precheck>
+  <hidecheck>0</hidecheck>
+  <showsource>0</showsource>
+  <answerboxlines>14</answerboxlines>
+  <answerboxcolumns>90</answerboxcolumns>
+  <answerpreload>// Задание 1. Провод: выход y повторяет вход a.
+module wire_demo(input a, output y);
+  // Допишите справа от знака "=" и поставьте ";" в конце
+  assign y = ;
+endmodule
+</answerpreload>
+  <globalextra></globalextra>
+  <useace>1</useace>
+  <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
+  <template><![CDATA[{{ STUDENT_ANSWER }}
+
+`timescale 1ns/1ps
+module tb;
+  reg a;
+  wire y;
+  wire_demo dut(.a(a), .y(y));
+  initial begin
+    {{ TEST.testcode }}
+    #1 $display("y=%b", y);
+    $finish;
+  end
+endmodule
+]]></template>
+  <iscombinatortemplate>0</iscombinatortemplate>
+  <allowmultiplestdins>0</allowmultiplestdins>
+  <answer>module wire_demo(input a, output y);
+  assign y = a;
+endmodule
+</answer>
+  <validateonsave>0</validateonsave>
+  <testsplitterre></testsplitterre>
+  <language></language>
+  <acelang></acelang>
+  <sandbox></sandbox>
+  <grader></grader>
+  <cputimelimitsecs></cputimelimitsecs>
+  <memlimitmb></memlimitmb>
+  <sandboxparams></sandboxparams>
+  <templateparams></templateparams>
+  <hoisttemplateparams>1</hoisttemplateparams>
+  <extractcodefromjson>1</extractcodefromjson>
+  <templateparamslang>None</templateparamslang>
+  <templateparamsevalpertry>0</templateparamsevalpertry>
+  <templateparamsevald>{}</templateparamsevald>
+  <twigall>0</twigall>
+  <uiplugin></uiplugin>
+  <uiparameters></uiparameters>
+  <attachments>0</attachments>
+  <attachmentsrequired>0</attachmentsrequired>
+  <maxfilesize>10240</maxfilesize>
+  <filenamesregex></filenamesregex>
+  <filenamesexplain></filenamesexplain>
+  <displayfeedback>1</displayfeedback>
+  <giveupallowed>0</giveupallowed>
+  <prototypeextra></prototypeextra>
+  <testcases>
+    <testcase testtype="0" useasexample="1" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 0;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y=0</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+    <testcase testtype="0" useasexample="1" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 1;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y=1</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+  </testcases>
+</question>
+<question type="coderunner">
+  <name><text>Задание 2. Инвертор (НЕ)</text></name>
+  <questiontext format="html"><text><![CDATA[<p>Элемент <b>НЕ</b> (инвертор) меняет сигнал на противоположный: 0 становится 1, а 1 становится 0.</p>
+<table border="1" cellpadding="6"><tr><th>a</th><th>y</th></tr><tr><td>0</td><td>1</td></tr><tr><td>1</td><td>0</td></tr></table>
+<p>В Verilog «НЕ» записывается знаком <code>~</code> перед сигналом: <code>~a</code>.</p>
+<p>Допишите в модуле <code>not_gate</code> выражение справа от <code>=</code> так, чтобы выход <code>y</code> был противоположен входу <code>a</code>.</p>
+<p><b>Что делать.</b> Допишите код в окне ниже и нажмите «Проверить». Когда все проверки зелёные, нажмите «Закончить попытку…» внизу страницы: так оценка запишется в журнал и откроется следующее задание.</p>]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[<p>Верно! Теперь закончите попытку и переходите к следующему заданию.</p>]]></text></generalfeedback>
+  <defaultgrade>1.0000000</defaultgrade>
+  <penalty>0.0000000</penalty>
+  <hidden>0</hidden>
+  <coderunnertype>verilog_tb</coderunnertype>
+  <prototypetype>0</prototypetype>
+  <allornothing>0</allornothing>
+  <penaltyregime>0</penaltyregime>
+  <precheck>0</precheck>
+  <hidecheck>0</hidecheck>
+  <showsource>0</showsource>
+  <answerboxlines>14</answerboxlines>
+  <answerboxcolumns>90</answerboxcolumns>
+  <answerpreload>// Задание 2. Инвертор: y = НЕ a.
+module not_gate(input a, output y);
+  assign y = ;
+endmodule
+</answerpreload>
+  <globalextra></globalextra>
+  <useace>1</useace>
+  <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
+  <template><![CDATA[{{ STUDENT_ANSWER }}
+
+`timescale 1ns/1ps
+module tb;
+  reg a;
+  wire y;
+  not_gate dut(.a(a), .y(y));
+  initial begin
+    {{ TEST.testcode }}
+    #1 $display("y=%b", y);
+    $finish;
+  end
+endmodule
+]]></template>
+  <iscombinatortemplate>0</iscombinatortemplate>
+  <allowmultiplestdins>0</allowmultiplestdins>
+  <answer>module not_gate(input a, output y);
+  assign y = ~a;
+endmodule
+</answer>
+  <validateonsave>0</validateonsave>
+  <testsplitterre></testsplitterre>
+  <language></language>
+  <acelang></acelang>
+  <sandbox></sandbox>
+  <grader></grader>
+  <cputimelimitsecs></cputimelimitsecs>
+  <memlimitmb></memlimitmb>
+  <sandboxparams></sandboxparams>
+  <templateparams></templateparams>
+  <hoisttemplateparams>1</hoisttemplateparams>
+  <extractcodefromjson>1</extractcodefromjson>
+  <templateparamslang>None</templateparamslang>
+  <templateparamsevalpertry>0</templateparamsevalpertry>
+  <templateparamsevald>{}</templateparamsevald>
+  <twigall>0</twigall>
+  <uiplugin></uiplugin>
+  <uiparameters></uiparameters>
+  <attachments>0</attachments>
+  <attachmentsrequired>0</attachmentsrequired>
+  <maxfilesize>10240</maxfilesize>
+  <filenamesregex></filenamesregex>
+  <filenamesexplain></filenamesexplain>
+  <displayfeedback>1</displayfeedback>
+  <giveupallowed>0</giveupallowed>
+  <prototypeextra></prototypeextra>
+  <testcases>
+    <testcase testtype="0" useasexample="1" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 0;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y=1</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+    <testcase testtype="0" useasexample="1" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 1;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y=0</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+  </testcases>
+</question>
+<question type="coderunner">
+  <name><text>Задание 3. И и ИЛИ</text></name>
+  <questiontext format="html"><text><![CDATA[<p>У модуля <code>gates2</code> два входа <code>a</code>, <code>b</code> и два выхода.</p>
+<ul>
+<li><code>y_and</code> равен 1, только если <b>и</b> a, <b>и</b> b равны 1 (элемент И, знак <code>&amp;</code>).</li>
+<li><code>y_or</code> равен 1, если <b>хотя бы один</b> из a и b равен 1 (элемент ИЛИ, знак <code>|</code>).</li>
+</ul>
+<table border="1" cellpadding="6"><tr><th>a</th><th>b</th><th>y_and</th><th>y_or</th></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><td>0</td><td>1</td><td>0</td><td>1</td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td>1</td></tr><tr><td>1</td><td>1</td><td>1</td><td>1</td></tr></table>
+<p>Допишите оба <code>assign</code>. Пример записи с двумя сигналами: <code>assign y = a &amp; b;</code></p>
+<p><b>Что делать.</b> Допишите код в окне ниже и нажмите «Проверить». Когда все проверки зелёные, нажмите «Закончить попытку…» внизу страницы: так оценка запишется в журнал и откроется следующее задание.</p>]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[<p>Верно! Теперь закончите попытку и переходите к следующему заданию.</p>]]></text></generalfeedback>
+  <defaultgrade>1.0000000</defaultgrade>
+  <penalty>0.0000000</penalty>
+  <hidden>0</hidden>
+  <coderunnertype>verilog_tb</coderunnertype>
+  <prototypetype>0</prototypetype>
+  <allornothing>0</allornothing>
+  <penaltyregime>0</penaltyregime>
+  <precheck>0</precheck>
+  <hidecheck>0</hidecheck>
+  <showsource>0</showsource>
+  <answerboxlines>14</answerboxlines>
+  <answerboxcolumns>90</answerboxcolumns>
+  <answerpreload>// Задание 3. Два элемента: И и ИЛИ.
+module gates2(input a, input b, output y_and, output y_or);
+  assign y_and = ;  // И:   a &amp; b
+  assign y_or  = ;  // ИЛИ: a | b
+endmodule
+</answerpreload>
+  <globalextra></globalextra>
+  <useace>1</useace>
+  <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
+  <template><![CDATA[{{ STUDENT_ANSWER }}
+
+`timescale 1ns/1ps
+module tb;
+  reg a, b;
+  wire y_and, y_or;
+  gates2 dut(.a(a), .b(b), .y_and(y_and), .y_or(y_or));
+  initial begin
+    {{ TEST.testcode }}
+    #1 $display("y_and=%b y_or=%b", y_and, y_or);
+    $finish;
+  end
+endmodule
+]]></template>
+  <iscombinatortemplate>0</iscombinatortemplate>
+  <allowmultiplestdins>0</allowmultiplestdins>
+  <answer>module gates2(input a, input b, output y_and, output y_or);
+  assign y_and = a &amp; b;
+  assign y_or  = a | b;
+endmodule
+</answer>
+  <validateonsave>0</validateonsave>
+  <testsplitterre></testsplitterre>
+  <language></language>
+  <acelang></acelang>
+  <sandbox></sandbox>
+  <grader></grader>
+  <cputimelimitsecs></cputimelimitsecs>
+  <memlimitmb></memlimitmb>
+  <sandboxparams></sandboxparams>
+  <templateparams></templateparams>
+  <hoisttemplateparams>1</hoisttemplateparams>
+  <extractcodefromjson>1</extractcodefromjson>
+  <templateparamslang>None</templateparamslang>
+  <templateparamsevalpertry>0</templateparamsevalpertry>
+  <templateparamsevald>{}</templateparamsevald>
+  <twigall>0</twigall>
+  <uiplugin></uiplugin>
+  <uiparameters></uiparameters>
+  <attachments>0</attachments>
+  <attachmentsrequired>0</attachmentsrequired>
+  <maxfilesize>10240</maxfilesize>
+  <filenamesregex></filenamesregex>
+  <filenamesexplain></filenamesexplain>
+  <displayfeedback>1</displayfeedback>
+  <giveupallowed>0</giveupallowed>
+  <prototypeextra></prototypeextra>
+  <testcases>
+    <testcase testtype="0" useasexample="1" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 0; b = 0;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y_and=0 y_or=0</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+    <testcase testtype="0" useasexample="1" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 0; b = 1;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y_and=0 y_or=1</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+    <testcase testtype="0" useasexample="0" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 1; b = 0;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y_and=0 y_or=1</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+    <testcase testtype="0" useasexample="0" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 1; b = 1;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y_and=1 y_or=1</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+  </testcases>
+</question>
+<question type="coderunner">
+  <name><text>Задание 4. Полусумматор</text></name>
+  <questiontext format="html"><text><![CDATA[<p>Сложим два одноразрядных числа a и b. Результат может быть от 0 до 2, то есть <code>10</code> в двоичной записи: нужны два выхода.</p>
+<ul>
+<li><code>sum</code>: младший разряд суммы;</li>
+<li><code>carry</code>: перенос в старший разряд (1, когда 1 + 1).</li>
+</ul>
+<table border="1" cellpadding="6"><tr><th>a</th><th>b</th><th>carry</th><th>sum</th></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><td>0</td><td>1</td><td>0</td><td>1</td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td>1</td></tr><tr><td>1</td><td>1</td><td>1</td><td>0</td></tr></table>
+<p><b>Подсказка.</b> <code>sum</code> равен 1, когда входы <b>разные</b>. Это элемент «исключающее ИЛИ», знак <code>^</code>. А <code>carry</code> равен 1, когда <b>оба</b> входа равны 1: это уже знакомое И.</p>
+<p><b>Что делать.</b> Допишите код в окне ниже и нажмите «Проверить». Когда все проверки зелёные, нажмите «Закончить попытку…» внизу страницы: так оценка запишется в журнал и откроется следующее задание.</p>]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[<p>Верно! Теперь закончите попытку и переходите к следующему заданию.</p>]]></text></generalfeedback>
+  <defaultgrade>1.0000000</defaultgrade>
+  <penalty>0.0000000</penalty>
+  <hidden>0</hidden>
+  <coderunnertype>verilog_tb</coderunnertype>
+  <prototypetype>0</prototypetype>
+  <allornothing>0</allornothing>
+  <penaltyregime>0</penaltyregime>
+  <precheck>0</precheck>
+  <hidecheck>0</hidecheck>
+  <showsource>0</showsource>
+  <answerboxlines>14</answerboxlines>
+  <answerboxcolumns>90</answerboxcolumns>
+  <answerpreload>// Задание 4. Полусумматор.
+module half_adder(input a, input b, output sum, output carry);
+  assign sum   = ;  // подсказка: знак ^
+  assign carry = ;  // подсказка: знак &amp;
+endmodule
+</answerpreload>
+  <globalextra></globalextra>
+  <useace>1</useace>
+  <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
+  <template><![CDATA[{{ STUDENT_ANSWER }}
+
+`timescale 1ns/1ps
+module tb;
+  reg a, b;
+  wire sum, carry;
+  half_adder dut(.a(a), .b(b), .sum(sum), .carry(carry));
+  initial begin
+    {{ TEST.testcode }}
+    #1 $display("sum=%b carry=%b", sum, carry);
+    $finish;
+  end
+endmodule
+]]></template>
+  <iscombinatortemplate>0</iscombinatortemplate>
+  <allowmultiplestdins>0</allowmultiplestdins>
+  <answer>module half_adder(input a, input b, output sum, output carry);
+  assign sum   = a ^ b;
+  assign carry = a &amp; b;
+endmodule
+</answer>
+  <validateonsave>0</validateonsave>
+  <testsplitterre></testsplitterre>
+  <language></language>
+  <acelang></acelang>
+  <sandbox></sandbox>
+  <grader></grader>
+  <cputimelimitsecs></cputimelimitsecs>
+  <memlimitmb></memlimitmb>
+  <sandboxparams></sandboxparams>
+  <templateparams></templateparams>
+  <hoisttemplateparams>1</hoisttemplateparams>
+  <extractcodefromjson>1</extractcodefromjson>
+  <templateparamslang>None</templateparamslang>
+  <templateparamsevalpertry>0</templateparamsevalpertry>
+  <templateparamsevald>{}</templateparamsevald>
+  <twigall>0</twigall>
+  <uiplugin></uiplugin>
+  <uiparameters></uiparameters>
+  <attachments>0</attachments>
+  <attachmentsrequired>0</attachmentsrequired>
+  <maxfilesize>10240</maxfilesize>
+  <filenamesregex></filenamesregex>
+  <filenamesexplain></filenamesexplain>
+  <displayfeedback>1</displayfeedback>
+  <giveupallowed>0</giveupallowed>
+  <prototypeextra></prototypeextra>
+  <testcases>
+    <testcase testtype="0" useasexample="1" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 0; b = 0;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>sum=0 carry=0</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+    <testcase testtype="0" useasexample="1" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 0; b = 1;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>sum=1 carry=0</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+    <testcase testtype="0" useasexample="0" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 1; b = 0;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>sum=1 carry=0</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+    <testcase testtype="0" useasexample="0" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 1; b = 1;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>sum=0 carry=1</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+  </testcases>
+</question>
+<question type="coderunner">
+  <name><text>Задание 5. Мультиплексор 2 в 1</text></name>
+  <questiontext format="html"><text><![CDATA[<p><b>Мультиплексор</b> — это переключатель: он пропускает на выход один из двух входов. Какой именно, говорит управляющий вход <code>sel</code>.</p>
+<ul><li>если <code>sel = 0</code>, то <code>y</code> равен <code>a</code>;</li><li>если <code>sel = 1</code>, то <code>y</code> равен <code>b</code>.</li></ul>
+<p><b>Как записать выбор.</b> В Verilog есть «условие в одну строку»: <code>условие ? если_да : если_нет</code>. Например, <code>assign y = sel ? b : a;</code> означает «если sel равен 1, взять b, иначе a».</p>
+<p>Заготовка уже содержит интерфейс. Допишите выражение.</p>
+<p><b>Что делать.</b> Допишите код в окне ниже и нажмите «Проверить». Когда все проверки зелёные, нажмите «Закончить попытку…» внизу страницы: так оценка запишется в журнал и откроется следующее задание.</p>]]></text></questiontext>
+  <generalfeedback format="html"><text><![CDATA[<p>Верно! Теперь закончите попытку и переходите к следующему заданию.</p>]]></text></generalfeedback>
+  <defaultgrade>1.0000000</defaultgrade>
+  <penalty>0.0000000</penalty>
+  <hidden>0</hidden>
+  <coderunnertype>verilog_tb</coderunnertype>
+  <prototypetype>0</prototypetype>
+  <allornothing>0</allornothing>
+  <penaltyregime>0</penaltyregime>
+  <precheck>0</precheck>
+  <hidecheck>0</hidecheck>
+  <showsource>0</showsource>
+  <answerboxlines>14</answerboxlines>
+  <answerboxcolumns>90</answerboxcolumns>
+  <answerpreload>// Задание 5. Мультиплексор 2 в 1: sel = 0 -&gt; y = a, sel = 1 -&gt; y = b.
+module mux2(input a, input b, input sel, output y);
+  assign y = ;  // подсказка: sel ? ... : ...
+endmodule
+</answerpreload>
+  <globalextra></globalextra>
+  <useace>1</useace>
+  <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
+  <template><![CDATA[{{ STUDENT_ANSWER }}
+
+`timescale 1ns/1ps
+module tb;
+  reg a, b, sel;
+  wire y;
+  mux2 dut(.a(a), .b(b), .sel(sel), .y(y));
+  initial begin
+    {{ TEST.testcode }}
+    #1 $display("y=%b", y);
+    $finish;
+  end
+endmodule
+]]></template>
+  <iscombinatortemplate>0</iscombinatortemplate>
+  <allowmultiplestdins>0</allowmultiplestdins>
+  <answer>module mux2(input a, input b, input sel, output y);
+  assign y = sel ? b : a;
+endmodule
+</answer>
+  <validateonsave>0</validateonsave>
+  <testsplitterre></testsplitterre>
+  <language></language>
+  <acelang></acelang>
+  <sandbox></sandbox>
+  <grader></grader>
+  <cputimelimitsecs></cputimelimitsecs>
+  <memlimitmb></memlimitmb>
+  <sandboxparams></sandboxparams>
+  <templateparams></templateparams>
+  <hoisttemplateparams>1</hoisttemplateparams>
+  <extractcodefromjson>1</extractcodefromjson>
+  <templateparamslang>None</templateparamslang>
+  <templateparamsevalpertry>0</templateparamsevalpertry>
+  <templateparamsevald>{}</templateparamsevald>
+  <twigall>0</twigall>
+  <uiplugin></uiplugin>
+  <uiparameters></uiparameters>
+  <attachments>0</attachments>
+  <attachmentsrequired>0</attachmentsrequired>
+  <maxfilesize>10240</maxfilesize>
+  <filenamesregex></filenamesregex>
+  <filenamesexplain></filenamesexplain>
+  <displayfeedback>1</displayfeedback>
+  <giveupallowed>0</giveupallowed>
+  <prototypeextra></prototypeextra>
+  <testcases>
+    <testcase testtype="0" useasexample="1" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 0; b = 0; sel = 0;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y=0</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+    <testcase testtype="0" useasexample="1" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 0; b = 0; sel = 1;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y=0</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+    <testcase testtype="0" useasexample="0" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 0; b = 1; sel = 0;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y=0</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+    <testcase testtype="0" useasexample="0" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 0; b = 1; sel = 1;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y=1</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+    <testcase testtype="0" useasexample="0" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 1; b = 0; sel = 0;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y=1</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+    <testcase testtype="0" useasexample="0" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 1; b = 0; sel = 1;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y=0</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+    <testcase testtype="0" useasexample="0" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 1; b = 1; sel = 0;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y=1</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+    <testcase testtype="0" useasexample="0" hiderestiffail="0" mark="1.0000000">
+      <testcode><text>a = 1; b = 1; sel = 1;</text></testcode>
+      <stdin><text></text></stdin>
+      <expected><text>y=1</text></expected>
+      <extra><text></text></extra>
+      <display><text>SHOW</text></display>
+    </testcase>
+  </testcases>
+</question>
+</quiz>
