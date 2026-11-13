@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Делает так, чтобы ссылка на задание VPL в курсе сразу открывала редактор кода с условием.
+"""Делает так, чтобы ссылка на задание VPL в курсе сразу открывала редактор кода с условием
+на весь экран (без вкладок Moodle). Выйти из полного экрана можно кнопкой в панели редактора;
+параметр forms/edit.php?id=...&full=0 отключает полноэкранный режим.
 
 Страница описания и настроек (с файлами исполнения) остаётся доступной через вкладку
 «Описание» или по адресу view.php?id=...&info=1.
@@ -56,6 +58,26 @@ def patch_menu(text):
         sys.exit('в activity_menu.php не найдена ссылка вкладки «Описание»; версия VPL изменилась')
     return text.replace(MENU_OLD, MENU_NEW, 1)
 
+EDIT_MARK = '// Yosis: редактор на весь экран'
+EDIT_ANCHOR = '$vpl->print_footer();'
+EDIT_PATCH = (
+    EDIT_MARK + '; выйти: кнопка в панели редактора, отключить: &full=0\n'
+    "if (optional_param('full', 1, PARAM_BOOL)) {\n"
+    "    echo '<script>(function(){var n=0,t=setInterval(function(){"
+    "var b=document.getElementById(\"vpl_ide_fullscreen\");"
+    "if(b){clearInterval(t);b.click();}else if(++n>100){clearInterval(t);}},100);})();</script>';\n"
+    '}\n\n'
+)
+
+
+def patch_edit(text):
+    if EDIT_MARK in text:
+        return text
+    if text.count(EDIT_ANCHOR) != 1:
+        sys.exit('в forms/edit.php не найдено место вставки; версия VPL изменилась')
+    return text.replace(EDIT_ANCHOR, EDIT_PATCH + EDIT_ANCHOR, 1)
+
 
 patch(os.path.join(root, 'view.php'), patch_view)
 patch(os.path.join(root, 'classes', 'views', 'activity_menu.php'), patch_menu)
+patch(os.path.join(root, 'forms', 'edit.php'), patch_edit)
