@@ -176,6 +176,7 @@ export function LogicWorkspace({
                 <LutInspector
                   cell={currentCell}
                   cellName={selectedCell}
+                  netnames={netlist?.modules[moduleName]?.netnames}
                   onSourceNavigate={links.navigateSource}
                   canNavigateSource={links.canNavigateSource}
                 />

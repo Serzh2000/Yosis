@@ -371,3 +371,28 @@
   margin: 10px 12px 0;
   line-height: 1.6;
 }
+
+/* Понятное название элемента сверху, служебное имя Yosys — мелко под ним. */
+.inspector-pane .inspector-cell-heading {
+  flex-wrap: wrap;
+}
+.inspector-pane .inspector-cell-heading .inspector-type {
+  white-space: normal;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.inspector-pane .inspector-cell-heading h3:empty {
+  display: none;
+}
+.inspector-pane .inspector-technical {
+  flex-basis: 100%;
+  color: var(--text-soft);
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+}
+.inspector-pane .inspector-port-row code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: right;
+}

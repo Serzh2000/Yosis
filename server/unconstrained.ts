@@ -102,6 +102,9 @@ export function dropUnconstrainedPads(
   const netOfFabric = new Map<number, number>();
   const dropped: string[] = [];
   for (const [name, port] of Object.entries(module.ports)) {
+    // The GW2AR's on-package SDRAM is wired by nextpnr from the port names (O_sdram_*, IO_sdram_*),
+    // not from the .cst: such a port needs no pin and must not be thrown away.
+    if (/^(?:O|IO)_sdram_/.test(name)) continue;
     const width = port.bits.length;
     const bitName = (bit: number) =>
       width === 1 && !port.offset
@@ -148,4 +151,37 @@ export function dropUnconstrainedPads(
         });
   }
   return { json: JSON.stringify(netlist), dropped, cst: withPairs(text, pairs) };
+}
+
+/** Does the constraint file put a port on one of the pins 52-57 shared with SSPI/flash configuration? */
+export function usesConfigurationPins(cst: string): boolean {
+  const text = cst.replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g, '');
+  return [...text.matchAll(/\bIO_LOC\s+"[^"]+"\s+(\d+)/gi)].some(
+    (match) => Number(match[1]) >= 52 && Number(match[1]) <= 57,
+  );
+}
+
+/** Pins the configuration of the board owns: JTAG (5-8), RECONFIG_N (9) and the flash (59-62). */
+const CONFIGURATION_PINS: Record<number, string> = {
+  5: 'JTAG TMS',
+  6: 'JTAG TCK',
+  7: 'JTAG TDI',
+  8: 'JTAG TDO',
+  9: 'RECONFIG_N',
+  59: 'flash CLK',
+  60: 'flash CS',
+  61: 'flash MOSI',
+  62: 'flash MISO',
+};
+
+/** Ports the constraint file puts on a pin that belongs to the board's configuration. */
+export function reservedPinsUsed(cst: string): { port: string; pin: number; role: string }[] {
+  const text = cst.replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g, '');
+  return [...text.matchAll(/\bIO_LOC\s+"([^"]+)"\s+(\d+)/gi)]
+    .filter((match) => Number(match[2]) in CONFIGURATION_PINS)
+    .map((match) => ({
+      port: match[1],
+      pin: Number(match[2]),
+      role: CONFIGURATION_PINS[Number(match[2])],
+    }));
 }

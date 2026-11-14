@@ -84,7 +84,14 @@ export function resourceCategory(type: string): Exclude<keyof ResourceCounts, 't
   if (/^(MULT|MULTADDALU|MULTALU|ALU54D|PADD|DSP)/i.test(type)) return 'DSP';
   if (/^ALU/i.test(type) || /^\$(add|sub|alu|macc|mul|div|mod|pow)$/i.test(type)) return 'ALU';
   // RAM16S/RAM32S are distributed memories; physical BRAM is only counted for known block primitives.
-  if (/^(SP|SPX9|SDP|SDPX9|DP|DPX9|DPB|DPX9B|SDPB|SDPX9B|pROM|pROMX9|ROM|ROMX9|BSRAM)(?:$|_)/i.test(type) || /^\$mem/.test(type)) return 'BRAM';
+  if (
+    /^(SP|SPX9|SDP|SDPX9|DP|DPX9|DPB|DPX9B|SDPB|SDPX9B|pROM|pROMX9|ROM|ROMX9|BSRAM)(?:$|_)/i.test(
+      type,
+    ) ||
+    // Только сама память: порты чтения/записи и начальное содержимое — не отдельные блоки BRAM.
+    /^\$mem(?:_v2)?$/.test(type)
+  )
+    return 'BRAM';
   if (/^(I?O?BUF(?![GS])|IOBUF|TBUF|TLVDS|ELVDS|MIPI|I3C)/i.test(type)) return 'IO';
   return 'other';
 }

@@ -315,3 +315,15 @@ test('обычный проект без ошибок не показывает 
     [],
   );
 });
+
+test('модуль с именем примитива Gowin отклоняется понятной ошибкой с файлом и строкой', async () => {
+  await assert.rejects(
+    build(
+      broken(
+        'primitive-name',
+        'module DFF(input clk, input d, output reg q);\n always @(posedge clk) q <= d;\nendmodule\nmodule top(input clk, input d, output q); DFF u(.clk(clk), .d(d), .q(q)); endmodule',
+      ),
+    ),
+    /top\.v:1: имя модуля DFF занято примитивом Gowin/,
+  );
+});

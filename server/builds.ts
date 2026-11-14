@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import type { BuildResult, Project, ToolchainStatus } from '../shared/types';
 import type { YosysRequest, YosysWorkerMessage } from '../shared/worker-protocol';
 import { materializeCircuitProject } from '../shared/schematic';
+import { findPrimitiveModules } from '../shared/gowin-primitives';
 import { JobManager, type JobRecord } from './job-manager';
 import { TERMINAL } from './job-constants';
 import { parseDiagnostics, projectHash, RequestError } from './validation';
@@ -107,6 +108,11 @@ export class BuildManager extends JobManager<BuildResult, BuildRecord> {
   async create(project: Project): Promise<BuildResult> {
     const sourceHash = projectHash(project);
     project = materializeCircuitProject(project);
+    const taken = findPrimitiveModules(project.files)[0];
+    if (taken)
+      throw new RequestError(
+        `${taken.file}:${taken.line}: имя модуля ${taken.module} занято примитивом Gowin. Переименуйте модуль, например в my_${taken.module.toLowerCase()}.`,
+      );
     const release = this.scheduler.reserve();
     try {
       const { id, directory } = await this.prepareDirectory(project.files, {

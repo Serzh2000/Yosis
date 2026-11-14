@@ -306,6 +306,11 @@ export function circuitProblems(doc: CircuitDocument): CircuitIssue[] {
     for (const decl of [
       ...declaredNets(node),
       ...(def.port ? [{ name: node.name, width: 0, reg: false }] : []),
+      // Блок «ОЗУ» объявляет массив и счётчик прямо в своём коде, мимо regs()/wires():
+      // без этой строки узел с именем x_i или x_mem молча ломал бы синтез.
+      ...(node.kind === 'ram'
+        ? ['mem', 'i'].map((key) => ({ name: internalName(node, key), width: 0, reg: false }))
+        : []),
     ]) {
       const other = used.get(decl.name);
       if (other && other !== node.id && node.kind !== 'tag_in')

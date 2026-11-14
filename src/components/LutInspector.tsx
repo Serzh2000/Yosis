@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Code2, Cpu, ExternalLink } from 'lucide-react';
-import type { YosysCell } from '../../shared/types';
+import type { YosysCell, YosysModule } from '../../shared/types';
+import { cellTitle, describeBits, parameterLabel } from '../lib/cell-names';
+import { friendlyCellName } from '../lib/schematic-labels';
 import {
   getLutInputCount,
   getLutTruthTable,
@@ -15,6 +17,8 @@ import './inspector.css';
 export interface LutInspectorProps {
   cell: YosysCell | null;
   cellName?: string | null;
+  /** Имена цепей модуля: по ним порты описываются словами ученика, а не номерами Yosys. */
+  netnames?: YosysModule['netnames'];
   onSourceNavigate?: (file: string, line: number) => void;
   canNavigateSource?: (file: string) => boolean;
 }
@@ -46,6 +50,7 @@ function connectionLabels(bits: YosysCell['connections'][string]): string[] {
 export function LutInspector({
   cell,
   cellName,
+  netnames,
   onSourceNavigate,
   canNavigateSource,
 }: LutInspectorProps) {
@@ -88,9 +93,16 @@ export function LutInspector({
     <div className="lut-inspector">
       <div className="inspector-cell-heading">
         <HelpTrigger topic={{ kind: 'primitive', type: cell.type }} className="inspector-type">
-          {cell.type}
+          {cellTitle(cell.type)}
         </HelpTrigger>
-        <h3 title={cellName ?? ''}>{cellName ?? 'Выбранный элемент'}</h3>
+        <h3 title={cellName ?? ''}>
+          {friendlyCellName(cellName ?? '') || (cellName?.startsWith('$') ? '' : (cellName ?? ''))}
+        </h3>
+        {cellTitle(cell.type) !== cell.type && (
+          <small className="inspector-technical" title="Так этот элемент называется внутри Yosys">
+            Тип в Yosys: {cell.type}
+          </small>
+        )}
       </div>
       {rows && inputCount !== null && (
         <>
@@ -192,9 +204,11 @@ export function LutInspector({
                 {direction}
               </small>
               <small className="inspector-port-width">{bits.length} бит</small>
-              <code title={`Подключения ${name}: ${labels.join(', ')}`}>
-                {labels.slice(0, 2).join(', ')}
-                {labels.length > 2 ? ' …' : ''}
+              <code
+                title={`${describeBits(bits, netnames)}
+Внутренние номера: ${labels.join(', ')}`}
+              >
+                {describeBits(bits, netnames)}
               </code>
             </div>
           );
@@ -203,14 +217,17 @@ export function LutInspector({
       <details className="inspector-details inspector-connections">
         <summary>Все подключения</summary>
         <p>
-          Числа после # — внутренние номера цепей. 0, 1, X и Z обозначают постоянные значения.
-          Разряды перечислены от младшего к старшему.
+          Сначала имя сигнала из вашего кода, затем внутренние номера цепей Yosys (после #).
+          Константы показаны как «константа 0/1». Разряды перечислены от старшего к младшему.
         </p>
         <dl>
           {Object.entries(cell.connections).map(([name, bits]) => (
             <div key={name}>
               <dt>{name}</dt>
-              <dd>{connectionLabels(bits).join(', ') || 'Нет подключений'}</dd>
+              <dd>
+                {describeBits(bits, netnames)}
+                <small> · {connectionLabels(bits).join(', ')}</small>
+              </dd>
             </div>
           ))}
         </dl>
@@ -230,7 +247,7 @@ export function LutInspector({
                 <div key={name}>
                   <dt>
                     <HelpTrigger topic={{ kind: 'parameter', name, value, cellType: cell.type }}>
-                      {name}
+                      {parameterLabel(name)}
                     </HelpTrigger>
                   </dt>
                   <dd title={`${formatted.display}\nИсходная запись: ${formatted.raw}`}>

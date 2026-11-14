@@ -10,8 +10,8 @@ import { JOB_ID, TERMINAL } from './job-constants';
 import { JobManager, type JobRecord } from './job-manager';
 import { captureTool, stopProcess } from './process-limits';
 import { RequestError, projectHash } from './validation';
-import { dropUnconstrainedPads } from './unconstrained';
-import { sanitizeSdc } from './sdc';
+import { dropUnconstrainedPads, reservedPinsUsed, usesConfigurationPins } from './unconstrained';
+import { retargetToBufferNets, sanitizeSdc } from './sdc';
 import { workspace } from './paths';
 import { atomicWrite } from './atomic-write';
 
@@ -142,6 +142,13 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
     const release = this.scheduler.reserve();
     try {
       const config = validatePhysicalConfig(value, project);
+      const taken = reservedPinsUsed(
+        project.files.find((file) => file.name === config.cstFile)?.content ?? '',
+      )[0];
+      if (taken)
+        throw new RequestError(
+          `Порту ${taken.port} назначен вывод ${taken.pin} (${taken.role}): он занят конфигурацией платы, и сигнал на нём не появится. Выберите другой вывод во вкладке «Выводы».`,
+        );
       if (typeof buildId !== 'string' || !JOB_ID.test(buildId))
         throw new RequestError('Сначала синтезируйте проект.');
       const build = await this.builds.get(buildId);
@@ -305,6 +312,13 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
       const health = await this.waitFor(job, this.health());
       if (TERMINAL.has(job.result.status)) return;
       if (!health.available) throw new Error(health.error ?? 'nextpnr недоступен.');
+      // The same project placed by another nextpnr may land differently: keep the version with the log.
+      if (health.nextpnrVersion)
+        this.appendLog(
+          job,
+          `Инструменты: ${health.nextpnrVersion}
+`,
+        );
       job.result.stage = 'Подготовка плоского нетлиста';
       await this.save(job);
       if (TERMINAL.has(job.result.status)) return;
@@ -330,7 +344,18 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
       if (sdcFile) {
         const reduced = sanitizeSdc(sdcFile.content);
         if (reduced.text) {
-          await writeFile(path.join(job.directory, 'placement.sdc'), reduced.text, 'utf8');
+          await writeFile(
+            path.join(job.directory, 'placement.sdc'),
+            retargetToBufferNets(reduced.text, flat, job.project.top, (port) =>
+              this.appendLog(
+                job,
+                `
+Предупреждение: в ${sdcFile.name} порт ${port} не найден среди входов проекта, ограничение для него не применено.
+`,
+              ),
+            ),
+            'utf8',
+          );
           sdc = true;
         }
         if (reduced.skipped.length)
@@ -393,6 +418,9 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
           'GW2A-18C',
           '-o',
           'design.fs',
+          // Pins 52-57 double as the configuration interface (SSPI/flash). They only work as
+          // ordinary I/O when the bitstream sets the fuse that gives them up.
+          ...(usesConfigurationPins(placedCst) ? ['--sspi_as_gpio'] : []),
           'placement.json',
         ]);
         if (TERMINAL.has(job.result.status)) return;
