@@ -71,7 +71,12 @@ export function compatibleProject(
   /** @type {Project} */ project,
   /** @type {(note: string) => void} */ report,
 ) {
-  const files = project.files.map((file) => {
+  const files = project.files.map((original) => {
+    // A file saved by Notepad starts with a byte-order mark that Yosys reads as an invalid token.
+    const file =
+      original.content.charCodeAt(0) === 0xfeff
+        ? { ...original, content: original.content.slice(1) }
+        : original;
     if (!/\.(v|sv|vh|svh)$/.test(file.name)) return file;
     const { text: integers, rounded } = integerRealParameters(file.content);
     if (rounded.length)
@@ -81,14 +86,31 @@ export function compatibleProject(
     // `input reg` cannot exist: a port that the module itself assigns is an output. The
     // vendor's tool lets the slip pass.
     let slips = 0;
+    let plain = 0;
+    const masked = mask(integers);
     const text = integers.replace(/\binput(\s+reg\b)/g, (match, rest, offset) => {
       if (mask(integers.slice(0, offset + match.length)).slice(offset) !== match) return match;
-      slips++;
-      return `output${rest}`;
+      // Only a port the file assigns can be an output; `input reg d` that is merely read is an
+      // input with a stray `reg`, and turning it into an output would leave it without a driver.
+      const name = /^\s*(?:\[[^\]]*\]\s*)?([A-Za-z_]\w*)/.exec(
+        masked.slice(offset + match.length),
+      )?.[1];
+      const assigned =
+        !!name && new RegExp(`\\b${name}\\b\\s*(?:\\[[^\\]]*\\]\\s*)?(?:<=|=(?!=))`).test(masked);
+      if (assigned) {
+        slips++;
+        return `output${rest}`;
+      }
+      plain++;
+      return 'input';
     });
     if (slips)
       report(
         `${file.name}: порт объявлен как «input reg» — так бывает только у выхода. Для синтеза он считается «output reg».\n`,
+      );
+    if (plain)
+      report(
+        `${file.name}: у входа написано «reg», но модуль ничего в него не присваивает. Для синтеза это обычный «input».\n`,
       );
     return text === file.content ? file : { ...file, content: text };
   });

@@ -4,11 +4,13 @@ import { retargetToBufferNets, sanitizeSdc } from '../server/sdc';
 import { findPrimitiveModules, GOWIN_PRIMITIVES } from '../shared/gowin-primitives';
 import { yosysResource } from './rtl-gowin-harness';
 import {
+  canonicalCst,
   dropUnconstrainedPads,
   reservedPinsUsed,
   usesConfigurationPins,
 } from '../server/unconstrained';
 import { circuitIssues, emptyCircuit, newCircuitNode } from '../shared/schematic';
+import { validateProject } from '../shared/project-validation';
 
 test('SDC from Gowin EDA is reduced to what nextpnr understands', () => {
   const { text, skipped } = sanitizeSdc(
@@ -186,4 +188,40 @@ test('an SDC clock on a port the design does not have is reported, not lost sile
     missing.push(port),
   );
   assert.deepEqual(missing, ['nope']);
+});
+
+test('the constraint file nextpnr reads has one canonical form: tabs, case and BOM do not hide pins', () => {
+  const text =
+    '﻿io_loc\t"clk"\t4;\nIO_LOC   "rst"  88 ;\n// IO_LOC "x" 1;\nIO_PORT "rst"  IO_TYPE=LVCMOS33   PULL_MODE=NONE;';
+  assert.equal(
+    canonicalCst(text),
+    'IO_LOC "clk" 4;\nIO_LOC "rst" 88;\nIO_PORT "rst" IO_TYPE=LVCMOS33 PULL_MODE=NONE;',
+  );
+});
+
+test('the placement constraints keep a pin that was written with tabs and lower case', () => {
+  const flat = JSON.stringify({
+    modules: {
+      top: {
+        ports: { rst: { direction: 'input', bits: [2] } },
+        cells: { b: { type: 'IBUF', connections: { I: [2], O: [7] } } },
+      },
+    },
+  });
+  const { cst, dropped } = dropUnconstrainedPads(flat, 'io_loc\t"rst"\t88;', 'top');
+  assert.deepEqual(dropped, []);
+  assert.match(cst, /^IO_LOC "rst" 88;/);
+});
+
+test('a keyword is not accepted as the top module name', () => {
+  assert.throws(
+    () =>
+      validateProject({
+        name: 'x',
+        top: 'module',
+        board: 'tangnano20k',
+        files: [{ name: 'top.v', content: 'module top; endmodule' }],
+      }),
+    /имя верхнего модуля/,
+  );
 });

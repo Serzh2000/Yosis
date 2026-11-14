@@ -29,7 +29,8 @@ test('an input declared as reg is read as an output, with a note in the log', ()
       files: [
         {
           name: 'a.v',
-          content: 'module a(input clk, input reg out); // input reg here\nendmodule',
+          content:
+            'module a(input clk, input reg out); // input reg here\nalways @(posedge clk) out <= 1;\nendmodule',
         },
         { name: 'board.cst', content: 'input reg' },
       ],
@@ -38,7 +39,7 @@ test('an input declared as reg is read as an output, with a note in the log', ()
   ) as { files: { content: string }[] };
   assert.equal(
     project.files[0].content,
-    'module a(input clk, output reg out); // input reg here\nendmodule',
+    'module a(input clk, output reg out); // input reg here\nalways @(posedge clk) out <= 1;\nendmodule',
   );
   assert.equal(project.files[1].content, 'input reg');
   assert.equal(notes.length, 1);
@@ -136,4 +137,31 @@ test('the P line of a differential pair keeps one pin, as nextpnr reads it', () 
   const { cst } = dropUnconstrainedPads(flat, 'IO_LOC "tp" 33,34;', 'top');
   assert.match(cst, /IO_LOC "tp" 33;/);
   assert.doesNotMatch(cst, /33,34/);
+});
+
+test('an input with a stray reg that the module only reads stays an input', () => {
+  const notes: string[] = [];
+  const project = compatibleProject(
+    {
+      files: [
+        {
+          name: 'a.v',
+          content:
+            'module a(input clk, input reg d, output reg q);\nalways @(posedge clk) q <= d;\nendmodule',
+        },
+      ],
+    },
+    (text: string) => notes.push(text),
+  ) as { files: { content: string }[] };
+  assert.match(project.files[0].content, /module a\(input clk, input d, output reg q\)/);
+  assert.equal(notes.length, 1);
+  assert.match(notes[0], /обычный «input»/);
+});
+
+test('a byte-order mark at the start of a source file is removed', () => {
+  const project = compatibleProject(
+    { files: [{ name: 'top.v', content: '﻿module top; endmodule' }] },
+    () => {},
+  ) as { files: { content: string }[] };
+  assert.equal(project.files[0].content, 'module top; endmodule');
 });

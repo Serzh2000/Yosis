@@ -39,7 +39,9 @@ export const DATA_VERSION = 1;
 export const SESSION_TTL_MS = 2 * 60 * 60 * 1000;
 const SESSION_SAVE_DELAY_MS = 60 * 1000;
 const ACTIVE_TOUCH_MS = 60 * 1000;
-export const SESSION_COOKIE = 'yosis_session';
+// Не 'yosis_session': так называется cookie ключей доступа (server/api-security.ts), и в режиме
+// с публичным адресом браузер присылал бы на /api обе, а разборщики брали бы первую.
+export const SESSION_COOKIE = 'yosis_account';
 export const EXPECTED_USER_HEADER = 'x-yosis-user';
 const LOGIN = /^[A-Za-z0-9_.-]{3,32}$/;
 const ATTEMPTS_KEPT = 60;

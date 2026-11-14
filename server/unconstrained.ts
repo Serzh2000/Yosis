@@ -43,6 +43,20 @@ function withPairs(text: string, pairs: string): string {
   );
 }
 
+/**
+ * The text nextpnr will read. Its parser knows only upper-case keywords and single spaces, while
+ * Gowin's own tool accepts tabs, any case and a byte-order mark: the same file would be read as
+ * pins assigned here and as «Unconstrained IO» there. Every statement is rewritten in one form.
+ */
+export function canonicalCst(cst: string): string {
+  const text = cst.replace(/^\uFEFF/, '').replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g, '');
+  return [...text.matchAll(/\b(IO_LOC|IO_PORT|CLOCK_LOC|INS_LOC)\s+"([^"]+)"\s+([^;]+);/gi)]
+    .map(
+      (match) => `${match[1].toUpperCase()} "${match[2]}" ${match[3].trim().replace(/\s+/g, ' ')};`,
+    )
+    .join('\n');
+}
+
 export function dropUnconstrainedPads(
   flatJson: string,
   cst: string,
@@ -51,7 +65,7 @@ export function dropUnconstrainedPads(
   const netlist = JSON.parse(flatJson) as { modules: Record<string, Module> };
   const module = netlist.modules[top];
   if (!module?.ports || !module.cells) return { json: flatJson, dropped: [], cst };
-  const text = cst.replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g, '');
+  const text = canonicalCst(cst);
   const placed = new Set([...text.matchAll(/\bIO_LOC\s+"([^"]+)"/gi)].map((match) => match[1]));
   // Gowin names a differential pair by its P port only: IO_LOC "p" 33,34. nextpnr reads just the
   // first pin, so the N port (the OB/IB pin of the LVDS buffer) is given its own pin here.

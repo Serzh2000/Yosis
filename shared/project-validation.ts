@@ -1,6 +1,7 @@
 import type { Project, ProjectOrigin } from './types';
 import { RequestError } from './errors';
 import { parseCircuit } from './schematic';
+import { validIdentifier } from './verilog-identifiers';
 
 const MAX_FILES = 40;
 const MAX_FILE_BYTES = 512 * 1024;
@@ -12,7 +13,7 @@ export function validateProject(value: unknown): Project {
   const project = value as Record<string, unknown>;
   if (typeof project.name !== 'string' || !project.name.trim() || project.name.length > 100)
     throw new RequestError('Название проекта должно содержать от 1 до 100 символов.');
-  if (typeof project.top !== 'string' || !/^[A-Za-z_][A-Za-z0-9_$]{0,127}$/.test(project.top))
+  if (typeof project.top !== 'string' || !validIdentifier(project.top))
     throw new RequestError('Укажите корректное имя верхнего модуля Verilog.');
   if (project.board !== 'tangnano20k')
     throw new RequestError('Поддерживается профиль Tang Nano 20K.');
