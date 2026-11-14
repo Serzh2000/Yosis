@@ -29,8 +29,10 @@ export function parseDiagnostics(logs: string): Diagnostic[] {
     if (!match) continue;
     const severity = match[1].toLowerCase() === 'error' ? 'error' : 'warning';
     const location = line.match(
-      /(?:^|\s)([A-Za-z0-9_][A-Za-z0-9_./-]*\.(?:sv|v|svh|vh)):(\d+)(?:\.\d+)?/,
+      /(?:^|[\s$])([A-Za-z0-9_][A-Za-z0-9_./-]*\.(?:sv|v|svh|vh)):(\d+)(?:\.\d+)?/,
     );
+    // Служебные замечания самого Yosys: ученику они ничего не говорят.
+    if (/write_xaiger2|The network is combinational/.test(match[2])) continue;
     const diagnostic: Diagnostic = { severity, message: match[2].trim() || line.trim() };
     if (location) {
       diagnostic.file = location[1];

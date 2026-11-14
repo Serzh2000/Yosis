@@ -16,7 +16,9 @@ const output = (/** @type {Uint8Array | null} */ data) => {
 };
 process.once(
   'message',
-  async (/** @type {import('../shared/worker-protocol').FlattenRequest} */ { technology, top }) => {
+  async (
+    /** @type {import('../shared/worker-protocol').FlattenRequest} */ { technology, rtl, top },
+  ) => {
     try {
       const runYosys = await loadYosys();
       // The synthesized JSON already has resolved parameters and top attributes.
@@ -39,9 +41,15 @@ endmodule
         [
           '-T',
           '-p',
-          `read_json technology.json; flatten -noscopeinfo ${top}; techmap -map aliases.v t:$buf t:$_BUF_; opt_clean; write_json flat.json`,
+          // With the RTL at hand the physical netlist is its own flat synthesis: a tri-state buffer
+          // inside a submodule only reaches TBUF/IOBUF when pads are mapped after flattening.
+          rtl
+            ? `read_json rtl.json; synth_gowin -family gw2a -nowidelut -top ${top}; techmap -map aliases.v t:$buf t:$_BUF_; opt_clean; write_json flat.json`
+            : `read_json technology.json; flatten -noscopeinfo ${top}; techmap -map aliases.v t:$buf t:$_BUF_; opt_clean; write_json flat.json`,
         ],
-        { 'technology.json': JSON.stringify(technology), 'aliases.v': aliases },
+        rtl
+          ? { 'rtl.json': JSON.stringify(rtl), 'aliases.v': aliases }
+          : { 'technology.json': JSON.stringify(technology), 'aliases.v': aliases },
         { stdout: output, stderr: output, decodeASCII: true, fetchProgress: () => {} },
       );
       const data = files['flat.json'];

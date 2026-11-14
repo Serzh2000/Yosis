@@ -11,6 +11,7 @@ import { JobManager, type JobRecord } from './job-manager';
 import { captureTool, stopProcess } from './process-limits';
 import { RequestError, projectHash } from './validation';
 import { dropUnconstrainedPads } from './unconstrained';
+import { sanitizeSdc } from './sdc';
 import { workspace } from './paths';
 import { atomicWrite } from './atomic-write';
 
@@ -24,6 +25,7 @@ const ARTIFACTS: Record<string, string> = {
 interface PhysicalJob extends JobRecord<PhysicalResult> {
   project: Project;
   technology: YosysNetlist;
+  rtl?: YosysNetlist;
   /** Отмена ожиданий, которые не привязаны к дочернему процессу (проверка nextpnr). */
   abort: AbortController;
 }
@@ -151,7 +153,7 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
         );
       if (this.scheduler.stopping) throw new RequestError('Сервис завершает работу.', 503);
       const { id, directory } = await this.prepareDirectory(
-        project.files.filter((file) => file.name === config.cstFile),
+        project.files.filter((file) => file.name === config.cstFile || file.name.endsWith('.sdc')),
         { 'project.json': JSON.stringify(project, null, 2) },
       );
       const result: PhysicalResult = {
@@ -171,6 +173,7 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
         result,
         project: structuredClone(project),
         technology: build.technology,
+        rtl: build.rtl,
         directory,
         persistence: Promise.resolve(),
         abort: new AbortController(),
@@ -285,6 +288,11 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
     return stopProcess(child, { untilClosed: true });
   }
 
+  /** Встроенная SDRAM GW2AR даёт в каждом запуске полсотни строк «Cell … not found»: убираем их. */
+  protected override appendLog(record: PhysicalJob, text: string) {
+    super.appendLog(record, text.replace(/^Info: Cell (?:O|IO)_sdram_\S+ not found.*\r?\n/gm, ''));
+  }
+
   private async perform(job: PhysicalJob) {
     if (TERMINAL.has(job.result.status)) {
       this.scheduler.complete(job);
@@ -304,13 +312,33 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
       if (TERMINAL.has(job.result.status)) return;
       const cst =
         job.project.files.find((file) => file.name === job.result.config.cstFile)?.content ?? '';
-      const { json: flat, dropped } = dropUnconstrainedPads(whole, cst, job.project.top);
+      const {
+        json: flat,
+        dropped,
+        cst: placedCst,
+      } = dropUnconstrainedPads(whole, cst, job.project.top);
       if (dropped.length)
         this.appendLog(
           job,
           `\nПредупреждение: портам ${dropped.join(', ')} не назначен вывод в ${job.result.config.cstFile}. Они не попали в битстрим: выходы никуда не выведены, входы читаются как 0. Назначьте им выводы во вкладке «Выводы», если они нужны.\n`,
         );
       await writeFile(path.join(job.directory, 'flat.json'), flat);
+      // The constraints nextpnr reads: the pupil's file plus pins for the N side of LVDS pairs.
+      await writeFile(path.join(job.directory, 'placement.cst'), placedCst, 'utf8');
+      const sdcFile = job.project.files.find((file) => file.name.endsWith('.sdc'));
+      let sdc = false;
+      if (sdcFile) {
+        const reduced = sanitizeSdc(sdcFile.content);
+        if (reduced.text) {
+          await writeFile(path.join(job.directory, 'placement.sdc'), reduced.text, 'utf8');
+          sdc = true;
+        }
+        if (reduced.skipped.length)
+          this.appendLog(
+            job,
+            `\nПредупреждение: из ${sdcFile.name} применены только create_clock; пропущены команды: ${reduced.skipped.join('; ')}\n`,
+          );
+      }
       if (TERMINAL.has(job.result.status)) return;
       job.result.stage = 'Размещение и трассировка';
       await this.save(job);
@@ -321,7 +349,7 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
         '--vopt',
         'family=GW2A-18C',
         '--vopt',
-        `cst=sources/${job.result.config.cstFile}`,
+        'cst=placement.cst',
         '--json',
         'flat.json',
         '--write',
@@ -330,7 +358,21 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
         'timing.json',
         '--freq',
         String(job.result.config.frequencyMHz),
+        // Fmax below the target is not a failure of the design: the pupil still gets a placement,
+        // a bitstream and a clear warning instead of a bare exit code.
+        '--timing-allow-fail',
+        // Timing constraints of the pupil (clock periods of derived clocks, false paths).
+        ...(sdc ? ['--sdc', 'placement.sdc'] : []),
       ]);
+      // nextpnr prints the figure twice (after placement and after routing): the last one counts.
+      const slowest = new Map<string, string>();
+      for (const line of job.result.logs.match(/^.*Max frequency for clock.*\(FAIL at .*$/gm) ?? [])
+        slowest.set(/clock '([^']*)'/.exec(line)?.[1] ?? line, line);
+      for (const line of slowest.values())
+        this.appendLog(
+          job,
+          `\nПредупреждение: схема не успевает на заданной частоте: ${line.replace(/^\s*Info:\s*/, '')}\n`,
+        );
       if (TERMINAL.has(job.result.status)) return;
       job.result.placed = JSON.parse(
         await readFile(path.join(job.directory, 'placement.json'), 'utf8'),
@@ -399,14 +441,26 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
         if (code === 0 && text) resolve(text);
         else reject(new Error(error ?? 'Не удалось подготовить нетлист.'));
       });
-      child.send({ technology: job.technology, top: job.project.top } satisfies FlattenRequest);
+      child.send({
+        technology: job.technology,
+        rtl: job.rtl,
+        top: job.project.top,
+      } satisfies FlattenRequest);
     });
   }
   private command(job: PhysicalJob, executable: string, args: string[]) {
     return this.runTool(job, executable, args, {
       env: this.environment(),
-      failure: (tool, code) =>
-        `Инструмент ${tool} завершился с кодом ${code}. Подробности в журнале.`,
+      failure: (tool, code) => {
+        const reason = [
+          ...job.result.logs.matchAll(/^(?:ERROR|Exception|ValueError|[A-Za-z]*Error):\s*(.+)$/gm),
+        ]
+          .pop()?.[1]
+          ?.trim();
+        return reason
+          ? `Инструмент ${tool} завершился с кодом ${code}: ${reason}`
+          : `Инструмент ${tool} завершился с кодом ${code}. Подробности в журнале.`;
+      },
     });
   }
 }

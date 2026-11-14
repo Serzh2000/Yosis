@@ -94,7 +94,7 @@ async function warmUp() {
     [
       '-T',
       '-p',
-      'read_json rtl.json; synth_gowin -family gw2a -noflatten -noiopads -top warm; write_json technology.json',
+      'read_json rtl.json; synth_gowin -family gw2a -noflatten -noiopads -nowidelut -top warm; write_json technology.json',
     ],
     { 'rtl.json': rtl['rtl.json'] },
     quiet,
@@ -306,10 +306,14 @@ async function handle(/** @type {YosysRequest} */ request) {
     send({ type: 'stage', stage: 'Отображение на примитивы Gowin' });
     // Mapping pads during a hierarchy-preserving synthesis would add package
     // buffers to every submodule. Only the actual top-level ports face pins.
+    const synth = `synth_gowin -family gw2a -noflatten -noiopads -nowidelut -top ${project.top}`;
     const technologyScript = [
       'read_json rtl.json',
-      `synth_gowin -family gw2a -noflatten -noiopads -top ${project.top}`,
+      `${synth} -run :map_ffs`,
+      // The pad cells must exist before LUT mapping: iopadmap adds an inverter for ~OEN, and only
+      // the later passes turn it into a LUT1 instead of leaving a bare $_NOT_ no site can hold.
       `iopadmap -bits -inpad IBUF O:I -outpad OBUF I:O -toutpad TBUF ~OEN:I:O -tinoutpad IOBUF ~OEN:O:I:IO ${project.top}`,
+      `${synth} -run map_ffs:`,
       'check -noinit',
       'write_json technology.json',
     ].join('; ');

@@ -70,10 +70,18 @@ const reg: BlockDef = {
     output('Q', num(p, 'width')),
   ],
   comb: () => [],
-  check: (p) =>
-    big(p, 'resetValue') > mask(num(p, 'width'))
+  check: (p) => [
+    ...(big(p, 'resetValue') > mask(num(p, 'width'))
       ? [`значение сброса ${p.resetValue} не помещается в ${p.width} бит`]
-      : [],
+      : []),
+    // У Gowin нет триггера с асинхронными и сбросом, и установкой сразу: с начальным значением
+    // Yosys не может подобрать ему замену, и синтез падает.
+    ...(flag(p, 'aclr') && flag(p, 'apre') && flag(p, 'init')
+      ? [
+          'асинхронный сброс и асинхронная установка вместе нельзя сочетать с начальным значением: отключите одно из трёх',
+        ]
+      : []),
+  ],
   regs: (p) => [
     { key: 'Q', width: num(p, 'width'), init: flag(p, 'init') ? powerOn(p) : undefined },
   ],

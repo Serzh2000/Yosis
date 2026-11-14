@@ -74,3 +74,66 @@ test('ports without a pin are left out of the bitstream and unplaced inputs read
   assert.deepEqual(top.cells.logic.connections.I1, ['0'], 'the unplaced input reads zero');
   assert.equal(dropUnconstrainedPads(json, cst, 'top').dropped.length, 0);
 });
+
+test('a differential pair named by its P pin gets a pin for the N port as well', () => {
+  const flat = JSON.stringify({
+    modules: {
+      top: {
+        ports: {
+          r: { direction: 'input', bits: [2] },
+          tp: { direction: 'output', bits: [3] },
+          tn: { direction: 'output', bits: [4] },
+        },
+        cells: {
+          buf: { type: 'TLVDS_OBUF', connections: { I: [2], O: [3], OB: [4] } },
+        },
+      },
+    },
+  });
+  const cst = 'IO_LOC "r" 15;\nIO_LOC "tp" 33,34;\nIO_PORT "tp" IO_TYPE=LVCMOS33D;\n';
+  const result = dropUnconstrainedPads(flat, cst, 'top');
+  assert.deepEqual(result.dropped, [], 'the N port is not thrown away');
+  assert.match(result.cst, /IO_LOC "tn" 34;/);
+  assert.deepEqual(Object.keys(JSON.parse(result.json).modules.top.cells), ['buf']);
+});
+
+test('an input that clocks a register must have a pin: no silent dead clock', () => {
+  const flat = JSON.stringify({
+    modules: {
+      top: {
+        ports: {
+          clk: { direction: 'input', bits: [2] },
+          q: { direction: 'output', bits: [3] },
+        },
+        cells: {
+          clk_pad: { type: 'IBUF', connections: { I: [2], O: [10] } },
+          ff: { type: 'DFF', connections: { CLK: [10], D: [11], Q: [12] } },
+          q_pad: { type: 'OBUF', connections: { I: [12], O: [3] } },
+        },
+      },
+    },
+  });
+  assert.throws(
+    () => dropUnconstrainedPads(flat, 'IO_LOC "q" 15;', 'top'),
+    /Тактовому входу clk не назначен вывод/,
+  );
+});
+
+test('the P line of a differential pair keeps one pin, as nextpnr reads it', () => {
+  const flat = JSON.stringify({
+    modules: {
+      top: {
+        ports: {
+          tp: { direction: 'output', bits: [3] },
+          tn: { direction: 'output', bits: [4] },
+        },
+        cells: {
+          buf: { type: 'TLVDS_OBUF', connections: { I: [2], O: [3], OB: [4] } },
+        },
+      },
+    },
+  });
+  const { cst } = dropUnconstrainedPads(flat, 'IO_LOC "tp" 33,34;', 'top');
+  assert.match(cst, /IO_LOC "tp" 33;/);
+  assert.doesNotMatch(cst, /33,34/);
+});

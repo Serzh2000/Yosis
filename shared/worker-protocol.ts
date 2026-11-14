@@ -34,6 +34,11 @@ export interface SyntaxRequest {
 /** Запрос к `physical-yosys-runner.mjs`: плоский нетлист для nextpnr. */
 export interface FlattenRequest {
   technology: YosysNetlist;
+  /**
+   * RTL проекта. Если он есть, плоский нетлист получается отдельным плоским синтезом из него, а не
+   * разворачиванием технологического нетлиста: так tri-state внутри подмодулей доходит до TBUF/IOBUF.
+   */
+  rtl?: YosysNetlist;
   top: string;
 }
 
