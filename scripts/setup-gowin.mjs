@@ -7,14 +7,19 @@ const workspace = fileURLToPath(new URL('../', import.meta.url));
 const directory = path.join(workspace, '.tools/gowin');
 const python = process.env.YOSIS_PYTHON ?? (process.platform === 'win32' ? 'py' : 'python3');
 const pythonArgs = process.platform === 'win32' && python === 'py' ? ['-3'] : [];
+// The nextpnr wheel pins Apycula==0.32, the version its chip database was built from. Apycula 0.35
+// (gowin_pack) fixes bitstream errors seen on the Tang Nano 20K (unused CFU wires, block RAM write
+// modes) and changes only fuses: placement and pips stay the same. It was checked against 32 designs
+// (every LUT/ALU table read back from the fuses, block RAM contents, frame counts), so nextpnr is
+// installed without its dependency pin.
+const nextpnr = 'yowasp-nextpnr-himbaechel-gowin==0.11.1.0.post826';
 const packages = [
-  'yowasp-nextpnr-himbaechel-gowin==0.11.1.0.post826',
-  'Apycula==0.32',
+  'Apycula==0.35',
   'yowasp-runtime==1.96',
   'wasmtime==47.0.1',
   'platformdirs==4.12.2',
   'msgspec==0.22.0',
-  'numpy==2.5.3',
+  'numpy==2.5.4',
   'fastcrc==0.5.0',
 ];
 function command(executable, args, env = process.env) {
@@ -42,7 +47,16 @@ try {
     process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python',
   );
   await command(localPython, ['-m', 'pip', 'install', '--disable-pip-version-check', ...packages]);
-  await command(localPython, ['-m', 'pip', 'check']);
+  await command(localPython, [
+    '-m',
+    'pip',
+    'install',
+    '--disable-pip-version-check',
+    '--no-deps',
+    '--force-reinstall', // rewrites the launcher: an environment copied to another folder keeps the old path
+    nextpnr,
+  ]);
+  // `pip check` would report the pinned Apycula==0.32 of the nextpnr wheel: that is intended.
   const binary = path.join(
     directory,
     process.platform === 'win32'
@@ -60,7 +74,7 @@ try {
     JSON.stringify(
       {
         installedAt: new Date().toISOString(),
-        packages,
+        packages: [nextpnr, ...packages],
         source: 'https://pypi.org/project/yowasp-nextpnr-himbaechel-gowin/',
         device: 'GW2AR-LV18QN88C8/I7',
         family: 'GW2A-18C',

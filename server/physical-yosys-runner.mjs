@@ -44,7 +44,7 @@ endmodule
           // With the RTL at hand the physical netlist is its own flat synthesis: a tri-state buffer
           // inside a submodule only reaches TBUF/IOBUF when pads are mapped after flattening.
           rtl
-            ? `read_json rtl.json; synth_gowin -family gw2a -nowidelut -top ${top}; techmap -map aliases.v t:$buf t:$_BUF_; opt_clean; write_json flat.json`
+            ? `read_json rtl.json; synth_gowin -family gw2a -nowidelut -top ${top}; techmap -map aliases.v t:$buf t:$_BUF_; delete t:$scopeinfo; opt_clean; write_json flat.json`
             : `read_json technology.json; flatten -noscopeinfo ${top}; techmap -map aliases.v t:$buf t:$_BUF_; opt_clean; write_json flat.json`,
         ],
         rtl
