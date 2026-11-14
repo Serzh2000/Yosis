@@ -182,7 +182,7 @@ endmodule`,
   initial begin for (i = 0; i < 64; i = i + 1) mem[i] = 8'h00; dout = 8'h00; end
   always @(posedge clk) begin if (we) mem[addr] <= din; dout <= mem[addr]; end
 endmodule`,
-    rtl: ['$memwr_v2', '$memrd'],
+    rtl: ['$mem_v2'],
   },
   {
     id: 'hierarchy-two-levels',
@@ -307,7 +307,7 @@ endmodule`,
   initial begin for (i = 0; i < 2048; i = i + 1) mem[i] = 8'h00; dout = 8'h00; end
   always @(posedge clk) begin if (we) mem[a] <= din; dout <= mem[a]; end
 endmodule`,
-    rtl: ['$memwr_v2', '$memrd'],
+    rtl: ['$mem_v2'],
     count: { SPX9: 1 },
   },
   {

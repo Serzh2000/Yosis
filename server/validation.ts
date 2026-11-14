@@ -21,7 +21,30 @@ export function projectHash(project: Project): string {
   return createHash('sha256').update(JSON.stringify(sources)).digest('hex');
 }
 
-export function parseDiagnostics(logs: string): Diagnostic[] {
+/**
+ * Yosys names the file and line for most errors, but not for a module that is never defined:
+ * «Module `foo' referenced in module `top' in cell `u' is not part of the design». The place is
+ * found here: the first line of the project that instantiates that module.
+ */
+function locateInstance(
+  message: string,
+  files: readonly { name: string; content: string }[],
+): { file: string; line: number } | undefined {
+  const name = /Module `\\?([A-Za-z_]\w*)' referenced in module/.exec(message)?.[1];
+  if (!name) return undefined;
+  const instance = new RegExp(String.raw`(?:^|\s)${name}\s*(?:#\s*\(|[A-Za-z_]\w*\s*\()`);
+  for (const file of files) {
+    if (!/\.(?:v|sv)$/.test(file.name)) continue;
+    const index = file.content.split('\n').findIndex((line) => instance.test(line));
+    if (index >= 0) return { file: file.name, line: index + 1 };
+  }
+  return undefined;
+}
+
+export function parseDiagnostics(
+  logs: string,
+  files: readonly { name: string; content: string }[] = [],
+): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
   const seen = new Set<string>();
   for (const line of logs.split(/\r?\n/)) {
@@ -34,9 +57,12 @@ export function parseDiagnostics(logs: string): Diagnostic[] {
     // Служебные замечания самого Yosys: ученику они ничего не говорят.
     if (/write_xaiger2|The network is combinational/.test(match[2])) continue;
     const diagnostic: Diagnostic = { severity, message: match[2].trim() || line.trim() };
-    if (location) {
-      diagnostic.file = location[1];
-      diagnostic.line = Number(location[2]);
+    const found = location
+      ? { file: location[1], line: Number(location[2]) }
+      : locateInstance(diagnostic.message, files);
+    if (found) {
+      diagnostic.file = found.file;
+      diagnostic.line = found.line;
     }
     const key = JSON.stringify(diagnostic);
     if (!seen.has(key)) {

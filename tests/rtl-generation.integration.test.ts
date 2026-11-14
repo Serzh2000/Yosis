@@ -162,7 +162,7 @@ test('RTL: параметризованные модули получают от
 // Схема по умолчанию показывает первые 180 ячеек, и инициализация вытесняет сами порты памяти.
 test(
   'RTL: инициализация памяти не раздувает схему (одна ячейка на память, а не на слово)',
-  { todo: 'RAM 64×8 даёт 64 ячейки $meminit_v2, RAM 2048×8 — 2048' },
+  {},
   async () => {
     const { rtl } = await buildOk(byId('ram-sync'));
     const inits = Object.values(rtl.modules.top.cells).filter((cell) =>
@@ -172,16 +172,14 @@ test(
   },
 );
 
-test(
-  'RTL: в схеме по умолчанию видны порты чтения и записи памяти',
-  { todo: 'в 2К-памяти из 180 видимых узлов 179 — $meminit_v2, порт чтения и регистр скрыты' },
-  async () => {
-    const { rtl } = await buildOk(byId('bram-2k'));
-    const types = new Set(buildGraph(rtl, 'top').nodes.map((node) => node.type));
-    assert.ok(types.has('$memrd') || types.has('$memrd_v2'), 'нет порта чтения');
-    assert.ok(types.has('$memwr_v2') || types.has('$memwr'), 'нет порта записи');
-  },
-);
+test('RTL: память в схеме — один блок, остальные элементы остаются видимыми', {}, async () => {
+  const { rtl } = await buildOk(byId('bram-2k'));
+  const graph = buildGraph(rtl, 'top');
+  assert.equal(graph.hiddenCells, 0, 'память не должна обрезать схему');
+  const types = graph.nodes.map((node) => node.type);
+  assert.ok(types.includes('$mem_v2'), 'нет блока памяти');
+  assert.ok(types.includes('$dff'), 'регистр чтения скрыт');
+});
 
 test('RTL: сборка воспроизводима — тот же проект даёт тот же нетлист', async () => {
   const design = byId('fsm-3state');
@@ -294,19 +292,13 @@ test('предупреждение о защёлке (самая частая о
   assert.equal(warning.line, 2);
 });
 
-test(
-  'ошибка «модуль не найден» указывает, где он вызван',
-  {
-    todo: 'в сообщении Yosys нет «файл:строка» для ссылки на модуль; диагностика остаётся без места',
-  },
-  async () => {
-    const result = await build(
-      broken('unknown-loc', 'module top(input a, output y);\n foo u(.a(a), .y(y));\nendmodule'),
-    );
-    const error = result.diagnostics.find((item) => item.severity === 'error');
-    assert.ok(error?.file && error.line);
-  },
-);
+test('ошибка «модуль не найден» указывает, где он вызван', async () => {
+  const result = await build(
+    broken('unknown-loc', 'module top(input a, output y);\n foo u(.a(a), .y(y));\nendmodule'),
+  );
+  const error = result.diagnostics.find((item) => item.severity === 'error');
+  assert.ok(error?.file && error.line);
+});
 
 test('обычный проект без ошибок не показывает служебных предупреждений Yosys', async () => {
   const { diagnostics } = await buildOk(byId('adder8'));

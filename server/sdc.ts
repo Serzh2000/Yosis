@@ -75,3 +75,62 @@ export function retargetToBufferNets(
     return net ? `[get_nets {${net}}]` : whole;
   });
 }
+
+interface PllCell {
+  type: string;
+  parameters: Record<string, string | number>;
+  connections: Record<string, (number | string)[]>;
+}
+
+/** Yosys writes an integer parameter as 32 binary digits and a string parameter as its text. */
+function parameterValue(value: string | number | undefined, fallback: number): number {
+  if (value === undefined) return fallback;
+  if (typeof value === 'number') return value;
+  const text = value.trim();
+  return /^[01]{32}$/.test(text) ? parseInt(text, 2) : Number.parseFloat(text) || fallback;
+}
+
+/**
+ * nextpnr checks every clock net against one target (`--freq`, the 27 MHz oscillator). The
+ * outputs of a PLL run faster: a 96 MHz clock would be reported as `PASS at 27 MHz`. Their real
+ * frequency follows from the primitive's parameters, so it is written down for nextpnr:
+ * CLKOUT = FCLKIN × (FBDIV_SEL + 1) / (IDIV_SEL + 1); CLKOUTD divides it by SDIV_SEL, CLKOUTD3 by 3.
+ */
+export function pllClockConstraints(
+  flatJson: string,
+  top: string,
+  skip: ReadonlySet<string>,
+): string {
+  const module = (
+    JSON.parse(flatJson) as {
+      modules: Record<string, FlatModule & { cells?: Record<string, PllCell> }>;
+    }
+  ).modules[top];
+  if (!module?.cells) return '';
+  const nameOf = (bit: number | string | undefined) =>
+    typeof bit === 'number'
+      ? Object.entries(module.netnames ?? {}).find(([, net]) => net.bits.includes(bit))?.[0]
+      : undefined;
+  const lines: string[] = [];
+  for (const cell of Object.values(module.cells as Record<string, PllCell>)) {
+    if (cell.type !== 'rPLL') continue;
+    const input = parameterValue(cell.parameters.FCLKIN, 27);
+    const out =
+      (input * (parameterValue(cell.parameters.FBDIV_SEL, 0) + 1)) /
+      (parameterValue(cell.parameters.IDIV_SEL, 0) + 1);
+    const outputs: [string, number][] = [
+      ['CLKOUT', out],
+      ['CLKOUTP', out],
+      ['CLKOUTD', out / Math.max(2, parameterValue(cell.parameters.SDIV_SEL, 2))],
+      ['CLKOUTD3', out / 3],
+    ];
+    for (const [pin, mhz] of outputs) {
+      const net = nameOf(cell.connections[pin]?.[0]);
+      if (!net || skip.has(net) || !Number.isFinite(mhz) || mhz <= 0) continue;
+      lines.push(
+        `create_clock -name ${net} -period ${(1000 / mhz).toFixed(3)} [get_nets {${net}}]`,
+      );
+    }
+  }
+  return lines.length ? `${lines.join('\n')}\n` : '';
+}

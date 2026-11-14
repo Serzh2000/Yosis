@@ -274,6 +274,9 @@ async function handle(/** @type {YosysRequest} */ request) {
           ...['$and', '$or', '$xor', '$xnor', '$not'].map(
             (type) => `simplemap t:${type} r:Y_WIDTH<=8 %i`,
           ),
+          // Yosys keeps a memory as separate read, write and initial-content cells (one per word
+          // for `initial` loops). The diagram shows one memory block instead of thousands of cells.
+          'memory_collect',
           'opt_clean',
           'write_json rtl-fine.json',
         ].join('; '),

@@ -179,7 +179,7 @@ export class BuildManager extends JobManager<BuildResult, BuildRecord> {
   }
   protected finalize(record: BuildRecord) {
     const { result } = record;
-    result.diagnostics = parseDiagnostics(result.logs);
+    result.diagnostics = parseDiagnostics(result.logs, record.project.files);
     if (result.status === 'error' && !result.diagnostics.some((item) => item.severity === 'error'))
       result.diagnostics.push({ severity: 'error', message: result.error ?? result.stage });
   }

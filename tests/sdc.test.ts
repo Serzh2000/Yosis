@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { retargetToBufferNets, sanitizeSdc } from '../server/sdc';
+import { pllClockConstraints, retargetToBufferNets, sanitizeSdc } from '../server/sdc';
 import { findPrimitiveModules, GOWIN_PRIMITIVES } from '../shared/gowin-primitives';
 import { yosysResource } from './rtl-gowin-harness';
 import {
@@ -223,5 +223,37 @@ test('a keyword is not accepted as the top module name', () => {
         files: [{ name: 'top.v', content: 'module top; endmodule' }],
       }),
     /имя верхнего модуля/,
+  );
+});
+
+test('the clock a PLL makes is checked at its own frequency, worked out from its parameters', () => {
+  const flat = JSON.stringify({
+    modules: {
+      top: {
+        cells: {
+          pll: {
+            type: 'rPLL',
+            parameters: {
+              FCLKIN: '27',
+              IDIV_SEL: '00000000000000000000000000001000',
+              FBDIV_SEL: '00000000000000000000000000011111',
+              SDIV_SEL: '00000000000000000000000000000100',
+            },
+            connections: { CLKOUT: [5], CLKOUTD: [6], CLKOUTP: [7] },
+          },
+        },
+        netnames: { fast: { bits: [5] }, slow: { bits: [6] } },
+      },
+    },
+  });
+  // 27 MHz × 32 / 9 = 96 MHz; CLKOUTD divides by SDIV_SEL = 4 → 24 MHz; CLKOUTP has no name.
+  assert.equal(
+    pllClockConstraints(flat, 'top', new Set()),
+    'create_clock -name fast -period 10.417 [get_nets {fast}]\ncreate_clock -name slow -period 41.667 [get_nets {slow}]\n',
+  );
+  assert.equal(
+    pllClockConstraints(flat, 'top', new Set(['fast'])),
+    'create_clock -name slow -period 41.667 [get_nets {slow}]\n',
+    'a clock the pupil already constrained is left alone',
   );
 });

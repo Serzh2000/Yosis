@@ -11,7 +11,7 @@ import { JobManager, type JobRecord } from './job-manager';
 import { captureTool, stopProcess } from './process-limits';
 import { RequestError, projectHash } from './validation';
 import { dropUnconstrainedPads, reservedPinsUsed, usesConfigurationPins } from './unconstrained';
-import { retargetToBufferNets, sanitizeSdc } from './sdc';
+import { pllClockConstraints, retargetToBufferNets, sanitizeSdc } from './sdc';
 import { workspace } from './paths';
 import { atomicWrite } from './atomic-write';
 
@@ -297,7 +297,12 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
 
   /** Встроенная SDRAM GW2AR даёт в каждом запуске полсотни строк «Cell … not found»: убираем их. */
   protected override appendLog(record: PhysicalJob, text: string) {
-    super.appendLog(record, text.replace(/^Info: Cell (?:O|IO)_sdram_\S+ not found.*\r?\n/gm, ''));
+    super.appendLog(
+      record,
+      text
+        .replace(/^Info: Cell (?:O|IO)_sdram_\S+ not found.*\r?\n/gm, '')
+        .replace(/^.*Feature 'write_xaiger2' is experimental.*\r?\n/gm, ''),
+    );
   }
 
   private async perform(job: PhysicalJob) {
@@ -340,30 +345,28 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
       // The constraints nextpnr reads: the pupil's file plus pins for the N side of LVDS pairs.
       await writeFile(path.join(job.directory, 'placement.cst'), placedCst, 'utf8');
       const sdcFile = job.project.files.find((file) => file.name.endsWith('.sdc'));
-      let sdc = false;
+      let userSdc = '';
       if (sdcFile) {
         const reduced = sanitizeSdc(sdcFile.content);
-        if (reduced.text) {
-          await writeFile(
-            path.join(job.directory, 'placement.sdc'),
-            retargetToBufferNets(reduced.text, flat, job.project.top, (port) =>
-              this.appendLog(
-                job,
-                `
-Предупреждение: в ${sdcFile.name} порт ${port} не найден среди входов проекта, ограничение для него не применено.
-`,
-              ),
-            ),
-            'utf8',
-          );
-          sdc = true;
-        }
+        userSdc = retargetToBufferNets(reduced.text, flat, job.project.top, (port) =>
+          this.appendLog(
+            job,
+            `\nПредупреждение: в ${sdcFile.name} порт ${port} не найден среди входов проекта, ограничение для него не применено.\n`,
+          ),
+        );
         if (reduced.skipped.length)
           this.appendLog(
             job,
             `\nПредупреждение: из ${sdcFile.name} применены только create_clock; пропущены команды: ${reduced.skipped.join('; ')}\n`,
           );
       }
+      // Outputs of a PLL run at their own frequency, which nextpnr cannot work out by itself.
+      const constrained = new Set(
+        [...userSdc.matchAll(/get_nets \{([^}]+)\}/g)].map((match) => match[1]),
+      );
+      const sdcText = userSdc + pllClockConstraints(flat, job.project.top, constrained);
+      const sdc = sdcText !== '';
+      if (sdc) await writeFile(path.join(job.directory, 'placement.sdc'), sdcText, 'utf8');
       if (TERMINAL.has(job.result.status)) return;
       job.result.stage = 'Размещение и трассировка';
       await this.save(job);
