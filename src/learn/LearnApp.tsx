@@ -69,7 +69,7 @@ function Lesson() {
     if (location.pathname !== path) history.replaceState(null, '', path);
     saveCurrent(route);
     savePlace(route.bookId, route.pageId);
-    document.title = `${current.lesson?.title ?? book.title} — Yosis`;
+    document.title = `${current.lesson?.title ?? book.title} — Logra`;
   }, [route, current, book.title]);
   useEffect(() => {
     const back = () =>
@@ -218,7 +218,7 @@ function Lesson() {
     <div className="learn-root" data-theme-mode={theme}>
       <header className="learn-top">
         <a className="learn-brand" href="/" title="К студии">
-          <GraduationCap size={18} /> <strong>Yosis</strong> <span>учебник</span>
+          <GraduationCap size={18} /> <strong>Logra</strong> <span>учебник</span>
         </a>
         <BookTitle book={book} />
         <div className="learn-views" role="group" aria-label="Что на столе">

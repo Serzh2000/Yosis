@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Check, CircuitBoard, Copy, Folder, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
 import type { ProjectSummary } from '../lib/projects';
 import { Dialog } from './Dialog';
+import { t } from '../lib/i18n';
 
 export function ProjectLibraryDialog({
   projects,
@@ -44,7 +45,7 @@ export function ProjectLibraryDialog({
       await operation();
       setAction(null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Не удалось изменить проект.');
+      setError(cause instanceof Error ? cause.message : t('Не удалось изменить проект.'));
     } finally {
       setBusy(false);
       onBusyChange?.(false);
@@ -61,10 +62,10 @@ export function ProjectLibraryDialog({
     >
       <div className="dialog-heading">
         <Folder size={21} />
-        <h2 id="library-heading">Ваши проекты</h2>
+        <h2 id="library-heading">{t('Ваши проекты')}</h2>
         <button
           className="icon-button"
-          aria-label="Закрыть проекты"
+          aria-label={t('Закрыть проекты')}
           disabled={busy}
           onClick={onClose}
         >
@@ -92,14 +93,14 @@ export function ProjectLibraryDialog({
             {action.kind === 'delete'
               ? `Удалить «${action.project.name}»?`
               : action.kind === 'rename'
-                ? 'Переименовать проект'
+                ? t('Переименовать проект')
                 : 'Создать копию проекта'}
           </h3>
           {action.kind === 'delete' ? (
-            <p>Исходники этого проекта будут удалены из библиотеки браузера.</p>
+            <p>{t('Исходники этого проекта будут удалены из библиотеки браузера.')}</p>
           ) : (
             <label>
-              Название
+              {t('Название')}
               <input
                 autoFocus
                 maxLength={100}
@@ -120,14 +121,14 @@ export function ProjectLibraryDialog({
                 setError('');
               }}
             >
-              Отмена
+              {t('Отмена')}
             </button>
             <button type="submit" className="button primary" disabled={busy}>
               {action.kind === 'delete'
-                ? 'Удалить проект'
+                ? t('Удалить проект')
                 : action.kind === 'rename'
-                  ? 'Сохранить название'
-                  : 'Создать копию'}
+                  ? t('Сохранить название')
+                  : t('Создать копию')}
             </button>
           </div>
         </form>
@@ -153,12 +154,12 @@ export function ProjectLibraryDialog({
                     key={kind}
                     title={
                       kind === 'rename'
-                        ? 'Переименовать'
+                        ? t('Переименовать')
                         : kind === 'duplicate'
-                          ? 'Создать копию'
-                          : 'Удалить'
+                          ? t('Создать копию')
+                          : t('Удалить')
                     }
-                    aria-label={`${kind === 'rename' ? 'Переименовать' : kind === 'duplicate' ? 'Создать копию' : 'Удалить'} ${saved.name}`}
+                    aria-label={`${kind === 'rename' ? t('Переименовать') : kind === 'duplicate' ? t('Создать копию') : t('Удалить')} ${saved.name}`}
                     onClick={() => {
                       setAction({ kind, project: saved });
                       setName(
@@ -179,7 +180,7 @@ export function ProjectLibraryDialog({
               </div>
             </div>
           ))}
-          {!projects.length && <p>Создайте первый проект.</p>}
+          {!projects.length && <p>{t('Создайте первый проект.')}</p>}
         </div>
       )}
       {error && (
@@ -191,11 +192,11 @@ export function ProjectLibraryDialog({
         <div className="dialog-actions">
           <button className="button subtle" disabled={busy} onClick={onImport}>
             <Upload size={15} />
-            Импорт JSON
+            {t('Импорт JSON')}
           </button>
           <button className="button primary" disabled={busy} onClick={onCreate}>
             <Plus size={16} />
-            Новый проект
+            {t('Новый проект')}
           </button>
         </div>
       )}

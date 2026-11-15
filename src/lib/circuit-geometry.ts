@@ -100,6 +100,12 @@ function localLayout(spec: SymbolSpec, pins: CircuitPin[]) {
         (spec.detail ?? '').length / 1.4,
       );
       width = Math.max(100, Math.ceil((longest * 9 + 60) / 10) * 10);
+      // Подпись и параметры стоят по центру, имена выводов — по краям: вместе они не должны сливаться.
+      const sideNames = (group: CircuitPin[]) =>
+        Math.max(0, ...group.map((pin) => pin.name.length)) * 7 + 10;
+      const side = Math.max(sideNames(inputs), sideNames(outputs));
+      const centre = Math.max(spec.label.length * 9, (spec.detail ?? '').length * 7) + 8;
+      width = Math.max(width, Math.ceil((2 * side + centre) / 10) * 10);
       height = Math.max(count * 20 + 20, spec.detail ? 60 : 40);
     }
   }

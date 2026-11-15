@@ -18,7 +18,8 @@ export function sanitizeSdc(source: string): { text: string; skipped: string[] }
     }
     const period = /-period\s+([0-9.]+)/.exec(line)?.[1];
     const target = /\[\s*get_(ports|nets)\s+(?:\{([^}]+)\}|([^\s\]]+))\s*\]/.exec(line);
-    if (!period || !target) {
+    // «1.2.3», «.» or a zero period would make nextpnr stop with an error of its own.
+    if (!period || !(Number(period) > 0) || !target) {
       skipped.push(line);
       continue;
     }
@@ -86,9 +87,14 @@ interface PllCell {
 function parameterValue(value: string | number | undefined, fallback: number): number {
   if (value === undefined) return fallback;
   if (typeof value === 'number') return value;
-  const text = value.trim();
-  return /^[01]{32}$/.test(text) ? parseInt(text, 2) : Number.parseFloat(text) || fallback;
+  // Yosys writes an integer as binary digits of any width (parameter widths are not always 32) and
+  // a text that looks binary with a trailing space, so that the two can be told apart.
+  if (/^[01]+$/.test(value)) return parseInt(value, 2);
+  return Number.parseFloat(value.trim()) || fallback;
 }
+
+const isTrue = (value: string | number | undefined) =>
+  typeof value === 'string' && value.trim().toLowerCase() === 'true';
 
 /**
  * nextpnr checks every clock net against one target (`--freq`, the 27 MHz oscillator). The
@@ -114,14 +120,21 @@ export function pllClockConstraints(
   const lines: string[] = [];
   for (const cell of Object.values(module.cells as Record<string, PllCell>)) {
     if (cell.type !== 'rPLL') continue;
-    const input = parameterValue(cell.parameters.FCLKIN, 27);
-    const out =
-      (input * (parameterValue(cell.parameters.FBDIV_SEL, 0) + 1)) /
-      (parameterValue(cell.parameters.IDIV_SEL, 0) + 1);
+    // The dividers set by ports at run time cannot be known here: no clock is claimed for them.
+    if (isTrue(cell.parameters.DYN_IDIV_SEL) || isTrue(cell.parameters.DYN_FBDIV_SEL)) continue;
+    const input = parameterValue(cell.parameters.FCLKIN, 100);
+    const out = isTrue(cell.parameters.CLKOUT_BYPASS)
+      ? input
+      : (input * (parameterValue(cell.parameters.FBDIV_SEL, 0) + 1)) /
+        (parameterValue(cell.parameters.IDIV_SEL, 0) + 1);
+    // The post-divider parameter of the primitive is DYN_SDIV_SEL (2 by default), not SDIV_SEL.
+    const divided = isTrue(cell.parameters.CLKOUTD_BYPASS)
+      ? out
+      : out / Math.max(2, parameterValue(cell.parameters.DYN_SDIV_SEL, 2));
     const outputs: [string, number][] = [
       ['CLKOUT', out],
-      ['CLKOUTP', out],
-      ['CLKOUTD', out / Math.max(2, parameterValue(cell.parameters.SDIV_SEL, 2))],
+      ['CLKOUTP', isTrue(cell.parameters.CLKOUTP_BYPASS) ? input : out],
+      ['CLKOUTD', divided],
       ['CLKOUTD3', out / 3],
     ];
     for (const [pin, mhz] of outputs) {

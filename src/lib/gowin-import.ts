@@ -47,7 +47,7 @@ export function guessTop(sources: string[]): string | undefined {
 }
 
 /**
- * Turns a folder with a project of the vendor's IDE (Gowin EDA, a `.gprj` file) into a Yosis
+ * Turns a folder with a project of the vendor's IDE (Gowin EDA, a `.gprj` file) into a Logra
  * project. The `.gprj` names the sources; memory images next to them come along too. A folder
  * without a `.gprj` is taken as it is: every Verilog and constraint file in it.
  */
@@ -88,7 +88,7 @@ export function projectFromFolder(files: FolderFile[], which?: string): Project 
   }));
   if (named.length > MAX_FILES)
     throw new Error(
-      `В проекте ${named.length} файлов, а Yosis принимает не больше ${MAX_FILES}. Уберите из папки лишнее.`,
+      `В проекте ${named.length} файлов, а Logra принимает не больше ${MAX_FILES}. Уберите из папки лишнее.`,
     );
   const config = normal.find((file) => file.path === `${base}impl/project_process_config.json`);
   let top: string | undefined;

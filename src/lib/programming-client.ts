@@ -215,7 +215,7 @@ export class ProgrammingClient {
       typeof data.available !== 'boolean' ||
       typeof data.detail !== 'string'
     )
-      throw new Error('Версия локального помощника несовместима с Yosis.');
+      throw new Error('Версия локального помощника несовместима с Logra.');
     return { ...data, detail: this.redact(data.detail) };
   }
   async devices(signal?: AbortSignal): Promise<ProgrammingDevice[]> {

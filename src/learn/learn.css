@@ -18,7 +18,7 @@
   --face-hi: var(--panel-raised);
   --face-lo: var(--surface);
   --stroke: var(--border);
-  --scrim: #0a1a1580;
+  --scrim: #11121380;
   --ink-line: var(--border);
   --ink-drop: #0000004d;
   --sans: var(--font-ui);
@@ -387,7 +387,7 @@
   place-items: center;
   border: 2px solid var(--key);
   border-radius: 50%;
-  color: #fff;
+  color: var(--surface);
 }
 .lc-task.done .lc-task-mark {
   border-color: var(--ok);
@@ -434,7 +434,7 @@
   place-items: center;
   border: 2px solid var(--rule-strong);
   border-radius: 50%;
-  color: #fff;
+  color: var(--surface);
 }
 .lc-checklist li.on .lc-check-mark {
   background: var(--ok);
@@ -786,7 +786,7 @@
   place-items: center;
   border-radius: 50%;
   background: var(--ok);
-  color: #fff;
+  color: var(--surface);
 }
 .learn-success-kicker {
   color: var(--ok);

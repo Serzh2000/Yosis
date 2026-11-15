@@ -4,6 +4,8 @@
  * the bitstream instead: its pad cell is removed, and logic that read an unplaced input sees
  * a constant zero. Nothing then appears on a pin the pupil did not choose.
  */
+import { blankComments } from '../shared/text-scan';
+
 interface Cell {
   type: string;
   connections: Record<string, (number | string)[]>;
@@ -49,12 +51,19 @@ function withPairs(text: string, pairs: string): string {
  * pins assigned here and as «Unconstrained IO» there. Every statement is rewritten in one form.
  */
 export function canonicalCst(cst: string): string {
-  const text = cst.replace(/^\uFEFF/, '').replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g, '');
-  return [...text.matchAll(/\b(IO_LOC|IO_PORT|CLOCK_LOC|INS_LOC)\s+"([^"]+)"\s+([^;]+);/gi)]
-    .map(
-      (match) => `${match[1].toUpperCase()} "${match[2]}" ${match[3].trim().replace(/\s+/g, ' ')};`,
-    )
-    .join('\n');
+  const text = blankComments(cst.replace(/^\uFEFF/, ''));
+  const out: string[] = [];
+  // Statement by statement, each matched with an anchored pattern: a file of 500 KB of unfinished
+  // statements must not make the server re-read it from every keyword. A forgotten \u00AB;\u00BB ends a
+  // statement at the next keyword, as the vendor's tool reads it.
+  for (const chunk of text.split(';'))
+    for (const piece of chunk.split(/(?=\b(?:IO_LOC|IO_PORT|CLOCK_LOC|INS_LOC)\s+")/i)) {
+      const match = /^(IO_LOC|IO_PORT|CLOCK_LOC|INS_LOC)\s+"([^"\n]+)"\s+(\S[\s\S]*)$/i.exec(
+        piece.trim(),
+      );
+      if (match) out.push(`${match[1].toUpperCase()} "${match[2]}" ${match[3].replace(/\s+/g, ' ')};`);
+    }
+  return out.join('\n');
 }
 
 export function dropUnconstrainedPads(
@@ -65,7 +74,17 @@ export function dropUnconstrainedPads(
   const netlist = JSON.parse(flatJson) as { modules: Record<string, Module> };
   const module = netlist.modules[top];
   if (!module?.ports || !module.cells) return { json: flatJson, dropped: [], cst };
-  const text = canonicalCst(cst);
+  // A one-bit port declared as `x` may be constrained as `x[0]` (the vendor's tool accepts both),
+  // while nextpnr knows only the plain name.
+  const singles = new Set(
+    Object.entries(module.ports)
+      .filter(([, port]) => port.bits.length === 1 && !port.offset)
+      .map(([name]) => name),
+  );
+  const text = canonicalCst(cst).replace(
+    /^(\w+ ")([^"\n]+)\[0\]"/gm,
+    (whole, head: string, name: string) => (singles.has(name) ? `${head}${name}"` : whole),
+  );
   const placed = new Set([...text.matchAll(/\bIO_LOC\s+"([^"]+)"/gi)].map((match) => match[1]));
   // Gowin names a differential pair by its P port only: IO_LOC "p" 33,34. nextpnr reads just the
   // first pin, so the N port (the OB/IB pin of the LVDS buffer) is given its own pin here.
@@ -169,7 +188,7 @@ export function dropUnconstrainedPads(
 
 /** Does the constraint file put a port on one of the pins 52-57 shared with SSPI/flash configuration? */
 export function usesConfigurationPins(cst: string): boolean {
-  const text = cst.replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g, '');
+  const text = canonicalCst(cst);
   return [...text.matchAll(/\bIO_LOC\s+"[^"]+"\s+(\d+)/gi)].some(
     (match) => Number(match[1]) >= 52 && Number(match[1]) <= 57,
   );
@@ -190,7 +209,7 @@ const CONFIGURATION_PINS: Record<number, string> = {
 
 /** Ports the constraint file puts on a pin that belongs to the board's configuration. */
 export function reservedPinsUsed(cst: string): { port: string; pin: number; role: string }[] {
-  const text = cst.replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g, '');
+  const text = canonicalCst(cst);
   return [...text.matchAll(/\bIO_LOC\s+"([^"]+)"\s+(\d+)/gi)]
     .filter((match) => Number(match[2]) in CONFIGURATION_PINS)
     .map((match) => ({

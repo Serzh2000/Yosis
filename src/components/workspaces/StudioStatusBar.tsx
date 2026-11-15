@@ -1,13 +1,14 @@
 import type { BuildResult, ToolchainStatus } from '../../../shared/types';
+import { t } from '../../lib/i18n';
 
 const stages: Record<string, string> = {
-  queued: 'Подготовка',
-  preparing: 'Подготовка проекта',
-  rtl: 'RTL-представление',
-  technology: 'Синтез Gowin',
-  synthesis: 'Синтез Gowin',
-  complete: 'Завершено',
-  finished: 'Завершено',
+  queued: t('Подготовка'),
+  preparing: t('Подготовка проекта'),
+  rtl: t('RTL-представление'),
+  technology: t('Синтез Gowin'),
+  synthesis: t('Синтез Gowin'),
+  complete: t('Завершено'),
+  finished: t('Завершено'),
 };
 
 /** Нижняя строка: готовность инструментов, ход синтеза или состояние сохранения. */
@@ -32,25 +33,25 @@ export function StudioStatusBar({
         <span className={`status-dot ${health?.yosys.available ? 'online' : 'pending'}`} />
         <span>
           {healthLoading
-            ? 'Проверяем инструменты…'
+            ? t('Проверяем инструменты…')
             : health?.yosys.available
-              ? 'Yosys готов'
-              : 'Тулчейн недоступен'}
+              ? t('Yosys готов')
+              : t('Тулчейн недоступен')}
         </span>
         <span className="statusbar-separator" />
         <span>
           {busy
-            ? `${stages[build?.stage || 'queued'] || build?.stage || 'Синтез'}…`
+            ? `${stages[build?.stage || 'queued'] || build?.stage || t('Синтез')}…`
             : saveState === 'saved'
-              ? 'Изменения сохранены в браузере'
+              ? t('Изменения сохранены в браузере')
               : saveState === 'saving'
-                ? 'Сохраняем…'
-                : 'Ошибка сохранения'}
+                ? t('Сохраняем…')
+                : t('Ошибка сохранения')}
         </span>
       </div>
       <div>
         <span>
-          {health?.capabilities.simulation ? 'Icarus Verilog готов' : 'Симулятор недоступен'}
+          {health?.capabilities.simulation ? t('Icarus Verilog готов') : t('Симулятор недоступен')}
         </span>
         <span className="statusbar-separator" />
         <span>Tang Nano 20K · {top}</span>

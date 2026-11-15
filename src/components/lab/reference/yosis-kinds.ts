@@ -5,8 +5,8 @@ import { standaloneKinds, uprightKinds } from './shared/mount';
 
 /**
  * Which model of the reference draws each part of the laboratory. The laboratory's parts keep
- * their own pins and behaviour; only the picture is borrowed: a Yosis LED is the reference's
- * LED module, a Yosis OLED its OLED board, and so on.
+ * their own pins and behaviour; only the picture is borrowed: a Logra LED is the reference's
+ * LED module, a Logra OLED its OLED board, and so on.
  */
 export const LOOKS: Record<string, PartKind> = {
   led: 'ledmod',

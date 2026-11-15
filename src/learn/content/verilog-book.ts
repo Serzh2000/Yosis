@@ -1,4 +1,4 @@
-// The Verilog book is the existing guided course of Yosis, told in the form of a textbook: every
+// The Verilog book is the existing guided course of Logra, told in the form of a textbook: every
 // step becomes a page, a quiz step brings its quiz, a practice step brings the checks of its
 // lesson. Nothing of the course is copied: the book is built from `guidedLessons`, so a lesson
 // edited there changes here too.

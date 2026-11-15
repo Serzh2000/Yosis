@@ -388,7 +388,7 @@ export function startServer() {
     }
     if (stopping) return;
     const address = host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
-    console.log(`Yosis: http://${address}:${port} · ${production ? 'production' : 'API'}`);
+    console.log(`Logra: http://${address}:${port} · ${production ? 'production' : 'API'}`);
     if (process.send && process.connected) process.send('ready');
   });
   let stopping: Promise<void> | undefined;

@@ -450,7 +450,7 @@ export function ProgrammingPanel({
           </div>
           {!usb && (
             <div className="physical-note">
-              WebUSB недоступен. Откройте Yosis через HTTPS или localhost в браузере с WebUSB,
+              WebUSB недоступен. Откройте Logra через HTTPS или localhost в браузере с WebUSB,
               например Chrome или Edge.
             </div>
           )}

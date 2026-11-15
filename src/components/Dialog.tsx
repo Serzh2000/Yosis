@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { getFocusableElements, getFocusLoopTarget } from '../lib/accessibility';
+import { t } from '../lib/i18n';
 
 export interface DialogProps {
   children: ReactNode;
@@ -121,7 +122,7 @@ export function Dialog({
         aria-modal="true"
         tabIndex={-1}
         aria-labelledby={labelledBy ?? (title ? titleId : undefined)}
-        aria-label={!labelledBy && !title ? 'Диалог' : undefined}
+        aria-label={!labelledBy && !title ? t('Диалог') : undefined}
         aria-describedby={descriptionId}
         aria-busy={busy}
         data-dialog="true"

@@ -38,6 +38,7 @@ import { linkVcdSignal } from './lib/signal-link';
 import { readStudioRoute } from './lib/studio-route';
 import { physicalStatus, synthesisStatus } from './lib/studio-status';
 import type { VcdSignal } from './lib/vcd';
+import { t } from './lib/i18n';
 
 type MissionPreview = { id: string; vcd: string; snapshot: string; name: string };
 
@@ -58,7 +59,11 @@ export default function App() {
   const [learningGuide, setLearningGuide] = useState<LearningGuide | null>(null);
   const [missionOpen, setMissionOpen] = useState(false);
   const [missionPreview, setMissionPreview] = useState<MissionPreview | null>(null);
-  const [projectHubOpen, setProjectHubOpen] = useState(false);
+  // A fresh launch starts on the «create a project» window. A reload keeps the project in the
+  // address (?project=…) and goes straight back to the work; a link into a lesson skips it too.
+  const [projectHubOpen, setProjectHubOpen] = useState(
+    !initialRoute.lessonId && !initialRoute.projectId,
+  );
   const [projectHubStart, setProjectHubStart] = useState<string | undefined>();
   const [plannerSignal, setPlannerSignal] = useState('');
   const [logsOpen, setLogsOpen] = useState(false);
@@ -204,7 +209,7 @@ export default function App() {
   };
   const openServer = () => (server.session ? setSyncOpen(true) : setLoginOpen(true));
   const synthesize = () => void startBuild();
-  const serverLabel = server.session ? 'Синхронизация' : 'Войти';
+  const serverLabel = server.session ? t('Синхронизация') : t('Войти');
   const editor: EditorBindings = {
     project,
     setProject,

@@ -26,6 +26,7 @@ import {
 } from '../lib/example-curriculum';
 import { Dialog } from './Dialog';
 import './project-wizard.css';
+import { t } from '../lib/i18n';
 
 export interface ProjectWizardProps {
   onCreate: (project: Project) => void | Promise<void>;
@@ -40,7 +41,7 @@ export interface ProjectWizardProps {
   onBusyChange?: (busy: boolean) => void;
 }
 
-const steps = ['Начало', 'Проект и плата', 'Проверка'];
+const steps = [t('Начало'), t('Проект и плата'), t('Проверка')];
 const beginnerIds = ['button', 'logic', 'counter', 'blank'];
 const pinLabels: Record<string, string> = {
   '4': 'Генератор 27 МГц',
@@ -87,7 +88,7 @@ export function ProjectWizard({
     } catch (value) {
       return {
         project: null,
-        error: value instanceof Error ? value.message : 'Проверьте настройки проекта.',
+        error: value instanceof Error ? value.message : t('Проверьте настройки проекта.'),
       };
     }
   }, [start, name, top, existingNames]);
@@ -124,7 +125,7 @@ export function ProjectWizard({
       await onCreate(createWizardProject(settings, existingNames));
     } catch (value) {
       setCreationError(
-        value instanceof Error ? value.message : 'Не удалось создать проект. Попробуйте ещё раз.',
+        value instanceof Error ? value.message : t('Не удалось создать проект. Попробуйте ещё раз.'),
       );
     } finally {
       setSubmitting(false);
@@ -156,7 +157,7 @@ export function ProjectWizard({
             <CircuitBoard size={23} />
           </div>
           <div>
-            <h2 id="wizard-title">Новый проект</h2>
+            <h2 id="wizard-title">{t('Новый проект')}</h2>
             <p id="wizard-intro">От идеи к схеме и выводам платы</p>
           </div>
           <button
@@ -169,7 +170,7 @@ export function ProjectWizard({
             <X size={18} />
           </button>
         </header>
-        <ol className="wizard-steps" aria-label="Шаги создания проекта">
+        <ol className="wizard-steps" aria-label={t('Шаги создания проекта')}>
           {steps.slice(initialStep).map((title, displayIndex) => {
             const index = displayIndex + initialStep;
             return (
@@ -187,7 +188,7 @@ export function ProjectWizard({
         <section className="wizard-body" aria-labelledby="wizard-step-title">
           <h3 id="wizard-step-title" ref={headingRef} tabIndex={-1}>
             {
-              ['С чего начнём?', 'Как назовём устройство?', 'Всё готово для первого эксперимента'][
+              [t('С чего начнём?'), t('Как назовём устройство?'), t('Всё готово для первого эксперимента')][
                 step
               ]
             }
@@ -216,7 +217,7 @@ export function ProjectWizard({
                       <span>
                         <strong>{item.title}</strong>
                         <small>{item.description}</small>
-                        {id === 'button' && <em>Для первого знакомства</em>}
+                        {id === 'button' && <em>{t('Для первого знакомства')}</em>}
                       </span>
                       <span className="wizard-selection">
                         {start === id && <Check size={13} />}
@@ -227,7 +228,7 @@ export function ProjectWizard({
               </div>
               <label className="wizard-field-label" htmlFor="wizard-example">
                 <BookOpen size={14} />
-                Ещё примеры
+                {t('Ещё примеры')}
               </label>
               <select
                 id="wizard-example"
@@ -269,71 +270,96 @@ export function ProjectWizard({
                 Название видно в списке проектов. Верхний модуль — точка входа вашей схемы; обычно
                 его называют top.
               </p>
-              <div className="wizard-fields">
-                <div>
-                  <label htmlFor="wizard-project-name">Название проекта</label>
-                  <input
-                    id="wizard-project-name"
-                    value={name}
-                    maxLength={100}
-                    disabled={busy}
-                    aria-invalid={Boolean(fieldErrors.name)}
-                    aria-describedby="wizard-name-hint wizard-name-error"
-                    onChange={(event) => {
-                      setName(event.target.value);
-                      setFieldErrors((current) => ({ ...current, name: undefined }));
-                    }}
-                  />
-                  <small id="wizard-name-hint">Любое понятное название, например «Светофор».</small>
-                  {fieldErrors.name && (
-                    <span id="wizard-name-error" className="wizard-field-error" role="alert">
-                      {fieldErrors.name}
+              <div className="wizard-cards">
+                <section className="wizard-card" aria-labelledby="wizard-card-project">
+                  <header className="wizard-card-heading">
+                    <span className="wizard-card-icon" aria-hidden="true">
+                      <FileCode2 size={18} />
                     </span>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="wizard-top-name">Верхний модуль Verilog</label>
-                  <input
-                    id="wizard-top-name"
-                    value={top}
-                    maxLength={128}
-                    spellCheck={false}
-                    autoCapitalize="off"
-                    autoComplete="off"
-                    disabled={busy}
-                    aria-invalid={Boolean(fieldErrors.top)}
-                    aria-describedby="wizard-top-hint wizard-top-error"
-                    onChange={(event) => {
-                      setTop(event.target.value);
-                      setFieldErrors((current) => ({ ...current, top: undefined }));
-                    }}
-                  />
-                  <small id="wizard-top-hint">
-                    Имя модуля устройства. Оно используется при сборке схемы.
-                  </small>
-                  {fieldErrors.top && (
-                    <span id="wizard-top-error" className="wizard-field-error" role="alert">
-                      {fieldErrors.top}
+                    <div>
+                      <h4 id="wizard-card-project">{t('Проект')}</h4>
+                      <p>Как он называется и с какого модуля начинается схема</p>
+                    </div>
+                  </header>
+                  <div className="wizard-fields">
+                    <div>
+                      <label htmlFor="wizard-project-name">{t('Название проекта')}</label>
+                      <input
+                        id="wizard-project-name"
+                        value={name}
+                        maxLength={100}
+                        disabled={busy}
+                        aria-invalid={Boolean(fieldErrors.name)}
+                        aria-describedby="wizard-name-hint wizard-name-error"
+                        onChange={(event) => {
+                          setName(event.target.value);
+                          setFieldErrors((current) => ({ ...current, name: undefined }));
+                        }}
+                      />
+                      <small id="wizard-name-hint">
+                        Любое понятное название, например «Светофор».
+                      </small>
+                      {fieldErrors.name && (
+                        <span id="wizard-name-error" className="wizard-field-error" role="alert">
+                          {fieldErrors.name}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <label htmlFor="wizard-top-name">{t('Верхний модуль Verilog')}</label>
+                      <input
+                        id="wizard-top-name"
+                        value={top}
+                        maxLength={128}
+                        spellCheck={false}
+                        autoCapitalize="off"
+                        autoComplete="off"
+                        disabled={busy}
+                        aria-invalid={Boolean(fieldErrors.top)}
+                        aria-describedby="wizard-top-hint wizard-top-error"
+                        onChange={(event) => {
+                          setTop(event.target.value);
+                          setFieldErrors((current) => ({ ...current, top: undefined }));
+                        }}
+                      />
+                      <small id="wizard-top-hint">
+                        Имя модуля устройства. Оно используется при сборке схемы.
+                      </small>
+                      {fieldErrors.top && (
+                        <span id="wizard-top-error" className="wizard-field-error" role="alert">
+                          {fieldErrors.top}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </section>
+                <section className="wizard-card" aria-labelledby="wizard-card-board">
+                  <header className="wizard-card-heading">
+                    <span className="wizard-card-icon" aria-hidden="true">
+                      <CircuitBoard size={18} />
                     </span>
-                  )}
-                </div>
-              </div>
-              <label className="wizard-field-label" htmlFor="wizard-board">
-                Плата
-              </label>
-              <select id="wizard-board" value="tangnano20k" disabled={busy} onChange={() => {}}>
-                <option value="tangnano20k">Sipeed Tang Nano 20K</option>
-              </select>
-              <div className="wizard-board-info">
-                <CircuitBoard size={25} />
-                <div>
-                  <strong>GW2AR-LV18QN88C8/I7</strong>
-                  <span>27 МГц · 6 LED · 2 кнопки · логические уровни 3,3 В</span>
-                  <small>
-                    В этой версии мастер настроен на Tang Nano 20K. Для неё подготовлены выводы и
-                    параметры сборки.
-                  </small>
-                </div>
+                    <div>
+                      <h4 id="wizard-card-board">{t('Плата')}</h4>
+                      <p>Для неё готовы выводы и параметры сборки</p>
+                    </div>
+                  </header>
+                  <label className="wizard-field-label" htmlFor="wizard-board">
+                    {t('Модель платы')}
+                  </label>
+                  <select id="wizard-board" value="tangnano20k" disabled={busy} onChange={() => {}}>
+                    <option value="tangnano20k">Sipeed Tang Nano 20K</option>
+                  </select>
+                  <div className="wizard-board-info">
+                    <strong>GW2AR-LV18QN88C8/I7</strong>
+                    <ul className="wizard-spec-chips" aria-label={t('Параметры платы')}>
+                      <li>{t('27 МГц')}</li>
+                      <li>{t('6 светодиодов')}</li>
+                      <li>{t('2 кнопки')}</li>
+                      <li>{t('уровни 3,3 В')}</li>
+                    </ul>
+                    <small>{t('В этой версии мастер настроен на Tang Nano 20K.')}</small>
+                  </div>
+                </section>
               </div>
             </>
           )}
@@ -341,23 +367,23 @@ export function ProjectWizard({
             <>
               {preview.project ? (
                 <>
-                  <div className="wizard-review-title">
+                  <div className="wizard-review-title wizard-card">
                     <div>
-                      <span>Проект</span>
+                      <span>{t('Проект')}</span>
                       <strong>{preview.project.name}</strong>
                     </div>
                     <div>
-                      <span>Верхний модуль</span>
+                      <span>{t('Верхний модуль')}</span>
                       <code>{preview.project.top}</code>
                     </div>
                     <div>
-                      <span>Старт</span>
+                      <span>{t('Старт')}</span>
                       <strong>{selected.title}</strong>
                     </div>
                   </div>
                   <div className="wizard-review-grid">
-                    <div>
-                      <h4>Файлы проекта</h4>
+                    <div className="wizard-card">
+                      <h4>{t('Файлы проекта')}</h4>
                       <ul className="wizard-file-list">
                         {preview.project.files.map((file) => (
                           <li key={file.name}>
@@ -365,7 +391,7 @@ export function ProjectWizard({
                             <code>{file.name}</code>
                             <small>
                               {file.name.endsWith('.cst')
-                                ? 'Выводы и электрические уровни'
+                                ? t('Выводы и электрические уровни')
                                 : 'Схема с комментариями'}
                             </small>
                           </li>
@@ -382,35 +408,38 @@ export function ProjectWizard({
                           ? 'Генератор платы подключён к выводу 4. В .cst задан глобальный буфер BUFG.'
                           : 'Выход меняется вслед за входами. Такт для этого примера не нужен.'}
                       </p>
-                      <small>Уровни LVCMOS33 · 3,3 В</small>
+                      <small>{t('Уровни LVCMOS33 · 3,3 В')}</small>
                     </div>
                   </div>
-                  <h4>Порты → физические выводы</h4>
-                  <p className="wizard-pin-help">
-                    Номера ниже относятся к корпусу FPGA. Мастер уже включит эти назначения в .cst.
-                  </p>
-                  <div className="wizard-pin-table-wrap">
-                    <table className="wizard-pin-table">
-                      <thead>
-                        <tr>
-                          <th scope="col">Порт схемы</th>
-                          <th scope="col">Вывод</th>
-                          <th scope="col">На плате</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pins.map((pin) => (
-                          <tr key={pin.signal}>
-                            <td>
-                              <code>{pin.signal}</code>
-                            </td>
-                            <td>{pin.pin}</td>
-                            <td>{pinLabel(pin.pin)}</td>
+                  <section className="wizard-card wizard-ports-card">
+                    <h4>{t('Порты → физические выводы')}</h4>
+                    <p className="wizard-pin-help">
+                      Номера ниже относятся к корпусу FPGA. Мастер уже включит эти назначения в
+                      .cst.
+                    </p>
+                    <div className="wizard-pin-table-wrap">
+                      <table className="wizard-pin-table">
+                        <thead>
+                          <tr>
+                            <th scope="col">{t('Порт схемы')}</th>
+                            <th scope="col">{t('Вывод')}</th>
+                            <th scope="col">{t('На плате')}</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody>
+                          {pins.map((pin) => (
+                            <tr key={pin.signal}>
+                              <td>
+                                <code>{pin.signal}</code>
+                              </td>
+                              <td>{pin.pin}</td>
+                              <td>{pinLabel(pin.pin)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
                   <p className="wizard-final-note">
                     После создания откроется {start === 'schematic' ? 'конструктор' : 'код'}. Затем
                     можно синтезировать схему, запустить диаграммы или виртуальную плату.
@@ -448,10 +477,10 @@ export function ProjectWizard({
               {step > initialStep ? (
                 <>
                   <ArrowLeft size={14} />
-                  Назад
+                  {t('Назад')}
                 </>
               ) : (
-                'Отмена'
+                t('Отмена')
               )}
             </button>
             <button
@@ -460,15 +489,15 @@ export function ProjectWizard({
               disabled={busy || (step === 2 && !preview.project)}
             >
               {submitting ? (
-                'Создаём…'
+                t('Создаём…')
               ) : step === 2 ? (
                 <>
                   <Plus size={15} />
-                  Создать проект
+                  {t('Создать проект')}
                 </>
               ) : (
                 <>
-                  Далее
+                  {t('Далее')}
                   <ArrowRight size={14} />
                 </>
               )}

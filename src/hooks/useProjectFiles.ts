@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import type { Project, SourceFile } from '../../shared/types';
-import { starterCircuit } from '../../shared/schematic';
+import { emptyCircuit } from '../../shared/schematic';
 import { planSchematicAddition } from '../lib/circuit-add';
 import { assignSchematicPins } from '../lib/circuit-board';
 import { canDeleteFile, newFileContent, workTabForFile } from '../lib/file-templates';
@@ -125,7 +125,7 @@ export function useProjectFiles({
     const plan = planSchematicAddition(project);
     if (!plan.ok) return;
     const next = cloneProject(project);
-    const content = JSON.stringify(starterCircuit(), null, 2);
+    const content = JSON.stringify(emptyCircuit(), null, 2);
     next.files.push({ name: plan.fileName, content });
     try {
       next.files = assignSchematicPins(next, content).files;

@@ -76,7 +76,7 @@
 .acct-tabs button[aria-selected='true'] {
   border-color: var(--key-hi, #168f8d);
   background: var(--key, #1aa3a1);
-  color: #fff;
+  color: var(--pad-text);
 }
 .acct-form {
   display: grid;
@@ -143,7 +143,7 @@
 .acct-btn.primary {
   border-color: var(--key-hi, #168f8d);
   background: var(--key, #1aa3a1);
-  color: #fff;
+  color: var(--pad-text);
 }
 .acct-btn.danger {
   border-color: var(--bad, #c2412f);

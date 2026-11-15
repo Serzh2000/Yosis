@@ -186,7 +186,7 @@ export function pasteSelection(
     return fail('в буфере обмена нет схемы.');
   }
   if (clip.format !== CLIPBOARD_FORMAT || clip.version !== 2)
-    return fail('в буфере обмена нет схемы Yosis.');
+    return fail('в буфере обмена нет схемы Logra.');
   // Проверяем фрагмент теми же правилами, что и документ.
   const parsed = parseCircuit(
     JSON.stringify({ format: 'yosis-schematic', version: 2, nodes: clip.nodes, wires: clip.wires }),

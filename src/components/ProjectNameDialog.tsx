@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Dialog } from './Dialog';
+import { t } from '../lib/i18n';
 
 export function ProjectNameDialog({
   name: currentName,
@@ -14,7 +15,7 @@ export function ProjectNameDialog({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   return (
-    <Dialog title="Переименовать проект" onClose={onClose} closeDisabled={busy} busy={busy}>
+    <Dialog title={t('Переименовать проект')} onClose={onClose} closeDisabled={busy} busy={busy}>
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -24,13 +25,13 @@ export function ProjectNameDialog({
           void onConfirm(name)
             .then(onClose)
             .catch((cause) =>
-              setError(cause instanceof Error ? cause.message : 'Проверьте название.'),
+              setError(cause instanceof Error ? cause.message : t('Проверьте название.')),
             )
             .finally(() => setBusy(false));
         }}
       >
         <label>
-          Название
+          {t('Название')}
           <input
             autoFocus
             value={name}
@@ -48,10 +49,10 @@ export function ProjectNameDialog({
         )}
         <div className="dialog-actions">
           <button className="button subtle" type="button" disabled={busy} onClick={onClose}>
-            Отмена
+            {t('Отмена')}
           </button>
           <button className="button primary" disabled={busy} type="submit">
-            Сохранить название
+            {t('Сохранить название')}
           </button>
         </div>
       </form>

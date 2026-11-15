@@ -1,7 +1,7 @@
-/* Design language: the board and its datasheet.
-   Chrome (header, tabs, status bar) is solder mask in both themes; work surfaces are
-   datasheet paper in the light theme and the board itself in the dark one. Gold is the
-   exposed pad: the one thing you press. Wires and signals borrow the trace colour. */
+/* Design language: graphite. Neutral greys in both themes, no tint; the whole interface, header,
+   tabs and status bar included, follows the theme: light grey paper or dark graphite. Amber is
+   the one accent: the thing you press. Colour beyond it only means something (error, success,
+   warning) or belongs to a drawing of a real part. Wires and signals use the neutral trace grey. */
 :root {
   --font-ui: 'Golos Text Variable', 'Golos Text', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
@@ -14,54 +14,56 @@
   -webkit-font-smoothing: antialiased;
   font-size: 14px;
   line-height: 1.5;
-  --chrome: #0c221b;
-  --chrome-raised: #15352b;
-  --chrome-text: #eef5ef;
-  --chrome-soft: #a9c2b6;
-  --chrome-border: #24493c;
+  --chrome: #f6f7f8;
+  --chrome-raised: #e6e9ec;
+  --chrome-text: #17191c;
+  --chrome-soft: #596169;
+  --chrome-border: #d5d9de;
   --pad: #e8b93a;
   --pad-strong: #f4cb5c;
   --pad-text: #1e1803;
-  --trace: #2c9c78;
-  --surface: #eef1ee;
+  --trace: #5d6772;
+  --surface: #eceef0;
   --panel: #ffffff;
-  --canvas: #f8faf8;
-  --panel-raised: #e4eae6;
-  --text: #12241d;
-  --text-soft: #3f5249;
-  --muted: #55685f;
-  --border: #cfd8d2;
-  --accent: #0e6b4e;
-  --accent-strong: #0a5740;
-  --accent-soft: #dcede5;
+  --canvas: #f6f7f8;
+  --panel-raised: #e3e6e9;
+  --text: #17191c;
+  --text-soft: #444a51;
+  --muted: #596169;
+  --border: #cfd3d8;
+  --accent: #8a5f00;
+  --accent-strong: #6e4a00;
+  --accent-soft: #f3ead2;
   --accent-text: #ffffff;
   --danger: #b3362b;
   --danger-soft: #fbe7e3;
   --success: #146640;
-  --warning: #8a5a00;
+  --warning: #b04e00;
   --warning-soft: #fbefd2;
-  --shadow: 0 14px 40px #0c221b1f;
+  --shadow: 0 14px 40px #0c0d0f1f;
   --bg: var(--surface);
   color: var(--text);
   background: var(--surface);
   color-scheme: light;
 }
 :root[data-theme='dark'] {
-  --chrome: #0e211b;
-  --chrome-raised: #1b3a30;
-  --chrome-border: #2b5145;
-  --trace: #57c9a0;
-  --surface: #0e211b;
-  --panel: #14302a;
-  --canvas: #0e211b;
-  --panel-raised: #1d4036;
-  --text: #ebf3ed;
-  --text-soft: #b7cabf;
-  --muted: #9fb5aa;
-  --border: #2b5145;
+  --chrome: #17181a;
+  --chrome-raised: #232528;
+  --chrome-text: #e8eaec;
+  --chrome-soft: #b3b9bf;
+  --chrome-border: #34373b;
+  --trace: #a3adb8;
+  --surface: #141516;
+  --panel: #1c1e20;
+  --canvas: #111213;
+  --panel-raised: #26292c;
+  --text: #e8eaec;
+  --text-soft: #b3b9bf;
+  --muted: #8e959c;
+  --border: #33373b;
   --accent: #e8b93a;
   --accent-strong: #f4cb5c;
-  --accent-soft: #3b3a1c;
+  --accent-soft: #342d1a;
   --accent-text: #1e1803;
   --danger: #f39384;
   --danger-soft: #472621;
@@ -1386,7 +1388,7 @@ kbd {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: #11140db3;
+  background: #0c0d0eb3;
   backdrop-filter: blur(5px);
   display: grid;
   place-items: center;
@@ -2400,4 +2402,52 @@ kbd {
   .app-statusbar {
     padding-inline: 10px;
   }
+}
+
+.generated-verilog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+  padding: 18px 22px;
+}
+.generated-verilog-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.generated-verilog-head h2 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+.generated-verilog-head p {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--text-soft);
+  font-size: 13px;
+}
+.generated-verilog-actions {
+  display: flex;
+  gap: 8px;
+}
+.generated-verilog-text {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 14px 16px;
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font: 13px/1.6 'JetBrains Mono Variable', 'JetBrains Mono', Consolas, monospace;
+  tab-size: 4;
+}
+.generated-verilog-empty {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 13px;
 }

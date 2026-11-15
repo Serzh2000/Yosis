@@ -20,6 +20,7 @@ import { ProjectLibraryDialog } from './ProjectLibraryDialog';
 import { ProjectWizard } from './ProjectWizard';
 import { examples } from '../lib/examples';
 import './project-hub.css';
+import { t } from '../lib/i18n';
 
 export interface ProjectHubProps {
   /** Saving projects and progress on the server lives with the other project actions. */
@@ -68,7 +69,7 @@ export function ProjectHub(props: ProjectHubProps) {
       await action();
       setMessage(success);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Не удалось выполнить действие.');
+      setError(cause instanceof Error ? cause.message : t('Не удалось выполнить действие.'));
     } finally {
       setBusy(false);
     }
@@ -87,16 +88,16 @@ export function ProjectHub(props: ProjectHubProps) {
         <Folder size={22} />
         <div>
           <h2 id="project-hub-heading" ref={heading} tabIndex={-1}>
-            Проекты
+            {t('Проекты')}
           </h2>
-          <p>Создайте своё устройство или продолжите сохранённое</p>
+          <p>{t('Создайте своё устройство или продолжите сохранённое')}</p>
         </div>
-        <nav className="project-hub-nav" aria-label="Разделы проектов">
+        <nav className="project-hub-nav" aria-label={t('Разделы проектов')}>
           {(
             [
-              ['create', 'Создание', Plus],
-              ['library', 'Мои проекты', Folder],
-              ['current', 'Текущий проект', Save],
+              ['create', t('Создание'), Plus],
+              ['library', t('Мои проекты'), Folder],
+              ['current', t('Текущий проект'), Save],
             ] as const
           ).map(([id, label, Icon]) => (
             <button
@@ -112,13 +113,13 @@ export function ProjectHub(props: ProjectHubProps) {
           {props.onServer && (
             <button disabled={busy} onClick={props.onServer}>
               <CloudUpload size={16} aria-hidden="true" />
-              {props.serverLabel ?? 'Синхронизация'}
+              {props.serverLabel ?? t('Синхронизация')}
             </button>
           )}
         </nav>
         <button
           className="icon-button"
-          aria-label="Закрыть проекты"
+          aria-label={t('Закрыть проекты')}
           disabled={busy}
           onClick={props.onClose}
         >
@@ -145,32 +146,32 @@ export function ProjectHub(props: ProjectHubProps) {
           ) : catalog ? (
             <ExamplesDialog
               embedded
-              chooseLabel="Выбрать этот пример"
+              chooseLabel={t('Выбрать этот пример')}
               onClose={() => setCatalog(false)}
               onChoose={setStart}
             />
           ) : (
             <section className="project-hub-start">
-              <h3>С чего начнём?</h3>
+              <h3>{t('С чего начнём?')}</h3>
               <p>
-                Все варианты создают отдельный проект. Текущие исходники сохранятся в библиотеке.
+                {t('Все варианты создают отдельный проект. Текущие исходники сохранятся в библиотеке.')}
               </p>
               <div className="project-hub-choices">
                 <button data-create-choice onClick={() => setStart('blank')}>
                   <Plus size={28} />
-                  <strong>С нуля</strong>
-                  <span>Напишите Verilog и назначьте физические выводы платы.</span>
+                  <strong>{t('С нуля')}</strong>
+                  <span>{t('Напишите Verilog и назначьте физические выводы платы.')}</span>
                 </button>
                 <button onClick={() => setStart('schematic')}>
                   <CircuitBoard size={28} />
-                  <strong>Из логических элементов</strong>
-                  <span>Соберите схему на холсте. Приложение создаст Verilog для сборки.</span>
+                  <strong>{t('Из логических элементов')}</strong>
+                  <span>{t('Соберите схему на холсте. Приложение создаст Verilog для сборки.')}</span>
                 </button>
                 <button onClick={() => setCatalog(true)}>
                   <BookOpen size={28} />
-                  <strong>На основе примера</strong>
+                  <strong>{t('На основе примера')}</strong>
                   <span>
-                    {examples.length} проектов с комментариями, заданиями и назначенными выводами.
+                    {t('{count} проектов с комментариями, заданиями и назначенными выводами.', { count: examples.length })}
                   </span>
                 </button>
                 <button
@@ -180,8 +181,8 @@ export function ProjectHub(props: ProjectHubProps) {
                   }}
                 >
                   <Upload size={28} />
-                  <strong>Импорт проекта</strong>
-                  <span>Продолжите работу из сохранённого файла JSON.</span>
+                  <strong>{t('Импорт проекта')}</strong>
+                  <span>{t('Продолжите работу из сохранённого файла JSON.')}</span>
                 </button>
                 {props.onImportFolder && (
                   <button
@@ -191,8 +192,8 @@ export function ProjectHub(props: ProjectHubProps) {
                     }}
                   >
                     <FolderOpen size={28} />
-                    <strong>Папка проекта Gowin</strong>
-                    <span>Откройте папку с файлом .gprj или просто с файлами Verilog и .cst.</span>
+                    <strong>{t('Папка проекта Gowin')}</strong>
+                    <span>{t('Откройте папку с файлом .gprj или просто с файлами Verilog и .cst.')}</span>
                   </button>
                 )}
               </div>
@@ -230,11 +231,11 @@ export function ProjectHub(props: ProjectHubProps) {
             <form
               onSubmit={(event) => {
                 event.preventDefault();
-                void run(() => props.onRename(props.project.id!, name), 'Название сохранено.');
+                void run(() => props.onRename(props.project.id!, name), t('Название сохранено.'));
               }}
             >
               <label>
-                Название проекта
+                {t('Название проекта')}
                 <input
                   required
                   maxLength={100}
@@ -244,17 +245,17 @@ export function ProjectHub(props: ProjectHubProps) {
                 />
               </label>
               <button type="submit" className="button subtle" disabled={busy}>
-                Сохранить название
+                {t('Сохранить название')}
               </button>
             </form>
             <div className="project-hub-actions">
               <button
                 className="button subtle"
                 disabled={busy}
-                onClick={() => void run(props.onSave, 'Проект сохранён в браузере.')}
+                onClick={() => void run(props.onSave, t('Проект сохранён в браузере.'))}
               >
                 <Save size={16} />
-                Сохранить сейчас
+                {t('Сохранить сейчас')}
               </button>
               <button
                 className="button subtle"
@@ -263,7 +264,7 @@ export function ProjectHub(props: ProjectHubProps) {
                 }
               >
                 <Download size={16} />
-                Экспорт проекта JSON
+                {t('Экспорт проекта JSON')}
               </button>
               <button
                 className="button subtle"
@@ -275,7 +276,7 @@ export function ProjectHub(props: ProjectHubProps) {
                 }
               >
                 <Link2 size={16} />
-                Ссылка на вкладку
+                {t('Ссылка на вкладку')}
               </button>
               <button
                 className="button subtle"
@@ -283,7 +284,7 @@ export function ProjectHub(props: ProjectHubProps) {
                 onClick={() => downloadText('rtl.json', JSON.stringify(props.build?.rtl, null, 2))}
               >
                 <Download size={16} />
-                Нетлист RTL
+                {t('Нетлист RTL')}
               </button>
               <button
                 className="button subtle"
@@ -293,7 +294,7 @@ export function ProjectHub(props: ProjectHubProps) {
                 }
               >
                 <Download size={16} />
-                Нетлист Gowin
+                {t('Нетлист Gowin')}
               </button>
             </div>
             <p>

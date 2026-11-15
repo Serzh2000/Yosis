@@ -100,7 +100,7 @@ endmodule
 `;
 
 const lcdItems = [
-  ...lcdProgram(['Yosis Lab', 'I2C addr 0x27']),
+  ...lcdProgram(['Logra Lab', 'I2C addr 0x27']),
   "10'h00F; // экран включён, курсор виден и мигает",
 ];
 const lcdI2cSource = `// ЖК-экран 1602 через I²C: текст и мигающий курсор.

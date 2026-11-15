@@ -123,11 +123,11 @@
   fill: #718599;
 }
 .schematic-node.kind-lut .schematic-node-body {
-  fill: #15302b;
-  stroke: #3d8774;
+  fill: #212224;
+  stroke: #5e6166;
 }
 .schematic-node.kind-lut .schematic-node-divider {
-  stroke: #3d8774;
+  stroke: #5e6166;
 }
 .schematic-node.kind-lut .schematic-node-type {
   fill: #7cdeba;
@@ -424,8 +424,8 @@
   align-self: flex-start;
   padding: 4px 7px;
   color: var(--accent, #61d4b3);
-  background: #14332b;
-  border: 1px solid #28594a;
+  background: #222325;
+  border: 1px solid #3e4043;
   border-radius: 5px;
   font-size: 12px;
   font-weight: 650;
@@ -514,9 +514,9 @@
   font-weight: 600;
 }
 .lut-input-toggles button.is-one {
-  border-color: #3e8973;
+  border-color: #606367;
   color: #7cdeba;
-  background: #15322a;
+  background: #222325;
 }
 .lut-live-output {
   display: flex;
@@ -583,10 +583,10 @@
   cursor: pointer;
 }
 .lut-truth-table tbody tr:hover {
-  background: #17262d;
+  background: #212223;
 }
 .lut-truth-table tr.is-active {
-  background: #18352d;
+  background: #252628;
 }
 .lut-truth-table td:first-child {
   color: var(--muted, #8496a9);

@@ -1,5 +1,6 @@
 import { CloudUpload, Folder, HelpCircle, Moon, Play, Plus, Square, Sun } from 'lucide-react';
 import type { Project } from '../../shared/types';
+import { language, switchLanguage, t } from '../lib/i18n';
 
 export function StudioHeader({
   project,
@@ -42,18 +43,18 @@ export function StudioHeader({
       <a
         className="sh-brand"
         href="#"
-        aria-label="Yosis FPGA Studio"
+        aria-label="Logra FPGA Studio"
         onClick={(event) => {
           event.preventDefault();
           onCode();
         }}
       >
         <span className="sh-brand-mark" aria-hidden="true" />
-        <strong>yosis</strong>
+        <strong>logra</strong>
       </a>
-      <div className="project-switcher sh-project" title={project.name || 'Без имени'}>
+      <div className="project-switcher sh-project" title={project.name || t('Без имени')}>
         <Folder size={16} aria-hidden="true" />
-        <span>{project.name || 'Без имени'}</span>
+        <span>{project.name || t('Без имени')}</span>
       </div>
       <div className="sh-actions">
         <button
@@ -61,16 +62,16 @@ export function StudioHeader({
           disabled={busy}
           onClick={onProjectHub}
           data-tour="new-project"
-          aria-label="Создать проект"
-          title="Создание, примеры и сохранённые проекты"
+          aria-label={t('Создать проект')}
+          title={t('Создание, примеры и сохранённые проекты')}
         >
           <Plus size={16} aria-hidden="true" />
-          <span>Создать проект</span>
+          <span>{t('Создать проект')}</span>
         </button>
         {showServer && (
           <button
             className="sh-btn quiet sh-sync"
-            title="Сохранение проектов и учебного прогресса на сервере"
+            title={t('Сохранение проектов и учебного прогресса на сервере')}
             aria-label={serverLabel}
             disabled={busy}
             onClick={onServer}
@@ -80,17 +81,25 @@ export function StudioHeader({
           </button>
         )}
         <button
+          className="sh-btn quiet icon sh-lang"
+          title={t('Язык интерфейса')}
+          aria-label={t('Язык интерфейса')}
+          onClick={() => switchLanguage(language() === 'en' ? 'ru' : 'en')}
+        >
+          {language() === 'en' ? 'RU' : 'EN'}
+        </button>
+        <button
           className="sh-btn quiet icon"
-          title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
-          aria-label={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+          title={theme === 'dark' ? t('Светлая тема') : t('Тёмная тема')}
+          aria-label={theme === 'dark' ? t('Светлая тема') : t('Тёмная тема')}
           onClick={() => onToggleTheme()}
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
         <button
           className="sh-btn quiet icon"
-          title="Как пользоваться IDE"
-          aria-label="Как пользоваться IDE"
+          title={t('Как пользоваться IDE')}
+          aria-label={t('Как пользоваться IDE')}
           onClick={() => onGuide()}
         >
           <HelpCircle size={18} />
@@ -99,7 +108,7 @@ export function StudioHeader({
           (busy ? (
             <button className="sh-btn danger" disabled={submitting} onClick={onCancel}>
               <Square size={13} fill="currentColor" />
-              Остановить
+              {t('Остановить')}
             </button>
           ) : (
             <button
@@ -110,7 +119,7 @@ export function StudioHeader({
               disabled={!synthesisAvailable || healthLoading}
             >
               <Play size={14} fill="currentColor" />
-              Синтезировать<kbd>Ctrl ↵</kbd>
+              {t('Синтезировать')}<kbd>Ctrl ↵</kbd>
             </button>
           ))}
       </div>

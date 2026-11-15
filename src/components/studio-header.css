@@ -387,3 +387,9 @@
     padding: 0;
   }
 }
+.sh-btn.sh-lang {
+  min-width: 38px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}

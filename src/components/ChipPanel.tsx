@@ -20,7 +20,7 @@ interface Props {
   onSynthesize?: () => void;
   onResult?: (result: PhysicalResult | null, sourceSnapshot: string) => void;
 }
-const COLORS = ['#db9550', '#7fa47d', '#ca7777', '#a58abd', '#bba36d', '#7caaa2', '#b99a8d'];
+const COLORS = ['#db9550', '#8c9095', '#ca7777', '#a58abd', '#bba36d', '#8f9297', '#b99a8d'];
 const CATEGORIES = ['LUT', 'FF', 'ALU', 'BRAM', 'DSP', 'IO', 'other'] as const;
 function timingRows(report: unknown): { name: string; achieved: number; requested: number }[] {
   if (!report || typeof report !== 'object') return [];

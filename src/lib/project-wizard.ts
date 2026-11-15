@@ -4,7 +4,7 @@ import { examples } from './examples';
 import { moduleDeclarations } from './verilog-modules';
 import { cloneProject, validateProject } from './projects';
 import { markExampleOrigin } from './example-origin';
-import { starterCircuit } from '../../shared/schematic';
+import { emptyCircuit } from '../../shared/schematic';
 import { assignSchematicPins } from './circuit-board';
 
 export interface WizardSettings {
@@ -80,14 +80,14 @@ export const wizardStartingPoints = [
   {
     id: 'schematic',
     title: 'Конструктор логических элементов',
-    description: 'Кнопка S1 → светодиод LED0. Соединяйте элементы без ручного Verilog.',
+    description: 'Чистое поле: берите элементы из библиотеки и соединяйте их без ручного Verilog.',
     project: assignSchematicPins(
       {
         name: 'my-circuit',
         top: 'top',
         board: 'tangnano20k',
         files: [
-          { name: 'top.ysch', content: JSON.stringify(starterCircuit(), null, 2) },
+          { name: 'top.ysch', content: JSON.stringify(emptyCircuit(), null, 2) },
           {
             name: 'board.cst',
             content:
@@ -95,7 +95,7 @@ export const wizardStartingPoints = [
           },
         ],
       } as Project,
-      JSON.stringify(starterCircuit()),
+      JSON.stringify(emptyCircuit()),
     ),
   },
   {

@@ -82,10 +82,12 @@ import {
 import { fullCheck, quickCheck, type ConnectCheck } from '../lib/circuit-connect';
 import { syncBoardConstraints } from '../lib/circuit-board';
 import { canvasPoint, fitCanvas, zoomCanvas, type CanvasView } from '../lib/canvas-view';
-import { CircuitSymbol } from './CircuitSymbol';
+import { CircuitSymbol, type SymbolStyle } from './CircuitSymbol';
+import { localStore, STORAGE_KEYS } from '../lib/storage';
 import { CircuitPalette, BLOCK_DRAG_TYPE } from './CircuitPalette';
 import { CircuitProperties } from './CircuitProperties';
 import './circuit-editor.css';
+import { t } from '../lib/i18n';
 
 type Selection = { nodes: string[]; wires: string[] };
 const noSelection: Selection = { nodes: [], wires: [] };
@@ -137,6 +139,7 @@ interface NodeViewProps {
   pendingPin: string | null;
   targets: Record<string, 'ok' | 'bad'> | null;
   live: Record<string, bigint | null> | null;
+  symbolStyle: SymbolStyle;
   api: NodeApi;
 }
 interface NodeApi {
@@ -166,6 +169,7 @@ const NodeView = memo(function NodeView({
   pendingPin,
   targets,
   live,
+  symbolStyle,
   api,
 }: NodeViewProps) {
   const geo = circuitGeometry(node),
@@ -198,7 +202,7 @@ const NodeView = memo(function NodeView({
           height={geo.height + (node.kind === 'note' ? 12 : 40)}
           rx={8}
         />
-        <CircuitSymbol node={node} hideDetail={bank !== undefined} />
+        <CircuitSymbol node={node} hideDetail={bank !== undefined} style={symbolStyle} />
         {lit && <circle className="led-lit" cx={geo.width - 24} cy={geo.height / 2} r={9} />}
         {bank !== undefined &&
           Array.from({ length: 6 }, (_, bit) => (
@@ -375,7 +379,7 @@ export function CircuitEditor({
     [gallery, setGallery] = useState(false),
     [menu, setMenu] = useState<MenuState | null>(null),
     [tool, setTool] = useState<'select' | 'hand'>('select'),
-    [panels, setPanels] = useState({ palette: true, inspector: true }),
+    [panels, setPanels] = useState({ palette: true, inspector: false }),
     [find, setFind] = useState(''),
     [rename, setRename] = useState<{ id: string; field: 'name' | 'text'; value: string } | null>(
       null,
@@ -395,6 +399,9 @@ export function CircuitEditor({
       check: ConnectCheck | null;
       replace?: string;
     } | null>(null);
+  const [symbolStyle, setSymbolStyle] = useState<SymbolStyle>(() =>
+    localStore.getItem(STORAGE_KEYS.symbolStyle) === 'gost' ? 'gost' : 'ansi',
+  );
   const [preview, setPreview] = useState<{
     on: boolean;
     state: PreviewState;
@@ -410,6 +417,12 @@ export function CircuitEditor({
     pasteCount = useRef(0),
     findIndex = useRef(0),
     fitted = useRef(false);
+
+  // The properties card covers part of the canvas, so it opens when there is something to edit.
+  const hasSelection = selection.nodes.length + selection.wires.length > 0;
+  useEffect(() => {
+    if (hasSelection) setPanels((value) => (value.inspector ? value : { ...value, inspector: true }));
+  }, [hasSelection]);
 
   useEffect(() => {
     if (!notice) return;
@@ -1309,7 +1322,7 @@ export function CircuitEditor({
           clipboardText.current = text;
           pasteText(text);
         } else if (clipboardText.current) pasteText(clipboardText.current);
-        else setMessage('В буфере нет схемы Yosis.');
+        else setMessage('В буфере нет схемы Logra.');
       }}
     >
       <header className="circuit-toolbar" role="toolbar" aria-label="Инструменты конструктора">
@@ -1395,6 +1408,33 @@ export function CircuitEditor({
         )}
         {toolbarButton('Показать всю схему (F)', <Maximize size={16} />, () => fitAll())}
         <span className="toolbar-sep" aria-hidden="true" />
+        <div className="symbol-style-toggle" role="group" aria-label="Стиль обозначений элементов">
+          {(
+            [
+              ['ansi', 'ANSI', 'Вентили привычной формы: И, ИЛИ, НЕ'],
+              [
+                'gost',
+                'ЕСКД',
+                'Прямоугольники с обозначениями &, ≥1, =1 по ГОСТ 2.743 и IEC 60617',
+              ],
+            ] as const
+          ).map(([value, label, hint]) => (
+            <button
+              key={value}
+              type="button"
+              className="button subtle"
+              aria-pressed={symbolStyle === value}
+              title={hint}
+              onClick={() => {
+                setSymbolStyle(value);
+                localStore.setItem(STORAGE_KEYS.symbolStyle, value);
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <span className="toolbar-sep" aria-hidden="true" />
         <button
           type="button"
           className="button subtle"
@@ -1414,11 +1454,11 @@ export function CircuitEditor({
           }
         >
           <Zap size={14} />
-          Предпросмотр
+          {t('Предпросмотр')}
         </button>
         <button type="button" className="button subtle" onClick={() => setGallery(true)}>
           <LayoutTemplate size={14} />
-          Примеры
+          {t('Примеры')}
         </button>
         <button
           type="button"
@@ -1427,23 +1467,23 @@ export function CircuitEditor({
           onClick={() => setCode(!code)}
         >
           <Code2 size={14} />
-          {code ? 'Вернуться к схеме' : 'Verilog'}
+          {code ? t('Вернуться к схеме') : 'Verilog'}
         </button>
         {toolbarButton(
-          'Библиотека элементов',
+          t('Библиотека элементов'),
           <PanelLeft size={16} />,
           () => setPanels((value) => ({ ...value, palette: !value.palette })),
           false,
           panels.palette,
         )}
         {toolbarButton(
-          'Свойства и проблемы',
+          t('Свойства и проблемы'),
           <PanelRight size={16} />,
           () => setPanels((value) => ({ ...value, inspector: !value.inspector })),
           false,
           panels.inspector,
         )}
-        {toolbarButton('Горячие клавиши (?)', <HelpCircle size={16} />, () => setHelp(true))}
+        {toolbarButton(t('Горячие клавиши (?)'), <HelpCircle size={16} />, () => setHelp(true))}
       </header>
       <div className="circuit-instruction">
         <span role="status">{status}</span>
@@ -1570,6 +1610,7 @@ export function CircuitEditor({
                       pendingPin={pending?.node === node.id ? pending.pin : null}
                       targets={targets}
                       live={liveNode ?? null}
+                      symbolStyle={symbolStyle}
                       api={api}
                     />
                   );
@@ -1622,9 +1663,9 @@ export function CircuitEditor({
             </svg>
             {!doc.nodes.length && (
               <div className="circuit-empty">
-                <p>Схема пуста. Выберите элемент в библиотеке слева или откройте готовый пример.</p>
+                <p>{t('Схема пуста. Выберите элемент в библиотеке слева или откройте готовый пример.')}</p>
                 <button type="button" className="button primary" onClick={() => setGallery(true)}>
-                  Открыть примеры
+                  {t('Открыть примеры')}
                 </button>
               </div>
             )}
@@ -1668,7 +1709,7 @@ export function CircuitEditor({
             {menu && (
               <ul className="circuit-menu" role="menu" style={{ left: menu.x, top: menu.y }}>
                 {[
-                  ['Копировать', () => void copy(), !selection.nodes.length],
+                  [t('Копировать'), () => void copy(), !selection.nodes.length],
                   ['Вырезать', () => void copy(true), !selection.nodes.length],
                   ['Вставить', () => void paste(), false],
                   ['Дублировать', duplicate, !selection.nodes.length],
@@ -1689,7 +1730,7 @@ export function CircuitEditor({
                     !selection.nodes.length,
                   ],
                   ['Выделить всё', selectAll, false],
-                  ['Удалить', deleteSelection, !selection.nodes.length && !selection.wires.length],
+                  [t('Удалить'), deleteSelection, !selection.nodes.length && !selection.wires.length],
                 ].map(([label, action, disabled]) => (
                   <li key={label as string} role="none">
                     <button
@@ -1708,14 +1749,15 @@ export function CircuitEditor({
               </ul>
             )}
             <span className="canvas-hint">
-              Рамка — выделение · колесо — масштаб · пробел + мышь — сдвиг
+              {doc.nodes.length} элементов · {doc.wires.length} проводов · рамка — выделение · колесо —
+              масштаб · пробел + мышь — сдвиг
             </span>
           </div>
           {panels.inspector && (
             <aside className="circuit-inspector" aria-label="Свойства и проверка схемы">
               {preview.on && (
                 <section className="preview-panel" aria-label="Предпросмотр значений">
-                  <h3>Предпросмотр</h3>
+                  <h3>{t('Предпросмотр')}</h3>
                   <p>
                     Быстрая проверка в браузере: показывает значения на проводах. Точное
                     моделирование выполняют вкладки «Диаграммы» и «Виртуальная».

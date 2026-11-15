@@ -40,6 +40,8 @@ test('the registry keeps the key names and versions of data already stored in br
       ['railNarrow', 'yosis.nav.rail-narrow.v1'],
       ['realBoardTabs', 'yosis.nav.real-board.v1'],
       ['labView', 'yosis.lab.view.v1'],
+      ['symbolStyle', 'yosis.symbol-style.v1'],
+      ['language', 'yosis.language.v1'],
     ],
   );
   assert.equal(STORAGE_KEYS.labLayout('abc'), 'yosis.lab.v1.abc');

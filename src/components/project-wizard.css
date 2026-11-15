@@ -5,7 +5,7 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: #11140db3;
+  background: #0c0d0eb3;
   backdrop-filter: blur(5px);
 }
 .project-wizard {
@@ -234,15 +234,49 @@
   line-height: 1.7;
   color: var(--danger);
 }
+.wizard-cards {
+  display: grid;
+  gap: 14px;
+}
+.wizard-card {
+  padding: 20px 22px 22px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.wizard-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.wizard-body .wizard-card-heading h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.wizard-card-heading p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.wizard-card-icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
 .wizard-board-info {
-  margin-top: 15px;
-  padding: 17px 16px;
+  margin-top: 14px;
+  padding: 14px 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 9px;
-  display: flex;
-  gap: 12px;
-  color: var(--accent-strong);
 }
 .wizard-board-info strong {
   display: block;
@@ -251,49 +285,71 @@
   font-weight: 500;
   color: var(--text);
 }
-.wizard-board-info span {
-  display: block;
-  margin-top: 7px;
+.wizard-spec-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.wizard-spec-chips li {
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
   font-size: 12px;
   color: var(--text-soft);
-  line-height: 1.7;
+  background: var(--panel);
 }
 .wizard-board-info small {
   display: block;
-  margin-top: 9px;
+  margin-top: 10px;
   font-size: 12px;
   line-height: 1.7;
   color: var(--muted);
 }
 .wizard-review-title {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px 25px;
-  padding: 16px 0 20px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 14px;
+  padding: 0;
 }
 .wizard-review-title > div {
   min-width: 0;
+  padding: 16px 22px 18px;
+}
+.wizard-review-title > div + div {
+  border-left: 1px solid var(--border);
 }
 .wizard-review-title span {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
   font-size: 12px;
   color: var(--muted);
 }
 .wizard-review-title strong,
 .wizard-review-title code {
   display: block;
-  font-size: 12px;
-  font-weight: 550;
+  font-size: 14px;
+  font-weight: 600;
   overflow-wrap: anywhere;
 }
 .wizard-review-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 17px;
-  margin-bottom: 20px;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.wizard-review-grid > .wizard-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.wizard-body .wizard-card > h4 {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
 }
 .wizard-file-list {
   margin: 0;
@@ -471,4 +527,63 @@
 .wizard-final-note {
   font-size: 13px;
   line-height: 1.7;
+}
+
+/* The last step reads as the same cards as the first one. */
+.wizard-file-list li {
+  align-items: center;
+  grid-template-columns: 30px 1fr;
+  gap: 1px 10px;
+  margin-bottom: 14px;
+}
+.wizard-file-list li:last-child {
+  margin-bottom: 0;
+}
+.wizard-file-list li > svg {
+  box-sizing: content-box;
+  width: 16px;
+  height: 16px;
+  padding: 7px;
+  grid-row: span 2;
+  border-radius: 8px;
+  background: var(--accent-soft);
+}
+.wizard-file-list small {
+  grid-column: 2;
+}
+.wizard-clock-note {
+  padding: 20px 22px 22px;
+  border-radius: 12px;
+  background: var(--panel);
+}
+.wizard-clock-note > svg {
+  box-sizing: content-box;
+  padding: 8px;
+  border-radius: 9px;
+  background: var(--accent-soft);
+}
+.wizard-clock-note strong {
+  margin-top: 12px;
+  font-size: 14px;
+}
+.wizard-ports-card .wizard-pin-help {
+  margin: -6px 0 14px;
+}
+.wizard-ports-card .wizard-pin-table-wrap {
+  border-radius: 9px;
+}
+.wizard-final-note {
+  margin: 18px 2px 0;
+}
+@media (max-width: 640px) {
+  .wizard-review-title {
+    grid-template-columns: 1fr;
+  }
+  .wizard-review-title > div + div {
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+  .wizard-review-grid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -35,6 +35,10 @@ export const STORAGE_KEYS = {
   realBoardTabs: 'yosis.nav.real-board.v1',
   /** localStorage: вид стола лаборатории, `{solid: boolean}`: объёмный или вид сверху. */
   labView: 'yosis.lab.view.v1',
+  /** localStorage: стиль обозначений в конструкторе, `'ansi'` или `'gost'`. */
+  symbolStyle: 'yosis.symbol-style.v1',
+  /** localStorage: язык интерфейса, `'ru'` или `'en'`; без значения выбирается по языку браузера. */
+  language: 'yosis.language.v1',
 } as const;
 
 /** Базы IndexedDB (не `Storage`, но тоже часть реестра: имя и версия схемы). */

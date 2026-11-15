@@ -21,12 +21,17 @@ test('wizard creates independent commented projects for every starting point and
     });
     assert.equal(project.top, 'my_device');
     assert.deepEqual(project, validateServerProject(project));
-    const source = materializeCircuitProject(project)
-      .files.filter((file) => /\.(?:v|sv)$/.test(file.name))
-      .map((file) => file.content)
-      .join('\n');
-    assert.equal((source.match(/\bmodule my_device\b/g) ?? []).length, 1, start.id);
-    assert.equal((source.match(/\bmodule top\s*[#(]/g) ?? []).length, 0, start.id);
+    if (start.id === 'schematic') {
+      // The designer starts from an empty canvas: nothing to delete before building.
+      assert.throws(() => materializeCircuitProject(project), /хотя бы один выход/);
+    } else {
+      const source = materializeCircuitProject(project)
+        .files.filter((file) => /\.(?:v|sv)$/.test(file.name))
+        .map((file) => file.content)
+        .join('\n');
+      assert.equal((source.match(/\bmodule my_device\b/g) ?? []).length, 1, start.id);
+      assert.equal((source.match(/\bmodule top\s*[#(]/g) ?? []).length, 0, start.id);
+    }
     const cst = project.files.find((file) => file.name.endsWith('.cst'))!;
     assert.ok(cst.content.includes('//'), start.id);
     assert.deepEqual(

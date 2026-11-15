@@ -7,7 +7,7 @@ import { buildFingerprint, buildIsCurrent, dependenciesAreCurrent } from './buil
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const [nodeMajor, nodeMinor] = process.versions.node.split('.').map(Number);
 if (nodeMajor < 22 || (nodeMajor === 22 && nodeMinor < 13)) {
-  console.error('Для запуска Yosis нужен Node.js 22.13 или новее.');
+  console.error('Для запуска Logra нужен Node.js 22.13 или новее.');
   process.exit(1);
 }
 process.chdir(root);
@@ -60,7 +60,7 @@ async function run(command, args) {
 
 try {
   if (!(await dependenciesAreCurrent(root))) {
-    console.log('Yosis: устанавливаем зависимости по package-lock.json…');
+    console.log('Logra: устанавливаем зависимости по package-lock.json…');
     const args = ['ci', '--include=dev', '--no-audit', '--no-fund'];
     if (process.platform === 'win32') {
       const npm =
@@ -73,7 +73,7 @@ try {
   if (!stopping) {
     const fingerprint = await buildFingerprint(root);
     if (!(await buildIsCurrent(root, fingerprint))) {
-      console.log('Yosis: собираем интерфейс и сервер…');
+      console.log('Logra: собираем интерфейс и сервер…');
       await run(process.execPath, ['scripts/build.mjs']);
     }
   }
@@ -89,7 +89,7 @@ try {
   process.removeListener('message', shutdownMessage);
   if (stopping && process.connected) process.disconnect();
 } catch (error) {
-  console.error(`Yosis не запущен: ${error.message}`);
+  console.error(`Logra не запущен: ${error.message}`);
   process.exitCode = 1;
   process.removeListener('SIGINT', stopBootstrap);
   process.removeListener('SIGTERM', stopBootstrap);

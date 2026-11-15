@@ -11,12 +11,13 @@ import {
 } from 'lucide-react';
 import type { BuildResult, Diagnostic } from '../../shared/types';
 import { downloadText } from '../lib/projects';
+import { t } from '../lib/i18n';
 const statusLabels = {
-  queued: 'В очереди',
-  running: 'Синтез выполняется',
-  success: 'Синтез завершён',
-  error: 'Ошибка сборки',
-  cancelled: 'Сборка отменена',
+  queued: t('В очереди'),
+  running: t('Синтез выполняется'),
+  success: t('Синтез завершён'),
+  error: t('Ошибка сборки'),
+  cancelled: t('Сборка отменена'),
 };
 function formatDuration(ms: number) {
   const seconds = ms / 1000;
@@ -59,7 +60,7 @@ export function BuildLogs({
             }}
           >
             <Terminal size={14} />
-            Журнал сборки
+            {t('Журнал сборки')}
           </button>
           <button
             className={logTab === 'diagnostics' ? 'active' : ''}
@@ -68,7 +69,7 @@ export function BuildLogs({
               setLogsOpen(!logsOpen || logTab !== 'diagnostics');
             }}
           >
-            Диагностика
+            {t('Диагностика')}
             <span className={`diagnostic-count ${diagnosticCount ? 'has-errors' : ''}`}>
               {diagnosticCount}
             </span>
@@ -99,8 +100,8 @@ export function BuildLogs({
           </button>
           <button
             className="icon-button"
-            title={logsOpen ? 'Свернуть журнал' : 'Развернуть журнал'}
-            aria-label={logsOpen ? 'Свернуть журнал' : 'Развернуть журнал'}
+            title={logsOpen ? t('Свернуть журнал') : t('Развернуть журнал')}
+            aria-label={logsOpen ? t('Свернуть журнал') : t('Развернуть журнал')}
             onClick={() => setLogsOpen(!logsOpen)}
           >
             {logsOpen ? <PanelBottomClose size={16} /> : <PanelBottomOpen size={16} />}
@@ -112,8 +113,8 @@ export function BuildLogs({
           {logTab === 'logs' ? (
             <pre ref={logsRef}>
               {build
-                ? build.logs || 'Сборка в очереди. Ожидаем запуск Yosys…'
-                : 'Запустите синтез, чтобы увидеть команды и сообщения Yosys.'}
+                ? build.logs || t('Сборка в очереди. Ожидаем запуск Yosys…')
+                : t('Запустите синтез, чтобы увидеть команды и сообщения Yosys.')}
             </pre>
           ) : (
             <div className="diagnostics-list">
@@ -127,7 +128,7 @@ export function BuildLogs({
                   }
                 >
                   <span className="diagnostic-level">
-                    {diagnostic.severity === 'error' ? 'Ошибка' : 'Предупреждение'}
+                    {diagnostic.severity === 'error' ? 'Ошибка' : t('Предупреждение')}
                   </span>
                   <span className="diagnostic-message">{diagnostic.message}</span>
                   {diagnostic.file && (
@@ -143,10 +144,10 @@ export function BuildLogs({
                   <CheckCheck size={18} />
                   <span>
                     {build?.status === 'error'
-                      ? build.error || 'Подробности доступны в журнале.'
+                      ? build.error || t('Подробности доступны в журнале.')
                       : build
-                        ? 'Ошибки и предупреждения не обнаружены.'
-                        : 'Здесь появятся сообщения сборки.'}
+                        ? t('Ошибки и предупреждения не обнаружены.')
+                        : t('Здесь появятся сообщения сборки.')}
                   </span>
                 </div>
               )}

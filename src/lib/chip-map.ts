@@ -25,7 +25,7 @@ export const chipLayers: { id: ChipLayer; label: string; hint: string; color: st
     id: 'pins',
     label: 'Выводы',
     hint: 'Ячейки ввода-вывода у края кристалла: здесь схема выходит к ножкам микросхемы.',
-    color: '#7caaa2',
+    color: '#6f9fc0',
   },
   {
     id: 'routing',

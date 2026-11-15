@@ -1,4 +1,4 @@
-import { starterCircuit } from '../../shared/schematic';
+import { emptyCircuit } from '../../shared/schematic';
 import type { WorkTab } from './studio-tabs';
 
 /** Вкладка, в которой открывается файл: выводы, конструктор схем или код. */
@@ -17,7 +17,7 @@ export function moduleNameForFile(name: string): string {
 
 /** Содержимое нового файла по расширению. */
 export function newFileContent(name: string): string {
-  if (name.endsWith('.ysch')) return JSON.stringify(starterCircuit(), null, 2);
+  if (name.endsWith('.ysch')) return JSON.stringify(emptyCircuit(), null, 2);
   if (name.endsWith('.cst'))
     return '// IO_LOC "port_name" номер_вывода_FPGA;\n// IO_PORT "port_name" IO_TYPE=LVCMOS33;\n';
   if (/\.(vh|svh)$/.test(name)) return '// Общие параметры и определения Verilog\n';

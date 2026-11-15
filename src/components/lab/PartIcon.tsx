@@ -236,7 +236,7 @@ const ICONS: Record<string, (def: PartDef) => ReactNode> = {
       {[11, 19, 27, 35].map((x, index) => (
         <g key={x}>
           <rect x={x - 2} y="11" width="5" height="14" fill={DARK} />
-          <rect x={x - 2} y={index % 2 ? 19 : 11} width="5" height="6" fill="#f1f3f0" />
+          <rect x={x - 2} y={index % 2 ? 19 : 11} width="5" height="6" fill="#f1f1f2" />
         </g>
       ))}
     </>
@@ -276,14 +276,14 @@ const ICONS: Record<string, (def: PartDef) => ReactNode> = {
     <>
       <rect x="12" y="4" width="24" height="28" rx="3" fill={CHIP} />
       {screen(16, 10, 16, 16)}
-      {text('7', 24, 23, 13, '#f1f3f0')}
+      {text('7', 24, 23, 13, '#f1f1f2')}
       <path d="M24 5l3 3h-6zM24 31l3-3h-6z" fill={GOLD} />
     </>
   ),
   const: () => (
     <>
       <rect x="12" y="8" width="24" height="20" rx="3" fill={CHIP} />
-      {text('1/0', 24, 22, 10, '#f1f3f0')}
+      {text('1/0', 24, 22, 10, '#f1f1f2')}
     </>
   ),
   sensor: (def) => (
@@ -352,8 +352,8 @@ const ICONS: Record<string, (def: PartDef) => ReactNode> = {
   servo: () => (
     <>
       <rect x="10" y="14" width="28" height="18" rx="2" fill="#1f4f8a" />
-      <circle cx="18" cy="14" r="5" fill="#f1f3f0" />
-      <path d="M18 14 36 5" stroke="#f1f3f0" strokeWidth="3.4" strokeLinecap="round" />
+      <circle cx="18" cy="14" r="5" fill="#f1f1f2" />
+      <path d="M18 14 36 5" stroke="#f1f1f2" strokeWidth="3.4" strokeLinecap="round" />
     </>
   ),
   stepper: () => (
@@ -426,7 +426,7 @@ const ICONS: Record<string, (def: PartDef) => ReactNode> = {
   ),
   'bus-lm75': () => (
     <>
-      <rect x="20" y="4" width="8" height="20" rx="4" fill="#f1f3f0" />
+      <rect x="20" y="4" width="8" height="20" rx="4" fill="#f1f1f2" />
       <circle cx="24" cy="27" r="6" fill={RED} />
       <rect x="22.5" y="12" width="3" height="14" fill={RED} />
     </>
@@ -435,7 +435,7 @@ const ICONS: Record<string, (def: PartDef) => ReactNode> = {
   'bus-rtc': () => (
     <>
       <circle cx="24" cy="18" r="13" fill={CHIP} />
-      <circle cx="24" cy="18" r="10" fill="#f1f3f0" />
+      <circle cx="24" cy="18" r="10" fill="#f1f1f2" />
       <path d="M24 18V11M24 18l6 3" stroke={DARK} strokeWidth="2" strokeLinecap="round" />
     </>
   ),
@@ -541,10 +541,10 @@ const ICONS: Record<string, (def: PartDef) => ReactNode> = {
           width="3"
           height="3.4"
           rx="0.6"
-          fill="#f1f3f0"
+          fill="#f1f1f2"
         />
       ))}
-      <rect x="14" y="22" width="20" height="3" rx="0.6" fill="#f1f3f0" />
+      <rect x="14" y="22" width="20" height="3" rx="0.6" fill="#f1f1f2" />
     </>
   ),
 };

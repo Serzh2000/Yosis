@@ -19,6 +19,7 @@ import {
 import { getTabDestination } from '../lib/accessibility';
 import { localStore, STORAGE_KEYS } from '../lib/storage';
 import { studioTabs, type WorkspaceStatus, type WorkTab } from '../lib/studio-tabs';
+import { t } from '../lib/i18n';
 
 export type { WorkspaceStatus };
 const tabIcons: Record<WorkTab, LucideIcon> = {
@@ -36,11 +37,11 @@ const tabIcons: Record<WorkTab, LucideIcon> = {
 export const workspaceTabs: { id: WorkTab; label: string; icon: LucideIcon; caption: string }[] =
   studioTabs.map((item) => ({ ...item, icon: tabIcons[item.id] }));
 const groups: { label: string; tabs: WorkTab[]; collapsible?: boolean }[] = [
-  { label: 'Узнать', tabs: ['lessons'] },
-  { label: 'Создать', tabs: ['code', 'design', 'constraints'] },
-  { label: 'Проверить', tabs: ['rtl', 'simulation', 'virtual'] },
+  { label: t('Узнать'), tabs: ['lessons'] },
+  { label: t('Создать'), tabs: ['code', 'design', 'constraints'] },
+  { label: t('Проверить'), tabs: ['rtl', 'simulation', 'virtual'] },
   // Everything up to the Лаборатория works without a board; these are for the real one.
-  { label: 'Настоящая плата', tabs: ['technology', 'chip', 'board'], collapsible: true },
+  { label: t('Настоящая плата'), tabs: ['technology', 'chip', 'board'], collapsible: true },
 ];
 const savedOpen = () => localStore.getItem(STORAGE_KEYS.realBoardTabs) === '1';
 const statuses = {
@@ -113,7 +114,7 @@ export function StudioNavigation({
     <div className="sh-nav">
       <nav
         className="sh-tabs"
-        aria-label="Рабочие вкладки"
+        aria-label={t('Рабочие вкладки')}
         role="tablist"
         aria-orientation="vertical"
         ref={tabs}
@@ -134,8 +135,8 @@ export function StudioNavigation({
                   aria-expanded={!closed}
                   title={
                     closed
-                      ? 'Показать вкладки для настоящей платы'
-                      : 'Свернуть вкладки настоящей платы'
+                      ? t('Показать вкладки для настоящей платы')
+                      : t('Свернуть вкладки настоящей платы')
                   }
                   onClick={toggle}
                   disabled={!closed && hasTab(group, tab)}
@@ -197,8 +198,8 @@ export function StudioNavigation({
         <button
           type="button"
           className="sh-files sh-rail-toggle"
-          aria-label={narrow ? 'Развернуть меню' : 'Свернуть меню'}
-          title={narrow ? 'Показать названия вкладок' : 'Оставить в меню только значки'}
+          aria-label={narrow ? t('Развернуть меню') : t('Свернуть меню')}
+          title={narrow ? t('Показать названия вкладок') : t('Оставить в меню только значки')}
           aria-pressed={narrow}
           onClick={onToggleNarrow}
         >
@@ -207,14 +208,14 @@ export function StudioNavigation({
           ) : (
             <PanelLeftClose size={17} aria-hidden="true" />
           )}
-          <span>Свернуть меню</span>
+          <span>{t('Свернуть меню')}</span>
         </button>
       )}
       <button
         type="button"
         className={`sh-files ${fileManagerOpen && filesAvailable ? 'active' : ''} ${filesAvailable ? '' : 'unavailable'}`}
-        aria-label="Файлы проекта"
-        title="Показать или скрыть файлы проекта"
+        aria-label={t('Файлы проекта')}
+        title={t('Показать или скрыть файлы проекта')}
         aria-expanded={fileManagerOpen && filesAvailable}
         aria-controls="project-files"
         aria-hidden={filesAvailable ? undefined : true}
@@ -223,7 +224,7 @@ export function StudioNavigation({
         onClick={onToggleFiles}
       >
         <Folder size={17} aria-hidden="true" />
-        <span>Файлы</span>
+        <span>{t('Файлы')}</span>
       </button>
     </div>
   );

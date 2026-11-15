@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import type { Project, SourceFile } from '../../shared/types';
+import { t } from '../lib/i18n';
 
 interface FileTreeNode {
   name: string;
@@ -91,7 +92,7 @@ function FileBranch({
       <button
         className="file-select"
         style={{ paddingLeft: 10 + depth * 12 }}
-        title={`${file.name} · ${isConstraints ? 'открыть назначения выводов' : file.name.endsWith('.ysch') ? 'открыть конструктор' : 'открыть код'}`}
+        title={`${file.name} · ${isConstraints ? t('открыть назначения выводов') : file.name.endsWith('.ysch') ? t('открыть конструктор') : t('открыть код')}`}
         aria-label={`Открыть ${file.name}`}
         aria-current={selected ? 'true' : undefined}
         onClick={() => props.onOpen(file)}
@@ -102,7 +103,7 @@ function FileBranch({
       <div className="file-actions">
         <button
           className="mini-button"
-          title="Переименовать"
+          title={t('Переименовать')}
           aria-label={`Переименовать ${file.name}`}
           onClick={() => props.onRename(file)}
         >
@@ -110,7 +111,7 @@ function FileBranch({
         </button>
         <button
           className="mini-button"
-          title="Удалить"
+          title={t('Удалить')}
           aria-label={`Удалить ${file.name}`}
           disabled={lastSource}
           onClick={() => props.onDelete(file)}
@@ -125,10 +126,10 @@ function FileBranch({
 /** The same project tree stays mounted while workspace tabs change. */
 export function ProjectFiles(props: ProjectFilesProps) {
   return (
-    <aside className="explorer project-files" id="project-files" aria-label="Файлы проекта">
+    <aside className="explorer project-files" id="project-files" aria-label={t('Файлы проекта')}>
       <div className="panel-label">
         <Folder size={15} />
-        <span>Файлы проекта</span>
+        <span>{t('Файлы проекта')}</span>
         <button
           className="mini-button"
           aria-label="Добавить файл"
@@ -151,7 +152,7 @@ export function ProjectFiles(props: ProjectFilesProps) {
         ))}
       </div>
       <label className="section-label" htmlFor="top-module">
-        Верхний модуль
+        {t('Верхний модуль')}
       </label>
       <div className="top-input-wrap">
         <Boxes size={15} />

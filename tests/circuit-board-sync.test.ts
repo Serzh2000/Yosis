@@ -1,10 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { syncBoardConstraints } from '../src/lib/circuit-board';
+import { assignSchematicPins, syncBoardConstraints } from '../src/lib/circuit-board';
 import { createWizardProject } from '../src/lib/project-wizard';
 import { readCst } from '../src/lib/pin-planner';
-import { newCircuitNode, parseCircuit, removeCircuitNodes } from '../shared/schematic';
+import { newCircuitNode, parseCircuit, removeCircuitNodes, starterCircuit } from '../shared/schematic';
 import { genericStarter } from './circuit-fixtures';
+
+/** The wizard starts empty; these tests need the board's button and LED, so they are placed here. */
+const withStarter = (project: ReturnType<typeof createWizardProject>) => {
+  const content = JSON.stringify(starterCircuit(), null, 2);
+  project.files[0].content = content;
+  return assignSchematicPins(project, content);
+};
 
 const pins = (project: Parameters<typeof readCst>[0]) =>
   Object.fromEntries(
@@ -23,8 +30,11 @@ const orphans = (project: Parameters<typeof readCst>[0]) => {
     .map((item) => item.signal);
 };
 
-test('a new schematic project starts on the board button and LED with their pins assigned', () => {
-  const project = createWizardProject({ start: 'schematic', name: 'new', top: 'top' });
+test('a new schematic project starts empty; the board button and LED get their pins when added', () => {
+  const fresh = createWizardProject({ start: 'schematic', name: 'new', top: 'top' });
+  assert.deepEqual(parseCircuit(fresh.files[0].content).nodes, []);
+  assert.deepEqual(pins(fresh), {});
+  const project = withStarter(fresh);
   const doc = parseCircuit(project.files[0].content);
   assert.deepEqual(
     doc.nodes.map((node) => node.kind),
@@ -35,7 +45,7 @@ test('a new schematic project starts on the board button and LED with their pins
 });
 
 test('adding board blocks to the starter keeps one consistent .cst', () => {
-  const project = createWizardProject({ start: 'schematic', name: 'new', top: 'top' });
+  const project = withStarter(createWizardProject({ start: 'schematic', name: 'new', top: 'top' }));
   const before = parseCircuit(project.files[0].content);
   const after = { ...before, nodes: [...before.nodes] };
   for (const [kind, params] of [

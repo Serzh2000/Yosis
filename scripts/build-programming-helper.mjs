@@ -21,6 +21,6 @@ await build({
 });
 await writeFile(
   new URL('README.txt', output),
-  `Yosis local USB helper\n\nRequirements: Node.js 22.12+ and a locally installed Gowin Programmer\n(Windows) or openFPGALoader (Linux/macOS).\n\nRun: node yosis-helper.mjs --allow-origin https://your-yosis-server.example\nFor the local Yosis app, omit --allow-origin.\nPaste the token printed in the terminal into the Connection tab.\nThe helper binds to 127.0.0.1:3211 and supports SRAM programming only.\nRun with --help to see all options.\n`,
+  `Logra local USB helper\n\nRequirements: Node.js 22.12+ and a locally installed Gowin Programmer\n(Windows) or openFPGALoader (Linux/macOS).\n\nRun: node yosis-helper.mjs --allow-origin https://your-yosis-server.example\nFor the local Logra app, omit --allow-origin.\nPaste the token printed in the terminal into the Connection tab.\nThe helper binds to 127.0.0.1:3211 and supports SRAM programming only.\nRun with --help to see all options.\n`,
 );
-console.log('Yosis USB helper: .helper-dist/yosis-helper.mjs (Node.js 22.12+)');
+console.log('Logra USB helper: .helper-dist/yosis-helper.mjs (Node.js 22.12+)');

@@ -16,6 +16,7 @@ import {
   newLibraryNode,
   parseCircuit,
   removeCircuitNode,
+  starterCircuit as realStarter,
   type CircuitDocument,
   type CircuitNode,
   type BlockKind,
@@ -34,7 +35,7 @@ import { getProjectSnapshot } from '../src/lib/projects';
 import { canvasPoint, fitCanvas, zoomCanvas } from '../src/lib/canvas-view';
 import { circuitGeometry, routeWire } from '../src/lib/circuit-geometry';
 import { quickCheck } from '../src/lib/circuit-connect';
-import { syncBoardConstraints } from '../src/lib/circuit-board';
+import { assignSchematicPins, syncBoardConstraints } from '../src/lib/circuit-board';
 import { circuitExamples } from '../shared/circuit-examples';
 
 test('fit includes elements outside the initial canvas and centers their bounds', () => {
@@ -77,8 +78,11 @@ function node(
   return { ...newCircuitNode(emptyCircuit(), kind, params), ...extra };
 }
 test('schematic wizard preserves board contracts and materializes a custom module without overwriting the source', () => {
-  const project = createWizardProject({ start: 'schematic', name: 'Моя схема', top: 'my_device' });
-  assert.equal(project.files[0].name, 'top.ysch');
+  const fresh = createWizardProject({ start: 'schematic', name: 'Моя схема', top: 'my_device' });
+  assert.equal(fresh.files[0].name, 'top.ysch');
+  const content = JSON.stringify(realStarter(), null, 2);
+  fresh.files[0].content = content;
+  const project = assignSchematicPins(fresh, content);
   const snapshot = getProjectSnapshot(project),
     compiled = materializeCircuitProject(project);
   assert.equal(getProjectSnapshot(project), snapshot);

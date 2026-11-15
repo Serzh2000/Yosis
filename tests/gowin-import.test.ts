@@ -13,7 +13,7 @@ const gprj = `<?xml version="1" encoding="UTF-8"?>
   </FileList>
 </Project>`;
 
-test('a Gowin EDA project folder becomes a Yosis project', () => {
+test('a Gowin EDA project folder becomes a Logra project', () => {
   const project = projectFromFolder([
     { path: 'demo/demo.gprj', text: gprj },
     { path: 'demo/src/top.v', text: 'module system(input clk); core u(.clk(clk)); endmodule\n' },

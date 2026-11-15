@@ -160,7 +160,7 @@ export function DebuggerInstaller({ disabled, closeUart, onBusy, onInstalled, on
     const transcript = new RomTranscript();
     journal.current = transcript;
     transcript.note(
-      `Yosis · ${mode}${file ? ' из файла' : ''} · ${debuggerPackage.build} · ${new Date().toISOString()} · ${navigator.userAgent}`,
+      `Logra · ${mode}${file ? ' из файла' : ''} · ${debuggerPackage.build} · ${new Date().toISOString()} · ${navigator.userAgent}`,
     );
     try {
       // The chooser must be opened directly inside the user gesture, before awaiting UART cleanup.

@@ -172,7 +172,7 @@ export function ChipMap({
     // The die: every tile is a separate cell, so the structure is visible at any zoom.
     const gapPx = scale >= 14 ? 1.5 : scale >= 7 ? 1 : 0.5;
     const ioColor = color('--chip-io', '#8a7a4a');
-    const logicColor = color('--chip-logic', '#1d3b33');
+    const logicColor = color('--chip-logic', '#2a2c2e');
     ctx.fillStyle = bg;
     ctx.fillRect(view.x - 2, view.y - 2, (map.maxX + 1) * scale + 4, (map.maxY + 1) * scale + 4);
     for (let x = x0; x <= x1; x++) {

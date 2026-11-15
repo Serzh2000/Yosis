@@ -10,10 +10,42 @@ const REAL_LITERAL =
 
 /** Same length as the source, with comments and strings blanked, so offsets stay valid. */
 function mask(/** @type {string} */ source) {
-  return source.replace(
-    /\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\\n])*"/g,
-    (/** @type {string} */ text) => text.replace(/[^\n]/g, ' '),
-  );
+  // One pass: a regular expression for `/* … */` re-reads the whole file from every unclosed `/*`.
+  const parts = [];
+  const length = source.length;
+  let at = 0;
+  while (at < length) {
+    const char = source[at];
+    const next = source[at + 1];
+    if (char === '/' && next === '/') {
+      let end = source.indexOf('\n', at);
+      if (end < 0) end = length;
+      parts.push(' '.repeat(end - at));
+      at = end;
+    } else if (char === '/' && next === '*') {
+      const close = source.indexOf('*/', at + 2);
+      const end = close < 0 ? length : close + 2;
+      parts.push(source.slice(at, end).replace(/[^\n]/g, ' '));
+      at = end;
+    } else if (char === '"') {
+      let end = at + 1;
+      while (end < length && source[end] !== '"' && source[end] !== '\n')
+        end += source[end] === '\\' ? 2 : 1;
+      if (end < length && source[end] === '"') {
+        parts.push(' '.repeat(end + 1 - at));
+        at = end + 1;
+      } else {
+        parts.push('"');
+        at += 1;
+      }
+    } else {
+      let end = at + 1;
+      while (end < length && source[end] !== '/' && source[end] !== '"') end++;
+      parts.push(source.slice(at, end));
+      at = end;
+    }
+  }
+  return parts.join('');
 }
 
 /**
@@ -88,15 +120,47 @@ export function compatibleProject(
     let slips = 0;
     let plain = 0;
     const masked = mask(integers);
+    // Module boundaries: a name assigned in another module says nothing about this port.
+    const starts = [...masked.matchAll(/\bmodule\b/g)].map((item) => item.index);
+    const ends = [...masked.matchAll(/\bendmodule\b/g)].map((item) => item.index);
+    /** @type {Map<number, Set<string>>} */
+    const assignedIn = new Map();
+    const lastBefore = (/** @type {number[]} */ list, /** @type {number} */ offset) => {
+      let low = 0;
+      let high = list.length;
+      while (low < high) {
+        const middle = (low + high) >> 1;
+        if (list[middle] <= offset) low = middle + 1;
+        else high = middle;
+      }
+      return low - 1;
+    };
+    // Names assigned in the module around `offset`, computed once per module.
+    const assignedNear = (/** @type {number} */ offset) => {
+      const from = starts[lastBefore(starts, offset)] ?? 0;
+      let names = assignedIn.get(from);
+      if (!names) {
+        const after = lastBefore(ends, offset - 1) + 1;
+        const to = ends[after] ?? masked.length;
+        names = new Set(
+          [
+            ...masked
+              .slice(from, to)
+              .matchAll(/\b([A-Za-z_]\w*)\b\s*(?:\[[^\]\n]{0,200}\]\s*)?(?:<=|=(?!=))/g),
+          ].map((item) => item[1]),
+        );
+        assignedIn.set(from, names);
+      }
+      return names;
+    };
     const text = integers.replace(/\binput(\s+reg\b)/g, (match, rest, offset) => {
-      if (mask(integers.slice(0, offset + match.length)).slice(offset) !== match) return match;
+      if (masked.slice(offset, offset + match.length) !== match) return match;
       // Only a port the file assigns can be an output; `input reg d` that is merely read is an
       // input with a stray `reg`, and turning it into an output would leave it without a driver.
       const name = /^\s*(?:\[[^\]]*\]\s*)?([A-Za-z_]\w*)/.exec(
-        masked.slice(offset + match.length),
+        masked.slice(offset + match.length, offset + match.length + 400),
       )?.[1];
-      const assigned =
-        !!name && new RegExp(`\\b${name}\\b\\s*(?:\\[[^\\]]*\\]\\s*)?(?:<=|=(?!=))`).test(masked);
+      const assigned = !!name && assignedNear(offset).has(name);
       if (assigned) {
         slips++;
         return `output${rest}`;

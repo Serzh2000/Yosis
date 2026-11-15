@@ -1,3 +1,5 @@
+import { blankComments } from './text-scan';
+
 /**
  * Имена примитивов Gowin из библиотеки Yosys (cells_sim.v и cells_xtra_gw2a.v). Модуль проекта с таким
  * именем подменяет примитив на первой стадии синтеза, а на второй Yosys падает с «Re-definition of
@@ -157,11 +159,9 @@ export function findPrimitiveModules(
   for (const file of files) {
     if (!/\.(v|sv)$/.test(file.name)) continue;
     // Комментарии заменяются пробелами, чтобы номера строк не сдвинулись.
-    const text = file.content.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (match) =>
-      match.replace(/[^\n]/g, ' '),
-    );
+    const text = blankComments(file.content);
     for (const match of text.matchAll(
-      /^\s*(?:macro)?module\s+(?:automatic\s+|static\s+)?(\w+)/gm,
+      /^[ \t]*(?:macro)?module\s+(?:automatic\s+|static\s+)?(\w+)/gm,
     )) {
       if (!GOWIN_PRIMITIVES.has(match[1])) continue;
       const line = text.slice(0, match.index + match[0].length).split('\n').length;

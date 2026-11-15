@@ -2,6 +2,7 @@ import type { FormEvent } from 'react';
 import { FileCode2, X } from 'lucide-react';
 import type { FileDialogState } from '../../hooks/useProjectFiles';
 import { Dialog } from '../Dialog';
+import { t } from '../../lib/i18n';
 
 /** Окно «Новый файл» / «Переименовать файл». */
 export function FileNameDialog({
@@ -23,13 +24,13 @@ export function FileNameDialog({
         <div className="dialog-heading">
           <FileCode2 size={20} />
           <h2 id="file-dialog-heading">
-            {dialog.kind === 'add' ? 'Новый файл' : 'Переименовать файл'}
+            {dialog.kind === 'add' ? t('Новый файл') : t('Переименовать файл')}
           </h2>
           <button type="button" className="icon-button" aria-label="Закрыть" onClick={onClose}>
             <X size={18} />
           </button>
         </div>
-        <label htmlFor="filename">Имя файла</label>
+        <label htmlFor="filename">{t('Имя файла')}</label>
         <input
           id="filename"
           autoFocus
@@ -48,10 +49,10 @@ export function FileNameDialog({
         )}
         <div className="dialog-actions">
           <button type="button" className="button subtle" onClick={onClose}>
-            Отмена
+            {t('Отмена')}
           </button>
           <button type="submit" className="button primary">
-            {dialog.kind === 'add' ? 'Создать файл' : 'Переименовать'}
+            {dialog.kind === 'add' ? t('Создать файл') : t('Переименовать')}
           </button>
         </div>
       </form>

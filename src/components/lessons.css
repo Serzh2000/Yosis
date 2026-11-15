@@ -2,8 +2,8 @@
   padding: 28px 32px 32px;
   height: 100%;
   overflow: auto;
-  background: var(--canvas, #171a16);
-  color: var(--text, #e7e9e0);
+  background: var(--canvas, #171819);
+  color: var(--text, #e3e4e6);
 }
 .lessons-heading {
   display: flex;
@@ -29,7 +29,7 @@
   margin: 0;
   font-size: 13px;
   line-height: 1.7;
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
 }
 .lessons-progress {
   width: 150px;
@@ -42,17 +42,17 @@
 }
 .lessons-progress strong small {
   font-size: 18px;
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
 }
 .lessons-progress > span {
   display: block;
   margin: 6px 0 10px;
   font-size: 12px;
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
 }
 .lessons-progress > div {
   height: 4px;
-  background: var(--surface, #2b3026);
+  background: var(--surface, #292b2d);
   border-radius: 5px;
   overflow: hidden;
 }
@@ -83,14 +83,14 @@
   text-align: left;
   border: 1px solid var(--border, #32372f);
   border-radius: 10px;
-  background: var(--panel, #21251e);
+  background: var(--panel, #202123);
   transition:
     border-color 0.15s,
     background 0.15s;
 }
 .lesson-card.selected {
   border-color: var(--accent, #b7d978);
-  background: var(--accent-soft, #303c25);
+  background: var(--accent-soft, #2f3032);
 }
 .lesson-number {
   display: grid;
@@ -100,7 +100,7 @@
   flex-shrink: 0;
   font-size: 12px;
   font-family: var(--font-mono);
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
   border: 1px solid var(--border, #32372f);
   border-radius: 6px;
 }
@@ -115,7 +115,7 @@
 }
 .lesson-card > div > small {
   display: block;
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
   font-size: 12px;
   margin: 0 0 7px;
 }
@@ -126,12 +126,12 @@
 }
 .lesson-card p {
   margin: 0 0 13px;
-  color: var(--text-soft, #b6bfae);
+  color: var(--text-soft, #b4b6b9);
   font-size: 12px;
   line-height: 1.65;
 }
 .lesson-meta {
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
   font-size: 12px;
 }
 .lesson-meta b {
@@ -139,7 +139,7 @@
   font-weight: 400;
 }
 .lesson-card > svg {
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
   margin-top: 9px;
 }
 .lesson-card.selected > svg {
@@ -149,7 +149,7 @@
   display: flex;
   gap: 11px;
   padding: 17px 11px;
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
   font-size: 12px;
   line-height: 1.8;
 }
@@ -160,7 +160,7 @@
 .lesson-detail {
   border: 1px solid var(--border, #32372f);
   border-radius: 12px;
-  background: var(--panel, #21251e);
+  background: var(--panel, #202123);
   overflow: hidden;
 }
 .lesson-detail-title {
@@ -181,7 +181,7 @@
 }
 .lesson-detail-title p {
   margin: 0;
-  color: var(--text-soft, #b6bfae);
+  color: var(--text-soft, #b4b6b9);
   font-size: 13px;
   line-height: 1.8;
 }
@@ -203,9 +203,9 @@
   width: 21px;
   height: 21px;
   border-radius: 50%;
-  background: var(--surface, #2b3026);
+  background: var(--surface, #292b2d);
   border: 1px solid var(--border, #32372f);
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
   font-size: 12px;
 }
 .lesson-quiz > p {
@@ -225,34 +225,34 @@
   gap: 9px;
   align-items: center;
   padding: 8px 11px;
-  background: var(--canvas, #171a16);
+  background: var(--canvas, #171819);
   border: 1px solid var(--border, #32372f);
   border-radius: 6px;
   font-size: 12px;
-  color: var(--text-soft, #b6bfae);
+  color: var(--text-soft, #b4b6b9);
 }
 .lesson-quiz button > i {
   width: 12px;
   height: 12px;
-  border: 1px solid var(--muted, #9ca596);
+  border: 1px solid var(--muted, #9a9da1);
   border-radius: 50%;
 }
 .lesson-quiz button.chosen {
-  border-color: var(--muted, #9ca596);
+  border-color: var(--muted, #9a9da1);
 }
 .lesson-quiz button.correct {
-  color: var(--accent, #b7d978);
-  border-color: var(--accent, #b7d978);
-  background: var(--accent-soft, #303c25);
+  color: var(--success, #7fd9a3);
+  border-color: var(--success, #7fd9a3);
+  background: color-mix(in srgb, var(--success) 14%, var(--panel));
 }
 .lesson-quiz .lesson-quiz-feedback {
   margin: 13px 0 0;
-  color: var(--text-soft, #b6bfae);
+  color: var(--text-soft, #b4b6b9);
   font-size: 12px;
   line-height: 1.8;
 }
 .lesson-quiz .lesson-quiz-feedback.correct {
-  color: var(--accent, #b7d978);
+  color: var(--success, #7fd9a3);
 }
 .lesson-open-row {
   display: flex;
@@ -266,7 +266,7 @@
   justify-content: center;
   gap: 8px;
   background: var(--accent, #b7d978);
-  color: var(--accent-contrast, #182113);
+  color: var(--accent-text, #191a1b);
   padding: 10px 13px;
   font-size: 12px;
   font-weight: 600;
@@ -285,7 +285,7 @@
 .lesson-code-step > small {
   display: block;
   font-size: 12px;
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
   line-height: 1.7;
   margin-top: 11px;
 }
@@ -295,7 +295,7 @@
   gap: 6px;
   padding: 0;
   background: transparent;
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
   font-size: 12px;
   margin-top: 16px;
 }
@@ -304,8 +304,8 @@
   padding: 11px 13px;
   border: 1px solid var(--border, #32372f);
   border-radius: 6px;
-  background: var(--canvas, #171a16);
-  color: var(--text-soft, #b6bfae);
+  background: var(--canvas, #171819);
+  color: var(--text-soft, #b4b6b9);
   font-size: 12px;
   line-height: 1.8;
 }
@@ -317,14 +317,14 @@
 }
 .lesson-check-intro p {
   margin: 0;
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
   line-height: 1.8;
   font-size: 12px;
   max-width: 390px;
 }
 .lesson-load-note,
 .lesson-stale {
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
   font-size: 12px;
   margin: 11px 0 0;
   line-height: 1.7;
@@ -344,21 +344,21 @@
 .lesson-truth-table th {
   padding: 10px 12px;
   font-weight: 500;
-  color: var(--muted, #9ca596);
-  background: var(--canvas, #171a16);
+  color: var(--muted, #9a9da1);
+  background: var(--canvas, #171819);
   white-space: nowrap;
 }
 .lesson-truth-table td {
   padding: 10px 12px;
   border-top: 1px solid var(--border, #32372f);
-  color: var(--text-soft, #b6bfae);
+  color: var(--text-soft, #b4b6b9);
 }
 .lesson-truth-table code {
   font-size: 12px;
   white-space: nowrap;
 }
 .lesson-truth-table tr.passed td:last-child {
-  color: var(--accent, #b7d978);
+  color: var(--success, #7fd9a3);
 }
 .lesson-truth-table tr.failed td:nth-last-child(-n + 2) {
   color: var(--danger, #dd8e77);
@@ -369,14 +369,14 @@
   gap: 10px;
   margin-top: 18px;
   padding: 12px 14px;
-  background: var(--canvas, #171a16);
+  background: var(--canvas, #171819);
   border: 1px solid var(--border, #32372f);
   border-radius: 7px;
 }
 .lesson-verdict.passed {
-  color: var(--accent, #b7d978);
-  border-color: var(--accent, #b7d978);
-  background: var(--accent-soft, #303c25);
+  color: var(--success, #7fd9a3);
+  border-color: var(--success, #7fd9a3);
+  background: color-mix(in srgb, var(--success) 14%, var(--panel));
 }
 .lesson-verdict.failed > svg {
   color: var(--danger, #dd8e77);
@@ -390,7 +390,7 @@
 .lesson-verdict span {
   display: block;
   font-size: 12px;
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
 }
 .lesson-progress-state {
   display: flex;
@@ -405,7 +405,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
   background: transparent;
   font-size: 12px;
 }
@@ -425,13 +425,13 @@
   gap: 10px;
   align-items: center;
   justify-content: space-between;
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
   font-size: 12px;
 }
 .lesson-simulation-footnote button {
   font-size: 12px;
   background: transparent;
-  color: var(--muted, #9ca596);
+  color: var(--muted, #9a9da1);
   padding: 0;
   text-decoration: underline;
 }
@@ -443,7 +443,7 @@
   overflow: auto;
   padding: 12px;
   border-radius: 6px;
-  background: var(--canvas, #171a16);
+  background: var(--canvas, #171819);
 }
 @media (max-width: 1200px) {
   .lessons-workspace {

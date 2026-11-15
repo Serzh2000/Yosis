@@ -1,4 +1,14 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+/** The app starts on the projects window; tests close it and open it from the header like a pupil. */
+async function openProjects(page: Page) {
+  const dialog = page.getByRole('dialog', { name: 'Проекты' });
+  if (await dialog.isVisible()) {
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible();
+  }
+  await page.getByRole('button', { name: 'Создать проект', exact: true }).click();
+}
 
 test('create project, inspect RTL, simulate, place and reload the same workspace', async ({
   page,
@@ -6,7 +16,7 @@ test('create project, inspect RTL, simulate, place and reload the same workspace
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
-  await page.getByRole('button', { name: 'Создать проект', exact: true }).click();
+  await openProjects(page);
   const wizard = page.getByRole('dialog', { name: 'Проекты' });
   await expect(wizard).toBeVisible();
   await wizard.getByRole('button', { name: 'На основе примера', exact: false }).click();
@@ -72,7 +82,7 @@ test('create project, inspect RTL, simulate, place and reload the same workspace
   await expect(page.locator('.project-switcher')).toHaveText(projectName);
   const originalId = new URL(page.url()).searchParams.get('project');
   // Server sync is one of the project actions in the «Проекты» window.
-  await page.getByRole('button', { name: 'Создать проект', exact: true }).click();
+  await openProjects(page);
   await page
     .getByRole('dialog', { name: 'Проекты' })
     .getByRole('button', { name: 'Синхронизация', exact: true })
@@ -126,7 +136,7 @@ for (const width of [1024, 1366]) {
       'aria-selected',
       'true',
     );
-    await page.getByRole('button', { name: 'Создать проект', exact: true }).click();
+    await openProjects(page);
     const dialog = page.getByRole('dialog', { name: 'Проекты' });
     await expect(dialog).toBeVisible();
     const bounds = await dialog.boundingBox();
@@ -158,7 +168,7 @@ test('graphical source is editable, reloadable and follows the real synthesis, s
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
-  await page.getByRole('button', { name: 'Создать проект', exact: true }).click();
+  await openProjects(page);
   const wizard = page.getByRole('dialog', { name: 'Проекты' });
   await wizard.getByRole('button', { name: /^Из логических элементов/ }).click();
   const name = `circuit-${Date.now()}`;
@@ -275,4 +285,24 @@ test('laboratory runs the design, puts a part on a breadboard and edits it', asy
     .click();
   await expect(lab.getByText(/Добавьте макетную плату/)).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test('the app starts on the «create a project» window', async ({ page }) => {
+  await page.goto('/');
+  const dialog = page.getByRole('dialog', { name: 'Проекты' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'С чего начнём?' })).toBeVisible();
+});
+
+test('reloading a page with a project open returns to the work, not to the projects window', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('dialog', { name: 'Проекты' }).waitFor();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Проекты' })).not.toBeVisible();
+  await expect(page).toHaveURL(/project=/);
+  await page.reload();
+  await expect(page.getByRole('button', { name: /^Синтезировать/ })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Проекты' })).not.toBeVisible();
 });

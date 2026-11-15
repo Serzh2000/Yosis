@@ -1,9 +1,9 @@
 .chip-map {
   /* Chip-planner palette: dark die, quiet empty logic, a distinct I/O ring. */
   --chip-bg: #06100d;
-  --chip-logic: #17342c;
+  --chip-logic: #242527;
   --chip-io: #6f6335;
-  --chip-empty: #101d19;
+  --chip-empty: #161617;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 270px;
   gap: 12px;

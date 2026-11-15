@@ -466,10 +466,10 @@
   padding: 14px 12px 6px;
 }
 .vb-board {
-  --vb-pcb: #17352b;
-  --vb-pcb-edge: #3f7a63;
+  --vb-pcb: #242628;
+  --vb-pcb-edge: #595c60;
   --vb-silk: #eef4ea;
-  --vb-silk-soft: #b9cfc0;
+  --vb-silk-soft: #c2c4c6;
   position: relative;
   width: 640px;
   height: 292px;
@@ -545,8 +545,8 @@
   display: grid;
   place-items: center;
   border-radius: 4px;
-  background: #101614;
-  border: 1px solid #3d4a44;
+  background: #121314;
+  border: 1px solid #414346;
   color: var(--vb-silk-soft);
   font-size: 12px;
 }
@@ -562,7 +562,7 @@
   justify-content: center;
   gap: 3px;
   border-radius: 6px;
-  background: #0d1210;
+  background: #0f0f10;
   border: 3px solid #5e6a64;
   text-align: center;
 }
@@ -600,11 +600,11 @@
   padding: 5px 9px;
   border-radius: 5px;
   background: #cfd3d6;
-  color: #1c2420;
+  color: #1f2021;
 }
 .vb-crystal span,
 .vb-crystal b {
-  color: #1c2420;
+  color: #1f2021;
   font-weight: 600;
 }
 .vb-crystal b {
@@ -675,7 +675,7 @@
 }
 .vb-led.idle {
   background: transparent;
-  border: 2px dotted #7b8f84;
+  border: 2px dotted #80848a;
 }
 .vb-led.unknown {
   background: repeating-linear-gradient(45deg, #3a2f12 0 4px, #5a4515 4px 8px);
@@ -717,8 +717,8 @@
   justify-content: center;
   gap: 6px;
   border-radius: 8px;
-  background: linear-gradient(#e7eae8, #b9c0bd);
-  color: #17201b;
+  background: linear-gradient(#e8e8e9, #babcbf);
+  color: #1a1b1d;
   font-weight: 700;
   border: 2px solid #55605b;
   box-shadow:
@@ -737,7 +737,7 @@
   min-width: 18px;
   padding: 1px 4px;
   border-radius: 3px;
-  background: #17201b;
+  background: #1a1b1d;
   color: #eef4ea;
   font-family: var(--font-mono);
 }
@@ -851,10 +851,10 @@
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 500;
-  color: #c9d0c8;
+  color: #caccce;
 }
 .vb-pin.power b {
-  color: #7f877d;
+  color: #7d8187;
 }
 .vb-pin.assigned i {
   background: #ffd23f;
@@ -903,7 +903,7 @@
 .vb-board {
   --vb-pcb: #2b2d31;
   --vb-pcb-edge: #45484d;
-  --vb-silk: #f2f3f1;
+  --vb-silk: #f1f2f3;
   width: 740px;
   height: 340px;
   border-radius: 26px;
@@ -1002,7 +1002,7 @@
   bottom: 10px;
   width: 9px;
   height: 9px;
-  background: #f2f3f1;
+  background: #f1f2f3;
 }
 .vb-bl616,
 .vb-chip-b {
@@ -1084,12 +1084,12 @@
   box-shadow: 0 0 0 2px #3b3d42;
 }
 .vb-board .vb-crystal span {
-  color: #d5d7d3;
+  color: #d3d5d7;
   font-weight: 500;
 }
 .vb-crystal b {
   background: #3b3d42;
-  color: #f2f3f1;
+  color: #f1f2f3;
 }
 /* Silk-screen title. */
 .vb-silk {

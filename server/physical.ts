@@ -10,6 +10,7 @@ import { JOB_ID, TERMINAL } from './job-constants';
 import { JobManager, type JobRecord } from './job-manager';
 import { captureTool, stopProcess } from './process-limits';
 import { RequestError, projectHash } from './validation';
+import { fixCarryHeads } from './carry-head';
 import { dropUnconstrainedPads, reservedPinsUsed, usesConfigurationPins } from './unconstrained';
 import { pllClockConstraints, retargetToBufferNets, sanitizeSdc } from './sdc';
 import { workspace } from './paths';
@@ -341,6 +342,12 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
           job,
           `\nПредупреждение: портам ${dropped.join(', ')} не назначен вывод в ${job.result.config.cstFile}. Они не попали в битстрим: выходы никуда не выведены, входы читаются как 0. Назначьте им выводы во вкладке «Выводы», если они нужны.\n`,
         );
+      // A tri-state buffer that did not become TBUF/IOBUF cannot be placed: nextpnr would stop
+      // with a message about an unknown cell type. Say what to do instead.
+      if (flat.includes('"$_TBUF_"'))
+        throw new Error(
+          'Трёхстабильный выход (значение z) остался вне вывода платы: такой буфер можно разместить только на внешнем порту верхнего модуля. Выведите шину на порт (inout или output) или уберите z из внутренней логики.',
+        );
       await writeFile(path.join(job.directory, 'flat.json'), flat);
       // The constraints nextpnr reads: the pupil's file plus pins for the N side of LVDS pairs.
       await writeFile(path.join(job.directory, 'placement.cst'), placedCst, 'utf8');
@@ -402,9 +409,18 @@ export class PhysicalManager extends JobManager<PhysicalResult, PhysicalJob> {
           `\nПредупреждение: схема не успевает на заданной частоте: ${line.replace(/^\s*Info:\s*/, '')}\n`,
         );
       if (TERMINAL.has(job.result.status)) return;
-      job.result.placed = JSON.parse(
+      // Older nextpnr writes a wrong table into the head of some carry chains (apicula #541).
+      const placement = fixCarryHeads(
         await readFile(path.join(job.directory, 'placement.json'), 'utf8'),
-      ) as YosysNetlist;
+      );
+      if (placement.fixed) {
+        await writeFile(path.join(job.directory, 'placement.json'), placement.json, 'utf8');
+        this.appendLog(
+          job,
+          `\nИсправлена таблица в начале цепочки переноса (${placement.fixed}): nextpnr этой версии ставит туда 0x505a, из-за чего результат зависел от места на кристалле.\n`,
+        );
+      }
+      job.result.placed = JSON.parse(placement.json) as YosysNetlist;
       try {
         job.result.report = JSON.parse(
           await readFile(path.join(job.directory, 'timing.json'), 'utf8'),

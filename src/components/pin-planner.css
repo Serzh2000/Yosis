@@ -1269,11 +1269,11 @@
   fill: var(--pad);
 }
 .pin-chip-title {
-  fill: #e8ebe6;
+  fill: #e8e8e9;
   font-weight: 700;
 }
 .pin-chip-subtitle {
-  fill: #a9b0aa;
+  fill: #a9acb0;
 }
 .pin-chip-signal {
   fill: var(--pad);

@@ -40,3 +40,23 @@ test('memory ports and initial contents are not counted as block RAM', () => {
   assert.equal(resourceCategory('$memwr_v2'), 'other');
   assert.equal(resourceCategory('$mem_v2'), 'BRAM');
 });
+
+test('parity cells say which count of ones they detect, LUT names agree in number', () => {
+  assert.equal(cellTitle('$reduce_xor'), 'Число единиц нечётно');
+  assert.equal(cellTitle('$reduce_xnor'), 'Число единиц чётно');
+  assert.equal(cellTitle('LUT1'), 'Таблица LUT на 1 вход');
+  assert.equal(cellTitle('LUT3'), 'Таблица LUT на 3 входа');
+  assert.equal(cellTitle('LUT6'), 'Таблица LUT на 6 входов');
+});
+
+test('vector indices follow the declaration: an offset and a [lo:hi] range', () => {
+  // reg [7:4] q: Yosys lists the bits from the least significant one, offset 4.
+  const offset = { q: { bits: [2, 3, 4, 5], offset: 4 } };
+  assert.equal(describeBits([2, 3], offset), 'q[5:4]');
+  assert.equal(describeBits([3], offset), 'q[5]');
+  assert.equal(describeBits([2, 3, 4, 5], offset), 'q');
+  // wire [0:3] w: bit 0 of the list has the highest index.
+  const upto = { w: { bits: [7, 8, 9, 10], upto: 1 } };
+  assert.equal(describeBits([7], upto), 'w[3]');
+  assert.equal(describeBits([8, 9], upto), 'w[2:1]');
+});

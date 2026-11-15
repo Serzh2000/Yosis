@@ -9,6 +9,8 @@ import {
 } from '../../shared/schematic';
 import { circuitGeometry } from '../lib/circuit-geometry';
 import { CircuitSymbol } from './CircuitSymbol';
+import { EntrySketch } from './EntrySketch';
+import { t } from '../lib/i18n';
 
 export const BLOCK_DRAG_TYPE = 'application/x-yosis-block';
 
@@ -54,8 +56,8 @@ export function CircuitPalette({
     [normalized],
   );
   return (
-    <aside className="circuit-palette" aria-label="Библиотека элементов">
-      <h3>Библиотека</h3>
+    <aside className="circuit-palette" aria-label={t('Библиотека элементов')}>
+      <h3>{t('Библиотека')}</h3>
       <label className="palette-search">
         <Search size={14} aria-hidden="true" />
         <input
@@ -117,7 +119,7 @@ export function CircuitPalette({
           <SymbolPreview entry={hover} />
           <strong>{hover.title}</strong>
           <p>{hover.help}</p>
-          {hover.sketch && <pre aria-label="Таблица истинности">{hover.sketch.join('\n')}</pre>}
+          {hover.sketch && <EntrySketch lines={hover.sketch} />}
         </div>
       )}
     </aside>

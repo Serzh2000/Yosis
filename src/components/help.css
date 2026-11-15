@@ -27,7 +27,7 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: #12150d73;
+  background: #10111273;
   backdrop-filter: blur(3px);
 }
 .help-card {

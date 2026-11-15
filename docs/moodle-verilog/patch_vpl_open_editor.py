@@ -16,7 +16,7 @@ import sys
 
 root = sys.argv[1]
 
-VIEW_MARK = '// Yosis: открыть редактор'
+VIEW_MARK = '// Logra: открыть редактор'
 VIEW_ANCHOR = '\\mod_vpl\\event\\vpl_description_viewed::log($vpl);'
 VIEW_PATCH = (
     VIEW_MARK + ' с условием сразу; описание и настройки: view.php?id=...&info=1\n'
@@ -58,7 +58,7 @@ def patch_menu(text):
         sys.exit('в activity_menu.php не найдена ссылка вкладки «Описание»; версия VPL изменилась')
     return text.replace(MENU_OLD, MENU_NEW, 1)
 
-EDIT_MARK = '// Yosis: редактор на весь экран'
+EDIT_MARK = '// Logra: редактор на весь экран'
 EDIT_ANCHOR = '$vpl->print_footer();'
 EDIT_PATCH = (
     EDIT_MARK + '; выйти: кнопка в панели редактора, отключить: &full=0\n'

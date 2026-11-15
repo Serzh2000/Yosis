@@ -555,7 +555,7 @@ export function compileCircuit(doc: CircuitDocument, top: string): string {
   const ports = doc.nodes.filter((node) => blocks[node.kind].port);
   const portWidth = (node: CircuitNode) => circuitPins(node)[0].width;
   const lines = [
-    '// Создано Yosis из исходной схемы .ysch. Не правьте этот файл: меняйте схему в Конструкторе.',
+    '// Создано Logra из исходной схемы .ysch. Не правьте этот файл: меняйте схему в Конструкторе.',
     '// Каждый элемент схемы описан отдельным разделом с комментарием: так видно, как рисунок превращается в Verilog.',
     `module ${top} (`,
     ports

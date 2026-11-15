@@ -323,7 +323,7 @@
 }
 .waveform-signal-label small > span {
   font-family: inherit;
-  color: #648d9a;
+  color: #7a7e84;
   margin-left: auto;
   flex-shrink: 0;
   font-size: 12px;
@@ -340,9 +340,9 @@
   cursor: crosshair;
 }
 .waveform-track-svg:focus-visible {
-  outline: 1px solid #638d9a;
+  outline: 1px solid #797e84;
   outline-offset: -2px;
-  background: #1d3d4722;
+  background: #30323422;
 }
 .waveform-grid-line {
   stroke: #293d4d;
@@ -358,7 +358,7 @@
 .waveform-bus path {
   stroke: #77c9ba;
   stroke-width: 1.1;
-  fill: #284f4c3d;
+  fill: #393b3e3d;
 }
 .waveform-bus text {
   fill: #a8d7cb;
@@ -459,7 +459,7 @@
   width: 100%;
   min-width: 0;
   height: 3px;
-  accent-color: #659a8a;
+  accent-color: #7a7f85;
   margin: 0;
 }
 .waveform-pan-slider:disabled {

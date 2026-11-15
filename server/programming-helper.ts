@@ -460,7 +460,7 @@ export function parseProgrammingHelperArguments(args: readonly string[]) {
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
   if (process.argv.includes('--help') || process.argv.includes('-h')) {
-    console.log(`Yosis USB helper · загрузка Tang Nano 20K в SRAM
+    console.log(`Logra USB helper · загрузка Tang Nano 20K в SRAM
 
 Запуск: node yosis-helper.mjs [параметры]
   --port 3211                  Локальный порт (127.0.0.1)
@@ -481,7 +481,7 @@ if (isMain) {
   const token = randomBytes(32).toString('hex');
   const { app, manager } = createProgrammingHelperApp({ ...config, adapter, token });
   const server = app.listen(config.port, '127.0.0.1', () => {
-    console.log(`Yosis USB helper: http://127.0.0.1:${config.port}`);
+    console.log(`Logra USB helper: http://127.0.0.1:${config.port}`);
     console.log(`Токен подключения: ${token}`);
     console.log(`Разрешённые origin: ${config.allowedOrigins.join(', ')}`);
     console.log('Режим: SRAM. После отключения питания восстанавливается программа из flash.');

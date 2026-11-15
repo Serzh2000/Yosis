@@ -237,7 +237,7 @@ test('the clock a PLL makes is checked at its own frequency, worked out from its
               FCLKIN: '27',
               IDIV_SEL: '00000000000000000000000000001000',
               FBDIV_SEL: '00000000000000000000000000011111',
-              SDIV_SEL: '00000000000000000000000000000100',
+              DYN_SDIV_SEL: '00000000000000000000000000000100',
             },
             connections: { CLKOUT: [5], CLKOUTD: [6], CLKOUTP: [7] },
           },
@@ -246,7 +246,7 @@ test('the clock a PLL makes is checked at its own frequency, worked out from its
       },
     },
   });
-  // 27 MHz × 32 / 9 = 96 MHz; CLKOUTD divides by SDIV_SEL = 4 → 24 MHz; CLKOUTP has no name.
+  // 27 MHz × 32 / 9 = 96 MHz; CLKOUTD divides by DYN_SDIV_SEL = 4 → 24 MHz; CLKOUTP has no name.
   assert.equal(
     pllClockConstraints(flat, 'top', new Set()),
     'create_clock -name fast -period 10.417 [get_nets {fast}]\ncreate_clock -name slow -period 41.667 [get_nets {slow}]\n',
@@ -256,4 +256,26 @@ test('the clock a PLL makes is checked at its own frequency, worked out from its
     'create_clock -name slow -period 41.667 [get_nets {slow}]\n',
     'a clock the pupil already constrained is left alone',
   );
+});
+
+test('rPLL: parameters of any binary width, the library default of FCLKIN, bypass and run-time dividers', () => {
+  const flat = (parameters: Record<string, string>) =>
+    JSON.stringify({
+      modules: {
+        top: {
+          cells: { pll: { type: 'rPLL', parameters, connections: { CLKOUT: [5] } } },
+          netnames: { fast: { bits: [5] } },
+        },
+      },
+    });
+  const period = (parameters: Record<string, string>) =>
+    /-period ([\d.]+)/.exec(pllClockConstraints(flat(parameters), 'top', new Set()))?.[1];
+  // 6-bit values (not 32): 27 × (3+1) / (1+1) = 54 MHz.
+  assert.equal(period({ FCLKIN: '27', IDIV_SEL: '000001', FBDIV_SEL: '000011' }), '18.519');
+  // The library default of FCLKIN is 100 MHz, not the 27 MHz of the board's oscillator.
+  assert.equal(period({ IDIV_SEL: '0', FBDIV_SEL: '0' }), '10.000');
+  // Bypass passes the input through.
+  assert.equal(period({ FCLKIN: '27', FBDIV_SEL: '11', CLKOUT_BYPASS: 'true' }), '37.037');
+  // Dividers that a port sets at run time are unknown: no clock is claimed.
+  assert.equal(pllClockConstraints(flat({ FCLKIN: '27', DYN_FBDIV_SEL: 'true' }), 'top', new Set()), '');
 });

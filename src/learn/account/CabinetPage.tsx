@@ -28,7 +28,7 @@ export function CabinetFrame({
   const account = useAccount();
   useEffect(() => {
     const previous = document.title;
-    document.title = `${title} — Yosis`;
+    document.title = `${title} — Logra`;
     return () => {
       document.title = previous;
     };

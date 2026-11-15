@@ -165,3 +165,18 @@ test('a byte-order mark at the start of a source file is removed', () => {
   ) as { files: { content: string }[] };
   assert.equal(project.files[0].content, 'module top; endmodule');
 });
+
+test('a one-bit port constrained as x[0] is read as x by nextpnr', () => {
+  const flat = JSON.stringify({
+    modules: {
+      top: {
+        ports: { led: { direction: 'output', bits: [3] } },
+        cells: { o: { type: 'OBUF', connections: { I: [4], O: [3] } } },
+      },
+    },
+  });
+  const result = dropUnconstrainedPads(flat, 'IO_LOC "led[0]" 10;', 'top');
+  assert.deepEqual(result.dropped, []);
+  assert.match(result.cst, /IO_LOC "led" 10;/);
+  assert.doesNotMatch(result.cst, /led\[0\]/);
+});

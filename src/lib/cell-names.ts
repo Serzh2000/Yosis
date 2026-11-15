@@ -23,8 +23,8 @@ const titles: Record<string, string> = {
   $reduce_and: 'Все биты равны 1',
   $reduce_or: 'Хотя бы один бит равен 1',
   $reduce_bool: 'Хотя бы один бит равен 1',
-  $reduce_xor: 'Чётность битов',
-  $reduce_xnor: 'Нечётность битов',
+  $reduce_xor: 'Число единиц нечётно',
+  $reduce_xnor: 'Число единиц чётно',
   $eq: 'Сравнение «равно»',
   $ne: 'Сравнение «не равно»',
   $lt: 'Сравнение «меньше»',
@@ -77,7 +77,10 @@ export function cellTitle(type: string): string {
   const known = titles[type];
   if (known) return known;
   const lut = /^LUT([1-8])$/.exec(type);
-  if (lut) return `Таблица LUT на ${lut[1]} входа`;
+  if (lut) {
+    const count = Number(lut[1]);
+    return `Таблица LUT на ${count} ${count === 1 ? 'вход' : count < 5 ? 'входа' : 'входов'}`;
+  }
   if (/^MUX2_LUT[5-8]$/.test(type)) return `Мультиплексор ${type.slice(5)}`;
   if (/^DFF/.test(type)) return `Триггер ${type}`;
   if (/^(?:SP|SPX9|SDP|SDPX9|DP|DPX9|DPB|DPX9B|SDPB|SDPX9B|pROM|pROMX9|ROM|ROMX9)$/.test(type))
@@ -114,6 +117,10 @@ export function parameterLabel(name: string): string {
 interface NamedNet {
   bits: Bit[];
   hide_name?: number;
+  /** Index of the least significant bit of a vector declared `[hi:lo]` with lo ≠ 0. */
+  offset?: number;
+  /** The vector is declared `[lo:hi]`: bit 0 has the highest index. */
+  upto?: number;
 }
 
 /**
@@ -165,13 +172,17 @@ export function describeBits(bits: Bit[], netnames: Record<string, NamedNet> = {
       index = end + 1;
       continue;
     }
-    const total = named.find(([name]) => name === best!.name)![1].bits.length;
+    const net = named.find(([name]) => name === best!.name)![1];
+    const total = net.bits.length;
+    const position = (from: number) => (net.offset ?? 0) + (net.upto ? total - 1 - from : from);
+    const high = Math.max(position(best.from), position(best.from + best.length - 1));
+    const low = Math.min(position(best.from), position(best.from + best.length - 1));
     parts.push(
       total === 1 || (best.from === 0 && best.length === total)
         ? best.name
         : best.length === 1
-          ? `${best.name}[${best.from}]`
-          : `${best.name}[${best.from + best.length - 1}:${best.from}]`,
+          ? `${best.name}[${low}]`
+          : `${best.name}[${high}:${low}]`,
     );
     index += best.length;
   }
