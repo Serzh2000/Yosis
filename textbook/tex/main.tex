@@ -38,7 +38,7 @@
     {От логических элементов до ПЛИС};
   \node[anchor=north west, text=white, font=\sffamily\large, align=left]
     at ([xshift=2cm, yshift=-6.7cm]current page.north west)
-    {Учебное пособие: логика, триггеры и автоматы,\\затем ПЛИС Tang Nano 20K и среда Yosis};
+    {Учебное пособие: логика, триггеры и автоматы,\\затем ПЛИС Tang Nano 20K и среда Logra};
   \node[anchor=south west, text=white!80, font=\sffamily\small, align=left]
     at ([xshift=2cm, yshift=-10.4cm]current page.north west)
     {Булева алгебра $\cdot$ Verilog $\cdot$ LUT и триггеры $\cdot$ GW2AR-18};
@@ -54,7 +54,7 @@
     \fill[yellow!70!orange] (0.3+\i*0.42,3.28) circle (0.08);
   }
   \fill[gray!70] (-0.35,1.2) rectangle (0.6,2.2);        % USB-C
-  \node[font=\tiny\sffamily, white] at (0.12,0.95) {USB-C};
+  \node[font=\tiny\sffamily, white] at (0.55,0.95) {USB-C};
   \fill[ChipBlack] (3.2,0.8) rectangle (5.2,2.8);         % ПЛИС
   \node[white, font=\tiny\sffamily, align=center] at (4.2,1.8) {GOWIN\\GW2AR-18};
   \fill[ChipBlack] (1.2,1.2) rectangle (2.3,2.3);         % BL616
@@ -85,30 +85,30 @@
 % ============================================================
 \part{Комбинационная и последовательная логика}
 \input{chapters/b1_signals.tex}
+\input{chapters/b1a_codes.tex}
 \input{chapters/b2_gates.tex}
 \input{chapters/b3_combinational.tex}
 \input{chapters/b3a_minimize.tex}
 \input{chapters/b4_coders.tex}
 \input{chapters/b5_mux.tex}
-\input{chapters/b5a_electrical.tex}
 \input{chapters/b6_arith.tex}
-\input{chapters/b1a_codes.tex}
 \input{chapters/b7_flipflops.tex}
 \input{chapters/b8_registers.tex}
 \input{chapters/b9_sync.tex}
 \input{chapters/b9a_fsmdesign.tex}
+\input{chapters/b5a_electrical.tex}
 \input{chapters/b9b_analog.tex}
 
 % ============================================================
 % ЧАСТЬ II. ПЛИС НА ПРАКТИКЕ: TANG NANO 20K
 % ============================================================
-\part{ПЛИС и среда Yosis: Tang Nano 20K}
+\part{ПЛИС и среда Logra: Tang Nano 20K}
 \input{chapters/01_what_is_fpga.tex}
 \input{chapters/02_inside.tex}
 \input{chapters/03_board.tex}
 \input{chapters/04_flow.tex}
 \input{chapters/05_verilog.tex}
-\input{chapters/03a_yosis.tex}
+\input{chapters/03a_logra.tex}
 \input{chapters/05a_bridge.tex}
 \input{chapters/06_examples.tex}
 \input{chapters/07_simulation.tex}
@@ -121,5 +121,6 @@
 \appendix
 \input{chapters/a1_cheatsheet.tex}
 \input{chapters/a2_answers.tex}
+\input{chapters/a3_logra_map.tex}
 
 \end{document}

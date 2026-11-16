@@ -1,0 +1,471 @@
+\chapter{Registers and Counters}
+\label{ch:regs}
+
+From the previous chapter we know that one flip-flop stores one bit, and that
+the security panel's alarm can be remembered and cleared with a key. But the
+panel needs more: to store the lock code, to \emph{count how many seconds the
+siren sounds}, and to make it ``beep'' once a second, even though the board's
+clock generator runs at 27~MHz. The question of this chapter: what happens if
+we connect many flip-flops, and how can we build storage, shifting and counting
+from them?
+
+\begin{buildbox}
+In Logra, open Learn, the ``Counters and dividers'' chapter of the ``Circuits and
+the board'' book, and go through the lesson ``A counter as one block''. Then the
+lesson ``A divide-by-2 frequency divider''. In the \term{Waveforms} tab look at
+all the counter bits at the same time: each next one changes half as often as the
+previous one. Write down at which number the counter returns to zero and why.
+Below we will see how this works.
+\end{buildbox}
+
+\newcommand{\dff}[3]{% name, x, y  -- D flip-flop 12x14 mm
+  \draw[thick, fill=green!8] (#2,#3) rectangle ++(1.2,1.4);
+  \node[font=\sffamily\scriptsize] at (#2+0.22,#3+1.05) {D};
+  \node[font=\sffamily\scriptsize] at (#2+0.98,#3+1.05) {Q};
+  \draw[thick] (#2,#3+0.2) -- (#2+0.18,#3+0.35) -- (#2,#3+0.5);
+  \coordinate (#1-d) at (#2,#3+1.05); \coordinate (#1-q) at (#2+1.2,#3+1.05);
+  \coordinate (#1-c) at (#2,#3+0.35);}
+
+\section{The Storage Register}
+
+A \term{register} is a group of D flip-flops with a common clock signal. At the
+edge all the flip-flops simultaneously store their inputs, and the register
+holds an $n$-bit number until the next edge. In schematics a register is
+labeled with the letters RG.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \foreach \i in {0,...,3} {
+    \pgfmathsetmacro{\x}{(3-\i)*2.3}
+    \dff{r\i}{\x}{0}
+    \draw[wire] (r\i-d) -- ++(-0.4,0) |- ($(r\i-d)+(-0.4,1.0)$) node[above] {$d_\i$};
+    \draw[wire] (r\i-q) -- ++(0.35,0) -- ++(0,-1.5) node[below] {$q_\i$};
+    \draw[wire, FpgaBlue] (r\i-c) -- ++(-0.3,0) -- ++(0,-0.75);
+  }
+  \draw[wire, FpgaBlue] (-1.4,-0.4) node[left, text=FpgaDark] {CLK} -- (6.6,-0.4);
+  \foreach \i in {0,...,3} { \pgfmathsetmacro{\x}{(3-\i)*2.3-0.3} \fill[FpgaBlue] (\x,-0.4) circle (1.3pt); }
+\end{tikzpicture}
+\caption{A four-bit register: four D flip-flops with a common clock}
+\label{fig:reg}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.08, xscale=1.5, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  CLK      & 8{1L 1H} \\
+  $D[3:0]$ & 2D{5} 1.5D{9} 1D{7} 1.5D{3} 4D{C} 6D{0} \\
+  $Q[3:0]$ & 1D{?} 2D{5} 2D{9} 2D{3} 4D{C} 5D{0} \\
+\end{tikztimingtable}
+\caption{The register ``photographs'' the value of the bus $D$ at the moments of
+the rising edges of CLK. The value 7 stayed on the input for less than one clock
+cycle and fell between the edges---the register simply did not notice it}
+\label{fig:reg_t}
+\end{figure}
+
+Registers are the ``variables'' of hardware. In a processor, registers hold
+operands and results of computations; in any digital device they hold the
+current state, counters, and data between processing stages. To make a register
+change its value not on every edge but only on command, flip-flops with an
+enable input CE are used (Fig.~\ref{fig:ce}).
+
+\begin{diybox}[The Storage Register]
+\textbf{Task.} \stars{1} The lesson ``A four-bit register''. \stars{2} The lesson
+``A register with write enable'', then ``A register with reset'': load a number,
+disable writing and make sure it does not change. \stars{3} Store the lock code
+(four bits) in a register and show it on four LEDs.\\
+\textbf{In Logra:} Learn, Designer, Waveforms.\\
+\textbf{Expected result:} the output updates only on the edge, and only
+if writing is enabled.\\
+\textbf{How to check:} in Waveforms the value 7 on the input that arrived between
+edges did not appear at the output (as in Fig.~\ref{fig:reg_t}).
+\end{diybox}
+
+\section{The Shift Register}
+
+Connect the flip-flops in a chain: the output of each feeds the input of the
+next. At every edge the contents \term{shift} by one bit, and a new bit from the
+input $D_\text{in}$ is written into the first flip-flop.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \foreach \i in {0,...,3} {
+    \pgfmathsetmacro{\x}{\i*2.3}
+    \dff{s\i}{\x}{0}
+    \draw[wire, FpgaBlue] (s\i-c) -- ++(-0.3,0) -- ++(0,-0.75);
+  }
+  \draw[wire] (-1.0,1.05) node[left] {$D_\text{in}$} -- (s0-d);
+  \foreach \i [evaluate=\i as \j using int(\i+1)] in {0,1,2} {
+    \draw[wire] (s\i-q) -- (s\j-d);
+    \fill ($(s\i-q)+(0.3,0)$) circle (1.3pt);
+    \draw[wire] ($(s\i-q)+(0.3,0)$) -- ++(0,1.0) node[above] {$q_\i$};
+  }
+  \draw[wire] (s3-q) -- ++(0.7,0) node[right] {$q_3 = D_\text{out}$};
+  \draw[wire, FpgaBlue] (-1.0,-0.4) node[left, text=FpgaDark] {CLK} -- (6.6,-0.4);
+\end{tikzpicture}
+\caption{A four-bit shift register}
+\label{fig:shift}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.08, xscale=1.5, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  CLK            & 8{1L 1H} \\
+  $D_\text{in}$  & 2H 2L 12L \\
+  $q_0$          & 1L 2H 13L \\
+  $q_1$          & 3L 2H 11L \\
+  $q_2$          & 5L 2H 9L \\
+  $q_3$          & 7L 2H 7L \\
+\end{tikztimingtable}
+\caption{A one applied to the input advances through the register by one bit
+per clock cycle}
+\end{figure}
+
+\subsection{Why Shift}
+
+\begin{description}
+  \item[Serial $\to$ parallel code.] Bits arrive one at a time on a single wire,
+    one after another (this is how data is sent over long cables and
+    wireless channels: fewer wires). After
+    $n$ clock cycles all $n$ bits are in the register at the same time and can be
+    read as a number. \lookahead{this is how serial
+    interfaces work, Chapter~\ref{ch:uart}.}
+  \item[Parallel $\to$ serial code.] The reverse task when transmitting: the
+    number is loaded into the register all at once and then ``pushed out'' one
+    bit per clock cycle. For loading, a ``shift/load'' multiplexer is placed in
+    front of each flip-flop.
+  \item[Delaying a signal] by a given number of clock cycles.
+  \item[Multiplying and dividing by 2]: shifting a binary number left by one bit
+    multiplies it by 2, shifting right divides it.
+\end{description}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[bit/.style={draw=FpgaBlue, fill=FpgaLight, minimum size=8mm, font=\ttfamily}]
+  \node[font=\sffamily\small, anchor=east] at (-0.6,0) {transmitter};
+  \foreach \b [count=\i from 0] in {1,0,1,1} \node[bit] at (\i*0.8,0) {\b};
+  \draw[very thick, FpgaOrange, -{Stealth}] (3.0,0) -- node[above, font=\sffamily\small, text=FpgaDark] {1 wire: \code{1}, \code{1}, \code{0}, \code{1}\ldots} (7.4,0);
+  \foreach \b [count=\i from 0] in {1,0,1,1} \node[bit] at (7.8+\i*0.8,0) {\b};
+  \node[font=\sffamily\small, anchor=west] at (10.8,0) {receiver};
+  \node[lbl] at (1.2,-0.8) {parallel $\to$ serial};
+  \node[lbl] at (9.0,-0.8) {serial $\to$ parallel};
+\end{tikzpicture}
+\caption{Sending a number over one wire with two shift registers}
+\end{figure}
+
+\subsection{The Ring Register and the Pseudorandom Number Generator}
+
+If the output of the last flip-flop is connected to the input of the first, you
+get a \term{ring register}: a one written into it will run around the circle
+forever, like the ``running light'' of a garland. \lookahead{a ready-made
+``running lights'' example is in Chapter~\ref{ch:examples}.}
+
+And if you feed the input with the XOR of several bits, you get a
+\term{linear feedback shift register} (LFSR). With a proper choice of
+taps it goes through all $2^n-1$ nonzero states in a ``shuffled''
+order. Such registers are used as simple pseudorandom number generators, in
+error-correcting coding and for encryption.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.55\textwidth}
+\centering
+\begin{tikzpicture}
+  \foreach \i in {0,...,2} {
+    \pgfmathsetmacro{\x}{\i*2.0}
+    \dff{l\i}{\x}{0}
+  }
+  \draw[wire] (l0-q) -- (l1-d); \draw[wire] (l1-q) -- (l2-d);
+  \node[gXOR, minimum width=9mm, minimum height=7mm, rotate=180] (x) at (2.6,2.3) {};
+  \draw[wire] (l2-q) -- ++(0.4,0) |- (x.input 1);
+  \fill ($(l1-q)+(0.3,0)$) circle (1.3pt);
+  \draw[wire] ($(l1-q)+(0.3,0)$) |- (x.input 2);
+  \draw[wire] (x.output) -| ($(l0-d)+(-0.4,0)$) -- (l0-d);
+  \foreach \i in {0,...,2} \node[lbl, below=1mm] at ($(l\i-c)+(0.6,-0.4)$) {$q_\i$};
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.4\textwidth}
+\centering
+\small
+\begin{tabular}{c|ccc}
+\toprule
+cycle & $q_0$ & $q_1$ & $q_2$ \\
+\midrule
+0 & 1 & 0 & 0 \\
+1 & 0 & 1 & 0 \\
+2 & 1 & 0 & 1 \\
+3 & 1 & 1 & 0 \\
+4 & 1 & 1 & 1 \\
+5 & 0 & 1 & 1 \\
+6 & 0 & 0 & 1 \\
+7 & 1 & 0 & 0 \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\caption{A three-bit LFSR ($q_0 \leftarrow q_1\oplus q_2$) goes through all seven
+nonzero states and repeats}
+\label{fig:lfsr}
+\end{figure}
+
+The ``all zeros'' state is forbidden for such a register: from it
+$q_1\oplus q_2=0$, and the register stays zero forever.
+
+\begin{diybox}[Shift, Ring and LFSR]
+\textbf{Task.} \stars{1} The lesson ``A shift register as a block''. \stars{2} The lessons
+``Serial input'' and ``Assembling a word from a stream'': check in which order
+(most or least significant bit first) the bits enter the word. \stars{3} The lessons
+``Ring counter'', ``Johnson counter'' and ``Pseudorandom numbers: LFSR'': make sure that
+a four-bit LFSR goes through 15 states.\\
+\textbf{In Logra:} Learn, Designer, Waveforms; for enthusiasts, the
+example \code{lfsr6}.\\
+\textbf{Expected result:} the one advances by one bit per clock cycle;
+the ring returns it to the starting position after $n$ cycles.\\
+\textbf{How to check:} Waveforms: write out the states and compare with the table
+in Fig.~\ref{fig:lfsr}.
+\end{diybox}
+
+\section{Counters}
+
+A \term{counter} is a register whose value increases (or decreases) by one on
+every clock cycle. Counters measure time, divide
+frequency and step through memory addresses.
+
+\subsection{The Asynchronous Counter}
+
+Look at how the bits change when counting $0, 1, 2, \ldots, 7$: the lowest bit
+toggles at every step, the next one half as often, the next one half as often
+again. Each bit toggles when the previous one goes from 1
+to 0. So T flip-flops can be chained: the clock input of each
+next flip-flop is connected to the \emph{inverted} output of the previous one.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \foreach \i in {0,...,2} {
+    \pgfmathsetmacro{\x}{\i*2.8}
+    \draw[thick, fill=green!8] (\x,0) rectangle ++(1.2,1.4);
+    \node[font=\sffamily\scriptsize] at (\x+0.22,1.05) {T};
+    \node[font=\sffamily\scriptsize] at (\x+0.98,1.05) {Q};
+    \node[font=\sffamily\scriptsize] at (\x+0.98,0.35) {$\overline{\text{Q}}$};
+    \draw[thick] (\x,0.2) -- (\x+0.18,0.35) -- (\x,0.5);
+    \draw[wire] (\x,1.05) -- ++(-0.3,0) node[left, font=\scriptsize] {1};
+    \draw[wire] (\x+1.2,1.05) -- ++(0.4,0) -- ++(0,0.8) node[above] {$q_\i$};
+  }
+  \draw[wire, FpgaBlue] (-1.0,0.35) node[left, text=FpgaDark] {CLK} -- (0,0.35);
+  \draw[wire, FpgaRed] (1.2,0.35) -- (2.8,0.35);
+  \draw[wire, FpgaRed] (4.0,0.35) -- (5.6,0.35);
+\end{tikzpicture}
+\caption{An asynchronous (ripple) three-bit counter made of T flip-flops}
+\label{fig:ripple}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.05, xscale=1.2, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  CLK     & 16{1L 1H} \\
+  $q_0$   & 1L 7{2H 2L} 2H 1L \\
+  $q_1$   & 3L 3{4H 4L} 4H 1L \\
+  $q_2$   & 7L 8H 8L 8H 1L \\
+  value   & 1D{0} 2D{1} 2D{2} 2D{3} 2D{4} 2D{5} 2D{6} 2D{7} 2D{0} 2D{1} 2D{2} 2D{3} 2D{4} 2D{5} 2D{6} 2D{7} 1D{0} \\
+\end{tikztimingtable}
+\caption{Each next bit changes half as often: the counter steps through the numbers
+$0\ldots7$, and the bit $q_k$ has the frequency $f_\text{CLK}/2^{k+1}$}
+\label{fig:count_t}
+\end{figure}
+
+The drawback of the asynchronous counter is that the flip-flops switch not
+simultaneously but in a ``wave'', each with a delay relative to the previous one.
+At the transition $011 \to 100$ false values appear at the output for a short time
+($011\to010\to000\to100$). In a long counter this ``wave'' takes a long time.
+So an asynchronous counter is good only where its outputs are not needed by the
+rest of the circuit at the same time (for example, as a frequency divider), and
+never for comparing the value with a constant.
+
+\subsection{The Synchronous Counter}
+
+In a synchronous counter all the flip-flops are clocked by \emph{one} signal, and
+the new value is computed by a combinational circuit---an adder that adds one.
+All the bits change simultaneously on the edge. This is how almost all counters in
+modern digital devices are built.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[draw=FpgaGreen, fill=green!8, thick, minimum width=27mm, minimum height=18mm, font=\sffamily\small, align=center] (reg) at (4.4,0) {register\\\scriptsize $n$ bits};
+  \node[font=\sffamily\scriptsize, anchor=west] at ([xshift=0.5mm]reg.west) {D};
+  \node[font=\sffamily\scriptsize, anchor=east] at ([xshift=-0.5mm]reg.east) {Q};
+  \draw[thick] ([xshift=-1.2mm]reg.south) -- ([yshift=1.8mm]reg.south) -- ([xshift=1.2mm]reg.south);
+  \draw[wire, FpgaBlue] (reg.south) -- ++(0,-0.8) node[below, text=FpgaDark] {CLK};
+  \node[draw=FpgaBlue, fill=FpgaLight, thick, circle, minimum size=12mm, font=\sffamily\bfseries] (add) at (1.4,0) {$+1$};
+  \draw[bus, -{Stealth}] (add.east) -- (reg.west);
+  \draw[bus, -{Stealth}] (reg.east) -- ++(1.8,0) node[right, text=FpgaDark] {$Q$};
+  \draw[bus, -{Stealth}] ($(reg.east)+(0.9,0)$) -- ++(0,1.6) -| (add.north);
+  \fill[FpgaBlue] ($(reg.east)+(0.9,0)$) circle (1.8pt);
+  \node[lbl] at (4.4,1.9) {feedback};
+\end{tikzpicture}
+\caption{A synchronous counter: a register plus an adder. Every clock cycle the register
+stores $Q+1$}
+\label{fig:sync_counter}
+\end{figure}
+
+\begin{diybox}[The Counter]
+\textbf{Task.} \stars{1} The lesson ``A counter as one block'': what happens after 15?
+\stars{2} The lessons ``A counter with pause'' and ``A counter from a register and
+\,`+1'\,'': compare the synchronous counter built by hand with the ready-made
+block. \stars{3} Build a counter that counts only while a button is pressed.\\
+\textbf{In Logra:} Learn, Designer, Waveforms, RTL; the example
+\code{counter}.\\
+\textbf{Expected result:} after $1111$ the counter goes to $0000$.\\
+\textbf{How to check:} RTL will show a register and a ``+1'' adder, as in
+Fig.~\ref{fig:sync_counter}.
+\end{diybox}
+
+\section{The Frequency Divider and the Modulo Counter}
+
+As Fig.~\ref{fig:count_t} shows, each bit of a counter is a frequency divider
+by a power of two. But how do we divide by a number that is not a power of two,
+for example by 10? We need a \term{modulo-$N$ counter}: it counts
+$0, 1, \ldots, N-1$ and then resets to 0. For this a comparator is added to the
+circuit, which compares the value with $N-1$, and a multiplexer, which feeds 0 to
+the register instead of $Q+1$. The comparator output $Q=N-1$ is a pulse
+one clock cycle long, and it appears exactly once every $N$ cycles: this is how
+the ``one second has passed'' signal is obtained from fast clock cycles.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[draw=FpgaGreen, fill=green!8, thick, minimum width=18mm, minimum height=16mm, font=\sffamily\small] (reg) at (5.6,0) {register};
+  \draw[wire, FpgaBlue] (reg.south) -- ++(0,-0.6) node[right, text=FpgaDark, font=\sffamily\small] {CLK};
+  \draw[thick, fill=orange!15] (3.0,0.9) -- (3.8,0.5) -- (3.8,-0.5) -- (3.0,-0.9) -- cycle;
+  \node[font=\sffamily\scriptsize] at (3.4,0) {MUX};
+  \node[font=\tiny, anchor=west] at (3.02,0.5) {0}; \node[font=\tiny, anchor=west] at (3.02,-0.5) {1};
+  \node[draw=FpgaBlue, fill=FpgaLight, thick, circle, minimum size=10mm, font=\sffamily\bfseries\small] (add) at (1.2,0.5) {$+1$};
+  \draw[bus, -{Stealth}] (add.east) -- (3.0,0.5);
+  \draw[bus, -{Stealth}] (1.8,-0.5) node[left, text=FpgaDark] {0} -- (3.0,-0.5);
+  \draw[bus, -{Stealth}] (3.8,0) -- (reg.west);
+  \draw[bus, -{Stealth}] (reg.east) -- ++(1.6,0) node[right, text=FpgaDark] {$Q$};
+  \draw[bus] ($(reg.east)+(0.8,0)$) -- ++(0,1.6) -| (add.north);
+  \fill[FpgaBlue] ($(reg.east)+(0.8,0)$) circle (1.8pt);
+  \node[block, minimum width=20mm] (cmp) at (5.6,-2.9) {$Q = N-1$?};
+  \draw[bus, -{Stealth}] ($(reg.east)+(0.8,0)$) |- (cmp.east);
+  \draw[arr] (cmp.west) -| node[pos=0.3, below, lbl] {reset} (3.4,-0.72);
+\end{tikzpicture}
+\caption{A modulo-$N$ counter}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.82\textwidth, height=5.6cm,
+  xlabel={Counter width $n$}, ylabel={Frequency, Hz},
+  ymode=log, ymin=0.1, ymax=3e7, xmin=0, xmax=26, xtick={1,4,8,12,16,20,25},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  axis lines*=left, grid=major, grid style={FpgaGray!20},
+]
+  \addplot[very thick, FpgaBlue, mark=*, mark size=1.5pt, samples at={1,2,...,25}] {27e6/2^x};
+  \addplot[FpgaRed, thick, dashed, domain=0:26, samples=2] {1};
+  \node[font=\sffamily\small, text=FpgaRed, anchor=south west] at (axis cs:1,1.3) {1 Hz---blinking visible to the eye};
+  \node[font=\sffamily\small, text=FpgaBlue, anchor=south west] at (axis cs:25,0.8) {$n=25$};
+\end{axis}
+\end{tikzpicture}
+\caption{The frequency at the output of the most significant bit of an $n$-bit counter with
+a 27\,MHz clock: $f = 27\,\text{MHz}/2^n$. To get blinking at about 1~Hz, you need a
+counter of about 25 bits}
+\label{fig:div_plot}
+\end{figure}
+
+But the output of the most significant bit of a 25-bit counter gives not 1~Hz but
+$27\cdot10^6/2^{25}\approx0.8$~Hz. To get exactly 1~Hz you need a counter
+modulo $N=27\,000\,000$: it counts from 0 to $26\,999\,999$ (this is also 25
+bits) and once a second produces a pulse. If this pulse toggles a
+T flip-flop, you get a 0.5~Hz square wave (one period in two seconds). For a
+square wave of exactly 1~Hz, take the modulus $13\,500\,000$: the pulse arrives every
+half second and toggles the flip-flop.
+
+\begin{diybox}[Modulus $N$ and the Frequency Divider; Project Stage]
+\textbf{Task.} \stars{1} The lessons ``Counting from 0 to 5'' (modulo 6) and ``A divide-by-4
+from a counter''. \stars{2} The lessons ``A counter with reset'' and ``A counter with load'',
+then ``A counter to a seven-segment display'' (chapter ``Projects'' of the ``Circuits
+and the board'' book): make a modulo-10 counter shown on the display.
+\stars{3} \textbf{Project stage ``Security Panel'': the alarm-time counter and the
+``beep''.} Build a counter that counts seconds while the alarm from stage~7
+is on and stops at 9. Get the seconds with a divider: so that
+the check in Waveforms does not take 27 million clock cycles, first set a
+small modulus (for example, $N=4$), and leave the real $N=27\,000\,000$ for the board.
+The buzzer ``beeps'' from the seconds bit.\\
+\textbf{In Logra:} Learn (chapters ``Counters and dividers'', ``Projects''), Designer, Waveforms,
+RTL; the examples \code{blink}, \code{countdown}, \code{stopwatch}.\\
+\textbf{Expected result:} with $N=4$ the ``second'' pulse arrives once every 4
+clock cycles; the seconds counter grows $0,1,\ldots,9$ and freezes; on a reset by the key it
+is cleared.\\
+\textbf{Acceptance criterion:} in Waveforms measure the pulse period
+(it equals $N$ clock cycles), the alarm output does not grow beyond the 9th second,
+and on reset all counters are zero on the very next clock cycle.
+\end{diybox}
+
+\begin{ideabox}
+A \textbf{register} is a group of flip-flops with a common clock; it stores a number.
+A \textbf{shift register} moves bits along a chain and converts
+serial code to parallel and back. A \textbf{synchronous counter}
+is a register with an adder in the feedback path; its bits divide the clock frequency
+by powers of two.
+\end{ideabox}
+
+\section{Common Mistakes}
+
+\begin{warnbox}[Common Mistakes]
+\begin{enumerate}
+  \item \textbf{An off-by-one error in the modulus.} A modulo-$N$ counter is reset
+        at the value $N-1$, not $N$. If you compare with $N$, there will be
+        $N+1$ states, and the extra value $N$ will appear at the output for an
+        instant.
+  \item \textbf{``A bit flies through the whole register in one clock cycle.''} All the flip-flops
+        shift simultaneously and take the \emph{old} values of their neighbors, so
+        a bit advances exactly one position per edge.
+  \item \textbf{A mixed-up bit order.} When receiving a stream, the most significant bit
+        may come first or last; if the word is assembled by shifting in the
+        other direction, you get a number with the reverse bit order
+        ($0011$ becomes $1100$, and $0001$ becomes $1000$).
+  \item \textbf{Confusing ``blinking'' and ``pulse''.} The most significant bit of a counter
+        gives a square wave, whereas the comparison $Q=N-1$ gives one short pulse per cycle.
+        To toggle another node you need exactly a pulse, not a square wave.
+  \item \textbf{The zero state of an LFSR.} A register with an XOR that is filled
+        with zeros will never leave them; the initial value must be
+        nonzero.
+  \item \textbf{Using the outputs of an asynchronous counter as data.}
+        Because of the switching ``wave'', false numbers flicker on the outputs, and logic
+        that reads them without synchronization may fire an extra time.
+\end{enumerate}
+\end{warnbox}
+
+\section{Questions and Problems}
+\label{sec:tasks-regs}
+
+Answers are collected in Appendix~\ref{app:answers}.
+
+\begin{taskbox}[Chapter Problems]
+\begin{enumerate}
+  \item \stars{1}~A four-bit ring register holds $0001$. What values will it take over the next four clock cycles?
+  \item \stars{1}~A four-bit binary counter is in the state $1111$. What will its state be after the next clock cycle? What is the counting modulus?
+  \item \stars{2}~How many bits must a counter have to divide 27~MHz down to 1~Hz, if it counts up to 27\,000\,000?
+  \item \stars{1}~What value does a modulo-10 counter count up to and how is it reset?
+  \item \stars{2}~How many different nonzero states does a 4-bit LFSR with the feedback $x^4 + x^3 + 1$ pass through before repeating?
+  \item \stars{1}~What is the main advantage of a synchronous counter over an asynchronous one?
+  \item \stars{2}~\textbf{Find the error.} A student built a modulo-10 counter and reset it at the value $1010$. What sequence does the output see? What should be fixed?
+  \item \stars{2}~\textbf{Find the error.} The three-bit LFSR of Fig.~\ref{fig:lfsr} was powered on without setting an initial value and ended up in the state $000$. What will happen next and how can it be avoided?
+  \item \stars{3}~\textbf{Project.} A modulo-$N=6$ counter (or any other $N$ of your choice) showing the number on a seven-segment display. Acceptance criterion: Waveforms shows the cycle $0,1,\ldots,N-1,0$, the value $N$ does not appear at any moment, and the ``carry'' output is one pulse per cycle at the number $N-1$.
+  \item \stars{3}~\textbf{Project (stage 8).} A divider from 27~MHz to 1~Hz: first with a small modulus in Waveforms, then with the real one. Acceptance criterion: for the modulus $N$ the period of the output pulse equals $N$ clock cycles; for the board the modulus is $N=27\,000\,000$ and the counter has 25 bits.
+  \item \stars{3}~\textbf{Project (stage 8).} An alarm-time counter: it counts seconds only while the alarm is remembered (stage~7), stops at 9 and is cleared by the key. Acceptance criterion: four checks in Waveforms---growth, stop at 9, stop when the alarm is cleared, clearing by the key.
+\end{enumerate}
+\end{taskbox}
+
+\section{What's Next}
+
+Now the panel has memory, numbers and time: the lock code in a register, the alarm
+seconds in a counter and the ``beep'' from a divider. But all of this is still
+assembled by hand, and the circuit has no ``modes'': the key is turned on, the signal
+goes, the alarm turns on, the code is entered. How can we describe such a sequence
+of states rigorously, so that nothing is lost? For that we need synchronous circuits
+and finite-state machines---the subject of the next chapter.

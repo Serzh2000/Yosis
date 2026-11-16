@@ -1,0 +1,493 @@
+\chapter{Signals}
+\label{ch:signals}
+
+This is the first chapter, so for now we can lean only on everyday
+experience: a lamp is on or off, a door is open or closed. The question we
+start with is simple: \emph{how do we turn ``the door is open'' into the zero
+or one that a circuit can work with?} The answer comes from the notions of a
+signal, logic levels, and the binary system, and along the way you will learn
+to read timing diagrams.
+
+\begin{infobox}[The Running Project ``Security Panel'']
+Throughout Part I we will grow a single device: a security panel with a door
+sensor, a window sensor, a night mode, an arming key, a code lock, a siren,
+and an indicator. Each chapter adds a new block to it, and after every
+chapter the panel still works. The first step is the smallest one: the door
+sensor as a single bit and an ``alarm'' LED.
+\end{infobox}
+
+\begin{buildbox}
+Open Logra, go to the \emph{Learn} tab, and complete the lessons ``A bit:
+zero and one'' and ``The button and the LED on the board''. In the second
+lesson, connect the button directly to the LED and press it. If the lamp did
+not light up but went out instead, that is fine: by the end of the chapter you
+will be able to explain why this happened and fix the circuit.
+\end{buildbox}
+
+\section{What Is a Signal}
+
+A \term{signal} is a physical quantity that changes in time and carries
+information. In electronics it is most often the \emph{voltage} on a wire. A
+microphone turns sound into a changing voltage, a temperature sensor turns
+temperature into a voltage, and a button turns a press into a voltage.
+
+Signals come in two kinds.
+
+\begin{description}
+  \item[An analog signal] can take \emph{any} value within some range: 1.2~V,
+    1.21~V, 1.215~V\ldots\ This is what sound looks like, or the signal from a
+    microphone or a sensor.
+  \item[A digital signal] takes only a few allowed values. In binary digital
+    engineering there are two: \textbf{logic 0} (low voltage) and
+    \textbf{logic 1} (high voltage).
+\end{description}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=2 by 1, horizontal sep=18mm},
+  width=0.5\textwidth, height=3.6cm, xmin=0, xmax=10,
+  xlabel={Time}, axis lines*=left, xtick=\empty,
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  title style={font=\sffamily\small\bfseries},
+]
+\nextgroupplot[title={Analog signal}, ylabel={$U$, V}, ymin=0, ymax=3.5]
+  \addplot[very thick, FpgaBlue, domain=0:10, samples=200] {1.65+1.2*sin(deg(x*0.9))+0.35*sin(deg(x*2.7))};
+\nextgroupplot[title={Digital signal}, ymin=-0.2, ymax=1.4, ytick={0,1}, yticklabels={0,1}, ylabel={logic level}]
+  \addplot[very thick, FpgaOrange, const plot] coordinates {(0,0) (1,1) (2.5,0) (3,1) (5,1) (5.5,0) (7,1) (8,0) (9,1) (10,1)};
+\end{groupplot}
+\end{tikzpicture}
+\caption{An analog signal changes smoothly; a digital signal changes in jumps between two levels}
+\end{figure}
+
+\subsection{Why Digital}
+
+Why is all modern computing digital? The main reason is \textbf{noise
+immunity}. Any wire picks up noise: from neighboring wires, from motors, from
+radio waves. In an analog signal noise distorts the information itself, and
+it can no longer be separated from the useful signal. In a digital signal we
+care about only one thing: whether the voltage is \emph{above or below a
+threshold}. A small disturbance changes nothing.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.8\textwidth, height=5.4cm, xmin=0, xmax=10, ymin=-0.4, ymax=3.8,
+  xlabel={Time}, ylabel={$U$, V}, xtick=\empty, ytick={0,0.8,2.0,3.3},
+  yticklabels={0, 0.8, 2.0, 3.3},
+  axis lines*=left, label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  clip=false,
+]
+  \fill[green!12] (axis cs:0,2.0) rectangle (axis cs:10,3.8);
+  \fill[red!10] (axis cs:0,0.8) rectangle (axis cs:10,2.0);
+  \fill[blue!8] (axis cs:0,-0.4) rectangle (axis cs:10,0.8);
+  \addplot[thick, FpgaBlue, samples=400, domain=0:10]
+    {(x>1 && x<4 || x>6 && x<8.5 ? 3.1 : 0.2) + 0.25*sin(deg(x*37)) + 0.15*sin(deg(x*91))};
+  \node[font=\sffamily\small, anchor=west] at (axis cs:10.1,2.9) {``1''};
+  \node[font=\sffamily\small, anchor=west, text=FpgaRed] at (axis cs:10.1,1.4) {forbidden};
+  \node[font=\sffamily\small, anchor=west] at (axis cs:10.1,0.2) {``0''};
+\end{axis}
+\end{tikzpicture}
+\caption{A signal with noise. As long as the voltage does not enter the forbidden zone,
+the receiver tells 0 from 1 without error (the thresholds are for the 3.3~V LVCMOS standard)}
+\label{fig:levels}
+\end{figure}
+
+\begin{infobox}[From Relay to Transistor]
+The idea of ``on or off'' is older than electronics. The relay, a switch
+controlled by an electromagnet, was used in telegraphy from the 1830s, and the
+first computing machines were built from relays (the German Z3, 1941, with
+about two thousand relays). A relay clicks in milliseconds, makes noise, and
+wears out. ENIAC (1945) used about 17,500 vacuum tubes: faster, but tubes got
+hot and burned out. In 1947 the transistor appeared at Bell Labs---the same
+switch with no moving parts---and from 1958--1959 thousands of transistors
+began to be made on a single chip. The Intel 4004 microprocessor (1971) had
+about 2300 transistors, and modern chips have tens of billions. Only the
+technology changed; the meaning stayed the same: each of these switches is in
+one of two states, that is, it stores one bit.
+\end{infobox}
+
+\begin{diybox}[A Bit from a Sensor]
+\textbf{Task.} Agree on what 0 and 1 mean for the door sensor: for example,
+1 means ``the door is open'' and 0 means ``closed''. State it in one phrase:
+such an agreement is called a level convention.\par
+\textbf{In Logra.} The \emph{Learn} tab, the lesson ``A bit: zero and
+one''.\par
+\textbf{Expected result.} You confidently answer the question ``what does 1
+on this wire mean'' without looking at the circuit.\par
+\textbf{How to check.} Answer the questions of the lesson; the built-in check
+will tell you whether you determined the value of the bit correctly.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: complete the lesson to the end without hints.
+  \item[\stars{2}] Modify: describe three more bits of your room (a window, a
+    light switch, an arming key) and write down what 1 means for each.
+  \item[\stars{3}] Project: a temperature sensor produces an analog voltage.
+    Come up with a threshold (for example, 30\,\textdegree C) and explain how
+    to get a digital ``too hot'' from the analog signal.
+\end{itemize}
+\end{diybox}
+
+\section{Logic Levels}
+
+Which voltage counts as zero and which as one is defined by a
+\term{logic level standard}. The chip on the Tang Nano 20K learning board uses
+the \textbf{LVCMOS33} standard (3.3~V supply). \lookahead{the board carries a
+programmable chip (an FPGA), to which the second part of the book is
+devoted.} The parameters of the standard:
+
+\begin{table}[H]
+\centering
+\caption{LVCMOS 3.3 V levels}
+\begin{tabular}{l l l}
+\toprule
+\textbf{Parameter} & \textbf{Value} & \textbf{Meaning} \\
+\midrule
+$U_\text{IL,max}$ & 0.8 V & anything below this, an input reads as zero \\
+$U_\text{IH,min}$ & 2.0 V & anything above this, an input reads as one \\
+$U_\text{OL,max}$ & 0.4 V & an output gives ``0'' at no more than this voltage \\
+$U_\text{OH,min}$ & 2.4 V & an output gives ``1'' at no less than this voltage \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[yscale=1.3]
+  \fill[blue!10] (0,0) rectangle (2.4,0.4);   \fill[green!15] (0,2.4) rectangle (2.4,3.3);
+  \fill[gray!15] (0,0.4) rectangle (2.4,2.4);
+  \fill[blue!10] (5,0) rectangle (7.4,0.8);   \fill[green!15] (5,2.0) rectangle (7.4,3.3);
+  \fill[red!12] (5,0.8) rectangle (7.4,2.0);
+  \draw[thick] (0,0) rectangle (2.4,3.3); \draw[thick] (5,0) rectangle (7.4,3.3);
+  \node[font=\sffamily\small\bfseries] at (1.2,3.65) {Output};
+  \node[font=\sffamily\small\bfseries] at (6.2,3.65) {Input};
+  \node[font=\sffamily\small] at (1.2,2.85) {``1''}; \node[font=\sffamily\small] at (1.2,0.2) {``0''};
+  \node[font=\sffamily\small] at (6.2,2.65) {``1''}; \node[font=\sffamily\small] at (6.2,0.4) {``0''};
+  \node[font=\sffamily\fontsize{6}{7}\selectfont, text=FpgaRed] at (6.2,1.4) {undefined};
+  \foreach \v/\l in {0.4/0.4, 2.4/2.4, 3.3/3.3} \node[font=\sffamily\scriptsize, anchor=east] at (0,\v) {\l~V};
+  \foreach \v/\l in {0.8/0.8, 2.0/2.0} \node[font=\sffamily\scriptsize, anchor=west] at (7.4,\v) {\l~V};
+  \draw[FpgaOrange, <->, thick] (3.7,2.0) -- (3.7,2.4) node[midway, right, font=\sffamily\scriptsize] {margin};
+  \draw[FpgaOrange, <->, thick] (3.7,0.4) -- (3.7,0.8) node[midway, right, font=\sffamily\scriptsize] {margin};
+  \draw[dashed, FpgaGray] (2.4,2.4) -- (5,2.4); \draw[dashed, FpgaGray] (2.4,2.0) -- (5,2.0);
+  \draw[dashed, FpgaGray] (2.4,0.4) -- (5,0.4); \draw[dashed, FpgaGray] (2.4,0.8) -- (5,0.8);
+\end{tikzpicture}
+\caption{The output guarantees the levels ``with a margin'', so noise of 0.4~V
+does not cause an error}
+\end{figure}
+
+\begin{infobox}[Active High and Active Low]
+Usually the ``action'' happens at one: 1 means the LED is on, 1 means the
+motor is running. This is \term{active high}. But often it is the other way
+round: a reset signal \emph{fires at zero}. Such signals are called
+\term{active-low} signals and are marked with an overbar
+($\overline{\text{RESET}}$), a hash sign (RESET\#), or the suffix \code{\_n}
+(\code{rst\_n}). On the Tang Nano 20K board the LEDs are exactly like this:
+they light at zero.
+\end{infobox}
+
+\begin{diybox}[The Door Sensor and the ``Alarm'' LED]
+\textbf{Task.} The door sensor gives 1 when the door is open. The board LED
+lights at 0. Connect them so that the ``alarm'' LED lights when the door is
+open. Hint: you will need an inverter (a NOT gate); we will look at how it
+works in the next chapter.\par
+\textbf{In Logra.} The \emph{Learn} tab, the lesson ``The button and the LED
+on the board''; then the examples \code{button} (the button connected
+directly to the LED) and \code{not} (with an inverter). Build your own
+``input, inverter, output'' circuit on the \emph{Designer} tab.\par
+\textbf{Expected result.} With door${}=1$ the LED is on, with
+door${}=0$ it is off.\par
+\textbf{How to check.} The \emph{Waveforms} tab: apply 0 to the input, then
+1, and make sure that \code{led\_n} is always the opposite of the input.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: in the \code{button} example set the button first
+    to 0, then to 1, and explain why with the direct connection the board LED
+    is on when the button is released.
+  \item[\stars{2}] Modify: on the \emph{Pins} tab find the LED ports and
+    determine from the name \code{led\_n} which level turns them on.
+  \item[\stars{3}] Project. \emph{Stage of the ``Security Panel'' project: the
+    door sensor as a bit.} Build the circuit ``door $\to$ NOT $\to$
+    \code{led\_n}''. Acceptance criterion: on the waveform \code{led\_n} is an
+    exact inversion of door over the whole interval, and the LED is on exactly
+    when the door is open.
+\end{itemize}
+\end{diybox}
+
+\section{The Binary Number System}
+
+One digital wire carries one \term{bit}---0 or 1. To transmit a number larger
+than one, we take several wires (bits) and use the \term{binary number
+system}. Each digit position has a weight, a power of two:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \foreach \i/\b in {0/1,1/0,2/1,3/1} {
+    \pgfmathtruncatemacro{\p}{3-\i}
+    \pgfmathtruncatemacro{\w}{2^(3-\i)}
+    \node[draw=FpgaBlue, fill=FpgaLight, thick, minimum size=11mm, font=\ttfamily\Large] (b\i) at (\i*1.6,0) {\b};
+    \node[font=\sffamily\small, above=1mm of b\i] {$2^{\p}=\w$};
+    \node[font=\sffamily\small, below=1mm of b\i] {$\b\cdot\w$};
+  }
+  \node[font=\sffamily\small, anchor=west] at (6.2,-0.85) {$= 8+0+2+1 = 11$};
+  \node[font=\sffamily\small, anchor=west] at (6.2,0) {$1011_2 = 11_{10}$};
+\end{tikzpicture}
+\caption{Converting a binary number to decimal}
+\end{figure}
+
+With $n$ bits you can write $2^n$ different numbers: from $0$ to $2^n-1$.
+Four bits give 16 combinations, eight (a \term{byte}) give 256. Long binary
+numbers are hard to read, so they are written in the \term{hexadecimal}
+system: every 4 bits are replaced by one digit from 0 to F.
+
+\begin{table}[H]
+\centering
+\caption{The numbers from 0 to 15 in three number systems}
+\small
+\begin{tabular}{c c c @{\hspace{12mm}} c c c}
+\toprule
+\textbf{Dec.} & \textbf{Bin.} & \textbf{Hex.} & \textbf{Dec.} & \textbf{Bin.} & \textbf{Hex.} \\
+\midrule
+0 & \code{0000} & 0 & 8  & \code{1000} & 8 \\
+1 & \code{0001} & 1 & 9  & \code{1001} & 9 \\
+2 & \code{0010} & 2 & 10 & \code{1010} & A \\
+3 & \code{0011} & 3 & 11 & \code{1011} & B \\
+4 & \code{0100} & 4 & 12 & \code{1100} & C \\
+5 & \code{0101} & 5 & 13 & \code{1101} & D \\
+6 & \code{0110} & 6 & 14 & \code{1110} & E \\
+7 & \code{0111} & 7 & 15 & \code{1111} & F \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.75\textwidth, height=5cm, ybar, bar width=6mm,
+  xlabel={Number of bits $n$}, ylabel={Number of combinations $2^n$},
+  xtick={1,...,8}, ymin=0, ymax=300,
+  nodes near coords, nodes near coords style={font=\sffamily\scriptsize},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  axis lines*=left, grid=major, grid style={FpgaGray!20},
+]
+  \addplot[fill=FpgaBlue!70, draw=FpgaBlue] coordinates {(1,2) (2,4) (3,8) (4,16) (5,32) (6,64) (7,128) (8,256)};
+\end{axis}
+\end{tikzpicture}
+\caption{Each new bit doubles the number of possible values}
+\end{figure}
+
+What other number systems exist, how to write letters in binary, and how to
+protect a number from errors during transmission we will cover in the next
+chapter.
+
+\begin{diybox}[A Number on LEDs]
+\textbf{Task.} Output a four-bit number to four LEDs so that a one in a bit
+position lights the LED. Remember that the board LEDs light at zero, so all
+the bits will have to be inverted.\par
+\textbf{In Logra.} The \emph{Learn} tab, the lesson ``A number on four
+LEDs''.\par
+\textbf{Expected result.} The number 5 (\code{0101}) lights the second and
+fourth LEDs from the right, the number 0 lights nothing, and the number 15
+lights all of them.\par
+\textbf{How to check.} The built-in check of the lesson tries all 16
+numbers; on the \emph{Waveforms} tab compare the output with the table of
+numbers from 0 to 15 in this chapter.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: complete the lesson and enter the numbers 5 and 11.
+  \item[\stars{2}] Modify: which LEDs should be on for the number 13? Check
+    your prediction on the waveform.
+  \item[\stars{3}] Project: build from scratch in the \emph{Designer} a
+    six-bit bus and output the number 37 to six LEDs (problem~2). Acceptance
+    criterion: when 37 is entered, the LEDs of bits 0, 2, and 5 are on.
+\end{itemize}
+\end{diybox}
+
+\section{Timing Diagrams}
+
+To show how signals change in time, we draw \term{timing diagrams}: time runs
+horizontally and the level vertically. A transition from 0 to 1 is called a
+\term{rising edge} (or simply an edge), and a transition from 1 to 0 is a
+\term{falling edge}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \draw[very thick, FpgaBlue] (0,0) -- (2,0) -- (2.2,1.2) -- (5,1.2) -- (5.2,0) -- (8,0);
+  \draw[-{Stealth}, FpgaGray] (0,-1.0) -- (8.5,-1.0) node[right, font=\sffamily\small] {$t$};
+  \node[font=\sffamily\small, anchor=east] at (0,0) {0};
+  \node[font=\sffamily\small, anchor=east] at (0,1.2) {1};
+  \draw[FpgaOrange, thick, -{Stealth}] (1.3,1.9) node[above, font=\sffamily\small] {rising edge ($0\to1$)} -- (2.05,0.8);
+  \draw[FpgaOrange, thick, -{Stealth}] (6.3,1.9) node[above, font=\sffamily\small] {falling edge ($1\to0$)} -- (5.15,0.8);
+  \draw[decorate, decoration={brace, amplitude=5pt, mirror}] (2.2,-0.1) -- (5,-0.1) node[midway, below=5pt, font=\sffamily\scriptsize] {pulse width};
+\end{tikzpicture}
+\caption{A pulse on a timing diagram}
+\end{figure}
+
+If several wires on a diagram are combined into a number, they are drawn as a
+``bus'': two lines with the value written between them, and a cross marks the
+moment when the value changes.
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.1, xscale=2.2, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  a        & 2L 4H 2L 2H \\
+  b        & 4L 4H 2L \\
+  data[3:0] & 2D{0} 2D{5} 2D{A} 2D{F} 2D{3} \\
+  z (disconnected) & 3Z 4H 3Z \\
+\end{tikztimingtable}
+\caption{Single signals, a bus, and a signal in the third (disconnected) state Z}
+\end{figure}
+
+The letter $Z$ on the last line means that the output is \emph{disconnected}
+from the wire: it supplies neither a zero nor a one, and the wire may be taken
+over by another source. How this works physically we will see later, in
+Chapter~\ref{ch:electrical}.
+
+\begin{diybox}[Reading a Waveform]
+\textbf{Task.} Learn to read a timing diagram: find the rising and falling
+edges, and measure the pulse width and the period.\par
+\textbf{In Logra.} Open the example \code{blink} and the \emph{Waveforms}
+tab.\par
+\textbf{Expected result.} On the waveform of the LED signal you can point out
+a rising edge, a falling edge, and two adjacent rising edges between which one
+period passes.\par
+\textbf{How to check.} Select two adjacent rising edges on the waveform and
+compare the time difference with what you counted by eye.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: find the period and the pulse width for the LED in
+    the \code{blink} example.
+  \item[\stars{2}] Modify: make the LED blink twice as fast (in the example
+    code find the counter or constant that sets the speed) and compare the
+    periods before and after.
+  \item[\stars{3}] Project: complete the lesson ``A divide-by-2 frequency
+    divider'' (we have not studied flip-flops yet; just follow the hints of
+    the lesson). Acceptance criterion: the period of the output signal is
+    exactly twice the period of the clock, and this is visible on the
+    waveform (problem~6).
+\end{itemize}
+\end{diybox}
+
+\section{The Clock Signal}
+
+A special role in digital engineering is played by the \term{clock signal}
+(\code{clk}): a sequence of pulses that arrive at strictly equal intervals of
+time. It works like a conductor: on its edges all the memory elements of the
+circuit update their values at the same moment.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \foreach \i in {0,1,2,3} {
+    \draw[very thick, FpgaBlue] (\i*3,0) -- (\i*3,1.2) -- (\i*3+1.5,1.2) -- (\i*3+1.5,0) -- (\i*3+3,0);
+    \draw[FpgaOrange, -{Stealth}, thick] (\i*3,1.9) -- (\i*3,1.3);
+  }
+  \draw[-{Stealth}, FpgaGray] (-0.3,-0.4) -- (12.5,-0.4) node[right, font=\sffamily\small] {$t$};
+  \draw[<->, thick] (3,-0.9) -- (6,-0.9) node[midway, below, font=\sffamily\small] {period $T$};
+  \draw[<->, thick] (6,1.55) -- (7.5,1.55) node[midway, above, font=\sffamily\small] {$t_\text{w}$};
+  \node[font=\sffamily\small, text=FpgaOrange, anchor=west] at (9.3,2.1) {rising edges};
+\end{tikzpicture}
+\caption{The clock signal: period $T$, pulse width $t_\text{w}$}
+\end{figure}
+
+The main characteristics of a clock signal:
+\[
+  f = \frac{1}{T}, \qquad D = \frac{t_\text{w}}{T}\cdot 100\,\%.
+\]
+Here $f$ is the \term{frequency} (how many periods per second, measured in
+hertz), and $D$ is the \term{duty cycle} (usually 50\,\%). The Tang Nano 20K
+board has a 27~MHz oscillator:
+\[
+  T = \frac{1}{27\,000\,000\ \text{Hz}} \approx 37 \cdot 10^{-9}\ \text{s} = 37\ \text{ns}.
+\]
+In one second 27 million clock cycles occur. During one blink of an eye
+(about 0.1~s) there are almost three million.
+
+\begin{table}[H]
+\centering
+\caption{Prefixes for frequency and time}
+\begin{tabular}{l l l l}
+\toprule
+\textbf{Frequency} & \textbf{Period} & \textbf{Example} \\
+\midrule
+1 Hz  & 1 s   & an LED blinking \\
+1 kHz = $10^3$ Hz & 1 ms = $10^{-3}$ s & an audible ``beep'' tone \\
+1 MHz = $10^6$ Hz & 1 \textmu s = $10^{-6}$ s & simple microcontrollers \\
+27 MHz & 37 ns & the Tang Nano 20K oscillator \\
+1 GHz = $10^9$ Hz & 1 ns = $10^{-9}$ s & computer processors \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{diybox}[Clock and Frequency]
+\textbf{Task.} Relate the clock frequency to the period and to the time that
+the events you need take.\par
+\textbf{In Logra.} The \code{blink} example, the \emph{Waveforms} tab; the
+formulas of this section.\par
+\textbf{Expected result.} For any frequency in the prefix table you name the
+period, and for a period you name the frequency.\par
+\textbf{How to check.} Check your calculation against the prefix table; the
+period on the waveform should match $1/f$.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: find the period for the frequencies 1~kHz and 1~MHz.
+  \item[\stars{2}] Modify: how many 27~MHz clock cycles pass in 1~ms? How many
+    clock cycles are there in one period of a 1~Hz blink?
+  \item[\stars{3}] Project: explain in your own words why an LED that
+    switches every clock cycle at 27~MHz looks to us simply lit, and by how
+    much the frequency must be divided to get a noticeable blink.
+\end{itemize}
+\end{diybox}
+
+\begin{ideabox}
+A digital signal has two levels: 0 and 1. Several bits form a binary number.
+Changes of signals in time are shown with timing diagrams, and the clock
+signal sets the rhythm at which the whole circuit works.
+\end{ideabox}
+
+\section{Common Mistakes}
+
+\begin{warnbox}[Common Mistakes]
+\begin{itemize}
+  \item \textbf{Confusing ``active'' with ``lit''.} An active-low signal fires
+    at zero. The board LED lights at 0, and a direct connection to a button
+    that gives 1 when pressed turns the LED off when the button is pressed.
+  \item \textbf{Reading a binary number left to right with the wrong weights.}
+    The most significant bit is on the left, and the weight grows from right
+    to left: $1011_2 = 8+0+2+1$, not $1+0+4+8$.
+  \item \textbf{Thinking that $n$ bits give $n$ values.} They give $2^n$
+    values, from $0$ to $2^n-1$; ten bits are 1024 numbers, not 10.
+  \item \textbf{Trusting an ``in-between'' voltage.} A signal of 1.4~V at the
+    input of 3.3~V logic is undefined: the circuit may read either 0 or 1.
+\end{itemize}
+\end{warnbox}
+
+\section{Questions and Problems}
+\label{sec:tasks-signals}
+
+The answers are collected in Appendix~\ref{app:answers}.
+
+\begin{taskbox}[Chapter Problems]
+\begin{enumerate}
+  \item \stars{1}~Convert the numbers $101101_2$ and $11111111_2$ to decimal.
+  \item \stars{1}~Convert the numbers 37 and 200 to binary.
+  \item \stars{1}~How many different values can be encoded with 10 bits? How many bits are needed to number 1000 objects?
+  \item \stars{2}~For 3.3~V logic, a voltage up to 0.8~V is considered a low level and from 2.0~V a high level. What level does a 1.4~V signal have, and why are such signals undesirable?
+  \item \stars{1}~What is the period of a 27~MHz clock signal? How many clock cycles pass in one second?
+  \item \stars{2}~Draw a timing diagram of a clock signal and of a signal that changes on every rising edge (a divide-by-2 frequency divider). How many times slower is it?
+  \item \stars{2}~\emph{Find the mistake.} A student connected a button (it gives 1 when pressed) directly to a board LED and complains that the LED is on when the button is released and goes out when it is pressed. Explain the cause and fix the circuit.
+  \item \stars{2}~\emph{Find the mistake.} A student converted $1011_2$ to decimal like this: $1\cdot1+0\cdot2+1\cdot4+1\cdot8=13$. What is the mistake, and what is the correct answer?
+  \item \stars{3}~\emph{Project.} Stage 1 of the ``Security Panel'' project: the door sensor gives 1 when the door is open, and the board LED lights at zero. Build in Logra a circuit in which the LED is on while the door is open. Acceptance criterion: on the \emph{Waveforms} tab the output \code{led\_n} is an exact inversion of the door input over the whole simulation interval.
+  \item \stars{3}~\emph{Project.} Output the number 37 to six board LEDs (bits 5\ldots 0). Determine which LEDs must be on and what code must be applied to the \code{led\_n} outputs. Acceptance criterion: the circuit works for all numbers 0--63, and when 37 is entered the LEDs of bits 5, 2, and 0 are on.
+\end{enumerate}
+\end{taskbox}
+
+\section{What's Next}
+
+We have learned to record the state of a sensor with one bit and a number with
+several bits, and to read waveforms. But a number in binary notation is not
+the only way to represent information: the digits of a lock, letters, and the
+position of a shaft are encoded in different ways, and transmitting a code
+over a channel requires protection against errors. The next chapter,
+Chapter~\ref{ch:codes}, is devoted to this. After that we will return to the
+main question of the security panel: how to build the ``alarm'' rule from
+several signals. For this we need logic gates (Chapter~\ref{ch:gates}).

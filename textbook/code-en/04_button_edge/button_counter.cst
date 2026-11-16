@@ -1,0 +1,49 @@
+// =====================================================================
+// Physical constraints file for project 04_button_edge
+// Board: Sipeed Tang Nano 20K, FPGA GW2AR-LV18QN88C8/I7
+//
+// What this file does: it connects the port names of module button_counter
+// to the physical pins of the chip and sets their electrical
+// parameters. The file lists exactly the ports that the module has.
+//
+// Syntax:
+//   IO_LOC  "port_name" pin_number;            -- which pin to connect to
+//   IO_PORT "port_name" parameter=value ...;   -- how to configure it
+// Each line ends with a semicolon; comments start with //.
+// For a bus, each bit is described separately: "led[0]", "led[1]", ...
+// =====================================================================
+
+// ==== Clock signal ====
+// The 27 MHz crystal oscillator on the board is connected to pin 4.
+IO_LOC  "clk" 4;
+// LVCMOS33 -- ordinary logic with a 3.3 V supply.
+IO_PORT "clk" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+
+// ==== Buttons ====
+// S1 -> btn[0] (pin 88), S2 -> btn[1] (pin 87).
+// A pressed button puts a logic 1 on the pin.
+IO_LOC  "btn[0]" 88;
+IO_LOC  "btn[1]" 87;
+// PULL_MODE=DOWN turns on an internal resistor to ground: while the button
+// is released, the input is guaranteed to be 0, not a "floating" undefined level.
+IO_PORT "btn[0]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+IO_PORT "btn[1]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+// ==== LEDs ====
+// Six LEDs on pins 15..20. Their cathodes are connected to the pins,
+// so they light up when the output is 0 (active low).
+IO_LOC  "led[0]" 15;
+IO_LOC  "led[1]" 16;
+IO_LOC  "led[2]" 17;
+IO_LOC  "led[3]" 18;
+IO_LOC  "led[4]" 19;
+IO_LOC  "led[5]" 20;
+// DRIVE=8 -- the output can source up to 8 mA, which is enough for an LED.
+// PULL_MODE=UP -- until the FPGA is programmed, the pins are pulled up to 3.3 V and
+// the LEDs stay off.
+IO_PORT "led[0]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_PORT "led[1]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_PORT "led[2]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_PORT "led[3]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_PORT "led[4]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_PORT "led[5]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;

@@ -4,6 +4,10 @@
 import io
 import os
 import re
+import sys
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
 
 ROOT = os.path.join(os.path.dirname(__file__), '..', 'tex')
 main = io.open(os.path.join(ROOT, 'main.tex'), encoding='utf8').read()
@@ -46,7 +50,7 @@ TERMS = {
     'синхронизатор': r'синхронизатор',
     'конвейер': r'конвейер',
     'критический путь': r'критическ\w+ пут',
-    'Yosis': r'Yosis',
+    'Logra': r'Logra',
     'Yosys': r'Yosys',
     'nextpnr': r'nextpnr',
     'Gowin': r'Gowin',
@@ -100,3 +104,18 @@ for name, rx in TERMS.items():
     if first and not first_def:
         flag = '  <-- нет явного определения'
     print('%-26s первое: %-18s определение: %-18s%s' % (name, first, first_def, flag))
+
+
+# Проверка названия продукта: «Yosis» (старое имя) не должно встречаться; Yosys (синтезатор) допустим.
+bad = 0
+for fn in sorted(os.listdir(os.path.join(ROOT, 'chapters'))) + ['main.tex']:
+    path = os.path.join(ROOT, 'chapters', fn) if fn != 'main.tex' else os.path.join(ROOT, fn)
+    if not fn.endswith('.tex'):
+        continue
+    for i, l in enumerate(io.open(path, encoding='utf8').read().splitlines(), 1):
+        if re.search(r'Yosis', l):
+            bad += 1
+            print('Yosis: %s:%d: %s' % (fn, i, l.strip()[:100]))
+print()
+print('Упоминаний «Yosis»: %d' % bad)
+sys.exit(1 if bad else 0)

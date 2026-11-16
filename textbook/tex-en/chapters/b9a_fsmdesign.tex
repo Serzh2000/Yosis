@@ -1,0 +1,529 @@
+\chapter{State Machine Design and FIFO Queues}
+\label{ch:fsmdesign}
+
+In chapter~\ref{ch:sync} we met finite-state machines and analyzed an example
+detector. Now we will learn to design them systematically: from a verbal
+description to a circuit, and we will see that the same recipe works for the
+control part of any device. In the second half of the chapter we will use the
+same techniques to build a FIFO queue, which is needed in any system where the
+speeds of the data source and the data receiver differ.
+
+The question of the chapter: how do we derive a machine from a verbal
+requirement instead of guessing it, so that no case is forgotten? Along the way
+we will assemble the main stage of the running project: the mode machine of the
+``Security Panel''.
+
+\begin{buildbox}
+The \emph{Learn} tab, the ``Circuits and the board'' book, the ``State
+machines'' chapter, the lesson ``A state machine with two states'' (then ``The
+skeleton of a machine''). Build a machine with the states ``off'' and ``on'',
+switched by a press. In the \emph{Waveforms} tab make sure that the state
+changes only on the clock edge. Write down on a sheet of paper how you decided
+\emph{how many} states are needed---this is the first of the six steps
+below.
+\end{buildbox}
+
+\section{Six Steps of Design}
+
+\begin{enumerate}
+  \item \textbf{Verbal description.} What the device must do, what inputs and
+        outputs it has, and when the output must change.
+  \item \textbf{State graph.} Draw circles (states) and arrows (transitions)
+        labeled ``condition / output''.
+  \item \textbf{Transition table.} For every state and every value of the
+        inputs, write the next state and the output. No cell may be left
+        empty.
+  \item \textbf{State encoding.} Assign binary codes to the states
+        or use one-hot encoding.
+  \item \textbf{Logic.} Obtain the next-state and output functions
+        (by hand with Karnaugh maps, or with a program).
+  \item \textbf{Verification.} Go through scenarios in simulation, including
+        boundary ones: a reset in the middle of operation, extra inputs,
+        simultaneous events.
+\end{enumerate}
+
+\begin{diybox}[Six Steps on a Small Example]
+\textbf{Task.} Go through all six steps for a ``lamp with a button'' machine:
+one press turns it on, the next turns it off.\\
+\textbf{In Logra.} The \emph{Learn} tab, the ``Circuits and the board'' book,
+the ``State machines'' chapter; the \emph{Designer} and \emph{Waveforms}
+tabs.\\
+\stars{1} \emph{Repeat.} The lesson ``A state machine with two states''.\\
+\stars{2} \emph{Change.} The lesson ``The skeleton of a machine'': add a third
+state, ``blinking'', which the lamp enters after a double press.\\
+\stars{3} \emph{Project.} A pedestrian traffic light (the lesson ``A pedestrian
+traffic light''): draw the graph and the transition table \emph{before}
+building; when building, no cell of the table may be left empty.\\
+\textbf{Expected result.} The waveform repeats the path through the graph: the
+states change in the order you drew.\\
+\textbf{How to check.} \emph{Waveforms} tab: compare every clock cycle with
+the transition table; \emph{RTL} tab: find the state register and the
+transition logic.
+\end{diybox}
+
+\section{Example: A Vending Machine}
+
+The machine sells an item for 15 units. It accepts coins of 5 and 10 units, one
+per clock cycle. When 15 units or more have been inserted, it outputs the
+signal \code{vend} \emph{in the same clock cycle}, and then starts counting
+again (for simplicity, we give no change).
+
+There are three states: 0, 5, or 10 units inserted. The output depends not only
+on the state but also on the coin that has just arrived: a 5 in the ``10
+units'' state immediately produces a sale. So this is a \term{Mealy} machine.
+Its graph is in Fig.~\ref{fig:vend_graph}: the arrows are labeled with the
+inputs and the output, separated by a slash.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.85, transform shape, font=\sffamily\small, st/.style={circle, draw=FpgaBlue, fill=FpgaLight, minimum size=16mm, thick, align=center}, lbl2/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.5pt}]
+  \node[st] (s0) at (0,0) {$S_0$\\{\scriptsize 0 units}};
+  \node[st] (s5) at (5,2.6) {$S_5$\\{\scriptsize 5 units}};
+  \node[st] (s10) at (10,0) {$S_{10}$\\{\scriptsize 10 units}};
+  \draw[-{Stealth}] (s0) -- node[lbl2, above left] {c5/0} (s5);
+  \draw[-{Stealth}] (s5) -- node[lbl2, above right] {c5/0} (s10);
+  \draw[-{Stealth}] (s5) to[bend right=30] node[lbl2, below left, xshift=-2mm] {c10/1} (s0);
+  \draw[-{Stealth}] (s0) to[bend left=18] node[lbl2, above] {c10/0} (s10);
+  \draw[-{Stealth}] (s10) to[bend left=18] node[lbl2, below] {c5 or c10/1} (s0);
+  \draw[-{Stealth}] (s0) to[loop left] node[lbl2, left] {no coin/0} (s0);
+  \draw[-{Stealth}] (s5) to[loop above] node[lbl2, above] {no coin/0} (s5);
+  \draw[-{Stealth}] (s10) to[loop right] node[lbl2, right] {no coin/0} (s10);
+\end{tikzpicture}
+\caption{The graph of a Mealy machine. The label is ``input/output'': after the slash is the value of \code{vend}. All transitions that end in a sale return the machine to $S_0$}
+\label{fig:vend_graph}
+\end{figure}
+
+The same information is collected in the transition table. It must not have
+empty cells:
+
+\begin{table}[H]
+\centering
+\caption{The transition table of the vending machine ($c5$, $c10$ are coins, \code{vend} is the output)}
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{State} & \textbf{No coin} & \textbf{c5} & \textbf{c10} & \textbf{Output} \\
+\midrule
+$S_0$ (0) & $S_0$ & $S_5$ & $S_{10}$ & 0 \\
+$S_5$ (5) & $S_5$ & $S_{10}$ & $S_0$ & 1 only on c10 \\
+$S_{10}$ (10) & $S_{10}$ & $S_0$ & $S_0$ & 1 on c5 and on c10 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{How the Machine Works, Cycle by Cycle}
+
+Let us check the machine by hand: feed in the coins $5, 5, 5, 10, 5$ and write
+into a table what happens in every clock cycle. The state and the coin
+determine both the output and the next state.
+
+\begin{table}[H]
+\centering
+\caption{A trace of the vending machine}
+\small
+\begin{tabular}{cllcl}
+\toprule
+\textbf{Cycle} & \textbf{State} & \textbf{Coin} & \textbf{\code{vend}} & \textbf{Next state} \\
+\midrule
+0 & $S_0$ & 5 & 0 & $S_5$ \\
+1 & $S_5$ & 5 & 0 & $S_{10}$ \\
+2 & $S_{10}$ & 5 & \textbf{1} & $S_0$ \\
+3 & $S_0$ & 10 & 0 & $S_{10}$ \\
+4 & $S_{10}$ & 5 & \textbf{1} & $S_0$ \\
+5 & $S_0$ & none & 0 & $S_0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Note cycles 2 and 4: the signal \code{vend} is one \emph{in the same clock
+cycle} in which the last coin was inserted, not in the next one. The output is
+computed from the state and the input together, and this is the main hallmark
+of a Mealy machine. A Moore machine would dispense the item only in the next
+cycle, when the state register has already changed its value.
+
+\subsection{Rules for Reliable Description}
+
+Every machine is divided into three parts: the state register, the
+combinational transition logic, and the combinational output logic. Three
+techniques protect against typical mistakes.
+
+\begin{itemize}
+  \item For every state, a ``next state by default = current state'' is defined
+        in advance: if no transition condition fires, the machine stays in
+        place, and no unwanted latch appears in the circuit.
+  \item For unused state codes, provide a transition ``in all other cases'': if
+        the register somehow ends up in such a code (for example, because of a
+        fault), the machine returns to the initial state.
+  \item Make the reset synchronous: it acts on the clock and therefore causes
+        no timing problems.
+\end{itemize}
+
+\lookahead{a ready-made text description of this machine, its circuit, and
+a waveform checking it on a sequence of coins you will find in
+chapter~\ref{ch:bridge}.}
+
+Let us compare the two kinds of machines.
+
+\begin{table}[H]
+\centering
+\caption{Moore and Mealy machines}
+\small
+\begin{tabularx}{\textwidth}{l X X}
+\toprule
+ & \textbf{Moore} & \textbf{Mealy} \\
+\midrule
+The output depends on & the state & the state and the inputs \\
+Number of states & usually larger & usually smaller \\
+Reaction to an input & one cycle later & immediately, in the same cycle \\
+Noise on the input & does not reach the output & reaches the output \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{diybox}[The Vending Machine]
+\textbf{Task.} Check the vending machine on coin sequences and teach it to
+handle simultaneous coins.\\
+\textbf{In Logra.} The \emph{Examples} tab, project \code{vending-fsm}
+(the machine counts events and outputs a result after a set number);
+the \emph{Waveforms} and \emph{RTL} tabs.\\
+\stars{1} \emph{Repeat.} Compare one long button hold with three separate
+presses and releases: on the waveform find when the dispense pulse
+appears.\\
+\stars{2} \emph{Change.} In the \emph{Code} tab increase the number of events
+before dispensing from three to four and check the dispense pulse on the
+waveform. Then use the table of this chapter to make a trace for the coins
+$10, 5, 10$.\\
+\stars{3} \emph{Project.} Problem~2 of this chapter: add a column ``both coins
+at once'' to the transition table and check the table for empty cells.\\
+\textbf{Expected result.} The state accumulates events, and after the set
+number it outputs a one-cycle pulse and returns to the start.\\
+\textbf{How to check.} \emph{Waveforms} tab: between dispense pulses there are
+exactly as many events as you set; \emph{RTL} tab: find the register of the
+accumulated sum.
+\end{diybox}
+
+\section{State Encoding and Reduction}
+
+Three states need two flip-flops with binary encoding
+(\code{00}, \code{01}, \code{10}) and three with one-hot encoding. The choice
+of encoding can change the size and speed of the circuit. \lookahead{the
+synthesizer in Part~II can re-encode a machine by itself if you describe it
+using a template with named states.}
+
+Sometimes two states behave identically: for any inputs they give the same
+outputs and move to the same states. Such states can be merged into one, and
+the machine becomes simpler. The test is simple: if all rows of the transition
+table of two states coincide (up to the names of these same states), they can
+be merged.
+
+\begin{diybox}[Binary and One-Hot Encoding]
+\textbf{Task.} Build the same machine in two ways and compare the cost of
+each.\\
+\textbf{In Logra.} The \emph{Designer}, \emph{Waveforms}, \emph{RTL}, and
+\emph{Gowin} tabs.\\
+\stars{1} \emph{Repeat.} For a ``red---green---yellow'' machine write out the
+binary state codes and the one-hot ones.\\
+\stars{2} \emph{Change.} Build the machine in the Designer on two flip-flops
+(binary encoding), then on three (one-hot); the output waveforms must
+match.\\
+\stars{3} \emph{Project.} Compare the number of flip-flops and logic gates in
+the \emph{RTL} and \emph{Gowin} tabs; write your conclusion in one line.\\
+\textbf{Expected result.} The one-hot version uses more flip-flops and less
+logic per transition.\\
+\textbf{How to check.} \emph{Waveforms} tab: the outputs of both versions are
+identical in all clock cycles; \emph{RTL} tab: count the flip-flops.
+\end{diybox}
+
+\section{Running Project: The ``Security Panel'' Machine}
+\label{sec:panel-fsm}
+
+So far the project has had separate parts: a sensor, an ``alarm'' logic, alarm
+memory, and a time counter. Now we will assemble them into a device with modes.
+The panel is in one of three states: \term{DISARMED} (the sensors are ignored,
+the residents are home), \term{ARMED} (the door sensor is watching), and
+\term{ALARM} (the siren is on). The modes are switched by entering a code: bits
+are fed to the button on successive clock cycles, and the code counts as entered
+if \code{1-0-1} arrives in a row.
+
+Here two machines are connected by one signal. The first is the code detector
+from chapter~\ref{ch:sync}: it watches the input and outputs $c=1$ in the
+clock cycle when the code has been entered correctly. The second is the mode
+machine, which reads the signal $c$ and the door sensor $d$ (1 means the door
+is open).
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  st/.style={circle, draw=FpgaDark, very thick, minimum size=19mm, font=\sffamily\small, align=center, fill=FpgaLight},
+  tr/.style={-{Stealth[length=3mm]}, thick, FpgaDark},
+  lb/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.5pt}]
+  \node[st] (off) at (0,0) {DISARMED\\\scriptsize siren 0};
+  \node[st] (arm) at (5.2,0) {ARMED\\\scriptsize siren 0};
+  \node[st, fill=red!12] (al) at (10.4,0) {ALARM\\\scriptsize siren 1};
+  \draw[tr] (off) to[bend left=22] node[lb, above] {$c=1$} (arm);
+  \draw[tr] (arm) to[bend left=22] node[lb, below] {$c=1$} (off);
+  \draw[tr] (arm) -- node[lb, above] {$d=1$, $c=0$} (al);
+  \draw[tr] (al) to[bend left=50] node[lb, below] {$c=1$} (off);
+  \draw[tr] (off) edge[loop above, looseness=7] node[lb, above] {$c=0$} (off);
+  \draw[tr] (arm) edge[loop above, looseness=7] node[lb, above] {$d=0$, $c=0$} (arm);
+  \draw[tr] (al) edge[loop above, looseness=7] node[lb, above] {$c=0$} (al);
+  \draw[tr, FpgaRed] (-1.9,-1.9) node[left, font=\sffamily\scriptsize, text=FpgaRed] {reset} -- (off.south west);
+\end{tikzpicture}
+\caption{The panel mode machine (Moore). The siren is on only in the ALARM
+state. The condition for leaving any mode for DISARMED is the correct code}
+\label{fig:panel_fsm}
+\end{figure}
+
+Let us check against the six steps. The states are given (steps 1--2). The
+transition table (step 3) has no empty cells: for every state, all four
+combinations $(d,c)$ are described. In the ARMED state with $d=1$ and $c=1$ the
+code wins: the owner came in and entered the code, so no siren is needed.
+
+\begin{table}[H]
+\centering
+\caption{The transition table of the panel machine ($d$ is door open, $c$ is correct code)}
+\small
+\begin{tabular}{l|cccc|c}
+\toprule
+\textbf{State} & $d{=}0,c{=}0$ & $d{=}0,c{=}1$ & $d{=}1,c{=}0$ & $d{=}1,c{=}1$ & \textbf{Siren} \\
+\midrule
+DISARMED & DISARMED & ARMED & DISARMED & ARMED & 0 \\
+ARMED    & ARMED & DISARMED & ALARM & DISARMED & 0 \\
+ALARM    & ALARM & DISARMED & ALARM & DISARMED & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{diybox}[Project Stage 9: The Mode Machine]
+\textbf{Task.} Build the ``Security Panel'' machine with entry of the code
+\code{1-0-1} and a siren.\\
+\textbf{In Logra.} The \emph{Learn} tab, the ``Circuits and the board'' book,
+the ``State machines'' chapter: the lesson ``A code lock'' (code
+\code{1, 1, 0}); the \emph{Code} tab, the ``Verilog and the board'' book: the
+lesson ``A code lock: 1, 0, 1''; the \emph{Examples} tab: the project
+\code{door-controller} as a model of a machine with modes; the
+\emph{Designer}, \emph{Waveforms}, and \emph{RTL} tabs.\\
+\stars{1} \emph{Repeat.} The ``A code lock'' lesson from blocks: build the
+lock and make sure it opens only with the right triple.\\
+\stars{2} \emph{Change.} Rebuild the detector for the code \code{1-0-1}, then
+add the input $d$ and the output ``siren'' to the mode machine according to the
+table of this chapter.\\
+\stars{3} \emph{Project.} \textbf{A stage of the ``Security Panel'' project:}
+a machine DISARMED $\to$ ARMED $\to$ ALARM with entry of the code \code{1-0-1}
+and alarm reset by the same code. Acceptance criterion: on the waveform (a)
+after \code{101} is entered the panel moves to ARMED, (b) opening the door
+($d=1$) in the ARMED mode turns the siren on in the next clock cycle, (c) in
+the DISARMED mode opening the door does \emph{not} turn the siren on, (d)
+entering \code{101} in the ALARM state turns the siren off.\\
+\textbf{Expected result.} All four points of the criterion hold on the
+waveform, and the transition table has no empty cells.\\
+\textbf{How to check.} \emph{Waveforms} tab: in turn, feed the code,
+open the door, and enter the code again; \emph{RTL} tab: find the state
+register and the two logic blocks (transitions and output).
+\end{diybox}
+
+\section{The FIFO Queue}
+
+Often the source of data and its consumer work at different speeds: a sensor
+delivers samples in bursts, while a communication line sends them slowly. We
+need a buffer that stores the data and outputs it in the same order. Such a
+buffer is called a \term{FIFO} (first in---first out). It works like a queue
+in a store.
+
+\subsection{The Ring Buffer}
+
+Inside a FIFO there is ordinary memory (an array of words) and two pointers:
+the \emph{write pointer} (where to put the next word) and the \emph{read
+pointer} (where to take from). Each operation moves its pointer by one, and at
+the end of the memory it returns to zero, like the hand of a clock. The number
+of words in the queue is the number accumulated between the pointers: when it
+is zero, the queue is empty (\code{empty}); when it equals the size of the
+memory, it is full (\code{full}).
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\small]
+  \foreach \i in {0,...,7} {
+    \pgfmathsetmacro{\a}{90-\i*45}
+    \node[draw, minimum size=9mm, fill=white] (c\i) at (\a:2.2) {\i};
+  }
+  % occupied cells: 2,3,4
+  \foreach \i in {2,3,4} \node[draw, minimum size=9mm, fill=FpgaLight] at (90-\i*45:2.2) {\i};
+  \node[font=\sffamily\bfseries, text=FpgaGreen!50!black] at (90-2*45:3.5) {rp};
+  \draw[-{Stealth}, FpgaGreen!50!black, thick] (90-2*45:3.3) -- (90-2*45:2.8);
+  \node[font=\sffamily\bfseries, text=FpgaOrange] at (90-5*45:3.95) {wp};
+  \draw[-{Stealth}, FpgaOrange, thick] (90-5*45:3.55) -- (90-5*45:2.85);
+  \node[align=left, anchor=west] at (4.4,1.5) {3 words are stored (cells 2, 3, 4).\\Reading will start from cell 2.\\The next write goes to cell 5.};
+  \node[align=left, anchor=west] at (4.4,-1.2) {After cell 7 the pointers\\return to 0: that is why for\\8 words 3-bit counters\\are enough.};
+\end{tikzpicture}
+\caption{A ring buffer: the cells between the read pointer \code{rp} and the write pointer \code{wp} are filled}
+\end{figure}
+
+\subsection{The full and empty Flags}
+
+For a queue of 8 words, 3-bit pointers are enough, because a 3-bit counter
+``wraps around'' by itself after the value 7. A separate 4-bit word counter
+\code{count} (values from 0 to 8) simplifies the flags \code{empty} and
+\code{full}. Writing is allowed only while the queue is not full, and reading
+only while it is not empty.
+
+\begin{table}[H]
+\centering
+\caption{A trace of the queue: three words written, then three read}
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Action} & \textbf{wp} & \textbf{rp} & \textbf{count} & \textbf{empty} \\
+\midrule
+after reset & 0 & 0 & 0 & 1 \\
+wrote 11 & 1 & 0 & 1 & 0 \\
+wrote 22 & 2 & 0 & 2 & 0 \\
+wrote 33 & 3 & 0 & 3 & 0 \\
+read (got 11) & 3 & 1 & 2 & 0 \\
+read (got 22) & 3 & 2 & 1 & 0 \\
+read (got 33) & 3 & 3 & 0 & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The words come out in the order in which they went in. Note that the equality
+of the pointers $\text{wp}=\text{rp}$ does not distinguish an empty queue from
+a full one: in both cases the pointers coincide. So the flags are taken not from
+a comparison of the pointers but from the word counter:
+$\text{empty}=(\text{count}=0)$, $\text{full}=(\text{count}=8)$.
+
+\subsection{Overflow and Underflow on Waveforms}
+
+What happens if the source writes while the queue is already full, or the
+receiver reads from an empty queue? Consider a queue of 4 words. For five
+clock cycles in a row we try to write, then for five cycles in a row we read.
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.05, xscale=1.1, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  CLK    & 10{1L 1H} \\
+  wr     & 10H 10L \\
+  rd     & 10L 10H \\
+  count  & 2D{0} 2D{1} 2D{2} 2D{3} 2D{4} 2D{4} 2D{3} 2D{2} 2D{1} 2D{0} \\
+  full   & 8L 4H 8L \\
+  empty  & 2H 16L 2H \\
+\end{tikztimingtable}
+\caption{A queue of 4 words. In the fifth cycle the queue is already full (\code{full}=1): the fifth write
+is ignored and the word is lost. In the last cycle the queue is empty (\code{empty}=1): the tenth
+read outputs nothing, and the counter stays at zero}
+\label{fig:fifo_flags}
+\end{figure}
+
+The queue ``protects'' itself: when $\text{full}=1$ a write does not move the
+pointer, and when $\text{empty}=1$ a read does not move its pointer. But a word
+that arrives at a full queue is \emph{lost}: only the writer can fix this, by
+watching \code{full} and waiting. So in a system the source must either check
+the flag or have a margin in the size of the queue.
+
+\subsection{Example: A Four-Word Queue}
+
+\begin{buildbox}[Watch the Queue at Work]
+The \emph{Examples} tab, the project \code{fifo-four} (``Four-word FIFO'').
+After a reset the internal source writes the words 1, 2, 3, 4 by itself and
+stops when the queue is full. Each button press reads the oldest word. The
+pointers \code{write\_ptr} and \code{read\_ptr} move independently, and the
+counter \code{used} limits access. On the \emph{Waveforms} tab follow how the
+pointers ``wrap around''.
+\end{buildbox}
+
+\lookahead{a text description of the queue and its waveform you will find in
+chapter~\ref{ch:bridge}. In large projects a queue can be huge and
+keep its words in the block memory of the chip; there is also a
+\emph{dual-clock} queue, where writing runs on one clock signal and reading on
+another---then the pointers are passed between domains in Gray code
+(chapter~\ref{ch:clocks}).}
+
+\begin{warnbox}[Common mistakes]
+\begin{itemize}
+  \item \textbf{Telling empty from full by pointer equality.} When
+        $\text{wp}=\text{rp}$ it is unclear whether there are zero words or
+        all of them. You need a word counter or an extra pointer bit.
+  \item \textbf{Writing when \code{full} and reading when \code{empty}.} A word
+        is lost, or garbage is read. The source and the receiver must look at
+        the flags.
+  \item \textbf{The pointer does not return to zero.} If a queue of 8 words
+        uses a 4-bit pointer without wrapping at the boundary, the address
+        will go outside the memory.
+  \item \textbf{Forgetting the reset.} After power-up the pointers and the
+        counter must be zeros, otherwise the queue ``sees'' words that do not
+        exist.
+\end{itemize}
+\end{warnbox}
+
+\begin{diybox}[A Queue with full and empty Flags]
+\textbf{Task.} Follow the operation of a ring buffer and find the moments of
+``full'' and ``empty''.\\
+\textbf{In Logra.} The \emph{Examples} tab, the project \code{fifo-four};
+the \emph{Waveforms} and \emph{RTL} tabs.\\
+\stars{1} \emph{Repeat.} Wait until the queue fills with the words
+1, 2, 3, 4, then press the button several times; compare the pointers with the
+trace table of this chapter.\\
+\stars{2} \emph{Change.} Find on the waveform the clock cycle in which \code{used}
+reaches 4 and writing stops (this is how the ``full'' flag shows itself), and the cycle
+in which \code{used} becomes 0 (``empty''). Problem~5: what would happen without
+the protection?\\
+\stars{3} \emph{Project.} In the \emph{Code} tab enlarge the queue to eight
+words (3-bit pointers, a 4-bit \code{used}, comparison with 8) and
+check the full and empty flags.\\
+\textbf{Expected result.} When the queue is full, a write changes neither the
+pointer nor the counter; the words come out in the order they were written.\\
+\textbf{How to check.} \emph{Waveforms} tab: the sequence of
+\code{used} during filling and reading matches Fig.~\ref{fig:fifo_flags};
+\emph{RTL} tab: find the word memory and the two pointers.
+\end{diybox}
+
+\section{Questions and Problems}
+\label{sec:tasks-fsmdesign}
+
+The answers are collected in Appendix~\ref{app:answers}.
+
+\begin{taskbox}[Problems for the Chapter]
+\begin{enumerate}
+  \item \stars{2}~Draw the graph of a Moore machine with three states for a traffic light in which
+        red is on for 4 clock cycles, yellow for 1, and green for 3. How many flip-flops
+        are needed with binary encoding? With one-hot encoding?
+  \item \stars{2}~The vending machine receives the coins $c5$ and $c10$ at the same time (a
+        sensor fault). How will the description from this chapter behave? How should the
+        transition table be changed to take this into account?
+  \item \stars{2}~Draw the transition table of a detector of the sequence \code{110}
+        (with overlap). What type of machine results, Moore or Mealy?
+  \item \stars{1}~A FIFO queue has 16 words. What width do the pointers and
+        the word counter need?
+  \item \stars{1}~11 words were written in a row into a queue of 8 words. How many words will be
+        lost, and why?
+  \item \stars{1}~In what way is a Mealy machine more convenient than a Moore machine, and in what way more dangerous?
+  \item \stars{2}~\emph{Find the error.} The designer of a queue of 8 words defined
+        $\text{full}=(\text{wp}=\text{rp})$ and $\text{empty}=(\text{wp}=\text{rp})$. In which
+        two situations will the flags give a wrong result, and how can they be fixed?
+  \item \stars{2}~\emph{Find the error.} In the transition table of the panel machine
+        (section ``Running Project'') the designer left the cell
+        $d{=}1,c{=}1$ empty for the ARMED state, deciding that ``this never happens''. Describe a
+        scenario in which it happens, and say what the empty
+        cell will lead to. What transition would you write?
+  \item \stars{3}~\emph{Mini-project.} Build the ``Security Panel'' mode machine
+        with entry of the code \code{1-0-1} (stage~9). Acceptance criterion: on the waveform,
+        after \code{101} the panel is in the ARMED state; $d=1$ in the ARMED mode
+        turns the siren on from the next clock cycle; $d=1$ in the DISARMED mode does not
+        turn it on; entering \code{101} again in the ALARM state turns it off.
+  \item \stars{3}~\emph{Mini-project.} Extend the 4-word queue with the outputs
+        \code{full} and \code{empty} and make writing to a full
+        queue impossible. Acceptance criterion: with five writes in a row,
+        on the waveform \code{used}$=4$, the write pointer has stopped, and the fifth word did not
+        overwrite the first; with five reads in a row the fifth read changes nothing.
+\end{enumerate}
+\end{taskbox}
+
+\section{What's Next}
+
+We have learned to describe the behavior of a device with a state machine and to
+store data in a queue, that is, to work in a world of clock cycles where signals
+are only 0 and 1. But the panel in our project must connect to the real world:
+a button at the door, an LED and a buzzer on the case. What really happens on
+the pin of a chip when we ``output a 1''? How much current can an output
+supply, why are resistors needed, and how do several devices share one line?
+This is the business of chapter~\ref{ch:electrical}---``the chip boundary''.

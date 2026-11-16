@@ -1,0 +1,132 @@
+\chapter*{How to Read This Book}
+\addcontentsline{toc}{chapter}{How to Read This Book}
+\markboth{How to Read This Book}{How to Read This Book}
+
+This book teaches you to design digital devices. It is written for people
+who are just starting out in digital electronics: school-level mathematics
+and a wish to understand how computers, drone controllers, and any other
+digital devices ``think'' are enough.
+
+\section*{The Idea of the Book: Design, Run, Observe}
+
+You cannot learn a digital circuit just by reading about it. That is why in
+every chapter you repeat the same cycle:
+
+\begin{enumerate}
+  \item \textbf{Design.} Build a circuit in the Logra Designer or describe it
+    in Code.
+  \item \textbf{Run.} Set the inputs and start the simulation.
+  \item \textbf{Observe.} Compare the waveform with the table in the book,
+    look at the schematic on the RTL tab, and explain why the result came out
+    exactly this way.
+\end{enumerate}
+
+Logra is the environment you work in from the first page. It consists of the
+tabs Learn, Code, Designer, Pins, RTL, Waveforms, Lab, Gowin, Chip, and
+Connect. In the sidebar they are collected into the groups ``Learn'',
+``Create'', ``Check'', and ``Real board''. You can start working with it right
+away: Part I relies only on the Designer, Waveforms, and RTL.
+
+\section*{How a Chapter Is Organized}
+
+Each chapter is a small ``sprint''. It begins with a bridge: what we can
+already do and what question is still open. Then comes a ``Build it first''
+box with a task in Logra that is worth doing before you read the theory: this
+way you meet the theory already holding a question. Every section ends with a
+\textbf{``Do it yourself''} task: what to build in Logra, what result to
+expect, and how to check it. At the end of the chapter come common mistakes,
+questions and problems, and a bridge to the next topic.
+
+\begin{infobox}[The Chapter Rule]
+Do not move on to the next section until the waveform agrees with the table.
+If the signals on the Waveforms tab disagree with the truth table, then the
+mistake is either in the circuit or in the table. Find it now: later it will
+only pile up.
+\end{infobox}
+
+\subsection*{Difficulty Levels}
+
+Tasks and problems are marked with levels:
+\stars{1}~--- \emph{repeat}: do it by the example and check the result;
+\stars{2}~--- \emph{modify}: change a ready-made circuit or find a mistake in it;
+\stars{3}~--- \emph{project}: solve the problem on your own and accept the
+result against a given criterion. If it is hard, go back one level; that is
+normal.
+
+\section*{The Running Project ``Security Panel''}
+
+In Part I you build a single device: a security panel with door and window
+sensors, a night mode, an arming key, a code lock, a siren, and an indicator.
+Each chapter adds a new part to it (a sensor as a bit, the alarm formula,
+sensor voting, zone selection, a noise threshold, the lock code, alarm
+memory, a time counter, the arming state machine), and the panel always
+stays working. By the end of Part I you have a finished device, and in
+Part II it ends up on a board. The stages are collected in
+Appendix~\ref{app:logramap}.
+
+\section*{The Two Parts of the Book}
+
+\begin{description}
+  \item[Part I. Combinational and Sequential Logic.] The theoretical core of
+    the course, which you check on screen in Logra. The order of chapters:
+    signals; number systems and codes; logic gates and Boolean algebra;
+    combinational circuits; minimization (Karnaugh maps, the
+    Quine---McCluskey method); decoders and encoders; multiplexers;
+    arithmetic blocks; flip-flops; registers and counters; synchronous
+    circuits and finite-state machines; state machine design and FIFO queues;
+    then the electrical basics of CMOS and buses; the part closes with the
+    link to the analog world: DAC, ADC, and PWM.
+  \item[Part II. FPGAs and the Logra Environment.] Everything we have
+    studied is now assembled ``in hardware''. What an FPGA is and what is
+    inside it; the Sipeed Tang Nano 20K board; the path from text to a
+    working circuit and the Verilog language; a detailed tour of the Logra
+    environment; the blocks of Part I described in Verilog and examined on
+    screen; seven complete projects; simulation; clocking, timing analysis,
+    and clock domain crossing; the UART, SPI, and I$^2$C interfaces; on-chip
+    SDRAM memory; your own processor that runs a program; assignments for
+    independent work.
+\end{description}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=5mm and 7mm, t/.style={block, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize}]
+  \node[t] (a) {Signals};
+  \node[t, right=of a] (b) {Logic\\gates};
+  \node[t, right=of b] (c) {Combinational\\blocks};
+  \node[t, right=of c] (d) {Flip-flops,\\registers};
+  \node[t, right=of d] (e) {State machines,\\DAC and ADC};
+  \node[hblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, below=9mm of e] (f) {What is\\an FPGA};
+  \node[hblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of f] (g) {Board and\\flow};
+  \node[hblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of g] (h) {Verilog\\and Logra};
+  \node[oblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of h] (i) {Projects,\\interfaces};
+  \node[oblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of i] (j) {SDRAM,\\assignments};
+  \foreach \u/\v in {a/b, b/c, c/d, d/e, e/f, f/g, g/h, h/i, i/j} \draw[arr] (\u) -- (\v);
+  \begin{scope}[on background layer]
+    \node[draw=FpgaGray, dashed, rounded corners, fit=(a)(e), inner sep=2.5mm, label={[lbl]above:Part I}] {};
+    \node[draw=FpgaGray, dashed, rounded corners, fit=(f)(j), inner sep=2.5mm, label={[lbl]below:Part II}] {};
+  \end{scope}
+\end{tikzpicture}
+\caption{The path we will travel}
+\end{figure}
+
+If you already know logic, flip-flops, and state machines, you can go
+straight to the second part and return to the first as a reference: the
+second part has links to the relevant chapters of the first. The
+correspondence between chapters and Logra lessons and examples is collected
+in Appendix~\ref{app:logramap}.
+
+All the source texts of the examples are stored next to the book, in the
+folder \nolinkurl{textbook/code}. You can open them, copy them, and load them
+onto the board right away.
+
+\begin{infobox}[Conventions]
+\begin{itemize}
+  \item Blue ``Reference'' boxes contain useful details.
+  \item Orange ``Warning!'' boxes warn about common mistakes.
+  \item Purple ``Key idea'' boxes sum up a section.
+  \item Green ``Task'' and ``Do it yourself'' boxes suggest something to do
+    on your own in Logra.
+  \item Light-blue ``Build it first'' boxes give a task before the theory.
+  \item Italic ``Looking ahead'' notes mark rare glimpses into Part II.
+\end{itemize}
+\end{infobox}

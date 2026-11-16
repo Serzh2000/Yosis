@@ -1,0 +1,77 @@
+\chapter{Cheat Sheet}
+
+\section{Verilog on One Page}
+
+\begin{vcode}
+module name #(parameter integer N = 8) (   // parameter
+    input  wire         clk,
+    input  wire [N-1:0] a,
+    output wire         y,
+    output reg  [N-1:0] q
+);
+    localparam [1:0] S0 = 2'd0;            // constant
+
+    wire t = &a;                           // AND reduction
+    assign y = t ? 1'b1 : 1'b0;            // multiplexer
+
+    always @(*) begin                      // combinational logic: =
+        case (a[1:0])
+            2'd0:    ...;
+            default: ...;
+        endcase
+    end
+
+    always @(posedge clk) begin            // flip-flops: <=
+        if (a == 0) q <= 0;
+        else        q <= q + 1'b1;
+    end
+
+    other_module u1 (.in(a), .out(...));   // module instance
+endmodule
+\end{vcode}
+
+\section{Common Mistakes}
+
+\begin{longtable}{p{0.42\textwidth} p{0.52\textwidth}}
+\toprule
+\textbf{Symptom} & \textbf{Probable cause} \\
+\midrule
+\endhead
+The LEDs light up ``backwards'' & You forgot that the LEDs light at 0: an inversion is needed \\
+Nothing works, the circuit is ``empty'' & The module output is connected to nothing, and the synthesizer removed all the logic; wrong names in \code{.cst} \\
+The counter counts many times for one button press & No debouncing and/or no edge detector \\
+Warning \emph{latch inferred} & An \code{else} or \code{default} is missing in \code{always @(*)} \\
+Two registers do not swap values & \code{=} was used instead of \code{<=} in \code{always @(posedge clk)} \\
+The number does not fit, the counter never reaches the needed value & The register is too narrow: check that $2^n > N$ \\
+\emph{Multiple drivers} & One signal is assigned in two different \code{always} blocks or \code{assign} statements \\
+The circuit disappears after power-off & It was loaded into SRAM; for permanent operation load it into Flash \\
+\bottomrule
+\end{longtable}
+
+\section{Tang Nano 20K Pins}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{l c l}
+\toprule
+\textbf{Signal} & \textbf{Pin} & \textbf{Purpose} \\
+\midrule
+\code{clk} & 4 & 27\,MHz \\
+\code{btn[0]}, \code{btn[1]} & 88, 87 & buttons S1, S2 \\
+\code{led[0..5]} & 15--20 & LEDs (active low) \\
+\code{uart\_tx}, \code{uart\_rx} & 69, 70 & UART over USB \\
+\code{ws2812} & 79 & RGB LED \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Useful Links}
+
+\begin{itemize}
+  \item Sipeed documentation: \url{https://wiki.sipeed.com/hardware/en/tang/tang-nano-20k/nano-20k.html}
+  \item Sipeed examples: \url{https://github.com/sipeed/TangNano-20K-example}
+  \item Gowin EDA environment: \url{https://www.gowinsemi.com}
+  \item Open-source tools (OSS CAD Suite):\\ \url{https://github.com/YosysHQ/oss-cad-suite-build}
+  \item The Apicula project: \url{https://github.com/YosysHQ/apicula}
+  \item HDLBits, an interactive Verilog tutorial: \url{https://hdlbits.01xz.net}
+\end{itemize}

@@ -1,0 +1,500 @@
+\chapter{Number Systems and Codes}
+\label{ch:codes}
+
+In Chapter~\ref{ch:signals} we found out that a wire stores one bit, and
+several wires give a binary number. But the panel in our project has a code
+lock: the digits of the code, the letters of a zone name, and the messages that
+travel over a communication line. Two questions arise. First, \emph{in what
+form is it most convenient to write numbers}: binary notation is long, people
+are used to decimal, and circuits are used to binary. Second, \emph{how do we
+send a code without making a mistake}: wires pick up noise, and a single
+flipped bit will turn ``1998'' into ``1999''.
+This chapter answers both questions: the first section covers number systems,
+BCD and fractional numbers; the second covers character codes, the Gray code,
+the parity bit and the Hamming code, which can correct errors.
+
+\begin{buildbox}
+Open Logra, go to the \emph{Learn} tab, and complete the lesson ``Binary-coded
+decimal'' (chapter ``Comparison and codes''). Then open the
+\code{hamming-encode} project from the example library, apply four bits to the
+input, and look at the \emph{Waveforms} tab to see which seven bits are sent
+into the channel. Below we will work out how the extra three bits are
+computed.
+\end{buildbox}
+
+\section{Numbers and Number Systems}
+
+\subsection{Quick Conversion}
+
+In Chapter~\ref{ch:signals} we already converted several numbers to binary
+and got to know hexadecimal notation. Let us recall the key point: each
+hexadecimal digit corresponds to exactly four bits, so
+$11001000_2 = \text{C8}_{16} = 12\cdot 16 + 8 = 200$. The octal system
+works the same way, except that one digit corresponds to three bits. You will
+rarely meet it today: for example, in Unix file permissions (\code{chmod 755}).
+
+\begin{infobox}[How to convert quickly]
+From binary to hexadecimal: split the number into groups of four from right to
+left, adding zeros on the left, and replace each group with a digit. Going back,
+expand each digit into four bits. Multiplying and dividing by a power of two is
+just a shift: $x \cdot 2^k$ appends $k$ zeros on the right.
+\end{infobox}
+
+\begin{diybox}[Binary, hexadecimal, decimal]
+\textbf{Task.} Convert the number $\text{B7}_{16}$ to binary and decimal
+and show it on eight LEDs.\par
+\textbf{In Logra.} The \emph{Learn} tab, the lesson ``A number on four LEDs''
+(repeat it for two groups of four bits); the \emph{Designer} tab.\par
+\textbf{Expected result.} For $\text{B7}_{16}=10110111_2=183$ six LEDs are
+lit (bits 7, 5, 4, 2, 1 and 0).\par
+\textbf{How to check.} The \emph{Waveforms} tab: apply the number and compare
+the output with your notation; you compute the decimal value yourself.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: convert $\text{3C}_{16}$ to binary.
+  \item[\stars{2}] Modify: how does the notation change if you multiply the
+    number by 4? Check it by shifting two places.
+  \item[\stars{3}] Project: build a circuit that shows an eight-bit number
+    on two four-bit LED indicators (the high and low halves separately, like
+    two hexadecimal digits).
+\end{itemize}
+\end{diybox}
+
+\subsection{Binary-Coded Decimal}
+
+People are used to the decimal system, so devices that show numbers (clocks,
+calculators, instruments) often store not a binary number but
+\emph{each decimal digit separately} as four bits. This code is called
+\term{binary-coded decimal} (BCD) with weights
+8--4--2--1.
+
+\begin{table}[H]
+\centering
+\caption{The number 2026 in different forms}
+\small
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Form} & \textbf{Notation} \\
+\midrule
+Decimal & 2\,0\,2\,6 \\
+Binary & \code{0111 1110 1010} (12 bits) \\
+Hexadecimal & \code{7EA} \\
+BCD & \code{0010 0000 0010 0110} (16 bits, one digit per nibble) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The advantages of BCD: driving a display comes down to a simple decoder for
+one digit (we will build such circuits in Chapter~\ref{ch:coders}), and
+rounding of decimal fractions is exact. The disadvantages: the code is
+wasteful (the combinations \code{1010}--\code{1111} are not used), and
+arithmetic is more complicated.
+If you add two BCD digits with ordinary binary addition and get a result
+greater than nine, it must be corrected: add \code{0110} (six) to skip the
+six unused combinations and produce a carry into the next digit.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1.0cm,y=1.0cm, font=\sffamily\small]
+  \node[anchor=east] at (0,1) {$0111$};
+  \node[anchor=east] at (0,0.4) {$+\ 0101$};
+  \draw (-1.6,0.1) -- (0,0.1);
+  \node[anchor=east] at (0,-0.3) {$1100$};
+  \node[anchor=west, text=FpgaGray] at (0.4,-0.3) {$12>9$---not a BCD digit};
+  \node[anchor=east] at (0,-0.9) {$+\ 0110$};
+  \draw (-1.6,-1.2) -- (0,-1.2);
+  \node[anchor=east] at (0,-1.6) {$1\,0010$};
+  \node[anchor=west, text=FpgaGreen!60!black] at (0.4,-1.6) {carry 1 and digit 2: this is $12$ in BCD};
+  \node[anchor=east] at (0,2) {\textbf{7 + 5}};
+\end{tikzpicture}
+\caption{Adding $7+5$ in BCD: after ordinary addition we add the correction 6}
+\end{figure}
+
+\begin{diybox}[The lock code in BCD]
+\textbf{Task.} Encode a two-digit lock code (for example, 27) in BCD:
+each digit as a separate group of four bits.\par
+\textbf{In Logra.} The \emph{Learn} tab, the lesson ``Binary-coded decimal'';
+the \code{binary-bcd} example from the example library.\par
+\textbf{Expected result.} For 27 you get \code{0010 0111}; the plain
+binary number 27 looks different (\code{0001 1011}).\par
+\textbf{How to check.} In the \code{binary-bcd} example apply a number and, on
+the \emph{Waveforms} tab, compare the output with your hand-written result.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: write the number 1998 in BCD (problem~2).
+  \item[\stars{2}] Modify: add $8+5$ in BCD and show where the correction 6 is needed.
+  \item[\stars{3}] Project. \emph{Stage of the ``Security Panel'' project: the lock code in
+    BCD.} Choose a four-digit lock code and write it in BCD
+    (16 bits). Acceptance criterion: each of the four nibbles lies in the
+    range \code{0000}--\code{1001}, and the number of output bits is 16.
+\end{itemize}
+\end{diybox}
+
+\subsection{Fractional Numbers}
+
+Storing integers is easy. But how do we store $3.14$? There are two ways.
+
+\term{Fixed point.} We simply agree that the point is located
+between fixed bit positions. In the Q4.4 format a byte is split in half: the upper
+4 bits are the integer part, the lower 4 are the fractional part with weights $\tfrac12, \tfrac14,
+\tfrac18, \tfrac1{16}$. Then \code{0011\,0100} is $3 + \tfrac14 = 3.25$. All
+addition and subtraction is done with ordinary integer addition, and
+multiplication with ordinary multiplication, after which the result is shifted by
+the number of fractional bits. For signal processing this is the main method: it
+saves circuit resources.
+
+\term{Floating point.} A number is stored as $(-1)^s \cdot m \cdot
+2^{e}$: sign, mantissa and exponent. The IEEE~754 standard for the 32-bit
+\code{float} format allots 1 bit for the sign, 8 for the exponent and 23 for the mantissa.
+The range is huge (about $10^{\pm 38}$), but the precision is limited to seven decimal
+digits, and the number $0.1$ cannot be represented exactly in binary at all (it is
+an infinite repeating fraction), just as $\tfrac13$ cannot in decimal. A
+floating-point adder is much more complex and larger than an integer one,
+so in small devices people try to avoid it.
+
+\begin{diybox}[A fraction in one byte]
+\textbf{Task.} Find the value of the byte \code{0x2A} in the Q4.4 format and
+write the number 5.75 in this format.\par
+\textbf{In Logra.} The \emph{Designer} tab: an eight-bit bus on
+LEDs; write the bit weights next to it on a sheet of paper.\par
+\textbf{Expected result.} $\code{0x2A}=0010\,1010_2=2.625$;
+$5.75=0101\,1100_2=\code{0x5C}$.\par
+\textbf{How to check.} Multiply the byte by 16 and divide by 256, or
+add up the weights of the ones: the sums must agree.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: $\code{0x34}$ in Q4.4 (the answer is 3.25).
+  \item[\stars{2}] Modify: what is the smallest step of the Q4.4 format and what is the largest
+    number it can store?
+  \item[\stars{3}] Project: devise a fixed-point format for a voltage
+    of 0--3.3~V with a step of at most 0.02~V; how many bits are needed?
+\end{itemize}
+\end{diybox}
+
+\section{Codes for Transmission and Checking}
+
+\subsection{Character Codes and the Gray Code}
+
+Letters are encoded as numbers too. The best-known code is \term{ASCII}: 7 bits per
+character, 128 characters. The Latin letters go in sequence (\code{A} = 65 = \code{0x41},
+\code{B} = 66 and so on), and so do the digits (\code{0} = 48 = \code{0x30}), so
+the code of a digit differs from the code of its character by $48$. The first 32 codes are control
+codes (line feed \code{0x0A}, carriage return \code{0x0D}). Cyrillic letters and
+other symbols are encoded in modern systems by UTF-8, where one character
+takes from one to four bytes. \lookahead{in the Verilog hardware description language
+a character in quotes turns into its ASCII code: \code{"A"} is the same thing
+as \code{8'h41} (Chapter~\ref{ch:verilog}).}
+
+Another important code is the \term{Gray code}. It is needed when a number is read from
+a moving sensor, for example from a disc mounted on a shaft. In binary code,
+the transition $011\to100$ changes three bits at once, and if they do not change
+at the same moment, a wrong number is read for an instant (\code{111} or
+\code{000}). In the Gray code, adjacent numbers differ in exactly one bit, so
+the error will never exceed one position.
+
+\begin{table}[H]
+\centering
+\caption{Three-bit Gray code}
+\small
+\begin{tabular}{c c c}
+\toprule
+\textbf{Number} & \textbf{Binary} & \textbf{Gray} \\
+\midrule
+0 & \code{000} & \code{000} \\
+1 & \code{001} & \code{001} \\
+2 & \code{010} & \code{011} \\
+3 & \code{011} & \code{010} \\
+4 & \code{100} & \code{110} \\
+5 & \code{101} & \code{111} \\
+6 & \code{110} & \code{101} \\
+7 & \code{111} & \code{100} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The conversion is simple: the most significant bit is copied, and each following Gray bit is equal to
+the sum modulo two of two adjacent bits of the binary number. Here and below,
+the symbol $\oplus$ denotes \term{exclusive OR}: $a\oplus b=1$ if the
+bits differ ($0\oplus 0=0$, $0\oplus 1=1$, $1\oplus 1=0$). So, for
+$101_2$: $1$, $1\oplus 0=1$, $0\oplus 1=1$, that is \code{111}. We will examine the
+exclusive-OR gate and recoding circuits in more detail in
+Chapters~\ref{ch:gates} and~\ref{ch:coders}. \lookahead{the Gray code is also useful when
+passing a counter between parts of a circuit with different clocks
+(Chapter~\ref{ch:clocks}).}
+
+\begin{diybox}[Letter, digit, Gray]
+\textbf{Task.} Determine the ASCII code of the character \code{7} and of the character \code{G},
+and then write the number 5 in the Gray code.\par
+\textbf{In Logra.} The \code{gray} example (the \emph{Waveforms} tab).
+For the character code you can open the \code{uart-tx} example and see which byte
+is sent for a letter.\par
+\textbf{Expected result.} \code{7} = $48+7=55=\code{0x37}$;
+\code{G} = $65+6=71=\code{0x47}$; the number 5 in the Gray code is \code{111}.\par
+\textbf{How to check.} In the \code{gray} example the sequence 0\ldots 7
+must change by one bit per step: check this on the waveform.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: write all the numbers from 0 to 7 in the Gray code.
+  \item[\stars{2}] Modify: find which transition changes the most
+    bits in binary code, and explain why this is dangerous for a sensor.
+  \item[\stars{3}] Project: build the table of the four-bit Gray code and
+    verify that the last code (number 15) differs from the first (number 0)
+    in one bit, that is, the sequence can be closed into a ring.
+\end{itemize}
+\end{diybox}
+
+\subsection{Detecting Errors: the Parity Bit}
+
+Any communication channel and any memory makes mistakes from time to time: noise on a wire, a
+cosmic particle hitting a memory cell. The simplest way to notice an
+error is to add one bit to the data so that the number of ones in the whole word
+becomes even. This is the \term{parity bit}.
+
+\begin{table}[H]
+\centering
+\caption{Parity bit for 4-bit data}
+\small
+\begin{tabular}{ccc}
+\toprule
+\textbf{Data} & \textbf{Ones} & \textbf{Parity bit} \\
+\midrule
+0000 & 0 & 0 \\
+0111 & 3 & 1 \\
+1011 & 3 & 1 \\
+1111 & 4 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The parity bit equals the exclusive OR of all the data bits: $p = d_0 \oplus d_1
+\oplus d_2 \oplus d_3$. The receiving side computes the same sum modulo two,
+this time together with the parity bit; if the result is one, one of the positions (or an
+odd number of them) was corrupted. The method detects a single error, but does not know
+where it is, and does not notice two errors at once.
+
+\begin{diybox}[Parity of a lock digit]
+\textbf{Task.} For a digit of the lock code in BCD compute the parity bit and
+verify that a single error in the received word is detected.\par
+\textbf{In Logra.} The \emph{Learn} tab, the lesson ``Word parity check'';
+the \code{parity} and \code{serial-parity} examples.\par
+\textbf{Expected result.} For the digit 7 (\code{0111}) the parity bit is 1,
+and the word \code{01111} contains four ones.\par
+\textbf{How to check.} The \emph{Waveforms} tab: invert one bit of the
+received word and verify that the error flag becomes 1.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: complete the lesson ``Word parity check''.
+  \item[\stars{2}] Modify: invert two bits at once and show that parity
+    does not notice the error.
+  \item[\stars{3}] Project: build a transmitter that forms a
+    five-bit word (the digit and a parity bit) from a BCD digit. Acceptance criterion: for
+    all digits 0--9 the number of ones in the word is even.
+\end{itemize}
+\end{diybox}
+
+\subsection{Correcting Errors: the Hamming Code}
+
+Is it possible not only to notice but also to \emph{correct} an error? Yes, if there are
+several check bits and each one checks its own part of the word. The classic
+example is the \term{Hamming (7,4) code}: four data bits are turned into
+seven, and any single error is corrected.
+
+The bit positions are numbered from 1 to 7. The positions equal to powers of two (1, 2,
+4) hold the check bits $p_1, p_2, p_3$, and the others hold the data
+bits $d_1 \ldots d_4$. Each check bit checks those positions whose number has
+the corresponding one in its binary representation.
+
+\begin{table}[H]
+\centering
+\caption{Positions of the Hamming (7,4) code and the areas they check}
+\small
+\begin{tabular}{l*{7}{c}}
+\toprule
+\textbf{Position} & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\
+\textbf{Contents} & $p_1$ & $p_2$ & $d_1$ & $p_3$ & $d_2$ & $d_3$ & $d_4$ \\
+\midrule
+$p_1$ checks & \checkmark & & \checkmark & & \checkmark & & \checkmark \\
+$p_2$ checks & & \checkmark & \checkmark & & & \checkmark & \checkmark \\
+$p_3$ checks & & & & \checkmark & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The encoder computes each $p$ as the parity of its group:
+$p_1 = d_1\oplus d_2\oplus d_4$, $p_2 = d_1\oplus d_3\oplus d_4$,
+$p_3 = d_2\oplus d_3\oplus d_4$. The decoder recomputes three checks
+$s_1, s_2, s_3$ from the received word. If there is no error, all of them are zero. If the error
+is in position $k$, then the set $(s_3 s_2 s_1)$ is exactly the binary representation
+of the number $k$. This triple is called the \term{syndrome}: it points directly to the
+position of the error, and all that remains is to flip that bit.
+
+\begin{ideabox}
+For example, let the data be $d_1d_2d_3d_4 = 1011$. The encoder gives $p_1 = 1\oplus 0\oplus 1 = 0$,
+$p_2 = 1\oplus 1\oplus 1 = 1$, $p_3 = 0\oplus 1\oplus 1 = 0$, and the word
+\code{0110011} is sent into the channel. If the sixth bit gets flipped, the decoder obtains $s_1=0$, $s_2=1$,
+$s_3=1$, that is, the syndrome $110_2=6$. The bit in position 6 is flipped back, and
+the data is recovered.
+\end{ideabox}
+
+The whole circuit consists of exclusive-OR trees: the encoder computes three parities, and
+the decoder recomputes the same three and, from their values, chooses which bit to
+flip.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\small, bx/.style={draw, minimum width=26mm, minimum height=12mm, fill=white, rounded corners=2pt, align=center}]
+  \node[bx, fill=FpgaLight] (enc) at (0,0) {Encoder\\{\scriptsize 4 bits $\to$ 7 bits}};
+  \node[bx, fill=orange!12] (ch) at (4.6,0) {Channel\\{\scriptsize error possible}};
+  \node[bx, fill=FpgaLight] (syn) at (9.2,0) {Syndrome\\{\scriptsize $s_3 s_2 s_1$}};
+  \node[bx, fill=green!10] (fix) at (9.2,-2.2) {Correction\\{\scriptsize flip bit $k$}};
+  \draw[-{Stealth}] (-2.8,0) node[left] {data} -- (enc);
+  \draw[-{Stealth}] (enc) -- node[above] {7 bits} (ch);
+  \draw[-{Stealth}] (ch) -- node[above] {7 bits} (syn);
+  \draw[-{Stealth}] (syn) -- node[right] {$k$} (fix);
+  \draw[-{Stealth}] (fix.west) -- ++(-2.2,0) node[left] {data};
+\end{tikzpicture}
+\caption{The path of data through the Hamming code}
+\end{figure}
+
+\paragraph{Example: sending a byte with an error.} Let us send the byte
+\code{0x41} over a line, that is the letter \code{A} in ASCII: $0100\,0001_2$. The Hamming
+(7,4) code protects four bits, so the byte is split into two halves
+(nibbles), and each one is encoded separately.
+
+\begin{table}[H]
+\centering
+\caption{Encoding the byte \code{0x41} as two Hamming (7,4) words}
+\small
+\begin{tabular}{l c c c c l}
+\toprule
+\textbf{Half} & \textbf{Data} $d_1d_2d_3d_4$ & $p_1$ & $p_2$ & $p_3$ & \textbf{Word (positions 1--7)} \\
+\midrule
+High & \code{0100} & 1 & 0 & 1 & \code{1001100} \\
+Low & \code{0001} & 1 & 1 & 1 & \code{1101001} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Fourteen bits were sent instead of eight: that is the price of protection. Suppose that in the channel
+the fifth bit of the second word was flipped, and it arrived as \code{1101101}.
+The decoder recomputes the checks: $s_1$ (positions 1, 3, 5, 7) gives
+$1\oplus 0\oplus 1\oplus 1=1$; $s_2$ (positions 2, 3, 6, 7) gives
+$1\oplus 0\oplus 0\oplus 1=0$; $s_3$ (positions 4, 5, 6, 7) gives
+$1\oplus 1\oplus 0\oplus 1=1$. The syndrome is $s_3s_2s_1=101_2=5$: the error is in the fifth
+position. The decoder flips bit 5, obtains \code{1101001} and extracts
+the data \code{0001} from positions 3, 5, 6, 7. Gluing the two halves together, we get
+\code{0100\,0001}, that is, \code{0x41} again. A parity check would in this case
+only report that the word is damaged, but would not say where, and the byte
+would have to be requested again.
+
+Such a code is used in server memory (ECC), in communication lines, and in QR codes (which
+use a more powerful code, the Reed--Solomon code). The more check bits there are,
+the more errors can be corrected, but the greater the redundancy. For 64 data bits,
+8 check bits are enough (7 for the Hamming scheme and one overall parity bit
+to detect double errors). \lookahead{we will describe this scheme in Verilog and
+test it on all 16 data values and all seven single errors in
+Chapter~\ref{ch:bridge}.}
+
+\begin{diybox}[A byte with an error]
+\textbf{Task.} Encode a nibble with the Hamming (7,4) code, corrupt one bit
+of the word, and find the damaged position from the syndrome.\par
+\textbf{In Logra.} The \code{hamming-encode} (encoder) and
+\code{hamming-syndrome} (syndrome computation) examples from the example library.\par
+\textbf{Expected result.} For the data \code{0110} you get the word
+\code{1100110}; if you invert the seventh bit, the syndrome is $111_2=7$.\par
+\textbf{How to check.} The \emph{Waveforms} tab: apply a word with an error to
+\code{hamming-syndrome} and verify that the syndrome equals the position number;
+flip the bit with that number, and the syndrome becomes zero.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: encode \code{0110} (problem~3) and compare with
+    the \code{hamming-encode} example.
+  \item[\stars{2}] Modify: introduce an error into the check bit $p_2$ and verify
+    that the syndrome points to position 2, even though the data was not damaged.
+  \item[\stars{3}] Project: encode the byte \code{0x5A} as two words and corrupt
+    one different bit in each. Acceptance criterion: from the syndromes you
+    recover the original byte.
+\end{itemize}
+\end{diybox}
+
+\subsection{How to Choose a Code}
+
+\begin{table}[H]
+\centering
+\caption{Choosing a number representation}
+\small
+\begin{tabularx}{\textwidth}{l X X}
+\toprule
+\textbf{Code} & \textbf{Where it is used} & \textbf{Feature} \\
+\midrule
+Binary & Counters, addresses, arithmetic & The most compact \\
+Two's complement & Signed numbers & Subtraction reduces to addition \\
+BCD & Displays, clocks, finance & Easy to display, exact decimal fractions \\
+Gray code & Angle sensors, reliable counter transfer & Adjacent values differ in one bit \\
+Parity bit & Simple channels & Detects a single error \\
+Hamming code & Memory, communications & Corrects a single error \\
+Fixed point & Digital signal processing & Fast and cheap \\
+Floating point & Scientific computing & Huge range, but expensive \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{diybox}[Sending the lock code]
+\textbf{Task.} Prepare the lock code for transmission: write the digits in BCD and
+add a parity bit to each.\par
+\textbf{In Logra.} The lesson ``Binary-coded decimal'', the lesson ``Word parity check'',
+the \code{binary-bcd} example.\par
+\textbf{Expected result.} The code 27: the digit 2 is \code{0010} with parity
+bit 1, the digit 7 is \code{0111} with parity bit 1.\par
+\textbf{How to check.} The \emph{Waveforms} tab: for each digit the number of
+ones in the five-bit word is even.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: prepare the code 15 for transmission.
+  \item[\stars{2}] Modify: flip one bit and show that the receiver
+    notices the error.
+  \item[\stars{3}] Project. \emph{Stage of the ``Security Panel'' project: the lock code in BCD,
+    parity bit.} Build a digit transmitter (4 BCD bits $\to$ 5 bits with
+    parity) and a receiver that shows an error flag. Acceptance
+    criterion: for all digits 0--9 without an error the flag is 0, and when
+    any single bit is inverted the flag is 1.
+\end{itemize}
+\end{diybox}
+
+\section{Common Mistakes}
+
+\begin{warnbox}[Common mistakes]
+\begin{itemize}
+  \item \textbf{Adding BCD as binary.} The sum $7+5$ gives \code{1100}, which is not a
+    BCD digit. If the result is greater than 9, the correction \code{0110} is needed.
+  \item \textbf{Confusing BCD and a binary number.} \code{0001 1011} is binary 27,
+    while BCD 27 is \code{0010 0111}.
+  \item \textbf{Expecting a parity bit to correct errors.} It only notices a
+    single error, and misses a double one.
+  \item \textbf{Numbering Hamming positions from zero.} Positions are counted from 1,
+    otherwise the syndrome will not match the error number; the check bits are at
+    positions 1, 2, 4.
+\end{itemize}
+\end{warnbox}
+
+\section{Questions and Problems}
+\label{sec:tasks-codes}
+
+The answers are collected in Appendix~\ref{app:answers}.
+
+\begin{taskbox}[Chapter problems]
+\begin{enumerate}
+  \item \stars{1}~Convert $\text{B7}_{16}$ and $\text{3C}_{16}$ to binary and decimal.
+  \item \stars{1}~Write the number 1998 in binary-coded decimal.
+  \item \stars{2}~Encode the data $d_1d_2d_3d_4 = 0110$ with the Hamming (7,4) code.
+  \item \stars{2}~The word \code{1100111} was received. Find the syndrome, indicate the damaged position and recover the data.
+  \item \stars{1}~The data is \code{1011001}. What is the parity bit (we pad to an even number of ones)?
+  \item \stars{1}~What is the number \code{0x2A} in the fixed-point format Q4.4?
+  \item \stars{2}~\emph{Find the mistake.} A student added the BCD digits $8+5$ and wrote the result \code{1101}, declaring it to be thirteen. What is wrong, and how do you correctly obtain the BCD notation?
+  \item \stars{2}~\emph{Find the mistake.} A student claims: ``the parity bit lets you correct a single error, you just need to flip the wrong bit.'' What is wrong here?
+  \item \stars{3}~\emph{Project.} Stage of the ``Security Panel'' project: the lock code. Build in Logra a digit transmitter: the input is a digit 0--9 in BCD (4 bits), the output is five bits (the digit and a parity bit, padded to an even number of ones). Acceptance criterion: on the \emph{Waveforms} tab, for all digits 0--9 the number of ones on the output is even.
+  \item \stars{3}~\emph{Project.} Encode the byte \code{0x5A} as two Hamming (7,4) words. Corrupt position 3 in the high word and show that the syndrome recovers the original data. Check the result with the \code{hamming-encode} and \code{hamming-syndrome} examples. Acceptance criterion: the syndrome is 3, and after correction the data is \code{0101}.
+\end{enumerate}
+\end{taskbox}
+
+\section{What's Next}
+
+Now the panel has a lock code in BCD and protected transmission of digits, but
+it still has no ``brain'': a circuit that produces an alarm signal from several
+sensors is built from logic gates. In the next chapter, Chapter~\ref{ch:gates},
+we will learn how to write the rule ``the door is open AND (it is night OR the guard is on)''
+and how to build it from gates. Along the way we will examine the exclusive OR, which we
+have already met in parity and in the Hamming code.

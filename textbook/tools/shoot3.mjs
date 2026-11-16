@@ -1,31 +1,27 @@
 // Снимки для расширенных глав (коды, шины, автоматы, АЦП, UART, процессор, тактирование).
 // Запуск: node tools/shoot3.mjs [имя_снимка ...]
 import { readFileSync } from 'node:fs';
-import { open, newProject, synth, tab, shot, shotEl } from './lib.mjs';
+import { open, newProject, synth, tab, shot, shotEl, rtlShot, waveStyle, T, LANG, OUT } from './lib.mjs';
+const en = LANG === 'en';
 
 const only = process.argv.slice(2);
 const code = (d, f) => readFileSync(new URL(`../code/${d}/${f}`, import.meta.url), 'utf8');
-const tourMode = (process.argv[2] ?? 'all') === 'tour';
-const { b, page } = tourMode ? await open(1400, 860, 2) : await open();
+const { b, page } = await open(1100, 760, 3);
 
-async function rtl(name, extra = {}) {
-  await tab(page, /^RTL/);
-  await page.waitForTimeout(3500);
-  await shotEl(page, '.schematic-root', name);
-}
+async function rtl(name) { await rtlShot(page, name); }
 async function openScenario() {
-  await tab(page, /^Диаграммы/);
-  await page.getByRole('button', { name: 'Настроить сценарий' }).click();
+  await tab(page, T.waves);
+  await page.getByRole('button', { name: T.scenario }).click();
 }
 async function runTab(cycles) {
-  await page.getByRole('tab', { name: /^Запуск/ }).click();
-  const field = page.locator('label').filter({ hasText: /^Циклов$/ }).locator('input');
+  await page.getByRole('tab', { name: T.tabRun }).click();
+  const field = page.locator('label').filter({ hasText: T.cycles }).locator('input');
   await field.fill(String(cycles));
   await field.press('Tab');
   console.log('cycles field value', await field.inputValue(), 'max', await field.getAttribute('max'));
 }
 async function inputs(values) {
-  await page.getByRole('tab', { name: /^Входы/ }).click();
+  await page.getByRole('tab', { name: T.tabInputs }).click();
   for (const [name, value] of Object.entries(values)) {
     const row = page.locator('[role=tabpanel] >> text=' + name).first();
     const input = row.locator('xpath=ancestor::*[.//input][1]').locator('input').first();
@@ -33,48 +29,51 @@ async function inputs(values) {
   }
 }
 async function events(rows) {
-  await page.getByRole('tab', { name: /^События/ }).click();
+  await page.getByRole('tab', { name: T.tabEvents }).click();
   let n = 0;
   for (const [period, values] of rows) {
     n += 1;
-    await page.getByRole('button', { name: 'Добавить шаг' }).click();
-    await page.getByLabel(`Период шага ${n}`, { exact: true }).fill(String(period));
+    await page.getByRole('button', { name: T.addStep }).click();
+    await page.getByLabel(T.stepPeriod(n), { exact: true }).fill(String(period));
     for (const [sig, v] of Object.entries(values))
-      await page.getByLabel(`${sig}, шаг ${n}`, { exact: true }).fill(String(v));
+      await page.getByLabel(T.stepSig(sig, n), { exact: true }).fill(String(v));
   }
 }
 async function hideInternals() {
   for (let k = 0; k < 30; k++) {
-    const btn = page.locator('button[aria-label*="крыть"]');
+    const btn = page.locator('button[aria-label]');
     const labels = await btn.evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')));
-    const i = labels.findIndex((l) => /\._/.test(l ?? ''));
+    const i = labels.findIndex((l) => T.hide.test(l ?? '') && /\._/.test(l ?? ''));
     if (i < 0) break;
     await btn.nth(i).click();
     await page.waitForTimeout(150);
   }
 }
 async function onlySignals(names) {
-  await page.getByRole('button', { name: /^Сигналы/ }).click();
-  await page.getByRole('button', { name: 'Скрыть все' }).click();
+  await page.getByRole('button', { name: T.signals }).click();
+  await page.getByRole('button', { name: T.hideAll }).click();
   for (const n of names) {
     const item = page.locator('label[title]').and(page.getByTitle(new RegExp(String.raw`dut\.${n}(\[|$)`))).first();
     const box = item.locator('input[type=checkbox]');
     if (!(await box.isChecked())) await box.evaluate((el) => el.click());
   }
-  await page.getByRole('button', { name: 'Закрыть выбор сигналов' }).click({ force: true });
+  await page.getByRole('button', { name: T.closePicker }).click({ force: true });
   await page.waitForTimeout(500);
 }
 async function waveShot(name, signals) {
-  await page.getByRole('button', { name: 'Закрыть' }).first().click().catch(() => {});
-  await page.getByRole('button', { name: 'Симулировать', exact: true }).click();
+  await waveStyle(page);
+  await page.getByRole('button', { name: T.close }).first().click().catch(() => {});
+  await page.getByRole('button', { name: T.simulate, exact: true }).click();
   await page.locator('.waveform-track-svg').first().waitFor({ timeout: 60000 });
   await page.waitForTimeout(1200);
   if (signals) await onlySignals(signals); else await hideInternals();
-  await page.getByRole('button', { name: 'Показать весь интервал диаграммы' }).click();
+  await page.getByRole('button', { name: T.fullRange }).click();
   await page.waitForTimeout(500);
   const rows = page.locator('.waveform-track-svg');
   const last = await rows.nth((await rows.count()) - 1).boundingBox();
   const top = await page.locator('.waveform-viewer').first().boundingBox();
+  await page.mouse.move(5, 745);
+  await page.waitForTimeout(300);
   await shot(page, name, { clip: { x: top.x, y: top.y, width: top.width, height: last.y + last.height + 8 - top.y } });
 }
 async function project(name, top, dir, file) {
@@ -158,7 +157,7 @@ for (const [name, fn] of Object.entries(jobs)) {
     await fn();
     console.log('ok', name);
   } catch (e) {
-    await page.screenshot({ path: 'img/_fail.png' });
+    await page.screenshot({ path: OUT + '/_fail.png' });
     console.log('FAIL', name, String(e.message).split('\n')[0]);
   }
 }

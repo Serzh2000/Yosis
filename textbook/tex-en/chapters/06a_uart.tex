@@ -1,0 +1,254 @@
+\chapter{Serial Interfaces: UART, SPI, I$^2$C}
+\label{ch:uart}
+
+A chip has a limited number of pins, but there is a lot of data to transfer. If
+you send a byte over eight wires at once (a \term{parallel} interface), you
+need eight pins and eight traces on the board, and at high frequencies the
+wires start to interfere with each other. That is why data between chips is
+most often transferred \term{serially}: over a single wire, bit by bit. In
+this chapter we will look at the three most common serial interfaces and build
+one of them---UART---completely on an FPGA, from the transmitter to the
+receiver.
+
+\section{Three Interfaces}
+
+\begin{table}[H]
+\centering
+\caption{Comparison of serial interfaces}
+\small
+\begin{tabularx}{\textwidth}{l X X X}
+\toprule
+ & \textbf{UART} & \textbf{SPI} & \textbf{I$^2$C} \\
+\midrule
+Wires & 2 (TX, RX) + ground & 4 (SCK, MOSI, MISO, CS) & 2 (SDA, SCL) \\
+Clock & none, the speed is agreed in advance & yes, the master generates SCK & yes, the master generates SCL \\
+Devices & 2 (point-to-point) & 1 master and several slaves (selected by CS lines) & up to 127 addresses on 2 wires \\
+Speed & up to a few Mbit/s & tens of Mbit/s & 0.1--3.4 Mbit/s \\
+Typical uses & console, GPS, Bluetooth modules & Flash, displays, ADCs & sensors, clocks, EEPROM \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{diybox}[How many wires per interface]
+\textbf{Task.} Compare the three interfaces using ready-made examples and make sure the number of signals matches the table above.
+
+\textbf{In Logra.} In the From an example card, open three projects: UART transmitter 8N1, SPI mode 0: internal loopback, and I²C: START and STOP. On the Code tab, look at the port list of the top-level module; on the Pins tab, see which of them the platform needs.
+
+\textbf{Expected result.} UART has separate transmit and receive lines (\code{tx}, \code{rx}) and no clock; SPI has \code{SCK}, \code{MOSI}, \code{MISO}, \code{CS}; I$^2$C has a single pair of lines, \code{SDA} and \code{SCL}.
+
+\textbf{How to check.} Make a table ``interface---signals---has a clock'' and compare it with the table above; in the SPI example, note that the exchange is internal (loopback) and the board pins are not used.
+
+\stars{1} repeat: fill in the table for the three projects. \stars{2} modify: choose an interface for a sensor that has only one free pin left, and justify your choice. \stars{3} project: Security Panel stage---choosing the communication channel; acceptance criterion: one paragraph explains why the panel uses UART to talk to the computer.
+\end{diybox}
+
+\section{UART}
+
+\term{UART} (universal asynchronous receiver-transmitter) is the simplest
+interface; it is present in every microcontroller and in the USB bridge on your
+board (it is exactly what connects the FPGA to the computer over USB).
+Asynchronous means that there is \emph{no shared clock signal}: the transmitter
+and the receiver agree on the speed (the baud rate) in advance, and the
+receiver adjusts itself to the start of each byte.
+
+At rest, the line is held at 1. A byte is sent as a frame: a start bit (0),
+eight data bits \emph{least significant bit first}, and a stop bit (1). This
+format is called 8N1 (8 data bits, no parity, 1 stop bit).
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1.0cm, y=0.8cm, font=\sffamily\scriptsize]
+  \draw[FpgaBlue, very thick]
+    (0,1) -- (1,1) -- (1,0) -- (2,0) -- (2,1) -- (3,1) -- (3,0) -- (8,0) -- (8,1) -- (9,1) -- (9,0) -- (10,0) -- (10,1) -- (11.5,1);
+  \foreach \x/\t in {1.5/start, 2.5/{$d_0$}, 3.5/{$d_1$}, 4.5/{$d_2$}, 5.5/{$d_3$}, 6.5/{$d_4$}, 7.5/{$d_5$}, 8.5/{$d_6$}, 9.5/{$d_7$}, 10.5/stop}
+    \node at (\x,1.7) {\t};
+  \foreach \x/\t in {2.5/1, 3.5/0, 4.5/0, 5.5/0, 6.5/0, 7.5/0, 8.5/1, 9.5/0}
+    \node[text=FpgaGray] at (\x,-0.5) {\t};
+  \foreach \x in {1,2,...,11} \draw[gray!50, dashed] (\x,-0.2) -- (\x,1.4);
+  \node[anchor=east] at (0,1) {1};
+  \node[anchor=east] at (0,0) {0};
+  \node[text=FpgaGray] at (0.5,0.5) {idle};
+  \draw[<->] (1,-1.1) -- node[below] {$T_{\text{bit}}$} (2,-1.1);
+  \node[font=\sffamily\small] at (6,-2.0) {Frame for the letter A = \code{0x41} = \code{01000001$_2$}: the least significant bit goes first};
+\end{tikzpicture}
+\caption{A UART 8N1 frame}
+\label{fig:uart_frame}
+\end{figure}
+
+\subsection{Baud Rate}
+
+The duration of one bit, $T_{\text{bit}}$, equals $1/\text{baud rate}$. For
+115\,200 baud it is about $8.7$~$\mu$s. The FPGA runs at 27~MHz, so one bit
+takes
+\[
+\text{CLKS\_PER\_BIT} = \frac{27\,000\,000}{115\,200} \approx 234 \text{ clock cycles}.
+\]
+Both the transmitter and the receiver count clock cycles and change (or read)
+a bit every \code{CLKS\_PER\_BIT} cycles.
+
+\subsection{The Transmitter}
+
+The transmitter is simpler: it stores the assembled frame in a shift register
+and puts its bits on the line on a timer. Between bytes, the line stays at
+rest (1). The state machine has two states: \code{IDLE}, where it waits for the
+\code{start} signal, and \code{SEND}, where the ten bits of the frame are sent
+(start, 8 data bits, stop).
+
+\subsection{The Receiver}
+
+The receiver is more complicated because it does not know when a frame will
+begin, and it has no shared clock. It works like this:
+
+\begin{enumerate}
+  \item It waits until the line drops to 0: this is the start of the start bit.
+  \item It counts \emph{half a bit} to land in the middle of the start bit and
+        checks that the line is still at zero (otherwise it was noise).
+  \item After that, it reads the line exactly once per bit---always in the middle
+        of the bit, where the signal has settled and is farthest from the edges.
+  \item It reads the stop bit: it must be a 1, otherwise the frame is considered
+        corrupted.
+\end{enumerate}
+
+In addition, the \code{rx} input comes from outside and has no relation to the
+FPGA clock, so there are two flip-flops in a row at the receiver input (a
+synchronizer, see Chapter~\ref{ch:clocks}).
+
+\vfile{\codepath/08_uart/uart.v}{code/08\_uart/uart.v}
+
+The file contains three modules. \code{uart\_tx} and \code{uart\_rx} are the
+transceivers themselves, with the \code{CLKS\_PER\_BIT} parameter, and
+\code{uart\_demo} is their demonstration: the transmitter keeps sending the
+letters from A to Z, and the \code{tx} output is connected to the receiver
+input of the same module, so the receiver gets what was sent. For viewing in
+the simulator, the speed is made very high (\code{CLKS\_PER\_BIT = 8});
+otherwise you would have to wait for thousands of clock cycles.
+
+\shot{n-uart-wave}{Sending the letter A in Logra: first the start bit and eight data bits appear on \code{tx}, then the receiver raises \code{rx\_valid} and \code{0x41} appears in \code{rx\_data}}{fig:n-uart-wave}
+
+On the waveform (Fig.~\ref{fig:n-uart-wave}) you can count the frame: the line
+goes down (start), several bits are sent, and at the end, exactly 10 bit
+periods later, the receiver announces a ready byte with a \code{rx\_valid}
+pulse and sets \code{rx\_data}.
+
+\begin{infobox}[How to connect to a computer]
+The USB bridge on your board brings UART out to the computer. All you need is
+to set \code{CLKS\_PER\_BIT = 234} (115\,200 baud at 27~MHz), assign the
+\code{tx} and \code{rx} pins in the pin planner, load the design, and open the
+UART terminal tab in the Connect section: the letters you send will appear
+there.
+\end{infobox}
+
+\begin{diybox}[Send the letter A]
+\textbf{Task.} Send the letter A (\code{0x41}) over UART, break down the frame using the waveform, and pass it through the receiver.
+
+\textbf{In Logra.} Open UART transmitter 8N1 and UART receiver 8N1, or \code{uart.v} from the book (\code{uart\_demo}, \code{CLKS\_PER\_BIT = 8}). Waveforms tab: the signals \code{tx}, \code{rx\_valid}, \code{rx\_data}.
+
+\textbf{Expected result.} The line goes down for the start bit, then come the bits $1,0,0,0,0,0,1,0$ (least significant first), then the stop 1; the receiver raises \code{rx\_valid} and sets \code{rx\_data = 0x41}.
+
+\textbf{How to check.} Waveforms (Fig.~\ref{fig:n-uart-wave}): count the bits of the frame, make sure the width of a bit equals \code{CLKS\_PER\_BIT} clock cycles and that \code{rx\_valid} arrives at the end of the frame. For the board: set \code{CLKS\_PER\_BIT = 234}, assign the pins on the Pins tab, then Connect tab $\to$ UART terminal.
+
+\stars{1} repeat: the letter A on the waveform. \stars{2} modify: send \code{0x55} and make sure the line alternates strictly. \stars{3} project: Security Panel stage---sending the state over UART; acceptance criterion: at every change of \code{state}, a byte (0, 1, or 2) appears in the terminal at 115\,200 baud.
+\end{diybox}
+
+\section{SPI}
+
+\term{SPI} has a shared clock, \code{SCK}, which makes it simpler and faster.
+The master generates the clock signal and the data on the \code{MOSI} line
+(master out, slave in), and at the same time receives data from the slave on
+the \code{MISO} line. The slave is selected by the active-low \code{CS} (chip
+select) signal.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.7cm, y=0.8cm, font=\sffamily\scriptsize]
+  \node[anchor=east] at (-0.2,2.7) {CS};
+  \draw[FpgaBlue, very thick] (0,3) -- (1,3) -- (1,2.4) -- (17,2.4) -- (17,3) -- (18,3);
+  \node[anchor=east] at (-0.2,1.5) {SCK};
+  \draw[FpgaBlue, very thick] (0,1.2) -- (2,1.2);
+  \foreach \i in {0,...,7}
+    \draw[FpgaBlue, very thick] (2+\i*2,1.2) -- (2+\i*2,1.8) -- (3+\i*2,1.8) -- (3+\i*2,1.2) -- (4+\i*2,1.2);
+  \node[anchor=east] at (-0.2,0) {MOSI};
+  \draw[FpgaGreen!60!black, very thick] (0,-0.3) -- (1,-0.3) -- (1,0.3) -- (3,0.3) -- (3,-0.3) -- (5,-0.3) -- (5,0.3) -- (9,0.3) -- (9,-0.3) -- (13,-0.3) -- (13,0.3) -- (15,0.3) -- (15,-0.3) -- (17,-0.3);
+  \foreach \i/\v in {0/1, 1/0, 2/1, 3/1, 4/0, 5/0, 6/1, 7/0} \node at (2+\i*2,-1.0) {\v};
+  \foreach \i in {0,...,7} \draw[gray!50, dashed] (2+\i*2,-0.5) -- (2+\i*2,1.9);
+  \node[align=left, anchor=west] at (0,-2.1) {Data changes on the falling edge of SCK and is read by the slave on the rising edge (dashed), mode 0};
+\end{tikzpicture}
+\caption{Sending the byte \code{10110010} over SPI. Data changes on the falling clock edge and is read on the rising edge}
+\end{figure}
+
+SPI has four \term{modes}---combinations of the clock polarity at rest (CPOL)
+and the phase (CPHA, reading on the first or the second edge). The modes must
+be checked against the slave device's documentation. The simplest SPI
+transmitter in an FPGA is the shift register from Chapter~\ref{ch:regs}, which
+shifts on every SCK cycle, plus a frequency divider that generates SCK itself.
+
+\begin{diybox}[SPI: shifting and sampling]
+\textbf{Task.} Send the byte \code{0xA6} over SPI in mode 0 and check that the master received the same thing through the internal loopback.
+
+\textbf{In Logra.} The SPI mode 0: internal loopback project (From an example card), parameter \code{HALF\_TICKS = 1}. Waveforms tab: \code{sck}, \code{mosi}, \code{cs\_n}, \code{received}.
+
+\textbf{Expected result.} \code{SCK} is 0 at rest; the data on \code{MOSI} changes on the falling edge and is read on the rising edge; after eight clock cycles, \code{received = 0xA6}.
+
+\textbf{How to check.} Waveforms: compare the order of the \code{MOSI} bits with \code{0xA6 = 10100110$_2$} (most significant first) and with the SPI frame figure.
+
+\stars{1} repeat: \code{0xA6}. \stars{2} modify: send \code{0xC3} and predict the value of \code{received}. \stars{3} project: Security Panel stage---status byte over SPI; acceptance criterion: \code{cs\_n} is low for exactly 8 cycles of \code{SCK}, and the data does not change on the rising edge.
+\end{diybox}
+
+\section{I$^2$C}
+
+\term{I$^2$C} uses only two wires, but in return it makes the protocol more
+complex. \code{SDA} carries data and \code{SCL} carries the clock. Both lines
+are open-drain and pulled up to the supply by resistors
+(Chapter~\ref{ch:electrical}), so any device can pull the line down to 0, while
+the 1 is created by the pull-up.
+
+A transfer begins with the \term{START} condition (SDA falls while SCL is
+high). Then come the 7-bit device address, the direction bit (read or write),
+and the \term{ACK} acknowledgment: the addressed chip itself pulls SDA low on
+the ninth clock cycle. Then bytes are transferred, each with an
+acknowledgment, and at the end comes the \term{STOP} condition (SDA rises while
+SCL is high). Many devices can sit on one line, each with its own address, and
+collisions do not happen precisely thanks to the open drain.
+
+An I$^2$C project is more complex: you need a state machine with dozens of
+states, and a real device acknowledges reception. The Logra lab has models of
+an OLED display, a clock, and a memory on I$^2$C that respond bit by bit, so you
+can test your state machine before turning on the board.
+
+\begin{diybox}[I\texorpdfstring{$^2$}{2}C: START and STOP]
+\textbf{Task.} Find the START and STOP conditions on the waveform and make sure an open-drain line cannot be forcibly pulled up to 1.
+
+\textbf{In Logra.} The I²C: START and STOP project (From an example card), \code{STEP\_TICKS = 1}; Waveforms tab: \code{sda}, \code{scl}, \code{drive\_sda\_low}.
+
+\textbf{Expected result.} START: \code{SDA} falls while \code{SCL} is high; then one training bit; STOP: \code{SDA} rises while \code{SCL} is high. There is no address or ACK in this example.
+
+\textbf{How to check.} Waveforms: mark both conditions. Then open the Lab tab (the Check group), find the I$^2$C device in the parts list, and see how it responds to an address.
+
+\stars{1} repeat: find START and STOP. \stars{2} modify: add the 7 address bits and an ACK bit to the sequence. \stars{3} project: Security Panel stage---an indicator on I$^2$C; acceptance criterion: the waveform shows START, the address, the direction bit, ACK, the data byte, and STOP.
+\end{diybox}
+
+\section{Questions and Problems}
+\label{sec:tasks-uart}
+
+The answers are collected in Appendix~\ref{app:answers}.
+
+\begin{taskbox}[Chapter problems]
+\begin{enumerate}
+  \item \stars{1}~What \code{CLKS\_PER\_BIT} is needed for 9600 baud at a frequency of 27~MHz?
+  \item \stars{1}~How long does it take to send one byte in 8N1 format at
+        115\,200 baud? How many bytes per second can be sent?
+  \item \stars{1}~Draw the UART frame for the byte \code{0x55} (\code{01010101}).
+  \item \stars{2}~Why does a UART receiver read bits in the \emph{middle} of their duration rather than at the start?
+  \item \stars{2}~The receiver's clock frequency is 3\,\% higher than the transmitter's. Will the
+        reception of a 10-bit frame fail? What speed mismatch is acceptable?
+  \item \stars{2}~Why is SPI faster than UART, and what is its drawback?
+  \item \stars{2}~Find the bug. A UART receiver, after the line drops, starts reading bits immediately, counting
+        \code{CLKS\_PER\_BIT} cycles from the first edge. At 115\,200 baud with a good
+        cable everything works, but on a long wire failures appear. Why? How can it be fixed?
+  \item \stars{3}~Project. A module sends the panel's status byte (0, 1, or 2) every second
+        at 115\,200 baud. Acceptance criterion: on the waveform, the frame consists of
+        a start bit, 8 bits least significant first, and a stop bit, and in the terminal a character arrives once per second.
+  \item \stars{3}~Project. Connect the two modules \code{uart\_tx} and \code{uart\_rx} in one project
+        and show the received byte on the LEDs. Acceptance criterion: all 256 values pass
+        without corruption, and applying a wrong stop bit does not produce \code{rx\_valid}.
+\end{enumerate}
+\end{taskbox}

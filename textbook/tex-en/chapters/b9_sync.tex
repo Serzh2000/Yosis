@@ -1,0 +1,451 @@
+\chapter{Synchronous Circuits, State Machines, and Memory}
+\label{ch:sync}
+
+In the previous chapters we learned to compute (adders, comparators,
+multiplexers) and to remember (flip-flops, registers, counters). One question
+remains, the one all of this was for: how do we join computation and memory in
+a single circuit that can be trusted at high frequency and that behaves
+according to a script---waits for an event, reacts, and returns to its
+starting position? The answer is the synchronous principle and finite-state
+machines. At the end of the chapter we will take a look at memory: it is the
+same combinational logic and the same registers, just in large quantity.
+
+\begin{buildbox}
+Open the \emph{Learn} tab, the ``Circuits and the board'' book, the ``State
+machines'' chapter, the lesson ``The 101 detector''. Build a machine that
+outputs 1 when the bits 1, 0, 1 have arrived in a row on the input. In the
+\emph{Waveforms} tab feed the sequence \code{1010110010} to the input $x$ and
+watch the state register and the output~$y$. A question to keep in mind while
+reading: how many clock cycles after the last 1 of the triple does the output
+rise to 1, and why?
+\end{buildbox}
+
+\section{Synchronous Design}
+
+We already know two ``materials'': combinational logic (it computes) and
+flip-flops (they store). How do we build a large, reliable device from them?
+Almost all modern digital circuits follow one principle, called
+\term{synchronous} design:
+
+\begin{itemize}
+  \item all flip-flops are clocked by \textbf{one} clock signal;
+  \item between registers there is only combinational logic;
+  \item the result of a computation is written into the registers on the edge,
+        when all transients and glitches are already over.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[rg/.style={draw=FpgaGreen, fill=green!8, thick, minimum width=10mm, minimum height=18mm, font=\sffamily\small},
+  cl/.style={draw=FpgaBlue, fill=FpgaLight, thick, cloud, cloud puffs=11, aspect=1.8, minimum width=26mm, minimum height=16mm, font=\sffamily\small, align=center}]
+  \node[rg] (r1) at (0,0) {RG};
+  \node[cl] (c1) at (2.6,0) {logic};
+  \node[rg] (r2) at (5.2,0) {RG};
+  \node[cl] (c2) at (7.8,0) {logic};
+  \node[rg] (r3) at (10.4,0) {RG};
+  \draw[bus, -{Stealth}] (-1.2,0) node[left, text=FpgaDark] {inputs} -- (r1);
+  \draw[bus, -{Stealth}] (r1) -- (c1); \draw[bus, -{Stealth}] (c1) -- (r2);
+  \draw[bus, -{Stealth}] (r2) -- (c2); \draw[bus, -{Stealth}] (c2) -- (r3);
+  \draw[bus, -{Stealth}] (r3) -- ++(1.2,0) node[right, text=FpgaDark] {outputs};
+  \draw[wire, FpgaBlue] (-0.8,-1.6) node[left, text=FpgaDark] {CLK} -- (10.4,-1.6);
+  \foreach \r in {r1,r2,r3} { \draw[wire, FpgaBlue] (\r.south) -- (\r.south |- 0,-1.6); \fill[FpgaBlue] (\r.south |- 0,-1.6) circle (1.4pt); }
+\end{tikzpicture}
+\caption{A synchronous circuit: registers separated by combinational logic, and
+one common clock}
+\label{fig:sync}
+\end{figure}
+
+\subsection{Maximum Clock Frequency}
+
+Within one clock cycle a signal must travel from the output of one register
+through the logic to the input of the next and manage to ``settle'' before the
+edge. This gives the main equation of a synchronous circuit:
+\[
+  T_\text{CLK} \ \ge\ t_\text{co} + t_\text{logic} + t_\text{su},
+  \qquad
+  f_\text{max} = \frac{1}{t_\text{co} + t_\text{logic} + t_\text{su}}.
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \draw[very thick, FpgaBlue] (0,2.2) -- (1,2.2) -- (1.05,2.8) -- (5,2.8) -- (5.05,2.2) -- (9,2.2) -- (9.05,2.8) -- (11,2.8);
+  \node[font=\sffamily\small, anchor=east] at (-0.1,2.5) {CLK};
+  \fill[FpgaOrange!40] (1.05,1.2) rectangle (2.0,1.8); \node[font=\sffamily\scriptsize] at (1.52,1.5) {$t_\text{co}$};
+  \fill[FpgaBlue!25] (2.0,1.2) rectangle (7.6,1.8); \node[font=\sffamily\scriptsize] at (4.8,1.5) {$t_\text{logic}$ (critical path)};
+  \fill[FpgaRed!30] (7.6,1.2) rectangle (8.6,1.8); \node[font=\sffamily\scriptsize] at (8.1,1.5) {$t_\text{su}$};
+  \fill[green!25] (8.6,1.2) rectangle (9.05,1.8);
+  \node[font=\sffamily\scriptsize, anchor=west] at (9.2,1.5) {slack};
+  \draw[dashed, FpgaGray] (1.05,3.0) -- (1.05,0.6); \draw[dashed, FpgaGray] (9.05,3.0) -- (9.05,0.6);
+  \draw[<->, thick] (1.05,0.8) -- (9.05,0.8) node[midway, below, font=\sffamily\small] {period $T_\text{CLK}$};
+\end{tikzpicture}
+\caption{The time budget of one clock cycle. If the sum of the delays is larger
+than the period, a wrong value is written into the register}
+\label{fig:budget}
+\end{figure}
+
+Example: $t_\text{co} = 0.5$~ns, $t_\text{su} = 0.5$~ns, and the signal passes
+through 10 gates of 0.5~ns each. Then
+$T \ge 0.5 + 5 + 0.5 = 6$~ns and $f_\text{max} \approx 166$~MHz. The
+longer the chain of logic between registers, the lower the permitted
+frequency.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.78\textwidth, height=5.2cm, xlabel={Number of logic levels on the critical path}, ylabel={$f_\text{max}$, MHz},
+  xmin=1, xmax=20, ymin=0, ymax=520,
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  grid=major, grid style={FpgaGray!20}, axis lines*=left,
+]
+  \addplot[very thick, FpgaBlue, domain=1:20, samples=40] {1000/(1+0.5*x)};
+  \addplot[only marks, mark=*, FpgaRed] coordinates {(10,166.7)};
+  \node[font=\sffamily\small, text=FpgaRed, anchor=south west] at (axis cs:10,170) {example: 166 MHz};
+\end{axis}
+\end{tikzpicture}
+\caption{The maximum frequency falls as the number of gates between registers
+grows ($t_\text{co}+t_\text{su} = 1$~ns, gate delay 0.5~ns)}
+\end{figure}
+
+\subsection{The Pipeline}
+
+What if the logic is too long? We can cut it into parts and put extra
+registers between them. This is a \term{pipeline}: each ``station'' does its
+part of the work in one short clock cycle, and although the result for a given
+piece of data appears several cycles later, new data can be fed in
+\emph{every} cycle. This is how an assembly line in a factory works---and so
+do all modern processors.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[c/.style={draw, minimum width=11mm, minimum height=6mm, font=\sffamily\scriptsize}]
+  \foreach \t in {1,...,6} \node[font=\sffamily\scriptsize] at (\t*1.15+0.9,0.55) {clk \t};
+  \foreach \s/\n [count=\r from 0] in {stage 1/A, stage 2/B, stage 3/C} {
+    \node[font=\sffamily\small, anchor=east] at (1.3,-\r*0.75) {\s};
+  }
+  \foreach \d/\col [count=\k from 0] in {1/FpgaBlue!30, 2/FpgaOrange!40, 3/FpgaGreen!35, 4/FpgaPurple!30} {
+    \foreach \r in {0,1,2} {
+      \pgfmathsetmacro{\x}{(\k+\r+1)*1.15+0.9}
+      \node[c, fill=\col] at (\x,-\r*0.75) {$D_{\d}$};
+    }
+  }
+\end{tikzpicture}
+\caption{A three-stage pipeline ($D_1,\dots,D_4$ are pieces of data): at cycle 3 three
+pieces of data are processed at the same time, each in its own stage}
+\end{figure}
+
+\begin{diybox}[Clock, Critical Path, and Pipeline]
+\textbf{Task.} See that a chain of registers delays the result by a whole
+number of clock cycles but accepts new data every cycle, and relate this to
+the $f_\text{max}$ formula.\\
+\textbf{In Logra.} The \emph{Examples} tab, project \code{moving-average}
+(the average of four samples: the registers \code{delay1}\ldots\code{delay3}
+form a chain).\\
+\stars{1} \emph{Repeat.} Set \code{SAMPLE\_TICKS=1}, feed an input sample of
+32, and in \emph{Waveforms} follow 20 clock cycles: by how many cycles does
+the output lag behind the input?\\
+\stars{2} \emph{Change.} Open the project \code{fir-filter}, set the
+coefficients $A=1$, $B=0$, $C=-1$ and \code{SCALE\_SHIFT=0}. Feed a sample of
+32: the expected response is $32,\,0,\,-32$ in three consecutive cycles.\\
+\stars{3} \emph{Project.} On paper, cut logic with $t_\text{logic}=8$~ns
+(problem~1) into two stages and compute the new $T$ and $f_\text{max}$; then
+confirm on the waveforms that a new sample is accepted every cycle.\\
+\textbf{Expected result.} The latency of the result in clock cycles equals the
+number of registers on the path, and the throughput is one sample per cycle.\\
+\textbf{How to check.} \emph{Waveforms} tab: compare the cycle number of the
+input pulse with that of the response; in the \emph{Gowin} tab compare the
+project's maximum-frequency estimate with your calculation from the formula in
+this chapter.
+\end{diybox}
+
+\section{Finite-State Machines}
+
+Many devices work according to a script: ``wait for a button press, then do
+this, then that, and on an error go back to the beginning.'' Such behavior is
+described by a \term{finite-state machine} (FSM). The machine is in one of a
+finite number of \term{states}; on every clock cycle, depending on the current
+state and the inputs, it \term{moves} to the next state.
+
+The structure of every machine is the same: a register holds the number of the
+current state, and combinational logic computes the next state and the outputs.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=12mm]
+  \node[block, minimum width=28mm, minimum height=14mm] (next) {Transition\\logic};
+  \node[gblock, right=of next, minimum height=14mm] (st) {State\\register};
+  \node[block, right=of st, minimum width=28mm, minimum height=14mm] (out) {Output\\logic};
+  \draw[bus, -{Stealth}] (next) -- node[above, lbl] {next} (st);
+  \draw[bus, -{Stealth}] (st) -- node[above, lbl] {current} (out);
+  \draw[arr] (out.east) -- ++(1,0) node[right, font=\sffamily\small] {outputs};
+  \draw[bus, -{Stealth}] ($(st.east)+(0.6,0)$) -- ++(0,-1.3) -| (next.south);
+  \draw[arr] ($(next.west)+(-1.2,0)$) node[left, font=\sffamily\small] {inputs} -- (next.west);
+  \draw[arr, dashed, FpgaPurple] ($(next.west)+(-0.6,0)$) -- ++(0,1.3) -| node[pos=0.25, above, lbl, text=FpgaPurple] {Mealy machine only} (out.north);
+  \draw[wire, FpgaBlue] (st.south) ++(0,0) -- ++(0,-0.5) node[below, font=\sffamily\scriptsize, text=FpgaDark] {CLK};
+\end{tikzpicture}
+\caption{The structure of a finite-state machine. In a \textbf{Moore} machine the outputs depend
+only on the state; in a \textbf{Mealy} machine they also depend on the inputs (dashed)}
+\label{fig:fsm_struct}
+\end{figure}
+
+\subsection{Example: A Sequence Detector}
+
+Let us build a machine that watches the input $x$ (one bit per clock cycle) and
+outputs $y=1$ when the last three received bits equal \code{101}. Such
+detectors look for start markers in a data stream.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  st/.style={circle, draw=FpgaDark, very thick, minimum size=17mm, font=\sffamily\small, align=center, fill=FpgaLight},
+  tr/.style={-{Stealth[length=3mm]}, thick, FpgaDark},
+  lb/.style={font=\sffamily\small, fill=white, inner sep=1pt}]
+  \node[st] (s0) at (0,0) {S0\\\scriptsize $y=0$};
+  \node[st] (s1) at (3.6,0) {S1\\\scriptsize ``1''\\\scriptsize $y=0$};
+  \node[st] (s2) at (7.2,0) {S2\\\scriptsize ``10''\\\scriptsize $y=0$};
+  \node[st, fill=green!20] (s3) at (10.8,0) {S3\\\scriptsize ``101''\\\scriptsize $y=1$};
+  \draw[tr] (s0) -- node[lb, above] {1} (s1);
+  \draw[tr] (s1) -- node[lb, above] {0} (s2);
+  \draw[tr] (s2) -- node[lb, above] {1} (s3);
+  \draw[tr] (s0) edge[loop above, looseness=6] node[lb, above] {0} (s0);
+  \draw[tr] (s1) edge[loop above, looseness=6] node[lb, above] {1} (s1);
+  \draw[tr] (s2) to[bend left=35] node[lb, below] {0} (s0);
+  \draw[tr] (s3) to[bend left=32] node[lb, below] {0} (s2);
+  \draw[tr] (s3) to[bend right=40] node[lb, above] {1} (s1);
+  \draw[tr, FpgaRed] (-1.6,1.4) node[left, font=\sffamily\small, text=FpgaRed] {reset} -- (s0);
+\end{tikzpicture}
+\caption{The transition graph of the \code{101} detector (a Moore machine). The arrows are labeled with
+the value of the input $x$}
+\label{fig:fsm101}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{The transition table of the detector}
+\begin{tabular}{l|cc|c}
+\toprule
+\textbf{Current state} & \multicolumn{2}{c|}{\textbf{Next state}} & \textbf{Output} $y$ \\
+ & $x=0$ & $x=1$ & \\
+\midrule
+S0 (nothing found)    & S0 & S1 & 0 \\
+S1 (received ``1'')   & S2 & S1 & 0 \\
+S2 (received ``10'')  & S0 & S3 & 0 \\
+S3 (received ``101'') & S2 & S1 & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.05, xscale=1.3, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  CLK     & 10{1L 1H} \\
+  $x$     & 2H 2L 2H 2L 2H 2H 2L 2L 2H 2L \\
+  state   & 1D{S0} 2D{S1} 2D{S2} 2D{S3} 2D{S2} 2D{S3} 2D{S1} 2D{S2} 2D{S0} 2D{S1} 1D{S2} \\
+  $y$     & 5L 2H 2L 2H 9L \\
+\end{tikztimingtable}
+\caption{The detector at work: input \code{1010110010}. The output is 1 after
+every triple \code{101} found, including overlapping ones}
+\end{figure}
+
+Let us check against the table: S0 --(1)$\to$ S1 --(0)$\to$ S2 --(1)$\to$ S3 ($y=1$)
+--(0)$\to$ S2 --(1)$\to$ S3 ($y=1$) --(1)$\to$ S1 --(0)$\to$ S2 --(0)$\to$ S0
+--(1)$\to$ S1.
+
+\subsection{State Encoding}
+
+The states are stored in a register as binary codes. Four states can be
+encoded with two bits (\code{00}, \code{01}, \code{10}, \code{11})---this is
+\term{binary encoding}. We can also take four flip-flops and keep a one in
+only one of them (\code{0001}, \code{0010}, \ldots)---this is
+\term{one-hot encoding}. It needs more flip-flops, but the transition logic is
+simpler and faster. Where flip-flops are plentiful, one-hot is usually chosen.
+\lookahead{how to choose an encoding and see its cost in the number of gates we
+will see in chapter~\ref{ch:fsmdesign} and in Part~II.}
+
+\begin{warnbox}[Common mistakes with state machines]
+\begin{itemize}
+  \item \textbf{An empty cell in the transition table.} For every state, the
+        reaction to \emph{every} combination of inputs must be described,
+        otherwise the machine will ``hang'' in the undescribed case.
+  \item \textbf{No reset.} Without an initial state, after power-up the
+        register holds a random code; the machine may end up in a state from
+        which there is no exit.
+  \item \textbf{Mixing up Moore and Mealy.} An output that you wanted in the
+        same clock cycle will arrive one cycle later in a Moore machine: it
+        depends only on the state.
+  \item \textbf{A detector without overlap.} In the ``found'' state you must
+        not return to the start: after \code{101}, the next 1 may already be the
+        beginning of a new triple.
+\end{itemize}
+\end{warnbox}
+
+\begin{diybox}[The Detector and Kinds of Machines]
+\textbf{Task.} Build a sequence detector, compare Moore and Mealy machines,
+and check the overlap.\\
+\textbf{In Logra.} The \emph{Learn} tab, the ``Circuits and the board'' book,
+the ``State machines'' chapter; the \emph{Designer} and \emph{Waveforms}
+tabs.\\
+\stars{1} \emph{Repeat.} The lesson ``A detector of two ones in a row'', then
+the lesson ``The 101 detector''.\\
+\stars{2} \emph{Change.} The lessons ``A Moore output'' and ``A Mealy output'':
+build both for one condition and compare the waveforms. Expected: the Mealy
+output rises one cycle earlier.\\
+\stars{3} \emph{Project.} The project \code{sequence-1011}: feed the stream
+\code{1011011} after the initial synchronization and make sure the match is
+found twice (overlap).\\
+\textbf{Expected result.} A Moore machine outputs a one in the ``found''
+state; a Mealy machine does so in the same cycle in which the last bit arrived.\\
+\textbf{How to check.} \emph{Waveforms} tab: compare the sequence of states with
+the transition table of this chapter; \emph{RTL} tab: find the state register
+and the transition logic.
+\end{diybox}
+
+\section{Going Deeper: Memory (ROM and RAM)}
+\label{sec:memory}
+
+\emph{This section can be read later: it is not needed to understand state
+machines, but the data queue of the next chapter and the processor of Part~II
+are built on it.}
+
+A register of $n$ flip-flops stores one number. To store many numbers we use
+\term{memory}: an array of cells, each of which has its own number---an
+\term{address}. Memory is characterized by its \term{depth} (the number of
+cells) and its \term{width} (the number of bits in a cell), for example
+$1024 \times 8$---1024 cells of 8 bits.
+
+\subsection{ROM: Read-Only Memory}
+
+\term{ROM} (read-only memory) holds data written in advance. In essence it is
+a combinational circuit: the address is the input, the data is the output, and
+the contents are one big truth table. A ROM can be built from an address
+decoder and OR gates: each cell is an output of the decoder connected to those
+OR gates where the data has a 1.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=FpgaLight] (0,-2.8) rectangle (1.4,0.6);
+  \node[font=\sffamily\bfseries] at (0.7,-1.1) {DC};
+  \draw[wire] (-0.7,-0.4) node[left] {$a_1$} -- (0,-0.4);
+  \draw[wire] (-0.7,-1.8) node[left] {$a_0$} -- (0,-1.8);
+  \foreach \i in {0,...,3} {
+    \pgfmathsetmacro{\y}{0.2-\i*0.9}
+    \draw[wire] (1.4,\y) -- (6.4,\y);
+    \node[font=\sffamily\scriptsize, anchor=east] at (1.35,\y) {\i};
+  }
+  \foreach \j in {0,...,3} \draw[very thick, FpgaBlue] (2.4+\j*1.1,0.5) -- (2.4+\j*1.1,-3.2);
+  % data: cell0=1011, 1=0110, 2=1100, 3=0001 (d3..d0)
+  \foreach \i/\row in {0/1011, 1/0110, 2/1100, 3/0001} {
+    \pgfmathsetmacro{\y}{0.2-\i*0.9}
+    \foreach \j in {0,...,3} {
+      \StrChar{\row}{\numexpr\j+1\relax}[\bitv]
+      \ifnum\bitv=1 \fill[FpgaRed] (2.4+\j*1.1,\y) circle (2.4pt);\fi
+    }
+    \node[font=\ttfamily\small, anchor=west] at (6.6,\y) {\row};
+  }
+  \foreach \j/\n in {0/3,1/2,2/1,3/0} {
+    \node[gOR, rotate=-90, minimum width=9mm, minimum height=6mm] (o\j) at (2.4+\j*1.1,-3.8) {};
+    \draw[wire] (o\j.east) -- ++(0,-0.4) node[below] {$d_\n$};
+  }
+  \node[lbl, anchor=west] at (6.6,0.75) {contents};
+  \node[lbl, text=FpgaRed, align=left, anchor=west] at (6.6,-3.6) {a dot is a connection\\(this bit is 1)};
+\end{tikzpicture}
+\caption{A $4\times4$ ROM: the decoder selects a row, the OR gates collect
+the bits. \lookahead{the same principle---``memory as a truth table''---underlies LUTs}}
+\label{fig:rom}
+\end{figure}
+
+\subsection{RAM: Random-Access Memory}
+
+\term{RAM} (random-access memory) allows both reading and writing.
+Conceptually it is a set of registers, an address decoder that on a write
+selects which register to write the data into, and a multiplexer that on a
+read selects which register to send to the output.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=FpgaLight] (0,-2.9) rectangle (1.3,0.7);
+  \node[font=\sffamily\bfseries] at (0.65,-1.1) {DC};
+  \foreach \i in {0,...,3} {
+    \pgfmathsetmacro{\y}{0.25-\i*0.95}
+    \node[draw=FpgaGreen, fill=green!8, thick, minimum width=22mm, minimum height=7mm, font=\sffamily\small] (r\i) at (3.6,\y) {cell \i};
+    \draw[arr] (1.3,\y) -- node[above, lbl] {CE} (r\i.west);
+    \draw[bus, -{Stealth}] (r\i.east) -- (5.9,\y);
+  }
+  \draw[thick, fill=orange!15] (5.9,0.7) -- (7.0,0.2) -- (7.0,-2.4) -- (5.9,-2.9) -- cycle;
+  \node[font=\sffamily\small] at (6.45,-1.1) {MUX};
+  \draw[bus, -{Stealth}] (7.0,-1.1) -- (8.2,-1.1) node[right, text=FpgaDark] {read data};
+  \draw[bus] (3.6,1.6) node[above, text=FpgaDark] {write data} -- (3.6,0.6);
+  \draw[arr] (-0.8,0.3) node[left, font=\sffamily\small] {WE (write)} -- (0,0.3);
+  \draw[bus, -{Stealth}] (-0.8,-1.1) node[left, text=FpgaDark] {address} -- (0,-1.1);
+  \draw[bus] (-0.4,-1.1) |- (6.45,-3.6) -- (6.45,-2.65); \fill[FpgaBlue] (-0.4,-1.1) circle (1.8pt);
+\end{tikzpicture}
+\caption{How RAM works, in simple terms: an address decoder on a write,
+a multiplexer on a read}
+\label{fig:ram}
+\end{figure}
+
+In practice, memory cells are made not from D flip-flops but from more compact
+cells:
+\begin{itemize}
+  \item \textbf{static memory (SRAM)}---6 transistors per bit, fast, needs no
+        upkeep; processor caches and the memory blocks inside chips are made
+        of it;
+  \item \textbf{dynamic memory (DRAM)}---1 transistor and 1 capacitor per
+        bit, very dense, but it needs periodic refreshing; this is the kind of
+        memory used as the main memory in computers.
+\end{itemize}
+
+\begin{diybox}[ROM and RAM by Hand]
+\textbf{Task.} Read a word written in advance at an address, then write a word
+and read it back.\\
+\textbf{In Logra.} The \emph{Examples} tab: \code{small-rom},
+\code{rom-melody}, \code{ram-write-read}; the \emph{Learn} tab, the ``Verilog
+and the board'' book, the chapters on memory: the lessons ``A ROM from an
+array'' and ``An 8×4 RAM: write on the clock''.\\
+\stars{1} \emph{Repeat.} The project \code{small-rom}: select all eight
+addresses in turn and write down the words; the lesson ``A ROM from an
+array''.\\
+\stars{2} \emph{Change.} In \code{small-rom} replace the word at one address and
+check that the neighboring addresses did not change; in \code{rom-melody} swap
+two words of the table and shorten \code{STEP\_TICKS}.\\
+\stars{3} \emph{Project.} The project \code{ram-write-read}: write four
+words and read them back; match each word read with the previous
+address (a read takes one clock cycle).\\
+\textbf{Expected result.} A ROM gives the same output on every read;
+a RAM remembers what was written until a new word is written.\\
+\textbf{How to check.} \emph{Waveforms} tab: the address, the write word, the
+write-enable signal, and the read word; \emph{RTL} tab: compare how a ROM
+(selecting a ready-made word by address) and a RAM (cells that remember) look.
+\end{diybox}
+
+\section{Questions and Problems}
+\label{sec:tasks-sync}
+
+The answers are collected in Appendix~\ref{app:answers}.
+
+\begin{taskbox}[Problems for the Chapter]
+\begin{enumerate}
+  \item \stars{1}~The maximum delay of combinational logic between registers is 8~ns, the setup time is 0.5~ns, and the flip-flop clock-to-output delay is 0.5~ns. What is the maximum clock frequency?
+  \item \stars{2}~How does the clock period change if the same logic is split into two equal pipeline stages? What happens to the latency of the result?
+  \item \stars{1}~How does a Moore machine differ from a Mealy machine? Which type is the \code{101} detector of this chapter (Fig.~\ref{fig:fsm101}), and how would its graph change if the output $y$ had to be produced in the same clock cycle in which the last bit of the triple arrived?
+  \item \stars{1}~How many states does a 101 sequence detector (with overlap) need? How many flip-flops are required with binary encoding?
+  \item \stars{1}~A ROM is organized as $256\times 8$. How many address lines does it have, and what is its capacity in bits?
+  \item \stars{1}~A RAM with a capacity of $1\text{K}\times 16$ bits: how many kilobytes is that? How many address lines and data lines does it have?
+  \item \stars{2}~\emph{Find the error.} A student draws a \code{101} detector with overlap and in state S3, on input 1, returns the machine to S0. On the input \code{101101} such a machine will not output what is needed. How many ones of the output $y$ will it produce instead of the correct two, and in which clock cycle will the error show up?
+  \item \stars{3}~\emph{Mini-project.} Build in the Designer (or in Code) a detector of the sequence \code{1101} with overlap. Acceptance criterion: on the waveform for the input \code{11011011101} the output equals 1 exactly as many times as \code{1101} occurs in the stream (count it beforehand); the transition table has no empty cells.
+  \item \stars{3}~\emph{Mini-project.} Describe in Code an $8\times 7$ ROM that stores the segment codes for the digits 0--7 of a seven-segment display, and an address counter that steps through it on the clock. Acceptance criterion: on the waveform over 8 clock cycles the output passes through all 8 words in address order, and when one word is replaced exactly one clock cycle changes.
+\end{enumerate}
+\end{taskbox}
+
+\section{What's Next}
+
+We analyzed the machine in this chapter on a single example. But how do we design
+a machine for a task that is not in the textbook: how not to miss a case, how to
+choose the states, how to check the solution? In chapter~\ref{ch:fsmdesign} we
+will turn the example into a recipe of six steps, analyze a vending machine, and
+build a data queue---on the same memory that is described in the ``Going
+Deeper'' section of this chapter. The ``Security Panel'' running project will
+get its main stage there: the mode machine.

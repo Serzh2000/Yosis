@@ -1,0 +1,230 @@
+\chapter{The Sipeed Tang Nano 20K Board}
+\label{ch:board}
+
+\section{Overview}
+
+The Tang Nano 20K is a small (about $22\times54$~mm) and inexpensive
+development board from Sipeed. It carries a \textbf{Gowin
+GW2AR-LV18QN88C8/I7} FPGA and everything you need to start experimenting
+right away: buttons, LEDs, an HDMI connector, a memory card slot and a
+built-in programmer with a USB-C connector.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.35,
+  callout/.style={font=\sffamily\scriptsize, text=FpgaDark, align=left},
+  cl/.style={FpgaDark, thin, -{Circle[length=1.3mm]}}]
+  % Board
+  \fill[BoardGreen, rounded corners=4pt] (0,0) rectangle (10.8,4.4);
+  % Holes
+  \foreach \p in {(0.3,0.3),(10.5,0.3),(0.3,4.1),(10.5,4.1)} \fill[white] \p circle (0.12);
+  % Pin headers
+  \foreach \i in {0,...,19} {
+    \fill[yellow!70!orange] (0.8+\i*0.48,0.2) circle (0.09);
+    \fill[yellow!70!orange] (0.8+\i*0.48,4.2) circle (0.09);
+  }
+  % USB-C
+  \fill[gray!60, rounded corners=1pt] (-0.35,1.6) rectangle (0.55,2.8);
+  % BL616
+  \fill[ChipBlack] (1.1,1.7) rectangle (2.1,2.7);
+  \node[white, font=\tiny\sffamily] at (1.6,2.2) {BL616};
+  % Flash
+  \fill[ChipBlack] (2.5,0.7) rectangle (3.2,1.2);
+  % Oscillator
+  \fill[gray!40] (2.5,3.1) rectangle (3.2,3.6);
+  % FPGA
+  \fill[ChipBlack] (3.8,1.1) rectangle (6.0,3.3);
+  \foreach \i in {0,...,9} {
+    \fill[gray!60] (3.95+\i*0.2,1.0) rectangle ++(0.08,0.1);
+    \fill[gray!60] (3.95+\i*0.2,3.3) rectangle ++(0.08,0.1);
+    \fill[gray!60] (3.7,1.25+\i*0.2) rectangle ++(0.1,0.08);
+    \fill[gray!60] (6.0,1.25+\i*0.2) rectangle ++(0.1,0.08);
+  }
+  \node[white, font=\tiny\sffamily, align=center] at (4.9,2.2) {GOWIN\\GW2AR-18\\\scalebox{0.7}{+ SDRAM 64 Mbit}};
+  % LEDs
+  \foreach \i in {0,...,5} \fill[FpgaOrange] (6.6+\i*0.3,3.45) rectangle ++(0.18,0.14);
+  % RGB
+  \fill[white] (6.7,2.6) rectangle (7.1,3.0);
+  % Buttons
+  \fill[gray!30] (6.6,0.6) rectangle (7.2,1.2); \fill[gray!80] (6.9,0.9) circle (0.17);
+  \fill[gray!30] (7.6,0.6) rectangle (8.2,1.2); \fill[gray!80] (7.9,0.9) circle (0.17);
+  % HDMI
+  \fill[gray!55] (9.6,1.2) rectangle (11.0,3.2);
+  % TF
+  \fill[gray!35] (7.6,1.6) rectangle (9.2,2.8);
+  % FPC
+  \fill[gray!20] (2.3,-0.1) rectangle (3.5,0.4);
+
+  % Callouts
+  \draw[cl] (0.1,4.9) node[callout, above] {USB-C: power,\\programming,\\UART} -- (0.1,2.4);
+  \draw[cl] (1.6,5.1) node[callout, above] {BL616:\\programmer} -- (1.6,2.5);
+  \draw[cl] (2.85,4.9) node[callout, above] {27 MHz\\oscillator} -- (2.85,3.4);
+  \draw[cl] (4.9,4.9) node[callout, above] {GW2AR-18 FPGA\\with built-in SDRAM} -- (4.9,3.0);
+  \draw[cl] (7.3,4.9) node[callout, above] {6 LEDs\\(led[0..5])} -- (7.3,3.5);
+  \draw[cl] (10.3,4.9) node[callout, above] {HDMI} -- (10.3,3.0);
+  \draw[cl] (6.9,-0.7) node[callout, below] {button S1} -- (6.9,0.9);
+  \draw[cl] (7.9,-1.3) node[callout, below] {button S2} -- (7.9,0.9);
+  \draw[cl] (8.4,-0.7) node[callout, below right=-1mm] {TF card\\slot} -- (8.4,2.0);
+  \draw[cl] (6.2,-1.3) node[callout, below left=-1mm] {WS2812\\RGB LED} -- (6.9,2.8);
+  \draw[cl] (2.85,-0.7) node[callout, below] {64 Mbit Flash\\(configuration)} -- (2.85,0.95);
+  \draw[cl] (0.9,-0.7) node[callout, below] {GPIO\\pins} -- (0.8,0.2);
+\end{tikzpicture}
+\caption{Layout of the main components on the Tang Nano 20K board (schematic)}
+\label{fig:board}
+\end{figure}
+
+\begin{diybox}[The board on your desk]
+\textbf{Task.} Find on the virtual board the same elements as in Fig.~\ref{fig:board}.\\
+\textbf{In Logra.} The ``Running light'' project; the ``Check'' group, the ``Lab'' tab.\\
+\textbf{Expected result.} You see a Tang Nano 20K board on a breadboard; in the panel at the top there are buttons S1 and S2, which repeat the two buttons of the real board; the board's LEDs run around in a circle.\\
+\textbf{How to check.} Press ``Pause'', then ``Tick'' several times and write down how many LEDs are lit at the same time (a ring of six with a single one in it). \stars{2} Find the caption ``Tang Nano 20K · top'' in the status bar at the bottom.
+\end{diybox}
+
+\section{Specifications}
+
+\begin{table}[H]
+\centering
+\caption{Main specifications of the Tang Nano 20K}
+\label{tab:specs}
+\small
+\begin{tabularx}{0.95\textwidth}{>{\bfseries}l X}
+\toprule
+FPGA                 & Gowin GW2AR-LV18QN88C8/I7 (GW2AR-18C family, QFN88 package) \\
+Logic                & 20\,736 LUT4, 15\,552 flip-flops \\
+Distributed memory (SSRAM) & 41\,472 bits \\
+Block memory (BSRAM) & 828 Kbit (46 blocks of 18 Kbit) \\
+Built-in SDRAM       & 64 Mbit (8 MB), 32-bit bus---in the same package as the FPGA \\
+Multipliers          & 48 of $18\times18$ \\
+PLL                  & 2 \\
+Clock oscillator     & crystal, 27\,MHz (plus a programmable MS5351 oscillator) \\
+Flash                & 64 Mbit, SPI interface (Chapter~\ref{ch:uart})---stores the FPGA configuration \\
+Programmer           & BL616: USB-JTAG (loading the circuit) and USB-UART (serial link to the computer) through a single USB-C connector \\
+Peripherals          & HDMI, TF card, 6 LEDs, 2 buttons, WS2812 RGB LED, \\
+                     & RGB display connector, audio amplifier \\
+Pin voltage          & 3.3\,V (LVCMOS33) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{infobox}[What the ``R'' in GW2AR means]
+The letter R means that, besides the FPGA die, the chip package contains one
+more die---SDRAM memory. Such an assembly is called a SiP
+(System in Package). The wires between the FPGA and the SDRAM run inside the
+package, so you cannot see them on the board.
+\end{infobox}
+
+\begin{diybox}[The chip's data sheet in Logra]
+\textbf{Task.} Find in the environment the data from Table~\ref{tab:specs}.\\
+\textbf{In Logra.} The ``Real board'' group, the ``Chip'' tab (the panel header ``Placement and routing'' with the name of the chip); the ``Pins'' tab (the QN88 package).\\
+\textbf{Expected result.} The family name GW2A-18C; the oscillator frequency 27 in the ``Frequency, MHz'' field; in ``Pins'', a package with labelled pins.\\
+\textbf{How to check.} Compare the names you found with the specifications table and write down how GW2A-18C in Logra differs from the full name GW2AR-LV18QN88C8/I7 (the package and speed suffixes).
+\end{diybox}
+
+\section{Block Diagram}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=5mm and 12mm]
+  \node[hblock, minimum width=40mm, minimum height=42mm] (fpga) {FPGA\\GW2AR-18\\[2mm]\scriptsize 20\,736 LUT4};
+  \node[oblock, below=3mm of fpga.south, anchor=north, minimum width=40mm] (sdram) {SDRAM 64 Mbit\\\scriptsize (inside the package)};
+  \draw[bus, <->] (fpga.south) -- (sdram.north);
+  \begin{scope}[on background layer]
+    \node[draw=FpgaGray, dashed, rounded corners, fit=(fpga)(sdram), inner sep=2.5mm, label={[lbl]below:QFN88 package}] {};
+  \end{scope}
+
+  \node[block, left=30mm of fpga.north west, anchor=north east] (osc) {Oscillator\\27 MHz};
+  \node[block, below=of osc] (bl) {BL616\\USB-JTAG/UART};
+  \node[block, below=of bl] (flash) {Flash\\64 Mbit};
+  \node[gblock, left=8mm of bl] (usb) {USB-C};
+  \draw[arr] (osc.east) -- node[above, lbl] {clk (pin 4)} (osc.east -| fpga.west);
+  \draw[arr, <->] (bl.east) -- node[above, lbl] {JTAG, UART} (bl.east -| fpga.west);
+  \draw[arr, <->] (flash.east) -- node[above, lbl] {SPI} (flash.east -| fpga.west);
+  \draw[arr, <->] (usb) -- (bl);
+
+  \node[block, right=20mm of fpga.north east, anchor=north west] (led) {6 LEDs};
+  \node[block, below=of led] (btn) {Buttons S1, S2};
+  \node[block, below=of btn] (hdmi) {HDMI};
+  \node[block, below=of hdmi] (tf) {TF card};
+  \node[block, below=of tf] (gpio) {GPIO pins};
+  \draw[arr] (led.west -| fpga.east) -- (led.west);
+  \draw[arr] (btn.west) -- (btn.west -| fpga.east);
+  \draw[arr] (hdmi.west -| fpga.east) -- node[above, lbl] {TMDS} (hdmi.west);
+  \draw[arr, <->] (tf.west -| fpga.east) -- node[above, lbl] {SPI/SD} (tf.west);
+  \draw[arr, <->] (gpio.west) -- (gpio.west -| fpga.east);
+\end{tikzpicture}
+\caption{Block diagram of the board}
+\end{figure}
+
+\begin{diybox}[The signal path through the board]
+\textbf{Task.} Match the blocks of the block diagram with the Logra tabs.\\
+\textbf{In Logra.} ``Lab'': the ``Board USB terminal'' panel on the right; ``Connect'': the ``UART terminal'' switch and the three loading steps.\\
+\textbf{Expected result.} The BL616 block with its JTAG and UART channels corresponds in Logra to two modes: ``Load the design'' (JTAG) and ``UART terminal'' (pins 69 and 70).\\
+\textbf{How to check.} Write down which of the channels is used by the ``Load into SRAM'' button and which by the terminal, and compare with Fig.~\ref{fig:board} (USB-C: power, programming, UART).
+\end{diybox}
+
+\section{The Pins You Will Need in the Examples}
+
+Every pin of the FPGA has a number. To connect a signal in the code
+(for example, \code{led[0]}) with a physical pin, you use a constraints file
+\code{.cst}. The pin numbers for the Tang Nano 20K are given in
+Table~\ref{tab:pins}.
+
+\begin{warnbox}[LEDs light up on zero!]
+The LEDs on the board are connected with the anode to the $+3.3$~V supply and
+with the cathode, through a resistor, to the FPGA pin. Current flows (and the
+LED lights up) when the pin is at \textbf{logic 0}. That is why in all the
+examples there is an inversion in front of the output:
+\code{assign led = \textasciitilde{}value;}
+\end{warnbox}
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.9, transform shape]
+  \draw (0,4) node[vcc]{$+3.3$ V} -- (0,3.4) to[leD, l=LED] (0,2) to[R, l=$R$] (0,0.4) -- (1.8,0.4);
+  \draw (1.8,-0.4) rectangle (4.2,1.2);
+  \node[font=\sffamily\small] at (3,0.4) {FPGA};
+  \node[font=\sffamily\scriptsize, anchor=east] at (1.75,0.65) {pin 15};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5,2.4) {pin at \textbf{0}: current flows $\to$ lit};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5,1.6) {pin at \textbf{1}: $U_\text{R}=0$ $\to$ off};
+\end{circuitikz}
+\caption{Connecting an active-low LED}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{FPGA pins used in the examples}
+\label{tab:pins}
+\begin{tabular}{l c l}
+\toprule
+\textbf{Signal} & \textbf{FPGA pin} & \textbf{Note} \\
+\midrule
+\code{clk}     & 4  & 27\,MHz clock oscillator \\
+\code{btn[0]}  & 88 & button S1, pressed $\to$ 1 \\
+\code{btn[1]}  & 87 & button S2, pressed $\to$ 1 \\
+\code{led[0]}  & 15 & \multirow{6}{*}{\parbox{5.5cm}{LEDs, light up at \textbf{0}\\ (active level is low)}} \\
+\code{led[1]}  & 16 & \\
+\code{led[2]}  & 17 & \\
+\code{led[3]}  & 18 & \\
+\code{led[4]}  & 19 & \\
+\code{led[5]}  & 20 & \\
+\code{uart\_tx} & 69 & transmit to the computer through the BL616 \\
+\code{uart\_rx} & 70 & receive from the computer \\
+\code{ws2812}  & 79 & RGB LED \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{infobox}[Buttons]
+In the examples we assume that a pressed button gives logic 1 on the pin. If on
+your revision of the board it turns out the other way round, it is enough to
+put an inversion at the input:
+\code{wire pressed = \textasciitilde{}btn[0];}. It is easy to check this with
+the first example (Chapter~\ref{ch:examples}).
+\end{infobox}
+
+\begin{diybox}[Pins and LED inversion]
+\textbf{Task.} Find the pins from Table~\ref{tab:pins} in the planner and check that the LEDs light up on zero.\\
+\textbf{In Logra.} The ``Running light'' project; the ``Pins'' tab: the sub-tabs ``Pin planner'' and ``.cst text''.\\
+\textbf{Expected result.} \code{clk} on pin 4, six LEDs on pins 15--20; the number next to the ``Pins'' tab shows how many pins are assigned.\\
+\textbf{How to check.} Compare the \code{IO\_LOC} lines in the ``.cst text'' with the table. \stars{2} In ``Code'', replace the last line with \code{assign led\_n = ring;}, press ``Synthesize'' and, in the ``Lab'', explain why now five LEDs out of six are lit, and the one that was running is off.
+\end{diybox}

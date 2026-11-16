@@ -1,0 +1,310 @@
+\chapter{From Text to a Working Circuit}
+\label{ch:flow}
+
+\section{The Design Flow}
+
+For a programmer, the path from a program to working firmware looks like this:
+``source code $\to$ compiler $\to$ machine instructions''. For an FPGA developer
+there are more steps, and each solves its own task.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=4mm and 11mm,
+  fstep/.style={block, minimum width=26mm, minimum height=15mm},
+  file/.style={draw=FpgaGray, fill=white, font=\ttfamily\scriptsize, minimum height=5mm, inner sep=2pt},
+]
+  \node[fstep] (hdl) {\textbf{1. Design entry}\\\scriptsize Verilog (.v)};
+  \node[fstep, right=of hdl] (syn) {\textbf{2. Synthesis}\\\scriptsize Yosys / GowinSynth};
+  \node[fstep, right=of syn] (pnr) {\textbf{3. Place}\\\textbf{and route}\\\scriptsize nextpnr / Gowin PnR};
+  \node[fstep, right=of pnr] (bit) {\textbf{4. Bitstream}\\\scriptsize gowin\_pack};
+  \node[hblock, minimum width=26mm, minimum height=15mm, below=12mm of bit] (load) {\textbf{5. Programming}\\\scriptsize openFPGALoader\\\scriptsize Gowin Programmer};
+  \node[oblock, minimum width=26mm, minimum height=15mm, left=of load] (board) {\textbf{Tang Nano 20K}};
+  \node[gblock, minimum width=26mm, minimum height=15mm, below=12mm of hdl] (sim) {\textbf{Simulation}\\\scriptsize Icarus Verilog\\\scriptsize GTKWave};
+  \node[file, above=7mm of pnr] (cst) {pins.cst};
+  \draw[arr] (hdl) -- (syn);
+  \draw[arr] (syn) -- node[below, lbl] {netlist} (pnr);
+  \draw[arr] (pnr) -- (bit);
+  \draw[arr] (bit) -- node[right, lbl] {.fs} (load);
+  \draw[arr] (load) -- node[above, lbl] {USB} (board);
+  \draw[arr, <->, dashed] (hdl) -- node[right, lbl] {verification} (sim);
+  \draw[arr] (cst) -- (pnr);
+  \node[lbl, right=1mm of cst] {pin numbers};
+\end{tikzpicture}
+\caption{The FPGA design flow}
+\label{fig:flow}
+\end{figure}
+
+\begin{enumerate}
+  \item \textbf{Design entry.} You write \emph{what the circuit should be} in a
+        hardware description language (HDL). We will
+        use the most widespread one --- \textbf{Verilog}.
+  \item \textbf{Synthesis.} A synthesizer program reads the text and turns it into a
+        \term{netlist}: ``these LUTs, these flip-flops,
+        connected like this''. Along the way the logic is simplified, like minimization
+        with Karnaugh maps, only automatically.
+  \item \textbf{Place and route} (PnR). Each LUT and
+        flip-flop from the netlist gets a specific location on the chip, and the connections
+        are laid along the routing channels. The \code{.cst} file is used here
+        too, so that the circuit's ports end up on the right pins.
+  \item \textbf{Bitstream.} The result is packed into the configuration file
+        \code{.fs}: the very bits for each LUT and each switch.
+  \item \textbf{Programming.} The file is sent over USB to the FPGA (into SRAM) or to the
+        Flash memory on the board.
+\end{enumerate}
+
+\begin{diybox}[The five steps of the flow]
+\textbf{Task.} Find each step of Fig.~\ref{fig:flow} in Logra.\\
+\textbf{In Logra.} The ``Running light'' project: ``Synthesize'' (Ctrl+Enter), then the Chip tab (the chain Verilog, Gowin, nextpnr, .fs at the top) and ``Place and build''.\\
+\textbf{Expected result.} The chain on the panel repeats the steps of the description, synthesis, place and route, and bitstream; after the build the ``Bitstream .fs'' link is available.\\
+\textbf{How to check.} Make a table of five rows: the flow step, the tool, and the Logra tab or button where you can see it. Programming the board (the fifth step) is on the Connect tab.
+\end{diybox}
+
+\section{What the Synthesizer Does}
+
+Let us see how a synthesizer turns text into ``hardware''. Suppose we wrote:
+\begin{vcode}
+assign y = (a & b) | ~c;
+\end{vcode}
+
+A person would draw a circuit of three gates: AND, NOT, and OR. But an FPGA has no
+separate gates --- it has LUTs. The function depends on three variables,
+so the synthesizer computes its truth table and writes it into
+\emph{one} LUT3 (or a LUT4 with one unused input).
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \begin{scope}
+    \node[gAND] (and) at (1.3,0.9) {};
+    \node[gNOT] (not) at (1.1,-0.5) {};
+    \node[gOR] (or) at (3.0,0.2) {};
+    \draw[wire] (and.input 1) -- ++(-0.7,0) node[left] {$a$};
+    \draw[wire] (and.input 2) -- ++(-0.7,0) node[left] {$b$};
+    \draw[wire] (not.input) -- ++(-0.5,0) node[left] {$c$};
+    \draw[wire] (and.output) -- ++(0.3,0) |- (or.input 1);
+    \draw[wire] (not.output) -- ++(0.5,0) |- (or.input 2);
+    \draw[wire] (or.output) -- ++(0.5,0) node[right] {$y$};
+    \node[lbl] at (1.8,-1.5) {as the human designed it};
+  \end{scope}
+  \draw[-{Stealth[length=4mm]}, line width=2pt, FpgaOrange] (4.9,0.2) -- (6.1,0.2) node[midway, above=1mm, lbl] {synthesis};
+  \begin{scope}[xshift=7cm]
+    \node[draw=FpgaBlue, fill=FpgaLight, thick, minimum width=18mm, minimum height=20mm, font=\sffamily\small, align=center] (lut) at (1.5,0.2) {LUT3};
+    \draw[wire] ([yshift=5mm]lut.west) -- ++(-0.7,0) node[left] {$a$};
+    \draw[wire] (lut.west) -- ++(-0.7,0) node[left] {$b$};
+    \draw[wire] ([yshift=-5mm]lut.west) -- ++(-0.7,0) node[left] {$c$};
+    \draw[wire] (lut.east) -- ++(0.7,0) node[right] {$y$};
+    \node[lbl] at (1.5,-1.5) {how the FPGA implements it};
+  \end{scope}
+  \begin{scope}[xshift=11.2cm, yshift=1.6cm]
+    \matrix[matrix of nodes, nodes={font=\ttfamily\scriptsize, inner sep=1.2pt},
+            row 1/.style={nodes={font=\sffamily\bfseries\scriptsize}}] (tt) {
+      a & b & c & y \\ 0&0&0&1 \\ 0&0&1&0 \\ 0&1&0&1 \\ 0&1&1&0 \\ 1&0&0&1 \\ 1&0&1&0 \\ 1&1&0&1 \\ 1&1&1&1 \\};
+    \draw[FpgaGray] (tt-1-1.south west) -- (tt-1-4.south east);
+    \node[lbl, above=0mm of tt] {LUT memory};
+  \end{scope}
+\end{tikzpicture}
+\caption{Synthesis: three logic gates turn into one LUT3 with
+a truth table inside}
+\end{figure}
+
+\begin{ideabox}
+The synthesizer does not care how you would draw the circuit on paper. All that matters is
+\emph{which function} you described. That is why in Verilog you describe the
+\emph{behavior} of a circuit, and the program takes care of choosing the elements.
+\end{ideabox}
+
+\begin{diybox}[Three gates into one LUT]
+\textbf{Task.} Check on the example \code{assign y = (a \& b) | \textasciitilde c;} that the synthesizer collapses the circuit into a single LUT3.\\
+\textbf{In Logra.} ``New project'' $\to$ ``From scratch'', a \code{top} module with inputs \code{a, b, c} and output \code{y}; ``Synthesize''; the RTL and Gowin tabs.\\
+\textbf{Expected result.} On RTL there are three gates (AND, NOT, OR), on Gowin a single LUT3; the LUT table matches the figure in the section ``What the Synthesizer Does''.\\
+\textbf{How to check.} In the ``Inspector'' open the ``Truth table'' (8 rows), compare the $y$ column with the table in the figure, and write down INIT (the order of the inputs depends on the synthesizer, so compare by the table rows). \stars{2} Change the formula and compare the number of LUTs.
+\end{diybox}
+
+\section{Tools}
+
+There are two toolchains for the Tang Nano 20K, and both are free.
+
+\subsection{Gowin EDA (the Official Environment)}
+
+The \textbf{Gowin EDA Education} environment can be downloaded from the manufacturer's
+website (\url{https://www.gowinsemi.com}). The workflow is:
+\begin{enumerate}
+  \item \textbf{File $\to$ New $\to$ FPGA Design Project}, and enter a project name.
+  \item Choose the chip: series \textbf{GW2AR}, package \textbf{QFN88},
+        speed \textbf{C8/I7}, device \textbf{GW2AR-18C}
+        (full name \code{GW2AR-LV18QN88C8/I7}).
+  \item \textbf{File $\to$ New $\to$ Verilog File} --- create a module file
+        and write the code.
+  \item \textbf{File $\to$ New $\to$ Physical Constraints File} --- create
+        a \code{.cst} file with the pin numbers.
+  \item In the \textbf{Process} tab run \textbf{Synthesize}, then
+        \textbf{Place \& Route}.
+  \item Open the \textbf{Programmer}, choose the \textbf{SRAM Program} mode
+        (for testing) or \textbf{External Flash Mode} (so that the circuit
+        is kept after power-off), and press \textbf{Program}.
+\end{enumerate}
+
+\subsection{Open-Source Tools}
+
+There is a fully open-source set of programs that works on Linux, Windows, and macOS
+(the easiest way is to install the \textbf{OSS CAD Suite} bundle):
+\begin{itemize}
+  \item \textbf{Yosys} --- the synthesizer;
+  \item \textbf{nextpnr-himbaechel} --- place and route;
+  \item \textbf{Apicula} (\code{gowin\_pack}) --- bitstream packing for Gowin;
+  \item \textbf{openFPGALoader} --- programming the board;
+  \item \textbf{Icarus Verilog} and \textbf{GTKWave} --- simulation and
+        viewing timing diagrams.
+\end{itemize}
+
+All the commands are collected in the \code{Makefile} in the folder with the examples:
+\begin{vcode}[bash]
+# 1. Synthesis
+yosys -p "read_verilog blink.v; synth_gowin -top blink -json blink.json"
+# 2. Place and route
+nextpnr-himbaechel --json blink.json --write pnr.json \
+    --device GW2AR-LV18QN88C8/I7 --vopt family=GW2A-18C \
+    --vopt cst=blink.cst --freq 27
+# 3. Bitstream
+gowin_pack -d GW2A-18C -o blink.fs pnr.json
+# 4. Programming: into SRAM ...
+openFPGALoader -b tangnano20k blink.fs
+# ... or into Flash
+openFPGALoader -b tangnano20k -f blink.fs
+
+# The same thing with one command:
+make PROJECT=02_blink TOP=blink load
+\end{vcode}
+
+\begin{diybox}[Which tools are in the log]
+\textbf{Task.} Match the open-source tools from this section to what Logra shows.\\
+\textbf{In Logra.} The bottom ``Build log'' panel on the Code tab and the ``Log'' link on the Chip tab; the status bar at the bottom.\\
+\textbf{Expected result.} The log shows messages from Yosys (synthesis) and nextpnr (place and route); at the bottom it says that Yosys and Icarus Verilog are ready.\\
+\textbf{How to check.} Find one message from each tool in the log and match it with the commands in the listing (\code{yosys}, \code{nextpnr-himbaechel}). \stars{2} Explain what replaces the \code{openFPGALoader} command in Logra.
+\end{diybox}
+
+\section{The .cst Constraints File}
+\label{sec:cst}
+
+Verilog code knows nothing about the board: it contains only port names
+(\code{clk}, \code{led}, \code{btn}\ldots). The \code{.cst} file (Physical
+Constraints) tells the router which pin
+of the chip each port is connected to and how to configure that pin.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=4mm and 20mm]
+  \node[block, minimum width=30mm, minimum height=22mm, align=left, font=\ttfamily\scriptsize] (v) {module blink (\\\ \ input\ \ clk,\\\ \ output [5:0] led\\);};
+  \node[oblock, right=of v, minimum width=36mm, minimum height=22mm, align=left, font=\ttfamily\scriptsize] (c) {IO\_LOC "clk" 4;\\IO\_LOC "led[0]" 15;\\\ldots\\IO\_LOC "led[5]" 20;};
+  \node[draw=FpgaDark, fill=ChipBlack, text=white, minimum width=24mm, minimum height=22mm, right=of c, font=\sffamily\small, align=center] (chip) {FPGA\\\scriptsize pins 4, 15..20};
+  \draw[arr] (v) -- node[above, lbl] {names} (c);
+  \draw[arr] (c) -- node[above, lbl] {pin numbers} (chip);
+  \node[lbl, below=1mm of v] {blink.v};
+  \node[lbl, below=1mm of c] {blink.cst};
+\end{tikzpicture}
+\caption{The \code{.cst} file links the module's port names to the chip's pins}
+\end{figure}
+
+The file contains only two commands:
+\begin{description}
+  \item[\code{IO\_LOC "port" number;}] --- connect the port to the pin with the given
+    number. The pin numbers of the Tang Nano 20K are listed in Table~\ref{tab:pins}.
+  \item[\code{IO\_PORT "port" parameter=value ...;}] --- set the
+    electrical parameters of the pin.
+\end{description}
+
+\begin{table}[H]
+\centering
+\caption{The main parameters of the \code{IO\_PORT} command}
+\label{tab:ioport}
+\small
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Parameter} & \textbf{Values} & \textbf{Meaning} \\
+\midrule
+\code{IO\_TYPE} & \code{LVCMOS33}, \code{LVCMOS18}, \ldots & the logic level standard; on the Tang Nano 20K it is \code{LVCMOS33} almost everywhere (3.3~V), see Chapter~\ref{ch:signals} \\
+\code{PULL\_MODE} & \code{UP}, \code{DOWN}, \code{NONE}, \code{KEEPER} & a built-in resistor: pull-up to the supply, pull-down to ground, no pull, or ``keeper'' that holds the last level \\
+\code{DRIVE} & \code{4}, \code{8}, \code{12}, \code{16}, \code{24} & the maximum output current in milliamperes (outputs only) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Writing rules:
+\begin{itemize}
+  \item every command ends with a semicolon;
+  \item comments start with \code{//}, as in Verilog;
+  \item port names are written in quotes and must match the names in the module
+        \emph{exactly} (letter case matters too);
+  \item for a bus, each bit is described on a separate line: \code{"led[0]"},
+        \code{"led[1]"}, \ldots
+\end{itemize}
+
+Why do we need a pull resistor? An input with nothing connected to it (for example, the pin
+of a button while it is released) ``floats in the air'' and picks up noise: the FPGA will
+read 0 one moment and 1 the next. A \code{PULL\_MODE=DOWN} resistor weakly pulls such an input
+to ground, and while the button is released it is guaranteed to read 0.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.85, transform shape]
+  \draw (0,3.2) node[vcc] {$+3.3$ V} -- (0,2.8) to[push button, l=S1] (0,1.4) -- (2.4,1.4);
+  \draw (1.3,1.4) to[R, l_=$R_\text{pull}$, *-] (1.3,-0.2) node[ground] {};
+  \draw (2.4,0.8) rectangle (4.6,2.0);
+  \node[font=\sffamily\small] at (3.5,1.4) {FPGA};
+  \node[font=\sffamily\scriptsize, anchor=south west] at (2.4,1.4) {88};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5.2,1.9) {button released: the resistor pulls the input to 0};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5.2,1.0) {button pressed: the input is connected to 3.3~V $\to$ 1};
+\end{circuitikz}
+\caption{\code{PULL\_MODE=DOWN}: the pull resistor is enabled inside the FPGA,
+no soldering is needed}
+\end{figure}
+
+\subsection{.cst Files in the Examples}
+
+Every project from Chapter~\ref{ch:examples} has its own constraints file
+next to the code, for example \code{code/02\_blink/blink.cst}. It describes exactly
+the ports that the module has, and each group of lines is commented.
+Here is the complete file for the blinker:
+
+\vfile[c]{\codepath/02_blink/blink.cst}{code/02\_blink/blink.cst}
+
+In addition, \code{code/common/tang\_nano\_20k.cst} contains a summary pin assignment
+of all the pins used in this book. It is a reference: do not
+add it to a project as a whole, but copy the lines you need from it.
+
+\begin{warnbox}[Common mistakes]
+We checked the behavior of the open-source router \code{nextpnr} on the examples:
+\begin{itemize}
+  \item \textbf{A module port is not described in the \code{.cst}} --- the error
+        \code{Unconstrained IO}, and the bitstream is not built. That is actually better: the error
+        is visible immediately.
+  \item \textbf{The \code{.cst} describes a port that is not in the module} --- the line
+        is simply skipped with the message \code{Cell ... not found}, \emph{without
+        an error}. This is usually a typo in the name: then the real port remains
+        undescribed, and the previous error occurs. When you see
+        \code{Unconstrained IO}, first look for a typo in the \code{.cst}.
+  \item \textbf{A wrong pin number} --- the error \code{Pin ... not found}.
+\end{itemize}
+\end{warnbox}
+
+\subsection{Clock Frequency}
+
+The router needs to know what frequency the circuit will run at, in order to
+check whether the signals can travel along the critical path in time
+(Chapter~\ref{ch:sync}). For \code{nextpnr} the frequency is set with the option
+\code{--freq 27} (in megahertz), and the log shows a line like
+\begin{vcode}[text]
+Info: Max frequency for clock 'clk': 256.21 MHz (PASS at 27.00 MHz)
+\end{vcode}
+In Gowin EDA the frequency is set in a separate timing constraints file, \code{.sdc}:
+\begin{vcode}[text]
+create_clock -name clk -period 37.037 [get_ports {clk}]
+\end{vcode}
+Here 37.037~ns is the period of a 27~MHz signal.
+
+\begin{diybox}[The .cst file in Logra]
+\textbf{Task.} Read the project's constraints file and break it.\\
+\textbf{In Logra.} The ``Running light'' project, the Pins tab $\to$ ``.cst text''; then Chip $\to$ ``Place and build'' (the ``Constraints'' list: \code{board.cst}, the ``Frequency, MHz'' field).\\
+\textbf{Expected result.} The file contains \code{IO\_LOC} lines for \code{clk}, \code{reset}, and six \code{led\_n}; the build succeeds, and nextpnr shows the frequency against the specified 27~MHz.\\
+\textbf{How to check.} \stars{2} Fix the name of one port in the \code{.cst} (for example \code{clk} to \code{clock}) and rebuild: read the message in the log and compare it with the ``Common mistakes'' warning. Change the name back. \stars{2} Enter 400 in the ``Frequency, MHz'' field and see what the report says.
+\end{diybox}

@@ -1,0 +1,703 @@
+\chapter{Practice: Seven Projects}
+\label{ch:examples}
+
+In this chapter we will build, step by step, seven circuits, from simple logic
+gates to a finite-state machine and PWM (pulse-width modulation: it is
+covered in project~6). Each one relies on blocks from the first
+part of the book. Each project lives in its own folder
+inside \code{code/}: a \code{.v} file with the circuit description and a \code{.cst} file with
+the pins (how it is organized is explained in Section~\ref{sec:cst}).
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar stacked, bar width=9mm, width=\textwidth, height=6.2cm,
+  symbolic x coords={Logic, Blinker, {Running light}, Button, {Traffic light}, PWM, MUX},
+  xtick=data, ylabel={Number of cells},
+  legend style={at={(0.5,1.03)}, anchor=south, legend columns=3, font=\sffamily\small, draw=none},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  axis lines*=left, ymin=0, grid=major, grid style={FpgaGray!20},
+]
+  \addplot[fill=FpgaBlue!70, draw=FpgaBlue] coordinates {(Logic,5) (Blinker,114) ({Running light},60) (Button,21) ({Traffic light},32) (PWM,70) (MUX,8)};
+  \addplot[fill=FpgaGreen!60, draw=FpgaGreen] coordinates {(Logic,0) (Blinker,26) ({Running light},29) (Button,31) ({Traffic light},30) (PWM,34) (MUX,25)};
+  \addplot[fill=FpgaOrange!60, draw=FpgaOrange] coordinates {(Logic,0) (Blinker,25) ({Running light},22) (Button,25) ({Traffic light},35) (PWM,49) (MUX,25)};
+  \legend{LUT1--LUT4, flip-flops, ALU cells (carry)}
+\end{axis}
+\end{tikzpicture}
+\caption{How many resources each project uses (according to the Yosys synthesis report).
+Even the ``heaviest'' example uses less than 1\,\% of the FPGA}
+\label{fig:usage}
+\end{figure}
+
+% =============================================================================
+\section{Project 1. Logic Gates on Buttons}
+
+\textbf{Goal:} to see that the gates AND, OR, NOT, NAND, NOR and
+XOR really can be ``built'' with code. Buttons S1 and S2 will be
+the inputs $a$ and $b$, and six LEDs will be the outputs of the six functions.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[yscale=0.95]
+  \coordinate (A) at (0,0); \coordinate (B) at (0,-0.4);
+  \node[left, font=\sffamily\small] at (-0.1,-2.4) {\begin{tabular}{r}S1 $\to a$\\S2 $\to b$\end{tabular}};
+  \draw[very thick, FpgaBlue] (0,0.5) -- (0,-5.4) node[below, lbl] {$a$};
+  \draw[very thick, FpgaRed]  (0.4,0.5) -- (0.4,-5.4) node[below, lbl] {$b$};
+  \foreach \i/\g/\t in {0/gAND/AND, 1/gOR/OR, 2/gNOT/NOT, 3/gNAND/NAND, 4/gNOR/NOR, 5/gXOR/XOR} {
+    \pgfmathsetmacro{\y}{-\i*1.0}
+    \ifnum\i=2
+      \node[gNOT] (g\i) at (2.4,\y) {};
+      \draw[wire] (g\i.input) -- (0,\y); \fill[FpgaBlue] (0,\y) circle (1.5pt);
+    \else
+      \node[\g, minimum height=7mm, minimum width=10mm] (g\i) at (2.4,\y) {};
+      \draw[wire] (g\i.input 1) -- (0,{\y+0.12}); \fill[FpgaBlue] (0,{\y+0.12}) circle (1.5pt);
+      \draw[wire] (g\i.input 2) -- (0.4,{\y-0.12}); \fill[FpgaRed] (0.4,{\y-0.12}) circle (1.5pt);
+    \fi
+    \node[gNOT, minimum width=6mm, minimum height=4mm] (n\i) at (4.3,\y) {};
+    \draw[wire] (g\i.output) -- (n\i.input);
+    \draw[wire] (n\i.output) -- (5.4,\y) node[right, font=\sffamily\small] {led[\i]\quad (\t)};
+  }
+  \node[lbl, align=center] at (4.3,0.7) {inversion\\for the LED};
+\end{tikzpicture}
+\caption{The circuit of project 1}
+\end{figure}
+
+\vfile{\codepath/01_gates/gates.v}{code/01\_gates/gates.v}
+
+Load this file into Logra and click ``Synthesize''. On the RTL tab the circuit
+is broken down into individual gates: XOR, OR and AND, and each of the six LEDs
+gets its own inverter (Fig.~\ref{fig:ex-gates-rtl}). This is how the six-bit
+\code{led} vector turns into six independent wires. Note the
+double inverters: the NAND and NOR functions are written with \code{\textasciitilde},
+and one more inversion is added because the LEDs are active low.
+
+\shot[0.5\textwidth]{ex-gates-rtl}{Project~1 in Logra: one gate for each bit of the result}{fig:ex-gates-rtl}
+
+The pin file. There is no clock signal here: the circuit is purely combinational, and
+the file describes only the buttons and the LEDs. Note
+\code{PULL\_MODE=DOWN} on the buttons: without it, a released button would give a
+random level, and the LEDs would flicker.
+
+\vfile[c]{\codepath/01_gates/gates.cst}{code/01\_gates/gates.cst}
+
+\begin{table}[H]
+\centering
+\caption{Which LEDs should be on ($\bullet$ means on)}
+\label{tab:gates}
+\begin{tabular}{cc|cccccc}
+\toprule
+S1 ($a$) & S2 ($b$) & led0 AND & led1 OR & led2 NOT $a$ & led3 NAND & led4 NOR & led5 XOR \\
+\midrule
+0 & 0 &           &           & $\bullet$ & $\bullet$ & $\bullet$ &           \\
+0 & 1 &           & $\bullet$ & $\bullet$ & $\bullet$ &           & $\bullet$ \\
+1 & 0 &           & $\bullet$ &           & $\bullet$ &           & $\bullet$ \\
+1 & 1 & $\bullet$ & $\bullet$ &           &           &           &           \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{infobox}[What we got after synthesis]
+Yosys reports that the circuit took only \textbf{5 LUT2}, not 6 gates
+plus 6 inverters. The synthesizer merged each function with the inversion at its output into
+a single LUT (for example, $\overline{a\cdot b}$ became one table). And for
+\code{led[2]} the result was $\overline{\overline{a}} = a$---the LED is connected
+to the button simply by a wire, and no LUT was needed at all!
+\end{infobox}
+
+\begin{taskbox}
+\begin{enumerate}
+  \item Load the project and check all the rows of
+        Table~\ref{tab:gates} one by one.
+  \item Replace the function on \code{led[5]} with the majority function of three
+        signals: $a$, $b$ and $a \oplus b$. What do you get, and why?
+\end{enumerate}
+\end{taskbox}
+
+\begin{diybox}[Security on two buttons]
+\textbf{Task.} Build project 1 and check all four rows of Table~\ref{tab:gates}. Then change the functions so that S1 is the ``door'', S2 is the ``guard'', and an LED shows the alarm.
+
+\textbf{In Logra.} The ``From scratch'' card, Code tab: enter \code{gates.v}; the Pins tab holds the assignment of buttons and LEDs (the \code{gates.cst} file from the book). For the alarm, keep the AND function on \code{led[0]}: the board LEDs light with a zero, so the inverter in front of the pin is already in the project.
+
+\textbf{Expected result.} The alarm LED is on only when both buttons are pressed; the other five functions match the table.
+
+\textbf{How to check.} Waveforms: ``Sweep inputs'' gives four rows; compare them with the table. RTL: one gate for each bit. Gowin: how many LUTs are used (about five according to the report).
+
+\stars{1} repeat: check all 4 rows of the table. \stars{2} change: replace \code{led[5]} with the majority function of $a$, $b$ and $a\oplus b$ and explain the result (you get OR). \stars{3} project: the ``Security Panel'' stage---\code{alarm = door \& (night | armed)} on buttons S1, S2 and a third input; acceptance criterion: the eight combinations match the truth table from the first part.
+\end{diybox}
+
+% =============================================================================
+\section{Project 2. A Blinking LED}
+
+\textbf{Goal:} to get to know the clock signal and the counter. This is the
+``Hello, world!'' of the FPGA world.
+
+The oscillator produces \SI{27}{MHz}, that is, $27\,000\,000$ pulses per second.
+The human eye cannot see blinking that fast. We need to \term{divide the frequency}:
+we count clock cycles and every $13\,500\,000$ cycles (0.5\,s) we toggle the
+LED. How many bits wide must the counter be?
+\[
+  2^{23} = 8\,388\,608 < 13\,500\,000 < 2^{24} = 16\,777\,216
+\]
+\[
+  \Rightarrow\quad \text{24 bits are enough (we took 25 to have some margin).}
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=10mm]
+  \node[hblock] (clk) {Oscillator\\27 MHz};
+  \node[block, right=of clk, minimum width=30mm] (cnt) {Counter\\\scriptsize 0 \ldots 13\,499\,999};
+  \node[block, right=of cnt] (cmp) {Compare\\\scriptsize cnt == HALF$-$1};
+  \node[gblock, right=of cmp] (tff) {T flip-flop\\\scriptsize state};
+  \node[oblock, below=8mm of tff] (led) {6 LEDs};
+  \draw[arr] (clk) -- (cnt); \draw[bus, -{Stealth}] (cnt) -- (cmp); \draw[arr] (cmp) -- (tff);
+  \draw[arr] (tff) -- node[right, lbl] {\textasciitilde state} (led);
+  \draw[arr, dashed] (cmp.south) |- node[pos=0.75, below, lbl] {reset to 0} ($(cnt.south)+(0,-0.6)$) -- (cnt.south);
+\end{tikzpicture}
+\caption{Structure of the frequency divider}
+\end{figure}
+
+\vfile{\codepath/02_blink/blink.v}{code/02\_blink/blink.v}
+
+The pin file: the clock oscillator on pin 4 and six LEDs. The buttons
+are not used in this project, so they are not in the file---the router would
+skip extra lines, but a tidy project should not have them.
+
+\vfile[c]{\codepath/02_blink/blink.cst}{code/02\_blink/blink.cst}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.05, xscale=1.6, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.3ex]
+  clk   & 6{1L 1H} 3S 6{1L 1H} \\
+  cnt   & 2D{0} 2D{1} 2D{2} 2D{\ldots} 2D{H$-$2} 2D{H$-$1} 3S 2D{0} 2D{1} 2D{2} 2D{\ldots} 2D{H$-$2} 2D{H$-$1} \\
+  state & 12L 3S 12H \\
+\extracode
+  \node[lbl, text=FpgaOrange] at (13.5,0.7) {$\approx$0.5\,s};
+\end{tikztimingtable}
+\caption{Timing diagram of the blinker (H = HALF)}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.85\textwidth, height=4.5cm, xlabel={Time, s}, ylabel={led},
+  ymin=-0.2, ymax=1.3, xmin=0, xmax=3, ytick={0,1}, yticklabels={on (0), off (1)},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  grid=major, grid style={FpgaGray!20}, axis lines*=left,
+]
+  \addplot[very thick, FpgaBlue, const plot] coordinates {(0,0) (0.5,1) (1,0) (1.5,1) (2,0) (2.5,1) (3,1)};
+\end{axis}
+\end{tikzpicture}
+\caption{The signal on the LED pin: period 1\,s, frequency 1\,Hz}
+\end{figure}
+
+\begin{taskbox}
+\begin{enumerate}
+  \item Make the LED blink 5 times per second.
+  \item Make \code{led[0]} blink at 1\,Hz, \code{led[1]} at 2\,Hz,
+        \code{led[2]} at 4\,Hz\ldots\ Hint: use different bits of a single
+        counter. Which bit of the 25-bit counter changes at a frequency of about 1\,Hz?
+\end{enumerate}
+\end{taskbox}
+
+\begin{diybox}[The ``armed'' blinker]
+\textbf{Task.} The LED of the armed mode must blink once per second while the panel is armed. Choose the divider and check the period.
+
+\textbf{In Logra.} The ``From an example'' card---``27 MHz blinker'', or your own \code{blink.v}. Code tab $\to$ ``Synthesize''; in Waveforms reduce the divider constant (the \code{CLK\_HZ} parameter), otherwise you would have to simulate millions of clock cycles.
+
+\textbf{Expected result.} The LED toggles every $13\,500\,000$ clock cycles (0.5\,s), that is, it blinks with a period of 1\,s and a frequency of 1\,Hz; in the model with \code{CLK\_HZ = 20} it toggles every 10 clock cycles.
+
+\textbf{How to check.} Waveforms: set the number of cycles to 25 and watch \code{cnt} and \code{led}; \code{cnt} reaches \code{HALF - 1} and resets. On the Chip tab, after ``Place and build'', make sure that $f_{max}$ is much higher than 27\,MHz.
+
+\stars{1} repeat: a period of 1\,s from the diagram. \stars{2} change: 5 blinks per second; then find which bit of the counter toggles at a frequency of about 1\,Hz. \stars{3} project: the ``Security Panel'' stage---a mode indicator; acceptance criterion: the LED blinks with a period of 1\,s only when \code{armed = 1}, otherwise it is off.
+\end{diybox}
+
+% =============================================================================
+\section{Project 3. A Running Light}
+
+\textbf{Goal:} to study the shift register and the enable signal (\code{tick}).
+
+Six flip-flops are connected in a ring: on each \code{tick} pulse the value of
+each flip-flop moves to its neighbor, and the value of the last one goes to the first.
+If the ring initially holds a single one, it will ``run'' around the circle.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[ffn/.style={draw=FpgaGreen, fill=green!8, thick, minimum width=13mm, minimum height=11mm, font=\sffamily\small, align=center}]
+  \foreach \i in {0,...,5} {
+    \node[ffn] (r\i) at (\i*2.2,0) {D\enskip Q\\[-1mm]\scriptsize ring[\i]};
+    \draw[wire] (r\i.north) -- ++(0,0.6) node[above, font=\sffamily\scriptsize] {led[\i]};
+  }
+  \foreach \i [evaluate=\i as \j using int(\i+1)] in {0,...,4}
+    \draw[arr] (r\i.east) -- (r\j.west);
+  \draw[arr] (r5.east) -- ++(0.4,0) |- ($(r0.south)+(0,-0.7)$) -| ($(r0.west)+(-0.4,0)$) -- (r0.west);
+  \draw[wire, FpgaBlue] ($(r0.south)+(0,-1.3)$) node[left, font=\sffamily\scriptsize] {clk, tick} -- ($(r5.south)+(0,-1.3)$);
+  \foreach \i in {0,...,5} \draw[wire, FpgaBlue] (r\i.south) -- ++(0,-1.3);
+\end{tikzpicture}
+\caption{A ring shift register of six D flip-flops}
+\end{figure}
+
+\vfile{\codepath/03_running_lights/running_lights.v}{code/03\_running\_lights/running\_lights.v}
+
+The pin file is the same as for the blinker: the clock and the LEDs.
+
+\vfile[c]{\codepath/03_running_lights/running_lights.cst}{code/03\_running\_lights/running\_lights.cst}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.1, xscale=1.35, yscale=1.35, timing/font=\sffamily\small, timing/rowdist=3.1ex]
+  tick    & 2L 1H 3L 1H 3L 1H 3L 1H 3L 1H 3L 1H 3L 1H 1L \\
+  ring[0] & 3H 20L 4H 1L \\
+  ring[1] & 3L 4H 21L \\
+  ring[2] & 7L 4H 17L \\
+  ring[3] & 11L 4H 13L \\
+  ring[4] & 15L 4H 9L \\
+  ring[5] & 19L 4H 5L \\
+\end{tikztimingtable}
+\caption{The one ``moves'' to the neighboring bit after each \code{tick} pulse
+(the time scale is schematic)}
+\end{figure}
+
+\begin{infobox}[Why tick and not a separate slow clock?]
+You could feed the flip-flops a homemade slow clock taken straight from
+the divider. But this is not done in FPGAs: such a signal has no access to the
+global clock network, and the circuit may work unreliably. The correct approach is that
+\textbf{all flip-flops are clocked by the single \code{clk}}, and rare events
+are expressed by an \term{enable signal} one clock cycle long.
+\end{infobox}
+
+\begin{taskbox}
+Make a light that runs back and forth (``Knight Rider''). Hint:
+you need an additional direction register \code{dir}.
+\end{taskbox}
+
+\begin{diybox}[A running light in both directions]
+\textbf{Task.} The light must run to the last LED and back, and in the alarm state it must also run faster.
+
+\textbf{In Logra.} The ``From an example'' card---``Running light''; Code tab. Add a register \code{dir} that changes its value when the one reaches an edge.
+
+\textbf{Expected result.} The one goes $0\to5$, then $5\to0$, and so on in a loop; at each step exactly one bit equals 1.
+
+\textbf{How to check.} Waveforms: watch \code{ring} and \code{tick}, as in the figure for this project; the one should ``bounce'' off the edges. RTL shows six flip-flops in the ring.
+
+\stars{1} repeat: the example unchanged, shifting on the \code{tick} signal. \stars{2} change: direction and speed controlled by buttons (Task~6 of Chapter~\ref{ch:tasks}). \stars{3} project: the ``Security Panel'' stage---an alarm indicator; acceptance criterion: when \code{alarm = 1} the light runs twice as fast, and outside the alarm the LEDs are off.
+\end{diybox}
+
+% =============================================================================
+\section{Project 4. The Button: Synchronization, Bounce, Edge}
+
+\textbf{Goal:} to learn to work with buttons correctly. The task is simple:
+count presses of S1 and show the number in binary on the LEDs. But
+there are three obstacles in the way.
+
+\subsection{Obstacle 1: Contact Bounce}
+
+When pressed, the mechanical contacts of a button ``jump'' for several milliseconds, and
+instead of one $0\to1$ transition you get a whole series. A circuit running
+at 27\,MHz will count every ``jump'' as a separate press.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.9\textwidth, height=4.6cm, xlabel={Time, ms}, ylabel={Level},
+  xmin=0, xmax=30, ymin=-0.2, ymax=1.5, ytick={0,1},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  legend style={font=\sffamily\small, at={(0.5,1.08)}, anchor=south, legend columns=2, draw=none},
+  axis lines*=left,
+]
+  \addplot[thick, FpgaRed, const plot] coordinates {
+    (0,0) (5,1) (5.4,0) (5.9,1) (6.2,0) (6.9,1) (7.1,0) (7.8,1) (8.4,0) (8.6,1)
+    (22,1) (22.3,0) (22.7,1) (23.2,0) (23.5,1) (24.0,0) (30,0)};
+  \addlegendentry{button (raw signal)}
+  \addplot[very thick, FpgaGreen, const plot] coordinates {(0,-0.05) (18.6,-0.05) (18.6,1.1) (30,1.1)};
+  \addlegendentry{after debouncing}
+  \draw[FpgaOrange, <->, thick] (axis cs:8.6,1.25) -- (axis cs:18.6,1.25) node[midway, above, font=\sffamily\small] {10 ms stable};
+\end{axis}
+\end{tikzpicture}
+\caption{Contact bounce and its suppression: a new value is accepted only
+if it does not change for 10 ms}
+\end{figure}
+
+\subsection{Obstacle 2: Metastability}
+
+A button is pressed at a random moment that has nothing to do with the \code{clk} clock.
+If the input of a flip-flop changes exactly at the moment of the edge, the flip-flop may
+``hang'' for a while between 0 and 1 (the \term{metastable state}). The protection
+is a \term{synchronizer} made of two flip-flops in series: even
+if the first one ``hesitates'', by the second edge it will almost certainly have settled.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[ffn/.style={draw=FpgaGreen, fill=green!8, thick, minimum width=13mm, minimum height=11mm, font=\sffamily\small}]
+  \node[font=\sffamily\small] (in) at (0,0) {btn};
+  \node[ffn] (f1) at (2.2,0) {D\enskip Q};
+  \node[ffn] (f2) at (4.6,0) {D\enskip Q};
+  \node[block] (db) at (7.6,0) {debounce\\\scriptsize 10 ms};
+  \node[block] (ed) at (10.8,0) {edge\\detector};
+  \draw[arr] (in) -- (f1); \draw[arr] (f1) -- node[above, lbl] {sync0} (f2);
+  \draw[arr] (f2) -- node[above, lbl] {sync1} (db); \draw[arr] (db) -- node[above, lbl] {s1} (ed);
+  \draw[arr] (ed) -- ++(1.6,0) node[right, font=\sffamily\small] {press};
+  \draw[wire, FpgaBlue] (1.2,-1.2) node[left, font=\sffamily\scriptsize] {clk} -- (10.8,-1.2);
+  \foreach \n in {f1,f2,db,ed} \draw[wire, FpgaBlue] (\n.south) -- (\n.south |- 0,-1.2);
+\end{tikzpicture}
+\caption{The button signal processing chain}
+\end{figure}
+
+\subsection{Obstacle 3: A Press Lasts Millions of Clock Cycles}
+
+If you write \code{if (s1) count <= count + 1;}, the counter will add
+one \emph{every clock cycle} while the button is held---millions of times.
+You need a \term{rising-edge detector}: compare the current value with the
+value delayed by one clock cycle. The pulse \code{press = s1 \& \textasciitilde{}s1\_prev} lasts
+exactly one clock cycle.
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.1, xscale=2.4, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  clk      & 8{1L 1H} \\
+  s1       & 3L 10H 3L \\
+  s1\_prev & 5L 10H 1L \\
+  press    & 3L 2H 11L \\
+  count    & 5D{5} 11D{6} \\
+\end{tikztimingtable}
+\caption{The edge detector: \code{press} equals 1 for only one clock cycle after the press}
+\end{figure}
+
+\vfile{\codepath/04_button_edge/button_counter.v}{code/04\_button\_edge/button\_counter.v}
+
+The pin file: the clock, both buttons and the LEDs. The \code{PULL\_MODE=DOWN} pull-down
+does not save you from bounce---it only sets the level of a released button.
+Bounce is handled by the debounce circuit in the code.
+
+\vfile[c]{\codepath/04_button_edge/button_counter.cst}{code/04\_button\_edge/button\_counter.cst}
+
+\begin{taskbox}
+\begin{enumerate}
+  \item Make S2 subtract one from the counter instead of resetting it. For this,
+        S2 also needs debouncing and an edge detector. It is convenient to move them
+        into a separate \code{debounce} module and create two instances.
+  \item What happens if you remove the debouncing? Try it and count how many
+        extra ``presses'' accumulate.
+\end{enumerate}
+\end{taskbox}
+
+\begin{diybox}[Debouncing and counting presses]
+\textbf{Task.} The ``arm the system'' button must produce exactly one transition per press, no matter how the contacts bounce.
+
+\textbf{In Logra.} The ``From an example'' card: ``Button debounce'' and ``One press $	o$ toggle''. Code tab, then Waveforms.
+
+\textbf{Expected result.} In ``Button debounce'' the \code{synced} signal repeats the noise at the input, while \code{stable} changes only after several consistent samples. In ``One press $	o$ toggle'' a long press gives one \code{press} pulse and one toggle.
+
+\textbf{How to check.} Waveforms: apply the series 1-0-1-0-1 to the button and then a steady one; compare \code{synced} and \code{stable}. Remove the debouncing from \code{button\_counter.v} and count the ``extra'' presses.
+
+\stars{1} repeat: run both examples and find the clock cycle where \code{press = 1}. \stars{2} find the bug: remove the two-flip-flop synchronizer and explain why this is dangerous on a board (metastability, Chapter~\ref{ch:clocks}). \stars{3} project: the ``Security Panel'' stage---the arming button; acceptance criterion: on the diagram, with bounce at the input, the panel state changes exactly once.
+\end{diybox}
+
+% =============================================================================
+\section{Project 5. A Traffic Light: A Finite-State Machine}
+
+\textbf{Goal:} to move onto the board the finite-state machine that you studied in
+the first part and to see it work on the LEDs. The principle is the same: a state
+register, transition logic, output logic. The only new things here are the timer and the
+connection to real pins.
+
+A machine is in one of a finite number of \emph{states} and, under
+certain conditions, \emph{moves} to others. A traffic light is a classic
+example:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  st/.style={circle, draw=FpgaDark, very thick, minimum size=22mm, font=\sffamily\small, align=center},
+  tr/.style={-{Stealth[length=3mm]}, very thick, FpgaDark},
+]
+  \node[st, fill=red!20]    (r)  at (0,2.6)  {RED\\\scriptsize 4 s};
+  \node[st, fill=orange!25] (ry) at (5.2,2.6) {RED\_YL\\\scriptsize 1 s};
+  \node[st, fill=green!20]  (g)  at (5.2,-1.6) {GREEN\\\scriptsize 4 s};
+  \node[st, fill=yellow!30] (y)  at (0,-1.6)  {YELLOW\\\scriptsize 1 s};
+  \draw[tr] (r)  -- node[above, lbl] {timeout} (ry);
+  \draw[tr] (ry) -- node[right, lbl] {timeout} (g);
+  \draw[tr] (g)  -- node[below, lbl] {timeout} (y);
+  \draw[tr] (y)  -- node[left, lbl] {timeout} (r);
+  \draw[tr, FpgaRed, dashed] (-2.6,4.2) node[left, lbl, text=FpgaRed] {btn[0] (reset)} -- (r);
+  % Lamps
+  \foreach \s/\cr/\cy/\cg in {r/red/gray!30/gray!30, ry/red/yellow/gray!30, g/gray!30/gray!30/green!70!black, y/gray!30/yellow/gray!30} {
+    \begin{scope}[shift={($(\s)+(1.7,0.5)$)}]
+    \fill[ChipBlack, rounded corners=1pt] (-0.22,-1.0) rectangle (0.22,0.35);
+    \fill[\cr] (0,0.15) circle (0.13); \fill[\cy] (0,-0.3) circle (0.13); \fill[\cg] (0,-0.75) circle (0.13);
+    \end{scope}
+  }
+\end{tikzpicture}
+\caption{The state transition graph of the ``Traffic light'' machine}
+\end{figure}
+
+In Verilog a machine is described in three parts:
+\begin{enumerate}
+  \item the \textbf{state register} (\code{state})---flip-flops that store
+        the number of the current state;
+  \item the \textbf{transition logic}---determines the next state;
+  \item the \textbf{output logic}---what to light in each state.
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=12mm]
+  \node[block, minimum width=30mm, minimum height=14mm] (next) {Transition\\logic};
+  \node[gblock, right=of next, minimum height=14mm] (st) {Register\\state};
+  \node[block, right=of st, minimum width=30mm, minimum height=14mm] (out) {Output\\logic};
+  \draw[arr] (next) -- (st); \draw[arr] (st) -- (out);
+  \draw[arr] (out.east) -- ++(1,0) node[right, font=\sffamily\small] {led};
+  \draw[arr] ($(st.east)+(0.5,0)$) -- ++(0,-1.2) -| (next.south);
+  \draw[arr] ($(next.west)+(-1.2,0)$) node[left, font=\sffamily\small] {timer, btn} -- (next.west);
+  \draw[wire, FpgaBlue] (st.north) -- ++(0,0.5) node[above, font=\sffamily\scriptsize] {clk};
+\end{tikzpicture}
+\caption{Structure of a Moore machine: the output depends only on the state}
+\end{figure}
+
+\vfile{\codepath/05_traffic_light/traffic_light.v}{code/05\_traffic\_light/traffic\_light.v}
+
+The pin file: the clock, the buttons (S1 is used as reset) and the LEDs. The
+\code{btn} port in the module is two bits wide, so both bits are described even though \code{btn[1]}
+is not used: otherwise the router will report that the port is not described.
+
+\vfile[c]{\codepath/05_traffic_light/traffic_light.cst}{code/05\_traffic\_light/traffic\_light.cst}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.05, xscale=1.2, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.3ex]
+  state   & 8D{RED} 2D{R+Y} 8D{GREEN} 2D{YEL} 8D{RED} 2D{R+Y} \\
+  red     & 10H 10L 10H \\
+  yellow  & 8L 2H 8L 2H 8L 2H \\
+  green   & 10L 8H 12L \\
+\extracode
+  \draw[FpgaGray] (0,-6.2) -- (30,-6.2);
+  \foreach \t/\l in {0/0, 8/4, 10/5, 18/9, 20/10, 28/14, 30/15} {
+    \draw[FpgaGray] (\t,-6.1) -- (\t,-6.3) node[below, font=\sffamily\scriptsize] {\l\,s};
+  }
+\end{tikztimingtable}
+\caption{The traffic light over time (1 = lamp on)}
+\end{figure}
+
+\begin{taskbox}
+Add a ``flashing green'' state (3 times for 0.5\,s each) between GREEN and
+YELLOW. Draw the new transition graph before you write the code!
+\end{taskbox}
+
+\begin{diybox}[Exit delay in the security system]
+\textbf{Task.} After the system is armed, the owner has 3\,s to leave: during this time the sensors are ignored. Add an ``exit'' state to the panel's machine.
+
+\textbf{In Logra.} The ``From an example'' card---``Traffic light state machine''---as a model (\code{traffic\_light.v}); Code tab. Draw the graph OFF $\to$ EXIT $\to$ ARMED $\to$ ALARM, then write the \code{case}.
+
+\textbf{Expected result.} After \code{arm} the machine stays in EXIT for exactly 3\,s (30 clock cycles in the reduced model), then moves to ARMED; a sensor trigger in EXIT does not affect the state.
+
+\textbf{How to check.} Waveforms: the \code{state} signal goes through $0\to 1\to 2\to 3$; on the diagram, a sensor raised in EXIT does not cause a transition to ALARM. RTL shows the state register and the timer counter.
+
+\stars{1} repeat: go through red, red-yellow, green, yellow on the diagram. \stars{2} change: add ``flashing green'' (the task at the end of the project). \stars{3} project: the ``Security Panel'' stage---exit delay; acceptance criterion: a graph of four states is drawn, and the diagram has no transitions that are not on the graph.
+\end{diybox}
+
+% =============================================================================
+\section{Project 6. A ``Breathing'' LED: PWM}
+
+\textbf{Goal:} to learn to control brightness. A digital pin has only two
+states: 0 and 1. But if you switch an LED very fast, the eye sees the
+\emph{average} brightness. This is \term{pulse-width modulation} (PWM):
+the frequency is constant, while the fraction of the time when the signal equals 1 changes---the
+\term{duty cycle} $D$:
+\[
+  D = \frac{t_\text{on}}{T}\cdot 100\,\%, \qquad
+  U_\text{avg} = D \cdot U_\text{supply}.
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=1 by 3, vertical sep=13mm, xticklabels at=edge bottom},
+  width=0.85\textwidth, height=3cm, xmin=0, xmax=4, ymin=-0.15, ymax=1.3,
+  ytick={0,1}, axis lines*=left, tick label style={font=\sffamily\small},
+  label style={font=\sffamily\small},
+]
+\nextgroupplot[title={$D=25\,\%$ --- dim}, title style={font=\sffamily\small}]
+  \addplot[very thick, FpgaBlue, const plot] coordinates {(0,1) (0.25,0) (1,1) (1.25,0) (2,1) (2.25,0) (3,1) (3.25,0) (4,0)};
+  \addplot[thick, dashed, FpgaOrange, domain=0:4] {0.25};
+\nextgroupplot[title={$D=50\,\%$}, title style={font=\sffamily\small}]
+  \addplot[very thick, FpgaBlue, const plot] coordinates {(0,1) (0.5,0) (1,1) (1.5,0) (2,1) (2.5,0) (3,1) (3.5,0) (4,0)};
+  \addplot[thick, dashed, FpgaOrange, domain=0:4] {0.5};
+\nextgroupplot[title={$D=90\,\%$ --- bright}, title style={font=\sffamily\small}, xlabel={Time, PWM periods}]
+  \addplot[very thick, FpgaBlue, const plot] coordinates {(0,1) (0.9,0) (1,1) (1.9,0) (2,1) (2.9,0) (3,1) (3.9,0) (4,0)};
+  \addplot[thick, dashed, FpgaOrange, domain=0:4] {0.9};
+\end{groupplot}
+\end{tikzpicture}
+\caption{PWM with different duty cycles. The dashed line is the average value
+that the eye ``sees''}
+\end{figure}
+
+How do you get PWM on an FPGA? You need a free-running counter and a comparator:
+while the counter is less than a given number \code{duty}, the output equals 1.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.9\textwidth, height=5.2cm, xmin=0, xmax=768, ymin=0, ymax=300,
+  xlabel={Clock cycles}, ylabel={Value},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  legend style={font=\sffamily\small, at={(0.5,1.02)}, anchor=south, legend columns=3, draw=none},
+  axis lines*=left,
+]
+  \addplot[thick, FpgaBlue] coordinates {(0,0) (255,255) (256,0) (511,255) (512,0) (767,255)};
+  \addlegendentry{pwm\_cnt}
+  \addplot[thick, dashed, FpgaRed] coordinates {(0,96) (768,96)};
+  \addlegendentry{duty = 96}
+  \addplot[very thick, FpgaGreen, const plot] coordinates {(0,285) (96,265) (256,285) (352,265) (512,285) (608,265) (768,265)};
+  \addlegendentry{pwm (output)}
+\end{axis}
+\end{tikzpicture}
+\caption{A sawtooth counter and a comparator: the \code{pwm} output equals 1 while
+\code{pwm\_cnt < duty}}
+\end{figure}
+
+To make the LED ``breathe'', we will slowly increase \code{duty} from 0 to 255
+and then decrease it back.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.85\textwidth, height=4.6cm, xmin=0, xmax=6, ymin=0, ymax=270,
+  xlabel={Time, s}, ylabel={duty},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  axis lines*=left, grid=major, grid style={FpgaGray!20},
+]
+  \addplot[very thick, FpgaPurple] coordinates {(0,0) (1,255) (2,0) (3,255) (4,0) (5,255) (6,0)};
+\end{axis}
+\end{tikzpicture}
+\caption{Change of the duty cycle: an ``inhale'' in 1\,s and an ``exhale'' in 1\,s}
+\end{figure}
+
+\vfile{\codepath/06_pwm_breath/pwm_breath.v}{code/06\_pwm\_breath/pwm\_breath.v}
+
+The pin file: the clock and the LEDs. \code{DRIVE=8} limits the output current;
+PWM brightness does not depend on it---it is set by the fraction of time the
+LED is on.
+
+\vfile[c]{\codepath/06_pwm_breath/pwm_breath.cst}{code/06\_pwm\_breath/pwm\_breath.cst}
+
+\begin{infobox}[Why the LED seems ``uneven'']
+The eye perceives brightness nonlinearly: the difference between $D=5\,\%$ and $10\,\%$ is noticeable
+much more than between $90\,\%$ and $95\,\%$. To make the ``breathing'' look
+smooth, real devices use \term{gamma correction}: a table
+that converts linear brightness into the required \code{duty} value. Such a table
+is conveniently stored in BSRAM block memory.
+\end{infobox}
+
+\begin{taskbox}
+\begin{enumerate}
+  \item Make the six LEDs ``breathe'' with a phase shift
+        (a ``wave'').
+  \item Add control: button S1 increases the brightness by 1/8, S2
+        decreases it (use the debounce module from project 4).
+\end{enumerate}
+\end{taskbox}
+
+\begin{diybox}[Breathing of the armed indicator]
+\textbf{Task.} The ``armed'' indicator must smoothly ``breathe'', and the siren volume must be adjustable with the number \code{duty}.
+
+\textbf{In Logra.} The ``From an example'' card---``Brightness with PWM'' and ``Smooth LED breathing''. Code tab, then Waveforms with a large number of cycles.
+
+\textbf{Expected result.} With \code{duty = 96} out of 256 clock cycles the output equals 1 for the first 96 cycles of the period (37.5\,\%); as \code{duty} grows from 0 to 255 the brightness rises, then falls.
+
+\textbf{How to check.} Waveforms: signals \code{pwm\_cnt}, \code{duty}, \code{pwm}; compare the fraction of ones with the formula $D=t_\text{on}/T$. Brightness on the board is judged by eye: the larger \code{duty}, the brighter.
+
+\stars{1} repeat: measure $D$ for three values of \code{duty}. \stars{2} change: a ``wave'' on six LEDs with a phase shift. \stars{3} project: the ``Security Panel'' stage---indication; acceptance criterion: in the ARMED mode the indicator breathes with a period of about 2\,s, and in OFF it is off.
+\end{diybox}
+
+% =============================================================================
+\section{Project 7. Decoder, Multiplexer and Demultiplexer}
+
+\textbf{Goal:} to put together the blocks from Chapters~\ref{ch:coders} and~\ref{ch:mux} in an FPGA and
+to see them work on the LEDs.
+
+Buttons S1 and S2 form a two-bit address $s$ (from 0 to 3). A divider counter
+produces four signals of different frequencies---these are its most significant bits
+(Fig.~\ref{fig:count_t}).
+\begin{itemize}
+  \item The \textbf{4:1 multiplexer} uses the address to select one of the four signals
+        and sends it to \code{led[4]}: the higher the number, the faster the blinking.
+  \item The \textbf{2$\to$4 decoder} turns the address into a one-hot code.
+  \item The \textbf{1:4 demultiplexer} is the same decoder whose
+        outputs are ``enabled'' by a data signal. The blinking reaches only
+        the LED \code{led[s]}.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[hblock, minimum height=24mm, minimum width=18mm] (cnt) at (0,0) {Counter\\\scriptsize 25 bits};
+  \draw[thick, fill=orange!15] (2.6,1.4) -- (3.6,0.9) -- (3.6,-0.9) -- (2.6,-1.4) -- cycle;
+  \node[font=\sffamily\scriptsize] at (3.1,0) {MUX};
+  \foreach \i in {0,...,3} \draw[wire] (cnt.east |- 0,0.9-\i*0.6) -- node[above, font=\tiny, pos=0.4] {cnt[\the\numexpr21+\i\relax]} (2.6,0.9-\i*0.6);
+  \draw[wire] (3.6,0) -- (4.4,0) node[right, font=\sffamily\small] {led[4]};
+  \draw[thick, fill=FpgaLight] (6.4,-3.5) rectangle (7.4,-1.3);
+  \node[font=\sffamily\small\bfseries] at (6.9,-2.4) {DC};
+  \foreach \i in {0,...,3} {
+    \node[gAND, minimum width=8mm, minimum height=6mm] (g\i) at (8.8,-1.55-\i*0.55) {};
+    \draw[wire] (7.4,-1.48-\i*0.55) -- (g\i.input 1);
+    \draw[wire] (g\i.output) -- ++(0.4,0) node[right, font=\sffamily\small] {led[\i]};
+  }
+  \draw[wire, FpgaOrange] (cnt.south) -- ++(0,-2.4) node[below, font=\sffamily\scriptsize, text=FpgaDark] {cnt[23]} -| (8.0,-1.2);
+  \foreach \i in {0,...,3} { \draw[wire, FpgaOrange] (8.0,0 |- g\i.input 2) -- (g\i.input 2); \fill[FpgaOrange] (8.0,0 |- g\i.input 2) circle (1.2pt); }
+  \draw[wire, FpgaOrange] (8.0,-1.2) -- (8.0,0 |- g3.input 2);
+  \draw[wire, FpgaBlue] (4.9,-3.0) node[left, text=FpgaDark] {s = btn} -- (6.4,-3.0);
+  \draw[wire, FpgaBlue] (5.4,-3.0) |- (3.1,-2.0) -- (3.1,-1.15); \fill[FpgaBlue] (5.4,-3.0) circle (1.3pt);
+  \begin{scope}[on background layer]
+    \node[draw=FpgaGray, dashed, rounded corners, fit=(g0)(g3), inner sep=6mm, label={[lbl]above:demultiplexer}] {};
+  \end{scope}
+\end{tikzpicture}
+\caption{The circuit of project 7. Demultiplexer = decoder + AND gates}
+\end{figure}
+
+\vfile{\codepath/07_mux_demux/mux_demux.v}{code/07\_mux\_demux/mux\_demux.v}
+
+The pin file: the clock, both buttons (they form the address $s$) and the LEDs.
+
+\vfile[c]{\codepath/07_mux_demux/mux_demux.cst}{code/07\_mux\_demux/mux\_demux.cst}
+
+Note that the same block can be described in different ways:
+the multiplexer here is written as a tree of \code{?:} operators (as in
+Fig.~\ref{fig:muxtree}), and the decoder as a \code{case}. The shortest way to write a
+multiplexer is \code{assign y = x[s];}---the synthesizer will produce
+the same circuit.
+
+\begin{infobox}[What we got after synthesis]
+Yosys placed the multiplexer not in ordinary LUTs but in the special
+multiplexers \code{MUX2\_LUT5} and \code{MUX2\_LUT6}, which sit in every
+logic cell next to the LUT. The whole project took 8 LUTs and 25 flip-flops
+(the flip-flops are the counter).
+\end{infobox}
+
+\begin{taskbox}
+\begin{enumerate}
+  \item Replace the multiplexer with the line \code{assign y = x[s];} and compare
+        the synthesis reports.
+  \item Add a priority encoder (Chapter~\ref{ch:coders}): output on
+        \code{led[5]} the flag $V$ ``at least one button is pressed''.
+  \item Show the number $s$ on a seven-segment display connected to the
+        GPIO pins, using the decoder from Table~\ref{tab:7seg}.
+\end{enumerate}
+\end{taskbox}
+
+\begin{diybox}[Security zones: multiplexer and demultiplexer]
+\textbf{Task.} The security panel monitors four zones. Buttons S1, S2 select the zone number $s$; the multiplexer shows the state of the selected zone on one LED, and the demultiplexer lights the lamp of exactly that zone.
+
+\textbf{In Logra.} The ``From an example'' card: ``Choosing one of four words'', ``Demultiplexer 1 $	o$ 4'', ``2 $	o$ 4 decoder''; Code tab---\code{mux\_demux.v} from the book. The Pins tab holds the assignment of buttons and LEDs.
+
+\textbf{Expected result.} \code{led[4]} blinks at a frequency that depends on $s$ (the larger $s$, the faster). The blinking reaches only \code{led[s]}; the other three are off at that moment.
+
+\textbf{How to check.} Waveforms: sweep $s=0\ldots3$ while the counter is running. RTL: the multiplexer, the decoder and the demultiplexer's AND gates. On the Gowin tab find the \code{MUX2\_LUT5} and \code{MUX2\_LUT6} cells.
+
+\stars{1} repeat: check all four addresses. \stars{2} change: replace the multiplexer with \code{assign y = x[s];} and compare the synthesis reports. \stars{3} project: the ``Security Panel'' stage---zone selection; acceptance criterion: when the sensor of zone $z$ triggers, the lamp of zone $z$ is on and the others are off, and the multiplexer outputs that zone's sensor to the indicator by zone number.
+\end{diybox}

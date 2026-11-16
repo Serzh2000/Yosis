@@ -1,0 +1,361 @@
+\chapter{Your First Sprint in Logra}
+\label{ch:logra}
+
+In Part~I you drew circuits on paper and checked them in your head: you know
+logic gates, multiplexers, adders, flip-flops and counters. Now you will
+\emph{build} these same elements in a working environment. For an FPGA, the path from idea to
+board is too long to walk by hand: you have to describe the circuit in
+text, check it, see what it turned into, and only then
+load it into the chip. One program does all of these steps---\term{Logra}.
+It opens in a browser, needs nothing installed, and shows
+every stage of the path we studied in Chapter~\ref{ch:flow}.
+
+Open-source tools work inside Logra: Yosys turns text into a circuit,
+nextpnr places it on the chip, Project Apicula packs the bitstream, and
+Icarus Verilog checks the behavior. The environment only gathers them together and draws
+what they computed.
+
+\begin{buildbox}[Build it first]
+Open Logra and click ``New project''. Choose ``From an example'',
+find the example ``Running light'' and open it. Without changing anything, click
+``Synthesize'' (Ctrl+Enter) in the top right corner. While the build runs, recall
+the ring register from Part~I: six flip-flops with a single one passed
+around the loop. Later in this chapter we will walk through the tabs and find each part of this circuit.
+\end{buildbox}
+
+\section{A Map of the Environment}
+
+On the left side of Logra is a column of tabs. They are grouped in the order in
+which we travel the path from idea to board: ``Learn'', ``Create'', ``Check'' and
+the group ``Real board'', which is collapsed by default. Tabs with a finished result
+are marked with a colored dot; the ``Pins'' tab shows on the right the number of assigned pins.
+
+\begin{table}[H]
+\centering
+\caption{Logra groups and tabs, and the book chapters that cover them}
+\small
+\begin{tabularx}{\textwidth}{l l X l}
+\toprule
+\textbf{Group} & \textbf{Tab} & \textbf{What you do there} & \textbf{Chapter} \\
+\midrule
+Learn & Learn & Step-by-step lessons with questions and solution checking (the ``Your workshop'' course, 31 lessons) & --- \\
+\midrule
+Create & Code & Write a circuit description in Verilog & \ref{ch:verilog} \\
+ & Designer & Build a circuit from logic gates with the mouse; Verilog writes itself & \ref{ch:logra} \\
+ & Pins & Assign the circuit's ports to package pins & \ref{ch:board} \\
+\midrule
+Check & RTL & View the gate-level circuit built by the synthesizer & \ref{ch:bridge} \\
+ & Waveforms & Apply signals and view timing diagrams & \ref{ch:sim} \\
+ & Lab & Connect parts to the board and run the circuit ``as on a desk'' & \ref{ch:examples} \\
+\midrule
+Real board & Gowin & See LUTs, flip-flops and adder blocks after synthesis & \ref{ch:inside} \\
+ & Chip & Place and route, frequency report, bitstream & \ref{ch:flow} \\
+ & Connect & Load onto the board over USB, UART terminal & \ref{ch:flow} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+In the top row on the right are the ``New project'' button, the language
+switch (RU/EN), the theme switch, help, and the main button
+\textbf{``Synthesize''} (Ctrl+Enter), which runs the whole flow. In
+the bottom status bar you will see ``Yosys ready'' (this is the name of the program
+Yosys, not of the environment) and ``Icarus Verilog ready''.
+
+\begin{diybox}[A map of the environment]
+\textbf{Task.} Go through all the tabs and make sure you understand the
+groups.\\
+\textbf{In Logra.} Open the ``Running light'' project and click ``Synthesize''.\\
+\textbf{Expected result.} The RTL, Gowin and Chip tabs now have
+colored dots: their results are ready; the ``Pins'' tab shows the number of assigned pins.\\
+\textbf{Check.} Expand the ``Real board'' group (the arrow to the left of its
+name) and find the three tabs in it. Write down which group each of the tabs
+Code, Waveforms and Chip belongs to.\\
+\stars{1} Repeat: find the language switch button and switch the interface back to Russian.
+\end{diybox}
+
+\section{A New Project}
+
+Work begins with the ``New project'' button in the top row. The window
+offers five ways to start: ``From scratch'' (write Verilog yourself),
+``From logic elements'' (build a circuit with the mouse), ``From an example'' (the
+catalog has 275 ready-made projects), ``Import a project'' (from a file) and ``Gowin project
+folder''. The buttons at the top of the window are ``Create'', ``My projects'', ``Current project''
+and ``Synchronization''. We will choose ``From scratch'': you only need to give the project a name and
+specify the name of the top module, usually called \code{top}.
+
+\shot{app-wizard}{The new-project window: five ways to start}{fig:y-wizard}
+
+The ``From logic elements'' option opens the \term{Designer}: you assemble a circuit
+with the mouse from a library, and Logra writes the Verilog itself. This is the same path as
+on paper in Part~I, only with instant checking. The library is modeled on
+the Quartus graphic editor: gates with three, four and eight
+inputs, flip-flops (D, T, JK, RS), a latch, registers and counters, RAM and ROM,
+multiplexers, decoders and encoders, adders, a comparator, a multiplier and
+a divider, a modulo block, Gray code, and a seven-segment display decoder.
+Ready-made sets are named after familiar chips of the 74 series: 74138, 74147,
+74148, 7442, 7447, 74184, 7483, 7485. The ``Preview'' button lets you check
+the circuit right away: click the inputs and apply a clock.
+
+\begin{diybox}[Your first project]
+\textbf{Task.} Create a project and build an ``exclusive OR'' gate in it from the
+library.\\
+\textbf{In Logra.} ``New project'' $\to$ ``From logic elements''; place
+two inputs, an XOR element and an output.\\
+\textbf{Expected result.} In ``Preview'' the output equals 1 exactly when the
+inputs differ (the truth table from the chapter on gates).\\
+\textbf{Check.} Open the ``Code'' tab and find the \code{assign} line with
+the operator \code{\^{}}; click ``Synthesize'' and make sure that in RTL there remains
+a single XOR element.\\
+\stars{2} Change the circuit to get an XNOR, and compare it with the table.
+\end{diybox}
+
+\section{Code}
+
+The ``Code'' tab is an editor with Verilog highlighting. Errors are underlined
+as you type, and saving happens automatically (``Autosaved'' appears at the bottom).
+Below the editor there are the ``Build log'' and ``Diagnostics''. For our walkthrough we will take the
+``Running light'' project: a one in a six-bit ring register moves to the
+next LED eight times a second. This is the circuit from Chapter~\ref{ch:examples},
+but the ports are named the way the board names them: \code{clk}, \code{reset} and
+\code{led\_n}.
+
+\shot{app-code}{The code editor. The ``Synthesize (Ctrl+Enter)'' button in the corner runs the whole flow}{fig:y-code}
+
+\begin{infobox}[Why \code{led\_n}]
+The suffix \code{\_n} is a common convention: the signal is active \emph{low}.
+The board's LEDs light when the pin is 0, so in the circuit we
+feed them the inverted value of the ring.
+\end{infobox}
+
+\begin{diybox}[Your own parameter]
+\textbf{Task.} Slow the running light down by half.\\
+\textbf{In Logra.} The ``Code'' tab, the line \code{localparam DIV = 27\_000\_000 / 8;}.\\
+\textbf{Expected result.} After replacing \code{8} with \code{4}, the light moves
+four times a second.\\
+\textbf{Check.} Click ``Synthesize'' and open the ``Lab'': the strip of
+six LEDs should switch half as often. If ``Diagnostics'' shows a
+nonzero number, read the message and find the typo.\\
+\stars{2} Make the light run in the opposite direction (change the
+order of bits in the concatenation).
+\end{diybox}
+
+\section{RTL: The Circuit Built by the Synthesizer}
+
+Let us click ``Synthesize''. In under a second Yosys reads the text and builds the
+circuit. The RTL tab (register-transfer level: a
+description of a circuit as a set of registers and the logic between them) shows it the way
+it is drawn on paper: rectangles for registers, standard symbols for
+gates, circles with a plus for adders. This is exactly what we studied in
+Part~I, only drawn automatically.
+
+\shot{br-adder-rtl}{An RTL diagram, using a full adder as an example (Chapter~\ref{ch:bridge}): XOR, AND and OR gates, labels with code line numbers, and the inspector on the right}{fig:y-rtl}
+
+Clicking an element opens the ``Inspector'' on the right: inputs, outputs, parameters and
+the line of source text from which the element came. A double click
+takes you to the editor. The mouse wheel zooms, and dragging pans the diagram.
+
+\begin{ideabox}
+The environment shows the circuit \emph{before} it is bound to a specific chip. This is an
+``ideal'' circuit of gates and flip-flops. At the bottom of the panel it says: ``Before
+mapping to the FPGA''. What it becomes on a real chip can be seen
+on the Gowin tab.
+\end{ideabox}
+
+\begin{diybox}[Read the RTL]
+\textbf{Task.} Find in the ``Running light'' diagram the ring of six flip-flops and
+the counter's adder.\\
+\textbf{In Logra.} The RTL tab after ``Synthesize''.\\
+\textbf{Expected result.} You can see the registers, an addition element (a circle with a
+plus), the comparison \code{cnt == DIV - 1}, and the inverters in front of the output \code{led\_n}.\\
+\textbf{Check.} Click the adder: the ``Inspector'' should show the
+code line \code{cnt + 1}; a double click takes you to that line in the editor.
+\end{diybox}
+
+\section{Pins: From a Port to a Pin}
+
+The port \code{clk} in Verilog is just a name. To make it work, you have to say
+which pin of the package the 27~MHz oscillator is connected to. This is what the
+``Pins'' tab is for, with the sub-tabs ``Pin planner'' and ``.cst text''. On the left is a table of
+your circuit's ports; on the right is the GW2AR-18 QN88 package with labels on all the pins. A hint
+with three steps: choose a signal, choose a pin, click ``Assign''.
+The ``Assign LEDs in order'' button places the six LEDs for you. The environment
+writes the \code{IO\_LOC} lines into the file \code{board.cst}---the very same constraints
+file that we studied in Section~\ref{sec:cst}.
+
+\shot{app-pins}{The pin planner. For ports with suitable names, the pins are filled in automatically}{fig:y-pins}
+
+\begin{diybox}[Find the pin]
+\textbf{Task.} Determine which FPGA pin the \code{clk} port is connected to and
+which line Logra wrote into the constraints file.\\
+\textbf{In Logra.} The ``Pins'' tab: the sub-tabs ``Pin planner'' and ``.cst text''.\\
+\textbf{Expected result.} \code{clk} on pin 4; the LEDs \code{led\_n[0..5]}
+on pins 15--20 (Table~\ref{tab:pins}).\\
+\textbf{Check.} Open ``.cst text'': the lines \code{IO\_LOC "clk" 4;} and
+\code{IO\_LOC "led\_n[0]" 15;} should match the planner.\\
+\stars{2} Deliberately spoil a port name in the \code{.cst} and see which
+message the build gives (see the warning in Section~\ref{sec:cst}).
+\end{diybox}
+
+\section{Gowin: What the Circuit Turned Into}
+
+The Gowin tab shows the result of the next step---mapping onto the
+chip's primitives. Instead of abstract gates, here you have LUTs, DFF flip-flops,
+ALU arithmetic blocks and I/O buffers. If you click a LUT, the ``Inspector''
+shows a block ``LUT with 3 inputs'', the INIT configuration table, and a collapsible
+``Truth table''. This is how you can plainly see the statement from
+Chapter~\ref{ch:inside}: a logic gate in an FPGA is a table in memory.
+
+\shot{br-adder-lut}{The same adder after mapping to Gowin primitives: instead of gates there are two LUTs, and on the right the inspector shows the LUT table and the INIT value}{fig:y-gowin}
+
+\begin{diybox}[Find the LUT]
+\textbf{Task.} Find one LUT in the circuit and compare its table with the function from
+the code.\\
+\textbf{In Logra.} Open the example ``A full adder'', click ``Synthesize'',
+the Gowin tab; click a LUT.\\
+\textbf{Expected result.} In the ``Inspector'' there is a 3-input table with the
+INIT configuration: for the sum \code{s = a \^{} b \^{} cin}, the ones are in the rows
+with an odd number of ones on the inputs.\\
+\textbf{Check.} Compare the table with the truth table from Part~I and
+list the rows where the output equals 1.\\
+\stars{2} From the INIT value, determine which function is stored in the carry LUT.
+\end{diybox}
+
+\section{Waveforms: Behavior over Time}
+
+The circuit is drawn, but does it work? The ``Waveforms'' tab runs the
+Icarus Verilog simulator and draws timing diagrams of the signals
+(Fig.~\ref{fig:y-wave}). For combinational circuits there is the scenario ``Sweep
+inputs'': Logra itself applies all combinations of the input signals one after another. For
+sequential circuits the environment itself generates a clock and a short reset pulse.
+More about simulation is in Chapter~\ref{ch:sim}.
+
+\shot{br-adder-wave}{All eight input combinations of the full adder: this is how you check a truth table}{fig:y-wave}
+
+\subsection{Scenario: Events, Cycles and Signal Selection}
+
+For circuits with memory, a single sweep is not enough: you need to apply the inputs at the right
+moments. The ``Set up the scenario'' button opens a panel with four tabs.
+\emph{Run} sets the clock input, the reset signal, the period and the number of cycles.
+\emph{Inputs} stores constant values. On the \emph{Events} tab you can
+add steps: ``in period 5 the input \code{c5} equals 1, in period 6---0 again''.
+The \emph{Checks} tab lets you record expected values, and Logra
+compares them with the simulation result.
+
+If there are many signals, the ``Signals'' menu above the diagram lets you hide
+the service nets and keep only the ones you need, and the ``Show the whole interval'' button
+fits the entire simulation in the window. This is how the state machine and queue diagrams
+in Chapter~\ref{ch:fsmdesign} were made: all the input pulses are set on the ``Events'' tab.
+
+\begin{diybox}[Checking a truth table]
+\textbf{Task.} Check the full adder by sweeping all the inputs.\\
+\textbf{In Logra.} The example ``A full adder'', the ``Waveforms'' tab, ``Sweep
+inputs''.\\
+\textbf{Expected result.} Eight intervals: the pair \code{cout, s} equals the
+binary sum \code{a + b + cin}.\\
+\textbf{Check.} Pick any three intervals and compute the sum in your head;
+compare it with the diagram.\\
+\stars{2} For the ``Running light'', open ``Set up the scenario'' and increase the
+number of cycles; find the moment when the one in the ring returned to the first
+LED.
+\end{diybox}
+
+\section{Chip: Placement and the Bitstream}
+
+The ``Place and build'' button on the ``Place and route'' panel runs
+nextpnr. It decides exactly which cell of the chip to put each LUT and
+each flip-flop on, and routes the connections between them. On the ``Placement map on
+the chip'', colored squares show which part of the chip is occupied. Above the map are
+the resource counters: for the ``Running light''---15 LUTs, 29 flip-flops, 22 ALUs and 8 I/O
+pins. Next to them is the frequency report: nextpnr shows 338.87~MHz
+against a required 27~MHz, a margin of about twelve times.
+
+\shot{app-chip}{The placement map on the chip and the nextpnr result: 338.87 MHz against 27 MHz}{fig:y-chip}
+
+After a successful build, the \code{.fs} files (bitstream), \code{JSON} and the log are available.
+
+\begin{diybox}[Frequency margin]
+\textbf{Task.} Find how many resources the ``Running light'' uses and what its
+maximum frequency is.\\
+\textbf{In Logra.} The ``Real board'' group, the ``Chip'' tab, ``Place and
+build''.\\
+\textbf{Expected result.} The counters LUT, FF, ALU, IO and a line like
+``338.87 / 27.00 MHz. Frequency reached''.\\
+\textbf{Check.} Divide the maximum frequency by 27 and write down the margin;
+then raise the requirement in the ``Frequency, MHz'' field to 400 and rebuild: what does the report
+say?\\
+\stars{2} Compare the number of FFs with the number of bits in the code (22 in the counter, 1 for
+\code{tick}, 6 in the ring).
+\end{diybox}
+
+\section{Lab}
+
+Before loading a circuit onto a real board, you can run it on a
+virtual desk. The Lab shows a Tang Nano 20K board on a breadboard.
+At the top are the buttons ``Pause'', ``Clock'', ``Reset'', a speed selector, the board buttons
+S1 and S2, and the ``Board time'' counter. You can connect parts to the board:
+LEDs, displays, sensors, screens, memory. The circuit runs in the browser
+continuously, and the parts behave like real ones, including the serial
+protocols I$^2$C, SPI and UART (Chapter~\ref{ch:uart}).
+
+\shot{app-lab}{The running light on the virtual board. On the left is a list of 85 parts}{fig:y-lab}
+
+\begin{diybox}[The virtual desk]
+\textbf{Task.} Put an LED on the desk and connect it to the circuit's output.\\
+\textbf{In Logra.} The ``Lab'' tab: the part ``LED'' from the group
+``LEDs'', a wire from a board pin.\\
+\textbf{Expected result.} The LED blinks in time with the circuit; the buttons S1 and S2
+change the state of the inputs.\\
+\textbf{Check.} Click ``Pause'' and ``Clock'': the circuit steps one clock at a time, and
+you can see when the state changes. In the parts search, find the word
+``traffic light''.\\
+\stars{2} Find the part ``Traffic light'' and connect it to the traffic light circuit from the examples.
+\end{diybox}
+
+\section{Connect and Learn}
+
+The ``Connect'' tab loads the bitstream onto the board straight from the browser over
+WebUSB. The switches at the top are ``Load the design'', ``UART terminal'' and ``Debugger''.
+There are three steps: connect the board, choose a file, click ``Load into SRAM''. In
+``UART terminal'' mode, the characters sent by the circuit over the
+serial line arrive in the window, and you can send characters from it into the circuit.
+
+\shot{app-conn}{Loading a bitstream onto the board}{fig:y-conn}
+
+And the ``Learn'' tab is a self-contained course, ``Your workshop'', of thirty-one
+lessons for those seeing an FPGA for the first time: from ``what is a bit'' to
+your own circuits with the solutions checked by the simulator. There are modes ``With a mentor''
+and ``Free tasks''.
+
+\shot{app-learn}{The ``Your workshop'' course: lessons with checking}{fig:y-learn}
+
+\begin{diybox}[The first lesson and loading]
+\textbf{Task.} Complete the first lesson of the course and find the steps for loading onto the board.\\
+\textbf{In Logra.} The ``Learn'' tab: the lesson ``What we have in hand''; then the
+``Connect'' tab.\\
+\textbf{Expected result.} The lesson is marked as completed; on ``Connect''
+you see three steps and the ``Load into SRAM'' button (without a board it stays
+unavailable).\\
+\textbf{Check.} If you have a board, load the circuit and make sure the light
+runs across the real LEDs; without a board, compare with the ``Lab''.
+\end{diybox}
+
+\section{Sprint Summary}
+
+\begin{taskbox}[Task]
+Create a project in Logra from scratch, name the module \code{top}, and enter the
+description from Fig.~\ref{fig:y-code}. Click ``Synthesize'' and go in turn
+through the tabs RTL, Gowin, Chip, Lab. On each one find:
+how many flip-flops are in the circuit (29: six in the ring, twenty-two in the divider and one for the tick signal),
+what maximum frequency nextpnr promises, and in what order the
+LEDs light up.
+\end{taskbox}
+
+\begin{diybox}[The ``First path'' sprint]
+\textbf{Sprint result.} A project with the module \code{top} that has passed synthesis,
+placement and a run in the Lab, and your table of four numbers
+(flip-flops, LUTs, frequency, pin number of \code{clk}).\\
+\stars{3} \textbf{``Security Panel'' project stage:} create a project with this
+name and save a first version in it (at least one sensor input and one
+indicator LED). Acceptance criterion: synthesis passes without errors, in
+``Pins'' all ports are assigned, and in the ``Lab'' the LED responds to button S1.
+\end{diybox}

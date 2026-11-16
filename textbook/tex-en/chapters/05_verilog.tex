@@ -1,0 +1,438 @@
+\chapter{Verilog Basics}
+\label{ch:verilog}
+
+\section{Code Describes a Circuit, Not a Sequence of Actions}
+
+The main thing to understand before studying Verilog is that \textbf{it is not a
+programming language in the usual sense}. Lines of Verilog code are not executed
+one after another. Each line describes a piece of a circuit, and all the pieces
+work \emph{simultaneously}, like components on a breadboard.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[draw=FpgaBlue, fill=CodeBack, thick, rounded corners, align=left, font=\ttfamily\small, inner sep=3mm] (code) at (0,0) {
+  \textcolor{CodeKeyword}{\textbf{assign}} x = a \& b;\\
+  \textcolor{CodeKeyword}{\textbf{assign}} y = c | d;\\
+  \textcolor{CodeKeyword}{\textbf{assign}} z = x \^{} y;};
+  \node[lbl, above=1mm of code] {Verilog code};
+  \begin{scope}[xshift=5.3cm, yshift=-0.2cm]
+    \node[gAND] (g1) at (0,0.8) {};
+    \node[gOR] (g2) at (0,-0.8) {};
+    \node[gXOR] (g3) at (2.2,0) {};
+    \draw[wire] (g1.input 1) -- ++(-0.6,0) node[left] {$a$};
+    \draw[wire] (g1.input 2) -- ++(-0.6,0) node[left] {$b$};
+    \draw[wire] (g2.input 1) -- ++(-0.6,0) node[left] {$c$};
+    \draw[wire] (g2.input 2) -- ++(-0.6,0) node[left] {$d$};
+    \draw[wire] (g1.output) -- node[above, lbl] {x} ++(0.4,0) |- (g3.input 1);
+    \draw[wire] (g2.output) -- node[below, lbl] {y} ++(0.4,0) |- (g3.input 2);
+    \draw[wire] (g3.output) -- ++(0.6,0) node[right] {$z$};
+    \node[lbl] at (1.1,1.8) {the circuit it describes};
+  \end{scope}
+  \draw[arr, FpgaOrange] (code.east) -- (4.0,0);
+\end{tikzpicture}
+\caption{Three lines of code --- three logic gates working simultaneously}
+\label{fig:code_to_schem}
+\end{figure}
+
+If you swap the lines, the circuit does not change: the wire \code{x} will still
+connect the output of the AND gate to the input of the XOR gate.
+
+\begin{diybox}[The order of lines does not matter]
+\textbf{Task.} Check on Fig.~\ref{fig:code_to_schem} that the \code{assign} lines work simultaneously.\\
+\textbf{In Logra.} ``New project'' $\to$ ``From scratch'', a \code{top} module; the Code tab: inputs \code{a, b, c, d}, output \code{z}, and three \code{assign} lines (\code{x = a \& b;}, \code{y = c | d;}, \code{z = x \^{} y;}; declare the wires \code{x} and \code{y} as \code{wire}); ``Synthesize''.\\
+\textbf{Expected result.} On the RTL tab there are three gates: AND, OR, and XOR.\\
+\textbf{How to check.} Swap the lines and rebuild: the circuit on RTL should stay the same. \stars{2} Remove \code{wire}: read the message in ``Diagnostics'' and explain it.
+\end{diybox}
+
+\section{The Module}
+
+Any Verilog circuit is written as a \term{module} (\code{module}). A module
+is like a chip: it has a name, inputs, outputs, and ``internals''.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.52\textwidth}
+\begin{vcode}
+module half_adder (   // module name
+    input  wire a,    // inputs
+    input  wire b,
+    output wire s,    // outputs
+    output wire c
+);
+    assign s = a ^ b; // sum
+    assign c = a & b; // carry
+endmodule
+\end{vcode}
+\end{minipage}\hfill
+\begin{minipage}{0.44\textwidth}
+\centering
+\begin{tikzpicture}
+  \node[draw=FpgaBlue, fill=FpgaLight, very thick, minimum width=26mm, minimum height=24mm, font=\sffamily\small, align=center] (m) {half\_adder};
+  \draw[wire] ([yshift=5mm]m.west) -- ++(-0.9,0) node[left] {a};
+  \draw[wire] ([yshift=-5mm]m.west) -- ++(-0.9,0) node[left] {b};
+  \draw[wire] ([yshift=5mm]m.east) -- ++(0.9,0) node[right] {s};
+  \draw[wire] ([yshift=-5mm]m.east) -- ++(0.9,0) node[right] {c};
+  \node[lbl, below=1mm of m] {module = ``chip''};
+\end{tikzpicture}
+\end{minipage}
+\caption{The half-adder module and its ``package''}
+\end{figure}
+
+Let us go through the key words:
+\begin{itemize}
+  \item \code{module name ( ... ); ... endmodule} --- the beginning and end of the description;
+  \item \code{input}, \code{output}, \code{inout} --- the direction of a port;
+  \item \code{wire} --- a wire (a connection);
+  \item \code{assign} --- ``connect the output of the circuit on the right to the wire on the left''.
+\end{itemize}
+
+\begin{diybox}[Your own half adder]
+\textbf{Task.} Describe the half-adder module from this section and check it.\\
+\textbf{In Logra.} The Code tab: the \code{half\_adder} module (you can leave the name \code{top}); ``Synthesize''; the RTL and Waveforms tabs $\to$ ``Sweep inputs''.\\
+\textbf{Expected result.} RTL shows one XOR and one AND; the waveform shows $s=a\oplus b$, $c=a\cdot b$ for all four combinations.\\
+\textbf{How to check.} Compare the waveform with the half-adder table from Part~I; click the XOR on RTL and make sure the ``Inspector'' names the line \code{assign s = a \^{} b;}. \stars{2} Make input \code{a} two bits wide and see how the ports change.
+\end{diybox}
+
+\section{Signals: wire and reg}
+
+\begin{description}
+  \item[wire] --- a wire. It does not store a value, but only passes on what some circuit
+    drives onto it. It is assigned with \code{assign}.
+  \item[reg] --- a variable that is assigned a value inside an \code{always}
+    block. Despite the name, a \code{reg} becomes a flip-flop
+    \emph{not always}: it depends on which kind of \code{always} it is described in (see
+    Section~\ref{sec:always}).
+\end{description}
+
+\subsection{Buses (Multi-Bit Signals)}
+
+Several wires can be combined into a \term{bus}:
+\begin{vcode}
+wire [7:0] data;      // 8 wires: data[7], data[6], ..., data[0]
+reg  [5:0] counter;   // a 6-bit register
+wire       bit3 = data[3];      // one wire from the bus
+wire [3:0] low  = data[3:0];    // the low 4 wires
+\end{vcode}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \foreach \i in {0,...,7} {
+    \pgfmathtruncatemacro{\n}{7-\i}
+    \node[draw=FpgaBlue, fill=\ifnum\n<4 orange!20\else FpgaLight\fi, minimum width=9mm, minimum height=8mm, font=\ttfamily\small] (b\i) at (\i*0.9,0) {\n};
+  }
+  \node[left=2mm of b0, font=\ttfamily\small] {data =};
+  \draw[decorate, decoration={brace, amplitude=5pt, mirror}, thick] (b4.south west) -- (b7.south east) node[midway, below=6pt, lbl] {data[3:0]};
+  \node[above=1mm of b0, lbl] {most significant (MSB)};
+  \node[above=1mm of b7, lbl] {least significant (LSB)};
+\end{tikzpicture}
+\caption{The bus \code{[7:0]}: bits are numbered from right to left}
+\end{figure}
+
+\subsection{Writing Numbers}
+
+Numbers in Verilog are written in the format \code{<width>'<base><value>}:
+
+\begin{table}[H]
+\centering
+\caption{Number notation}
+\begin{tabular}{l l l}
+\toprule
+\textbf{Notation} & \textbf{Value} & \textbf{Explanation} \\
+\midrule
+\code{4'b1010}        & 10  & 4 bits, binary \\
+\code{8'hFF}          & 255 & 8 bits, hexadecimal \\
+\code{6'd42}          & 42  & 6 bits, decimal \\
+\code{1'b0}, \code{1'b1} & 0, 1 & a single bit \\
+\code{27\_000\_000}   & 27000000 & underscores are ignored; they are used for readability \\
+\code{4'bx01z}        & ---  & \code{x} --- unknown, \code{z} --- disconnected (high impedance) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{diybox}[Buses and numbers]
+\textbf{Task.} Do the practice exercises on wires and buses.\\
+\textbf{In Logra.} The Learn tab, the course ``B. Verilog from scratch'': the lessons ``The first wire'', ``A four-bit number'', ``The upper half of a bus''.\\
+\textbf{Expected result.} All the checks of each lesson are green.\\
+\textbf{How to check.} Then in ``Code'' write \code{wire [3:0] low = data[3:0];} for an 8-bit bus \code{data} and make sure on RTL that the output takes the four low wires. \stars{2} Put other values for \code{x} and \code{z} in \code{4'bx01z} and see how the waveform shows them.
+\end{diybox}
+
+\section{Operators}
+
+\begin{table}[htbp]
+\centering
+\caption{The main Verilog operators}
+\label{tab:ops}
+\small
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Group} & \textbf{Operators} & \textbf{Example and meaning} \\
+\midrule
+Bitwise & \code{\textasciitilde{} \& | \^{} \textasciitilde\&  \textasciitilde|} &
+  \code{a \& b} --- AND over each pair of bits; \code{\textasciitilde{}a} --- NOT \\
+Logical & \code{! \&\& ||} & \code{(x > 3) \&\& en} --- the result is 1 bit (true/false) \\
+Reduction & \code{\&a  |a  \^{}a} & \code{\&a} --- AND of all bits of the bus (1 if all are ones) \\
+Arithmetic & \code{+ - * / \%} & \code{cnt + 1'b1} --- an adder \\
+Comparison & \code{== != < > <= >=} & \code{cnt == 25} --- a comparator \\
+Shifts & \code{<< >>} & \code{x << 1} --- shift left by 1 \\
+Concatenation & \code{\{a, b\}} & \code{\{4'b0, x\}} --- join buses into one \\
+Replication & \code{\{n\{a\}\}} & \code{\{6\{1'b1\}\}} = \code{6'b111111} \\
+Conditional & \code{c ? a : b} & a multiplexer: if \code{c}, then \code{a}, otherwise \code{b} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Every operator is a piece of hardware. \code{a + b} is an adder,
+\code{a == b} is a comparator, \code{c ? a : b} is a multiplexer.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[draw=FpgaDark, fill=orange!15, thick, trapezium, trapezium angle=65, shape border rotate=270, minimum width=20mm, minimum height=10mm, font=\sffamily\small] (mux) at (0,0) {MUX};
+  \draw[wire] ([yshift=3mm]mux.west) -- ++(-1,0) node[left] {a};
+  \node[font=\tiny, anchor=west] at ([yshift=3mm, xshift=1mm]mux.west) {1};
+  \draw[wire] ([yshift=-3mm]mux.west) -- ++(-1,0) node[left] {b};
+  \node[font=\tiny, anchor=west] at ([yshift=-3mm, xshift=1mm]mux.west) {0};
+  \draw[wire] (mux.east) -- ++(1,0) node[right] {y};
+  \draw[wire, FpgaBlue] (mux.south) -- ++(0,-0.6) node[below] {c};
+  \node[font=\ttfamily\small, anchor=west] at (3,0) {assign y = c ? a : b;};
+\end{tikzpicture}
+\caption{The ternary operator \code{?:} is a multiplexer}
+\end{figure}
+
+\begin{diybox}[An operator as a circuit node]
+\textbf{Task.} See that each operator corresponds to its own node.\\
+\textbf{In Logra.} ``Code'': ports \code{a, b} (4 bits), \code{c}, outputs \code{s = a + b}, \code{eq = (a == b)}, \code{m = c ? a : b}; ``Synthesize''; RTL. For exercises open ``Learn'': ``Not AND'' and ``Concatenate bits''.\\
+\textbf{Expected result.} RTL shows an adder, a comparator, and a multiplexer, as in the figure ``The ternary operator''.\\
+\textbf{How to check.} Apply values on ``Waveforms'' and verify one addition and one comparison in your head. \stars{2} Replace \code{c ? a : b} with an \code{if} form in \code{always @(*)} and make sure the circuit has not changed.
+\end{diybox}
+
+\section{The always Blocks}
+\label{sec:always}
+
+Describing complex logic with \code{assign} alone is inconvenient. For this there is the
+\code{always} block. It comes in two kinds, and it is important not to mix them up.
+
+\subsection{Combinational: always @(*)}
+
+The asterisk means: ``recompute the output whenever any input changes''. Such a
+block describes a \textbf{combinational circuit without memory}.
+\begin{vcode}
+reg [1:0] y;
+always @(*) begin
+    case (sel)
+        2'd0: y = a;
+        2'd1: y = b;
+        2'd2: y = c;
+        default: y = 2'b00;
+    endcase
+end
+\end{vcode}
+
+\subsection{Sequential: always @(posedge clk)}
+
+This block triggers only on the \textbf{rising edge of the clock signal}.
+All the \code{reg}s that are assigned inside it become
+\textbf{flip-flops}.
+\begin{vcode}
+reg [3:0] cnt = 0;
+always @(posedge clk) begin
+    cnt <= cnt + 1'b1;   // add one on every clock cycle
+end
+\end{vcode}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[draw=FpgaGreen, fill=green!8, thick, minimum width=18mm, minimum height=18mm, font=\sffamily\small, align=center] (reg) at (4.2,0) {register\\\scriptsize 4 bits};
+  \node[font=\sffamily\scriptsize, anchor=west] at (reg.west) {D};
+  \node[font=\sffamily\scriptsize, anchor=east] at (reg.east) {Q};
+  \draw[thick] ([xshift=-1.2mm]reg.south) -- ([yshift=1.8mm]reg.south) -- ([xshift=1.2mm]reg.south);
+  \draw[wire] (reg.south) -- ++(0,-0.8) node[below] {clk};
+  \node[draw=FpgaBlue, fill=FpgaLight, thick, circle, minimum size=11mm, font=\sffamily\bfseries] (add) at (1.2,0) {$+$};
+  \draw[bus, -{Stealth}] (add.east) -- node[above, lbl] {cnt+1} (reg.west);
+  \draw[bus, -{Stealth}] (reg.east) -- ++(1.6,0) node[right, text=FpgaDark] {cnt};
+  \draw[bus, -{Stealth}] ($(reg.east)+(0.8,0)$) -- ++(0,1.5) -| (add.north);
+  \fill[FpgaBlue] ($(reg.east)+(0.8,0)$) circle (1.6pt);
+  \draw[wire] (add.south) -- ++(0,-0.7) node[below] {1};
+\end{tikzpicture}
+\caption{A counter: an adder and a register with feedback. The code \code{cnt <= cnt + 1}
+describes exactly this circuit}
+\label{fig:counter}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.1, xscale=2.2, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  clk & 9{1L 1H} \\
+  cnt & 1D{0} 2D{1} 2D{2} 2D{3} 2D{4} 2D{5} 2D{6} 2D{7} 2D{8} 1D{9} \\
+\end{tikztimingtable}
+\caption{Timing diagram of a counter: the value increases on every
+rising edge}
+\end{figure}
+
+\subsection{Blocking (=) and Nonblocking (<=) Assignment}
+
+\begin{warnbox}[The golden rule]
+\begin{itemize}
+  \item In \code{always @(posedge clk)} use only \code{<=}.
+  \item In \code{always @(*)} use only \code{=}.
+\end{itemize}
+\end{warnbox}
+
+Why? The nonblocking assignment \code{<=} means: ``all right-hand sides
+are evaluated using the values from \emph{before} the edge, and all flip-flops are updated
+simultaneously''. This is exactly how real flip-flops behave. Look at an
+example in which two registers exchange values:
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.47\textwidth}
+\begin{vcode}
+always @(posedge clk) begin
+    a <= b;
+    b <= a;   // the swap works!
+end
+\end{vcode}
+\centering
+\begin{tikzpicture}[ffn/.style={draw=FpgaGreen, fill=green!8, thick, minimum width=10mm, minimum height=10mm, font=\sffamily\small}]
+  \node[ffn] (A) at (0,0) {a};
+  \node[ffn] (B) at (2.4,0) {b};
+  \draw[arr] (A.north) to[bend left=35] (B.north);
+  \draw[arr] (B.south) to[bend left=35] (A.south);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.47\textwidth}
+\begin{vcode}
+always @(posedge clk) begin
+    a = b;
+    b = a;    // bug: b = b
+end
+\end{vcode}
+\centering
+\begin{tikzpicture}[ffn/.style={draw=FpgaRed, fill=red!5, thick, minimum width=10mm, minimum height=10mm, font=\sffamily\small}]
+  \node[ffn] (A) at (0,0) {a};
+  \node[ffn] (B) at (2.4,0) {b};
+  \draw[arr] (B.north) to[bend right=35] (A.north);
+  \draw[arr] (B.east) to[out=0, in=-60, looseness=6] (B.south east);
+\end{tikzpicture}
+\end{minipage}
+\caption{On the left --- a correct swap (\code{<=}), on the right --- a bug (\code{=}):
+by the time of the second line \code{a} already equals \code{b}}
+\end{figure}
+
+\begin{diybox}[A counter and a register swap]
+\textbf{Task.} Describe a 4-bit counter and examine the blocking-assignment trap.\\
+\textbf{In Logra.} ``Code'': \code{reg [3:0] cnt = 0; always @(posedge clk) cnt <= cnt + 1'b1;} with ports \code{clk}, \code{reset}; ``Synthesize''; RTL and ``Waveforms''. Exercises: ``The first memory cell'', ``Two cells in a row''.\\
+\textbf{Expected result.} RTL shows a register, an adder, and feedback (Fig.~\ref{fig:counter}); on the waveform the value grows by one on every edge and returns to 0 after 15.\\
+\textbf{How to check.} \stars{2} Make two registers \code{a} and \code{b} with the swap \code{a <= b; b <= a;}, then replace \code{<=} with \code{=} and compare the waveforms: in the second case both registers become equal.
+\end{diybox}
+
+\section{Conditions: if and case}
+
+Inside \code{always} you can use conditions. They also turn into
+multiplexers.
+\begin{vcode}
+always @(posedge clk) begin
+    if (reset)
+        cnt <= 0;               // synchronous reset
+    else if (enable)
+        cnt <= cnt + 1'b1;      // count
+    // otherwise cnt keeps its value
+end
+\end{vcode}
+
+\begin{warnbox}[Latches]
+If in \code{always @(*)} a variable is not assigned under some condition,
+the synthesizer is forced to ``remember'' the old value and creates a \term{latch}---
+an unwanted memory element without a clock. Always write \code{else} and
+\code{default}!
+\end{warnbox}
+
+\begin{diybox}[A multiplexer and a latch]
+\textbf{Task.} Describe a selection with \code{case} and deliberately get a latch.\\
+\textbf{In Logra.} ``Code'': \code{always @(*) case (sel) ... endcase} from the section on \code{always}; first with \code{default}, then without it and without one value of \code{sel}; ``Synthesize''; RTL. Exercises: ``Choice by condition'', ``Choosing from a list''.\\
+\textbf{Expected result.} With \code{default} RTL shows a multiplexer; without \code{default} a LATCH element appears (in Logra you can see it next to the DFF).\\
+\textbf{How to check.} Compare with the ``Latches'' warning and put \code{default} back. \stars{2} Describe a priority encoder with \code{if / else if} and see how it differs from \code{case} on RTL.
+\end{diybox}
+
+\section{Parameters and Constants}
+
+\begin{vcode}
+localparam integer CLK_HZ = 27_000_000;  // a constant inside the module
+localparam [1:0]   IDLE = 2'd0, RUN = 2'd1;
+
+module blink #(parameter integer HZ = 1) (...);  // a parameter can be
+                                                 // changed from outside
+\end{vcode}
+
+\begin{diybox}[The frequency parameter]
+\textbf{Task.} Change the circuit with a single number, without touching the logic.\\
+\textbf{In Logra.} The ``Running light'' project, the line \code{localparam DIV = 27\_000\_000 / 8;}; the lesson ``Setting in one place'' in the Learn course.\\
+\textbf{Expected result.} After replacing \code{8} with \code{2} the light runs four times slower (two steps per second).\\
+\textbf{How to check.} ``Synthesize'', the Lab tab; the ``Speed'' list in the top panel lets you compare by eye. \stars{2} Convert the \code{localparam} into a module parameter \code{\#(parameter DIV = ...)} and check that the circuit builds the same way.
+\end{diybox}
+
+\section{Hierarchy: A Module Inside a Module}
+
+Large circuits are assembled from small modules, like a device from chips.
+Connecting one module inside another is called \term{instantiation}.
+
+\begin{figure}[htbp]
+\centering
+\begin{minipage}{0.55\textwidth}
+\begin{vcode}
+module full_adder (
+    input  wire a, b, cin,
+    output wire s, cout
+);
+    wire s1, c1, c2;
+    half_adder ha1 (.a(a),  .b(b),
+                    .s(s1), .c(c1));
+    half_adder ha2 (.a(s1), .b(cin),
+                    .s(s),  .c(c2));
+    assign cout = c1 | c2;
+endmodule
+\end{vcode}
+\end{minipage}\hfill
+\begin{minipage}{0.42\textwidth}
+\centering
+\begin{tikzpicture}[scale=0.85, transform shape,
+  ha/.style={draw=FpgaBlue, fill=FpgaLight, thick, minimum width=13mm, minimum height=13mm, font=\sffamily\scriptsize, align=center}]
+  \node[ha] (h1) at (0,0.6) {ha1};
+  \node[ha] (h2) at (2.3,-0.2) {ha2};
+  \node[draw, circle, thick, minimum size=6mm, font=\scriptsize] (or) at (4.2,-1.3) {$\ge1$};
+  \draw[wire] ([yshift=3mm]h1.west) -- ++(-0.6,0) node[left] {a};
+  \draw[wire] ([yshift=-3mm]h1.west) -- ++(-0.6,0) node[left] {b};
+  \draw[wire] ([yshift=3mm]h1.east) -- node[above, lbl] {s1} ++(0.4,0) |- ([yshift=3mm]h2.west);
+  \draw[wire] (-1.0,-0.7) node[left] {cin} -| ([xshift=-3mm]h2.west) -- ([yshift=-3mm]h2.west);
+  \draw[wire] ([yshift=3mm]h2.east) -- ++(0.8,0) node[right] {s};
+  \draw[wire] ([yshift=-3mm]h1.east) -- node[below, lbl] {c1} ++(0.25,0) |- ([yshift=0mm]or.west);
+  \draw[wire] ([yshift=-3mm]h2.east) -- node[below, lbl] {c2} ++(0.3,0) |- ([yshift=1.5mm]or.north west);
+  \draw[wire] (or.east) -- ++(0.4,0) node[right] {cout};
+  \node[draw=FpgaGray, dashed, fit=(h1)(h2)(or), inner sep=5mm, label={[lbl]above:full\_adder}] {};
+\end{tikzpicture}
+\end{minipage}
+\caption{A full adder built from two half adders}
+\end{figure}
+
+The notation \code{.a(s1)} means: ``connect the instance's input \code{a} to the wire
+\code{s1}''.
+
+\begin{ideabox}
+\begin{itemize}
+  \item \code{assign} and \code{always @(*)} describe \textbf{combinational}
+        logic (AND and OR gates, multiplexers, adders);
+  \item \code{always @(posedge clk)} describes \textbf{flip-flops} and everything
+        in front of them;
+  \item all blocks work \textbf{simultaneously}.
+\end{itemize}
+\end{ideabox}
+
+\begin{diybox}[A full adder from two modules]
+\textbf{Task.} Build \code{full\_adder} from two \code{half\_adder}s (the listing in this section).\\
+\textbf{In Logra.} ``Code'': two modules in one file (the top one is \code{full\_adder}); the lesson ``A module inside a module''; ``Synthesize''; RTL, Gowin, ``Waveforms''.\\
+\textbf{Expected result.} RTL shows two nested blocks \code{ha1} and \code{ha2}; the sum and carry on the waveform match the ``Full adder'' example from the catalog.\\
+\textbf{How to check.} By sweeping the inputs, make sure that \code{cout, s} equal the binary sum \code{a + b + cin}. \stars{3} \textbf{A stage of the ``Security Panel'' project:} move the sensor logic into a separate module (for example, ``either of two has triggered'') and instantiate it in the top module. Acceptance criterion: the build has no errors, the hierarchy is visible on RTL, and on ``Waveforms'' all sensor combinations are checked.
+\end{diybox}

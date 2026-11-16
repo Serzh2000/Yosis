@@ -1,0 +1,516 @@
+\chapter{Combinational Circuits}
+\label{ch:comb}
+
+In Chapter~\ref{ch:gates} we learned to write logic functions and build them
+from gates, but every time the function was handed to us ready-made. In
+practice the task sounds different: ``sound the alarm if the door is open and
+it is night or the guard is on.'' How do you turn such a sentence into a
+circuit without using extra gates? And there is a second question left over
+from the previous chapter: we treated gates as instantaneous, but a real
+circuit needs time to ``settle down.'' What happens to the output during that
+moment? This chapter answers both questions.
+
+\begin{buildbox}
+Open the \emph{Learn} tab, the book ``Logic gates,'' the lesson
+\emph{``Two out of three''}: build a circuit in which lamp $y$ lights up if at
+least two of the three buttons $a$, $b$, $c$ are pressed. Without reading
+further, write down in your notebook how many blocks you used. At the end of
+the chapter we will get the same circuit by the plan ``table $\to$
+expression $\to$ simplification $\to$ circuit'' and compare.
+\end{buildbox}
+
+\section{Combinational and Sequential Logic}
+
+All digital circuits fall into two large classes.
+
+\begin{description}
+  \item[Combinational circuits] --- the outputs depend \emph{only on the
+    current values of the inputs}. They have no memory: apply the same inputs
+    and you get the same outputs, no matter what happened before. Examples:
+    logic gates, decoders, multiplexers, adders.
+  \item[Sequential circuits] --- the outputs depend not only on the current
+    inputs but also on the \emph{history}, that is, on what happened earlier.
+    They have memory. Examples: flip-flops, registers, counters. We will get
+    to them later; for now it is enough to know that they exist and that a
+    combinational circuit cannot ``remember what happened.''
+\end{description}
+
+A feature that makes them easy to tell apart in a diagram: in a combinational
+circuit the signal flows strictly from the inputs to the outputs, while in a
+sequential circuit some of the outputs go back to the input through memory.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[block, minimum width=30mm, minimum height=20mm] (c) {Combinational\\logic};
+  \foreach \i in {1,2,3} \draw[arr] ($(c.west)+(-1.2,0.9-\i*0.45)$) -- ($(c.west)+(0,0.9-\i*0.45)$);
+  \foreach \i in {1,2} \draw[arr] ($(c.east)+(0,0.68-\i*0.45)$) -- ($(c.east)+(1.2,0.68-\i*0.45)$);
+  \node[lbl, left=12mm of c] {inputs};
+  \node[lbl, right=12mm of c] {outputs};
+  \node[font=\sffamily\small\bfseries, above=2mm of c] {Combinational circuit};
+  \begin{scope}[xshift=8.3cm]
+    \node[block, minimum width=30mm, minimum height=20mm] (s) {Combinational\\logic};
+    \node[gblock, minimum width=30mm, below=6mm of s] (m) {Memory\\(flip-flops)};
+    \foreach \i in {1,2,3} \draw[arr] ($(s.west)+(-1.2,0.9-\i*0.45)$) -- ($(s.west)+(0,0.9-\i*0.45)$);
+    \foreach \i in {1,2} \draw[arr] ($(s.east)+(0,0.68-\i*0.45)$) -- ($(s.east)+(1.2,0.68-\i*0.45)$);
+    \draw[arr] ($(s.east)+(0.4,-0.7)$) -- ++(0,-1.0) |- (m.east);
+    \draw[arr] (m.west) -- ++(-0.4,0) |- ($(s.west)+(0,-0.7)$);
+    \node[lbl, left=4mm of m, align=center] {state};
+    \node[font=\sffamily\small\bfseries, above=2mm of s] {Sequential circuit};
+  \end{scope}
+\end{tikzpicture}
+\caption{The main difference: a sequential circuit has memory and feedback
+through it}
+\label{fig:comb_vs_seq}
+\end{figure}
+
+\begin{diybox}[Does the circuit have memory?]
+\textbf{Task.} \stars{1} For each device decide whether it is combinational or
+not: a lamp that ``is on while the button is held''; a lamp that ``turns on
+with the first press and off with the second''; a ``sum of two numbers''
+signal. \stars{2} Come up with an everyday device of each class.
+
+\textbf{In Logra.} \emph{Designer} tab: build ``button $\to$ NOT $\to$
+lamp'' and set the button to 0, then 1, then 0 again. Next open the example
+\code{edge-toggle} (the example library, \emph{Code} tab) and hold the button
+for several clock cycles.
+
+\textbf{Expected result.} In the first circuit the same inputs always give
+the same outputs. In the second the switching happens once per press: the
+circuit ``remembers'' that the button has already been pressed.
+
+\textbf{How to check.} \emph{Waveforms} tab: for a combinational circuit you
+can predict the output from the truth table by looking at the current inputs;
+for \code{edge-toggle} you cannot---you need the history as well.
+\end{diybox}
+
+\section{From a Word Description to a Circuit}
+
+Designing a combinational circuit always follows the same plan:
+\begin{enumerate}
+  \item understand which inputs and outputs are needed and give them names;
+  \item build the \textbf{truth table};
+  \item write the logic expression;
+  \item \textbf{simplify} it;
+  \item draw the circuit.
+\end{enumerate}
+
+The main difficulty is the first step. A sentence in everyday language almost
+never says how many inputs the problem has or what to do in ``borderline''
+cases. So before the table, write down for each input what 1 means and what 0
+means (``door open: 1,'' ``night: 1''), and only then build the table.
+
+\subsection{Example: Three Judges Vote}
+
+Three judges, $a$, $b$, $c$, work at a competition. Each presses a button if
+they accept the attempt. Lamp $y$ must light up if \emph{at least two}
+judges accepted the attempt. Such a function is called a
+\term{majority function} (from Latin \emph{major}---greater).
+
+\textbf{Steps 1--2. Truth table.} Three inputs give $2^3 = 8$ rows:
+
+\begin{table}[H]
+\centering
+\caption{Truth table of the majority function}
+\label{tab:maj}
+\begin{tabular}{c|ccc|c|l}
+\toprule
+\textbf{No.} & $a$ & $b$ & $c$ & $y$ & \textbf{Term} \\
+\midrule
+0 & 0 & 0 & 0 & 0 & \\
+1 & 0 & 0 & 1 & 0 & \\
+2 & 0 & 1 & 0 & 0 & \\
+3 & 0 & 1 & 1 & \textbf{1} & $\overline{a}bc$ \\
+4 & 1 & 0 & 0 & 0 & \\
+5 & 1 & 0 & 1 & \textbf{1} & $a\overline{b}c$ \\
+6 & 1 & 1 & 0 & \textbf{1} & $ab\overline{c}$ \\
+7 & 1 & 1 & 1 & \textbf{1} & $abc$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Step 3. Expression.} For each row where $y=1$, write the product of
+all the inputs: an input is taken as is if it equals 1, and inverted if it
+equals 0. Such a product equals one \emph{only} in that row. Adding up all
+such products gives the function. This form is called the \term{canonical sum
+of products} (canonical SOP):
+\[
+  y = \overline{a}bc + a\overline{b}c + ab\overline{c} + abc.
+\]
+
+\textbf{Step 4. Simplification.} The term $abc$ can be repeated as many times
+as we like ($x + x = x$). Add it two more times and group:
+\[
+  y = (\overline{a}bc + abc) + (a\overline{b}c + abc) + (ab\overline{c} + abc)
+    = bc(\overline{a}+a) + ac(\overline{b}+b) + ab(\overline{c}+c)
+    = bc + ac + ab.
+\]
+Instead of four three-input AND gates and three inverters, we need only
+three two-input AND gates and one OR gate.
+
+\textbf{Step 5. Circuit.}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \foreach \n/\x in {a/0, b/0.6, c/1.2} {
+    \draw[very thick, FpgaBlue] (\x,0.6) node[above, text=FpgaDark] {$\n$} -- (\x,-3.4);
+  }
+  \node[gAND] (g1) at (3.4,0) {};
+  \node[gAND] (g2) at (3.4,-1.4) {};
+  \node[gAND] (g3) at (3.4,-2.8) {};
+  \node[gOR, logic gate inputs=nnn, minimum height=14mm] (o) at (6,-1.4) {};
+  \draw[wire] (g1.input 1) -- (0,0 |- g1.input 1) node[circle, fill, inner sep=1.2pt] {};
+  \draw[wire] (g1.input 2) -- (0.6,0 |- g1.input 2) node[circle, fill, inner sep=1.2pt] {};
+  \draw[wire] (g2.input 1) -- (0,0 |- g2.input 1) node[circle, fill, inner sep=1.2pt] {};
+  \draw[wire] (g2.input 2) -- (1.2,0 |- g2.input 2) node[circle, fill, inner sep=1.2pt] {};
+  \draw[wire] (g3.input 1) -- (0.6,0 |- g3.input 1) node[circle, fill, inner sep=1.2pt] {};
+  \draw[wire] (g3.input 2) -- (1.2,0 |- g3.input 2) node[circle, fill, inner sep=1.2pt] {};
+  \draw[wire] (g1.output) -- node[above, lbl] {$ab$} ++(0.6,0) |- (o.input 1);
+  \draw[wire] (g2.output) -- node[above, lbl] {$ac$} (o.input 2);
+  \draw[wire] (g3.output) -- node[below, lbl] {$bc$} ++(0.6,0) |- (o.input 3);
+  \draw[wire] (o.output) -- ++(0.8,0) node[right] {$y$};
+\end{tikzpicture}
+\caption{The ``2 of 3'' majority gate: $y = ab + ac + bc$}
+\label{fig:maj}
+\end{figure}
+
+\subsection{Example: A Guard with Night Mode}
+
+Now a word problem that will be useful to us later. An alarm must sound if
+the door is open \emph{and} (it is night \emph{or} the guard is on). Name the
+inputs: $d$---the door is open, $n$---night, $s$---the guard is on. The
+parentheses in the condition show the order: first ``night or guard,'' then
+``and door'':
+\[
+  y = d\cdot(n + s).
+\]
+If we expand the parentheses we get $y = dn + ds$: two AND gates and one OR
+against one OR and one AND in the original form. The parenthesized form is
+\emph{cheaper} (two gates instead of three) and also more faithful to the
+meaning: it repeats the condition word for word. How to choose between such
+forms we will examine in detail in the next chapter.
+
+\begin{diybox}[From words to a circuit]
+\textbf{Task.} \stars{1} Build the ``2 of 3'' circuit from
+Figure~\ref{fig:maj} and check all 8 combinations. \stars{2} Change the
+condition: the lamp must light up if \emph{exactly two} accepted. Build the
+table and the expression. \stars{3} A stage of the ``Security Panel''
+project: add an arming input $arm$ to ``2 of 3'': the alarm sounds only when
+$arm=1$ and at least two of the three door sensors agree.
+
+\textbf{In Logra.} \stars{1} \emph{Learn} tab: the lesson
+\emph{``Two out of three''} (book ``Logic gates''); the example
+\code{majority}. \stars{2} The example \code{exactly-two}: compare it with
+your own expression. \stars{3} \emph{Learn} tab, book ``Projects,'' the
+lesson \emph{A ``2 of 3'' vote with a guard}.
+
+\textbf{Expected result.} In \stars{1} all 8 rows of Table~\ref{tab:maj}
+match. In \stars{2} the lamp is off for $111$. In \stars{3} with $arm=0$ the
+lamp is off for any $a,b,c$; the output is one in exactly four rows out of
+sixteen ($arm\,abc=1011$, $1101$, $1110$, $1111$).
+
+\textbf{How to check.} \emph{Waveforms} tab: set $a,b,c$ in turn as a
+counter 0--7 and compare $y$ with the table; the lesson is checked by the
+built-in simulator (the check button). Acceptance criterion for stage~3: four
+rows with $y=1$ out of sixteen and the alarm off when $arm=0$. We will find
+the minimal form of this function in Chapter~\ref{ch:minimize}.
+\end{diybox}
+
+\section{Karnaugh Maps}
+
+Simplifying expressions algebraically is possible, but it is easy to make a
+mistake. For functions of 2--4 variables there is a visual method---the
+\term{Karnaugh map}. It is the same truth table, but drawn as a rectangle so
+that \emph{neighboring cells differ in the value of only one variable}. That
+is why the columns are labeled in the order 00, 01, 11, 10 (Gray code) and not
+00, 01, 10, 11.
+
+The simplification rule: group the ones into rectangular groups of 2, 4, 8
+cells (a power of two), trying to make the groups as large as possible. Each
+group corresponds to one product, in which only the variables that
+\emph{do not change} within the group remain.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[cell/.style={draw, minimum size=11mm, font=\sffamily\large}]
+  \foreach \c/\lab in {0/00, 1/01, 2/11, 3/10} \node[font=\sffamily\small] at (\c*1.1,1.05) {\lab};
+  \foreach \r/\lab in {0/0, 1/1} \node[font=\sffamily\small] at (-0.95,-\r*1.1) {\lab};
+  \node[font=\sffamily\small] at (-1.1,1.05) {$a \backslash bc$};
+  % values: row a=0: bc=00,01,11,10 -> 0,0,1,0; a=1: 0,1,1,1
+  \foreach \r/\c/\v in {0/0/0, 0/1/0, 0/2/1, 0/3/0, 1/0/0, 1/1/1, 1/2/1, 1/3/1}
+    {\ifnum\v=1 \def\cc{FpgaLight}\else\def\cc{white}\fi
+     \node[cell, fill=\cc] at (\c*1.1,-\r*1.1) {\v};}
+  \draw[very thick, FpgaRed, rounded corners=4pt] (1.7,-1.62) rectangle (2.7,0.52);
+  \draw[very thick, FpgaGreen, rounded corners=4pt] (0.6,-1.56) rectangle (2.62,-0.64);
+  \draw[very thick, FpgaOrange, rounded corners=4pt] (1.78,-1.48) rectangle (3.8,-0.72);
+  \node[font=\sffamily\small, text=FpgaRed, anchor=west] at (4.6,0.2) {$bc$ --- column $bc=11$ ($a$ changes)};
+  \node[font=\sffamily\small, text=FpgaGreen, anchor=west] at (4.6,-0.5) {$ac$ --- cells $abc=101, 111$};
+  \node[font=\sffamily\small, text=FpgaOrange, anchor=west] at (4.6,-1.2) {$ab$ --- cells $abc=111, 110$};
+  \node[font=\sffamily\small\bfseries, anchor=west] at (4.6,-2.0) {$y = ab + ac + bc$};
+\end{tikzpicture}
+\caption{Karnaugh map of the majority function: three groups of two cells
+give three terms}
+\label{fig:karnaugh}
+\end{figure}
+
+Let us see where the terms come from. The red group is the column $bc=11$: in
+its two cells only $a$ changes, while $b=1$ and $c=1$ stay, so the term is
+$bc$. The green group is cells $101$ and $111$: here $b$ changes, $a=1$ and
+$c=1$ stay, and the term is $ac$. The orange group: $c$ changes, $a=1$ and
+$b=1$ stay, and the term is $ab$. The three groups give the same three terms
+that we got by algebra, but without the calculations.
+
+Two features of the three-variable map that people forget. First, the map is
+\emph{wrapped around horizontally}: the outer columns $00$ and $10$ are also
+neighbors (they differ only in $b$). Second, the same one may belong to
+several groups: overlapping groups are allowed and often useful, because they
+make the groups larger.
+
+\begin{infobox}[Who will simplify circuits in large projects?]
+When circuits become large, the simplification is done by a special program,
+and much better than a human can do it. But understanding \emph{how} it is
+done is still useful: it helps you estimate how many resources your circuit
+will take and how fast it will run. The full set of techniques (four
+variables, don't-care states, the formal algorithm) is in the next chapter.
+\end{infobox}
+
+\begin{diybox}[A Karnaugh map on paper and in a circuit]
+\textbf{Task.} \stars{1} For $F_2=\Sigma m(1,3,5,7)$ draw the map, find the
+minimal form and build it in the Designer. \stars{2} For
+$F_3=\Sigma m(3,5,6,7)$ find the minimal form, build it and compare it with
+the ``2 of 3'' circuit (is it the same function written differently?).
+\stars{3} Invent a function of three variables whose minimal form consists of
+three terms of two letters each, but whose groups do \emph{not} include any
+``wrap-around across the edge.''
+
+\textbf{In Logra.} \emph{Designer} tab: a circuit of AND, OR, NOT blocks. Set
+the inputs $a,b,c$ with switches.
+
+\textbf{Expected result.} For $F_2$ the minimal form is a single wire,
+$F_2=c$; in the circuit there is not a single gate between the input and the
+output. For $F_3$ you get $ab+ac+bc$, that is, the same majority function.
+
+\textbf{How to check.} \emph{Waveforms} tab: go through all 8 combinations;
+the output must match the column $F$ of your map. \emph{RTL} tab: compare your
+circuit with the figure in this chapter.
+\end{diybox}
+
+\section{Propagation Delay}
+
+So far we have assumed that a gate responds instantly. In fact transistors
+need time to switch, and wires need time to charge. The output of a gate
+changes a time $t_\text{pd}$ after the input. This is the
+\term{propagation delay}. In modern chips it ranges from fractions of a
+nanosecond to a few nanoseconds.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \draw[very thick, FpgaBlue] (0,1.6) -- (2,1.6) -- (2.1,2.4) -- (6,2.4) -- (6.1,1.6) -- (9,1.6);
+  \draw[very thick, FpgaOrange] (0,0.8) -- (3,0.8) -- (3.1,0) -- (7,0) -- (7.1,0.8) -- (9,0.8);
+  \node[font=\sffamily\small, anchor=east] at (-0.1,2.0) {$a$};
+  \node[font=\sffamily\small, anchor=east] at (-0.1,0.4) {$\overline{a}$};
+  \draw[dashed, FpgaGray] (2.05,2.6) -- (2.05,-0.4); \draw[dashed, FpgaGray] (3.05,2.6) -- (3.05,-0.4);
+  \draw[<->, thick] (2.05,-0.3) -- (3.05,-0.3) node[midway, below, font=\sffamily\small] {$t_\text{pd}$};
+  \draw[dashed, FpgaGray] (6.05,2.6) -- (6.05,-0.4); \draw[dashed, FpgaGray] (7.05,2.6) -- (7.05,-0.4);
+  \draw[<->, thick] (6.05,-0.3) -- (7.05,-0.3) node[midway, below, font=\sffamily\small] {$t_\text{pd}$};
+\end{tikzpicture}
+\caption{The inverter output changes after a delay $t_\text{pd}$}
+\end{figure}
+
+If a signal passes through several gates in a row, the delays add up. The
+longest path from an input to an output is called the \term{critical path}.
+It determines how fast the circuit can run: until the correct value has
+settled at the output, the result must not be read.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[gAND, minimum width=10mm, minimum height=10mm] (g1) at (0,0.9) {};
+  \node[gOR, minimum width=10mm, minimum height=10mm] (g2) at (1.8,0) {};
+  \node[gXOR, minimum width=10mm, minimum height=10mm] (g3) at (3.6,-0.9) {};
+  \node[gNOT] (g4) at (5.3,-0.9) {};
+  \draw[wire, FpgaRed, very thick] (g1.input 1) -- ++(-0.5,0) node[left, text=FpgaDark, yshift=1.3mm] {$a$};
+  \draw[wire] (g1.input 2) -- ++(-0.5,0) node[left, yshift=-1.3mm] {$b$};
+  \draw[wire, FpgaRed, very thick] (g1.output) -- ++(0.2,0) |- (g2.input 1);
+  \draw[wire] (g2.input 2) -- ++(-2.3,0) node[left] {$c$};
+  \draw[wire, FpgaRed, very thick] (g2.output) -- ++(0.2,0) |- (g3.input 1);
+  \draw[wire] (g3.input 2) -- ++(-4.1,0) node[left] {$d$};
+  \draw[wire, FpgaRed, very thick] (g3.output) -- (g4.input);
+  \draw[wire, FpgaRed, very thick] (g4.output) -- ++(0.6,0) node[right, text=FpgaDark] {$y$};
+  \node[font=\sffamily\small, text=FpgaRed, anchor=west] at (7.2,-0.55) {critical path:};
+  \node[font=\sffamily\small, text=FpgaRed, anchor=west] at (7.2,-1.25) {$t = 4\,t_\text{pd}$};
+\end{tikzpicture}
+\caption{The critical path passes through four gates}
+\end{figure}
+
+A simple consequence: the benefit of simplifying a circuit lies not only in
+the number of gates but also in time. If a chain of four gates can be
+replaced by two, the critical path is halved.
+
+\subsection{Races and Glitches}
+
+Because of the delays, short false pulses---\term{glitches}---can appear at
+the output of a combinational circuit. A classic example:
+$y = a\cdot\overline{a}$. By the laws of algebra $y$ is always 0. But the
+inverter responds with a delay, and for a short time after an edge of $a$
+\emph{both} inputs of the AND gate are 1.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[gAND, minimum width=10mm, minimum height=7mm] (g) at (2.2,0) {};
+  \node[gNOT] (n) at (0.9,-0.7) {};
+  \draw[wire] (-0.6,0.12) node[left] {$a$} -- (g.input 1);
+  \fill (0.0,0.12) circle (1.3pt);
+  \draw[wire] (0.0,0.12) |- (n.input);
+  \draw[wire] (n.output) -- ++(0.3,0) |- (g.input 2);
+  \draw[wire] (g.output) -- ++(0.5,0) node[right] {$y$};
+  \begin{scope}[xshift=5cm, yshift=0.9cm, x=1cm, y=1cm]
+    \draw[very thick, FpgaBlue] (0,0) -- (1.5,0) -- (1.55,0.5) -- (5,0.5);
+    \draw[very thick, FpgaOrange] (0,-0.4) -- (2.4,-0.4) -- (2.45,-0.9) -- (5,-0.9);
+    \draw[very thick, FpgaRed] (0,-1.8) -- (1.6,-1.8) -- (1.65,-1.3) -- (2.5,-1.3) -- (2.55,-1.8) -- (5,-1.8);
+    \node[font=\sffamily\small, anchor=east] at (-0.1,0.25) {$a$};
+    \node[font=\sffamily\small, anchor=east] at (-0.1,-0.65) {$\overline{a}$};
+    \node[font=\sffamily\small, anchor=east] at (-0.1,-1.55) {$y$};
+    \node[font=\sffamily\small, text=FpgaRed, anchor=west] at (2.7,-1.4) {false pulse!};
+  \end{scope}
+\end{tikzpicture}
+\caption{How a glitch arises from the inverter's delay}
+\end{figure}
+
+This is an example of a \emph{race}: two paths from the same input to the
+output (the direct one and the one through the inverter) have different
+lengths, and the signals ``run a race'' along them. For a moment the output
+takes a value that is not in the truth table.
+
+\subsubsection{Glitches and the Karnaugh map}
+
+A glitch can appear even in a circuit whose logic is flawless. Take
+$F = AB + \overline{A}C$ and fix $B=C=1$. Then $F = A + \overline{A}$ must
+always equal 1. But the term $AB$ turns off when $A$ goes from 1 to 0, while
+the term $\overline{A}C$ turns on later, because the signal $\overline{A}$ is
+still ``on its way'' through the inverter. For a short time \emph{both} terms
+are off, and a zero glitch appears at the output $F$.
+
+On the Karnaugh map this is visible at once: the two groups $AB$ and
+$\overline{A}C$ \emph{touch} but do not overlap. The transition between them
+goes along the boundary where neither group holds the one. The cure is to add
+an overlapping group $BC$: it covers both cells at the boundary and holds the
+output at one while $A$ switches.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[cell/.style={draw, minimum size=11mm, font=\sffamily\large}]
+  \foreach \c/\lab in {0/00, 1/01, 2/11, 3/10} \node[font=\sffamily\small] at (\c*1.1,1.05) {\lab};
+  \foreach \r/\lab in {0/0, 1/1} \node[font=\sffamily\small] at (-0.95,-\r*1.1) {\lab};
+  \node[font=\sffamily\small] at (-1.1,1.05) {$A \backslash BC$};
+  \foreach \r/\c/\v in {0/0/0, 0/1/1, 0/2/1, 0/3/0, 1/0/0, 1/1/0, 1/2/1, 1/3/1}
+    {\ifnum\v=1 \def\cc{FpgaLight}\else\def\cc{white}\fi
+     \node[cell, fill=\cc] at (\c*1.1,-\r*1.1) {\v};}
+  \draw[very thick, FpgaOrange, rounded corners=4pt] (0.65,0.42) rectangle (2.55,-0.42);
+  \draw[very thick, FpgaGreen, rounded corners=4pt] (1.85,-0.68) rectangle (3.75,-1.52);
+  \draw[very thick, dashed, FpgaRed, rounded corners=4pt] (1.9,0.5) rectangle (2.5,-1.6);
+  \node[font=\sffamily\small, text=FpgaOrange, anchor=west] at (4.6,0.2) {$\overline{A}C$ --- cells $A=0$};
+  \node[font=\sffamily\small, text=FpgaGreen, anchor=west] at (4.6,-0.5) {$AB$ --- cells $A=1$};
+  \node[font=\sffamily\small, text=FpgaRed, anchor=west] at (4.6,-1.2) {$BC$ --- added against the glitch};
+  \node[font=\sffamily\small\bfseries, anchor=west] at (4.6,-2.0) {$F = AB + \overline{A}C + BC$};
+\end{tikzpicture}
+\caption{The groups $\overline{A}C$ and $AB$ touch but do not overlap.
+The dashed group $BC$ removes the glitch, although the logic does not need it}
+\label{fig:hazard_karnaugh}
+\end{figure}
+
+A paradox: the added group is \emph{redundant} from the point of view of the
+minimal form, yet it is needed for reliable operation. So the ``minimal'' and
+the ``best'' circuits can differ, and this is worth remembering.
+
+\begin{warnbox}[How to deal with this]
+Glitches are the main reason why, in serious circuits, the outputs of
+combinational logic are ``read'' not at random moments but only on the edge
+of the clock signal, when all transient processes are over. This is called
+\term{synchronous design} (Chapter~\ref{ch:sync}). A practical rule: a glitch
+is harmless if nobody reads it until it is over.
+\end{warnbox}
+
+\begin{diybox}[Delay and glitch]
+\textbf{Task.} \stars{1} For the circuit from the ``Critical path'' figure,
+calculate the delay if $t_\text{pd}=1.2$~ns for each gate, and draw the
+timing diagram of $y=a\cdot\overline a$ with the inverter delay, marking the
+glitch. \stars{2} For $F=AB+\overline{A}C$ with $B=C=1$ draw the diagram and
+find the moment when $F$ briefly drops to 0. Add the term $BC$ and repeat.
+\stars{3} Invent a circuit in which a glitch is harmful (hint: the output is
+connected to an input that reacts to any short pulse).
+
+\textbf{In Logra.} \emph{Designer} tab: build $y=a\cdot\overline a$ (input
+$a$, a NOT block, an AND block), and next to it a chain of five NOT blocks.
+Then the example \code{button-debounce} (the example library): how contact
+bounce resembles a glitch.
+
+\textbf{Expected result.} For the calculation: $4\cdot 1.2 = 4.8$~ns. Five
+inversions give $y=\overline a$. On the diagram the output $y=a\cdot\overline
+a$ stays zero for any $a$: ordinary logic simulation does not model gate
+delays. This is not a bug but an important observation: the glitch is not
+visible on such a diagram, yet it exists in a real circuit.
+
+\textbf{How to check.} \emph{Waveforms} tab: make sure that $y\equiv0$ (the
+logic is correct) and compare with your paper diagram with the glitch. The
+difference between them is exactly the problem for which circuits with memory
+use a common clock signal. Where the nanoseconds come from is covered in
+Chapter~\ref{ch:electrical}.
+\end{diybox}
+
+\begin{warnbox}[Common mistakes]
+\begin{itemize}
+  \item \textbf{Simplifying ``however it comes out.''} Algebraic
+        transformations are easy to spoil: you skip an inversion or forget
+        that $\overline{a+b}\neq\overline a+\overline b$. After each
+        simplification check the result against the truth table on at least
+        three rows.
+  \item \textbf{Grouping the wrong cells.} A group must be a rectangle of
+        $1,2,4,8$ cells. Three cells in a row, an ``L-shape,'' and a diagonal
+        are not groups.
+  \item \textbf{Forgetting that the edges are neighbors.} The columns $00$ and
+        $10$ of the map are neighbors. If you found two ones at the edges and
+        did not combine them, you got an extra term.
+  \item \textbf{Treating a glitch as a logic error.} A glitch does not
+        violate the truth table: it lives in the transition moment and is
+        removed by clocking or by adding an overlapping group.
+\end{itemize}
+\end{warnbox}
+
+\begin{ideabox}
+A combinational circuit has no memory. It is designed from a truth table and
+simplified algebraically or with a Karnaugh map. Real gates have a delay,
+which makes short false pulses possible.
+\end{ideabox}
+
+\section{Questions and Problems}
+\label{sec:tasks-comb}
+
+Answers are collected in Appendix~\ref{app:answers}.
+
+\begin{taskbox}[Chapter problems]
+\begin{enumerate}
+  \item \stars{1}~Find the minimal form of the functions $F_1=\Sigma m(0,1,4,5)$, $F_2=\Sigma m(1,3,5,7)$ and $F_3=\Sigma m(3,5,6,7)$ of three variables $A,B,C$ ($A$ is the most significant bit) using a Karnaugh map.
+  \item \stars{1}~A signal passes through 5 gates with a delay of 1.5~ns each. What is the delay of this path? How is it related to the maximum frequency of the circuit?
+  \item \stars{2}~An alarm sounds if the door is open \emph{and} (it is night \emph{or} the guard is on). Write the function and draw the circuit.
+  \item \stars{1}~Which of these blocks are combinational and which are sequential: an adder, a counter, a multiplexer, a button that toggles a lamp on every press?
+  \item \stars{2}~For the function $F = AB + \overline{A}C$ with $B=C=1$, $A$ changes. Does a glitch occur? Which term must be added to remove it?
+  \item \stars{2}~\emph{Find the error.} A student simplified $y=\overline{a}bc+a\overline{b}c+ab\overline{c}+abc$ and got $y=ab+c$. Check the answer against the truth table and find the row where the student went wrong.
+  \item \stars{2}~\emph{Find the error.} On the three-variable map for $F=\Sigma m(1,2,3)$ a student circled an ``L-shape'' of three cells $1,3,2$ as one group and wrote $F=\overline{A}$. What is the student's function in reality? What should the minimal form be?
+  \item \stars{3}~\emph{A project with a criterion.} Build the ``guard with night mode'' circuit $y=d\,(n+s)$ in the Designer and make sure that for all 8 combinations $y$ matches the table. Acceptance criterion: 8 out of 8 rows match on the Waveforms tab.
+  \item \stars{3}~\emph{A project with a criterion (a stage of the ``Security Panel'' project).} Add an arming input $arm$ to the ``2 of 3'' circuit and build the minimal form $y=arm\cdot(ab+ac+bc)$. Acceptance criterion: with $arm=0$ the output is zero for any $a,b,c$; with $arm=1$ the output matches Table~\ref{tab:maj}. How many gates did you get?
+  \item \stars{3}~Show that for the function $y=ab+\overline{a}c$ a glitch occurs at $b=c=1$, while for the function $y=ab+\overline{a}c+bc$ it does not. How is this related to the Karnaugh map?
+\end{enumerate}
+\end{taskbox}
+
+\section{What's Next}
+
+We can build a circuit from a table and simplify a function of three
+variables on a Karnaugh map. But there are far more functions of four
+variables, some combinations have no value at all, and real programs simplify
+functions of dozens of variables. In the next chapter we will study the
+four-variable Karnaugh map, don't-care states, incorrect groupings, and see
+how a minimal form turns into a real circuit in Logra.

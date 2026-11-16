@@ -1,0 +1,688 @@
+\chapter{Decoders and Encoders}
+\label{ch:coders}
+
+We know how to build any combinational function from a table and simplify it on a
+Karnaugh map. But for a security panel with four zones a practical
+question arises: how do we turn on the lamp of a zone given its \emph{number}, and, the other way around,
+how do we get the number of the zone that triggered and show it
+on a digital display? These tasks come up so often that they have become
+ready-made ``bricks'': the decoder, the encoder, and code converters. It pays
+to recognize them at first sight. Let us start with the units that convert one
+way of writing a number (a code) into another.
+
+\begin{buildbox}
+On the \emph{Learn} tab, in the book ``Selection and distribution,'' open the lesson
+\emph{``Decoder''}: build a $2\to4$ decoder with an enable input.
+Feed the input $a$ the values $0,1,2,3$ in turn and write in your notebook which bit
+of the output $y$ equals one. Later in this chapter we will find out how this
+``brick'' is built inside and where it is needed.
+\end{buildbox}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=6mm and 32mm]
+  \node[block, minimum width=34mm] (bin) {Binary code\\\scriptsize \code{10} (the number 2)};
+  \node[oblock, minimum width=34mm, right=of bin] (oh) {One-hot code\\\scriptsize \code{0100} (a one in position 2)};
+  \draw[arr] ([yshift=2mm]bin.east) -- node[above, font=\sffamily\small] {decoder} ([yshift=2mm]oh.west);
+  \draw[arr] ([yshift=-2mm]oh.west) -- node[below, font=\sffamily\small] {encoder} ([yshift=-2mm]bin.east);
+\end{tikzpicture}
+\caption{The decoder and the encoder perform mutually inverse conversions}
+\end{figure}
+
+A \term{one-hot code} is a code in which, out of $N$
+wires, exactly one carries a one, and the number of that wire is the
+value being transmitted. It is convenient for \emph{selecting} something: turning on one of
+several lamps, or one of several memory chips.
+
+\section{The decoder}
+
+A \term{decoder} has $n$ inputs and $2^n$ outputs. The inputs give
+a binary number, and a 1 appears on the output with that number, while all the others
+are 0. In schematics a decoder is labeled with the letters DC.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.4\textwidth}
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=FpgaLight] (0,0) rectangle (2.6,3.2);
+  \draw[thick] (0.6,0) -- (0.6,3.2); \draw[thick] (2.0,0) -- (2.0,3.2);
+  \node[font=\sffamily\bfseries\large] at (1.3,1.6) {DC};
+  \foreach \i/\n in {0/0, 1/1} {
+    \draw[wire] (-0.6,2.1-\i*0.8) node[left] {$a_\i$} -- (0,2.1-\i*0.8);
+    \node[font=\sffamily\small] at (0.3,2.1-\i*0.8) {\pgfmathparse{int(2^\i)}\pgfmathresult};
+  }
+  \draw[wire] (-0.6,0.4) node[left] {$E$} -- (0,0.4); \node[font=\sffamily\small] at (0.3,0.4) {E};
+  \foreach \i in {0,...,3} {
+    \draw[wire] (2.6,2.6-\i*0.7) -- (3.2,2.6-\i*0.7) node[right] {$y_\i$};
+    \node[font=\sffamily\small] at (2.3,2.6-\i*0.7) {\i};
+  }
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.56\textwidth}
+\centering
+\begin{tabular}{ccc|cccc}
+\toprule
+$E$ & $a_1$ & $a_0$ & $y_0$ & $y_1$ & $y_2$ & $y_3$ \\
+\midrule
+0 & $\times$ & $\times$ & 0 & 0 & 0 & 0 \\
+1 & 0 & 0 & \textbf{1} & 0 & 0 & 0 \\
+1 & 0 & 1 & 0 & \textbf{1} & 0 & 0 \\
+1 & 1 & 0 & 0 & 0 & \textbf{1} & 0 \\
+1 & 1 & 1 & 0 & 0 & 0 & \textbf{1} \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+{\small $\times$ means ``don't care, 0 or 1''}
+\end{minipage}
+\caption{A $2\to4$ decoder with an enable input $E$: symbol and truth table}
+\label{fig:dc24}
+\end{figure}
+
+The input $E$ (Enable) lets you ``switch off'' the decoder: when $E=0$,
+all outputs are zero, whatever number is applied.
+
+How do we build a decoder from gates? Each output is a product
+that equals one for exactly one combination of inputs:
+\[
+  y_0 = E\,\overline{a_1}\,\overline{a_0}, \quad
+  y_1 = E\,\overline{a_1}\,a_0, \quad
+  y_2 = E\,a_1\,\overline{a_0}, \quad
+  y_3 = E\,a_1\,a_0.
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  % inputs
+  \draw[wire] (-0.4,1.6) node[left] {$a_1$} -- (1.0,1.6);
+  \draw[wire] (-0.4,0.8) node[left] {$a_0$} -- (2.4,0.8);
+  \draw[wire] (-0.4,0.0) node[left] {$E$} -- (3.8,0.0);
+  % inverters
+  \node[gNOT, minimum width=7mm, minimum height=5mm] (n1) at (1.0,2.4) {};
+  \draw[wire] (0.3,1.6) |- (n1.input); \fill (0.3,1.6) circle (1.3pt);
+  \draw[very thick, FpgaBlue] (n1.output) -| (1.6,-4.8);
+  \node[gNOT, minimum width=7mm, minimum height=5mm] (n0) at (2.4,1.5) {};
+  \draw[wire] (1.95,0.8) |- (n0.input); \fill (1.95,0.8) circle (1.3pt);
+  \draw[very thick, FpgaBlue] (n0.output) -| (3.0,-4.8);
+  % buses
+  \draw[very thick, FpgaBlue] (1.0,1.6) -- (1.0,-4.8);
+  \draw[very thick, FpgaBlue] (2.4,0.8) -- (2.4,-4.8);
+  \draw[very thick, FpgaBlue] (3.8,0.0) -- (3.8,-4.8);
+  \foreach \x/\l in {1.0/a_1, 1.6/\overline{a_1}, 2.4/a_0, 3.0/\overline{a_0}, 3.8/E}
+    \node[below, font=\small] at (\x,-4.8) {$\l$};
+  % AND gates: y0 = ~a1 ~a0, y1 = ~a1 a0, y2 = a1 ~a0, y3 = a1 a0
+  \foreach \i/\x/\z in {0/1.6/3.0, 1/1.6/2.4, 2/1.0/3.0, 3/1.0/2.4} {
+    \pgfmathsetmacro{\y}{-0.9-\i*1.1}
+    \node[gAND, logic gate inputs=nnn, minimum height=9mm] (g\i) at (5.6,\y) {};
+    \draw[wire] (g\i.input 1) -- (\x,0 |- g\i.input 1) node[circle, fill, inner sep=1.1pt] {};
+    \draw[wire] (g\i.input 2) -- (\z,0 |- g\i.input 2) node[circle, fill, inner sep=1.1pt] {};
+    \draw[wire] (g\i.input 3) -- (3.8,0 |- g\i.input 3) node[circle, fill, inner sep=1.1pt] {};
+    \draw[wire] (g\i.output) -- ++(0.6,0) node[right] {$y_\i$};
+  }
+\end{tikzpicture}
+\caption{A $2\to4$ decoder built from AND and NOT gates}
+\label{fig:dc24_gates}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.05, xscale=2.2, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  $a_1a_0$ & 2D{00} 2D{01} 2D{10} 2D{11} 2D{00} \\
+  $y_0$ & 2H 6L 2H \\
+  $y_1$ & 2L 2H 6L \\
+  $y_2$ & 4L 2H 4L \\
+  $y_3$ & 6L 2H 2L \\
+\end{tikztimingtable}
+\caption{As the numbers are swept, the one ``moves'' from one output to another}
+\end{figure}
+
+\subsection{Where decoders are used}
+
+\begin{itemize}
+  \item \textbf{Selecting a device by address.} In a computer, many memory and
+        peripheral chips are connected to one bus. A decoder uses the
+        high bits of the address to select which of them should respond right now.
+  \item \textbf{Driving displays}: turning on one of several
+        LEDs, display digits, or matrix rows.
+  \item \textbf{Selecting an instruction in a processor}: the operation code is decoded into
+        the control signals ``add,'' ``read from memory,'' and so on.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=5mm]
+  \node[hblock, minimum height=30mm, minimum width=18mm] (cpu) {Processor};
+  \node[block, right=22mm of cpu, minimum height=26mm] (dc) {DC\\2$\to$4};
+  \foreach \i/\t in {0/ROM, 1/RAM, 2/Input port, 3/Output port} {
+    \node[oblock, minimum width=24mm, minimum height=7mm] (d\i) at (9.0,1.65-\i*1.1) {\t};
+  }
+  \draw[arr] (cpu.east) -- node[above, lbl] {A[15:14]} (dc.west);
+  \foreach \i in {0,...,3} \draw[arr] ($(dc.north east)!{(\i+0.5)/4}!(dc.south east)$) -- ++(0.6,0) |- (d\i.west);
+  \foreach \i in {0,...,3} \node[lbl, right=1mm of d\i.east, anchor=west] {CS$_\i$};
+\end{tikzpicture}
+\caption{An address decoder: the two high bits of the address select one of four chips}
+\end{figure}
+
+\subsection{Cascading: a large decoder from small ones}
+
+The enable input $E$ is needed not only to ``switch off'' a decoder: with its help,
+large decoders are assembled from small ones. A $3\to8$ decoder is made from
+two $2\to4$ decoders: the low two bits of the number $a_1a_0$ go to
+both, and the high bit $a_2$ decides which of the two ``wakes up.'' The first
+is enabled by $\overline{a_2}$, the second by $a_2$. Then, when $a_2=0$, the
+first works and lights one of the lines $y_0\ldots y_3$, and when $a_2=1$ the second works and
+lights one of $y_4\ldots y_7$. The same technique (the first level selects
+a chip, the second selects a line) is used when selecting a device by address.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[block, minimum width=22mm, minimum height=16mm] (d0) at (5,1.3) {DC\\2$\to$4};
+  \node[block, minimum width=22mm, minimum height=16mm] (d1) at (5,-1.5) {DC\\2$\to$4};
+  \draw[arr] (0,0.1) node[left] {$a_1a_0$} -- (2.4,0.1);
+  \fill (2.4,0.1) circle (1.3pt);
+  \draw[arr] (2.4,0.1) |- ($(d0.west)+(0,-0.3)$);
+  \draw[arr] (2.4,0.1) |- ($(d1.west)+(0,0.3)$);
+  \draw[arr] (0,2.9) node[left] {$\overline{a_2}$} -- (5,2.9) -- node[right, lbl] {$E$} (d0.north);
+  \draw[arr] (0,-3.3) node[left] {$a_2$} -- (5,-3.3) -- node[right, lbl] {$E$} (d1.south);
+  \draw[arr] ($(d0.east)+(0,0)$) -- ++(1.4,0) node[right] {$y_0\ldots y_3$};
+  \draw[arr] ($(d1.east)+(0,0)$) -- ++(1.4,0) node[right] {$y_4\ldots y_7$};
+\end{tikzpicture}
+\caption{A $3\to8$ decoder from two $2\to4$ decoders with an enable input}
+\label{fig:dc38}
+\end{figure}
+
+\begin{diybox}[A decoder in Logra]
+\textbf{Task.} \stars{1} Build a $2\to4$ decoder and check all
+eight combinations $(E,a)$. \stars{2} Compare it with your own circuit of
+AND and NOT gates (Figure~\ref{fig:dc24_gates}): the number of gates and the
+result. \stars{3} Build a $3\to8$ decoder from two $2\to4$ decoders as in
+Figure~\ref{fig:dc38}; acceptance criterion: for each of the eight numbers
+exactly one line is lit, and for $E=0$ none.
+
+\textbf{In Logra.} \stars{1} The lesson \emph{``Decoder''} (book ``Selection and
+distribution''); the example \code{decoder}. \stars{2} The \emph{Designer} tab:
+AND and NOT blocks. \stars{3} The \emph{Designer} tab: two ``Decoder'' blocks with
+enable switched on, a ``Bus slice'' block to extract $a_1a_0$ and $a_2$
+(lesson ``Bus: a slice of bits''), and a NOT gate.
+
+\textbf{Expected result.} For the number 5 ($a=101$), $y_5$ lights up and
+the other outputs are zeros; for 2 ($a=010$), $y_2$ lights up. The example
+\code{binary-onehot} shows that ``extra'' numbers give an empty
+combination if you do not provide for them.
+
+\textbf{How to check.} The \emph{Waveforms} tab: drive $a$ with a counter
+$0$--$7$; the one should ``run'' along the outputs. The \emph{RTL} tab: compare
+your circuit with a single ``Decoder'' block.
+\end{diybox}
+
+\section{The seven-segment display}
+
+A seven-segment display consists of seven LED strips, labeled
+with the letters $a$ to $g$. By lighting different segments, you can show any digit.
+The unit that converts the binary code of a digit into signals for the segments is also
+called a decoder (although it does not produce a one-hot code).
+
+\newcommand{\sevenseg}[8]{%
+  \begin{tikzpicture}[scale=0.32, seg/.style={line width=2.6pt, line cap=round}]
+    \def\segc##1{\ifnum##1=1 \def\cc{FpgaRed}\else\def\cc{gray!20}\fi}
+    \segc{#1}\draw[seg, color=\cc] (0.2,4) -- (1.8,4);   % a
+    \segc{#2}\draw[seg, color=\cc] (2,3.8) -- (2,2.2);   % b
+    \segc{#3}\draw[seg, color=\cc] (2,1.8) -- (2,0.2);   % c
+    \segc{#4}\draw[seg, color=\cc] (0.2,0) -- (1.8,0);   % d
+    \segc{#5}\draw[seg, color=\cc] (0,1.8) -- (0,0.2);   % e
+    \segc{#6}\draw[seg, color=\cc] (0,3.8) -- (0,2.2);   % f
+    \segc{#7}\draw[seg, color=\cc] (0.2,2) -- (1.8,2);   % g
+    \node[font=\sffamily\scriptsize] at (1,-1.1) {#8};
+  \end{tikzpicture}}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.8, seg/.style={line width=4pt, line cap=round, FpgaRed}]
+  \draw[seg] (0.25,4) -- (1.75,4) node[midway, above=1mm, text=FpgaDark, font=\sffamily\small] {a};
+  \draw[seg] (2,3.75) -- (2,2.25) node[midway, right=1mm, text=FpgaDark, font=\sffamily\small] {b};
+  \draw[seg] (2,1.75) -- (2,0.25) node[midway, right=1mm, text=FpgaDark, font=\sffamily\small] {c};
+  \draw[seg] (0.25,0) -- (1.75,0) node[midway, below=1mm, text=FpgaDark, font=\sffamily\small] {d};
+  \draw[seg] (0,1.75) -- (0,0.25) node[midway, left=1mm, text=FpgaDark, font=\sffamily\small] {e};
+  \draw[seg] (0,3.75) -- (0,2.25) node[midway, left=1mm, text=FpgaDark, font=\sffamily\small] {f};
+  \draw[seg] (0.25,2) -- (1.75,2) node[midway, above=0.5mm, text=FpgaDark, font=\sffamily\small] {g};
+\end{tikzpicture}
+\hspace{12mm}
+\sevenseg1111110{0}\,\sevenseg0110000{1}\,\sevenseg1101101{2}\,\sevenseg1111001{3}\,\sevenseg0110011{4}\,%
+\sevenseg1011011{5}\,\sevenseg1011111{6}\,\sevenseg1110000{7}\,\sevenseg1111111{8}\,\sevenseg1111011{9}
+\caption{A seven-segment display: segment labels and the shapes of the digits}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Truth table of the seven-segment display decoder (1 means the segment is lit)}
+\label{tab:7seg}
+\small
+\begin{tabular}{c|cccc|ccccccc}
+\toprule
+Digit & $x_3$ & $x_2$ & $x_1$ & $x_0$ & a & b & c & d & e & f & g \\
+\midrule
+0 & 0&0&0&0 & 1&1&1&1&1&1&0 \\
+1 & 0&0&0&1 & 0&1&1&0&0&0&0 \\
+2 & 0&0&1&0 & 1&1&0&1&1&0&1 \\
+3 & 0&0&1&1 & 1&1&1&1&0&0&1 \\
+4 & 0&1&0&0 & 0&1&1&0&0&1&1 \\
+5 & 0&1&0&1 & 1&0&1&1&0&1&1 \\
+6 & 0&1&1&0 & 1&0&1&1&1&1&1 \\
+7 & 0&1&1&1 & 1&1&1&0&0&0&0 \\
+8 & 1&0&0&0 & 1&1&1&1&1&1&1 \\
+9 & 1&0&0&1 & 1&1&1&1&0&1&1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Each column a--g is a separate logic function of four
+variables. It can be simplified on a Karnaugh map and built from gates, as in
+Chapters~\ref{ch:comb} and~\ref{ch:minimize}. The codes $1010$--$1111$ are
+not digits, so nothing is required of them: for the
+segment functions they are don't-care states, and they make the
+minimal forms noticeably shorter.
+
+\textbf{Example: segment $e$.} In Table~\ref{tab:7seg}, segment $e$ is lit on
+the digits $0,2,6,8$. Let us draw the map for the function $e(x_3,x_2,x_1,x_0)$,
+marking the don't-care cells $10$--$15$ with the symbol $\times$.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[cell/.style={draw, minimum size=10mm, font=\sffamily\large}]
+  \foreach \c/\lab in {0/00, 1/01, 2/11, 3/10} \node[font=\sffamily\small] at (\c,0.85) {\lab};
+  \foreach \r/\lab in {0/00, 1/01, 2/11, 3/10} \node[font=\sffamily\small] at (-0.95,-\r) {\lab};
+  \node[font=\sffamily\small, anchor=south east] at (-0.5,0.9) {$x_3x_2\backslash x_1x_0$};  % e: 0,2,6,8 = 1; 1,3,4,5,7,9 = 0; 10..15 = x
+  \foreach \r/\c/\v in {0/0/1, 0/1/0, 0/2/0, 0/3/1,
+                        1/0/0, 1/1/0, 1/2/0, 1/3/1,
+                        2/0/x, 2/1/x, 2/2/x, 2/3/x,
+                        3/0/1, 3/1/0, 3/2/x, 3/3/x}
+    {\def\cc{white}
+     \if 1\v \def\cc{FpgaLight}\fi
+     \if x\v \def\cc{gray!25}\fi
+     \node[cell, fill=\cc] at (\c,-\r) {\if x\v$\times$\else\v\fi};}
+  \foreach \x/\y in {0/0, 3/0, 0/-3, 3/-3}
+    \draw[very thick, FpgaRed, rounded corners=4pt] (\x-0.44,\y+0.44) rectangle (\x+0.44,\y-0.44);
+  \draw[very thick, FpgaGreen, rounded corners=4pt] (2.62,0.38) rectangle (3.38,-3.38);
+  \node[font=\sffamily\small, text=FpgaRed, anchor=west] at (4.4,0.2) {$\overline{x_2}\,\overline{x_0}$ --- four corners};
+  \node[font=\sffamily\small, text=FpgaGreen, anchor=west] at (4.4,-0.6) {$x_1\overline{x_0}$ --- right column};
+  \node[font=\sffamily\small\bfseries, anchor=west] at (4.4,-1.6) {$e=\overline{x_0}\,(\overline{x_2}+x_1)$};
+\end{tikzpicture}
+\caption{Segment $e$ on a Karnaugh map: the don't-care cells allow two large groups of four cells}
+\label{fig:seg_e}
+\end{figure}
+
+The four corners (cells $0,2,8,10$) give $\overline{x_2}\,\overline{x_0}$,
+and the right column (cells $2,6,10,14$) gives $x_1\overline{x_0}$. We add them and
+factor out the common term: $e=\overline{x_0}(\overline{x_2}+x_1)$, just three
+gates instead of seven terms of four letters each. Let us check on digits:
+for $4$ ($0100$) we get $1\cdot(0+0)=0$, and segment $e$ is off; for $6$
+($0110$) we get $1\cdot(0+1)=1$, and it is lit. Similarly, segment $c$ is off only
+on the digit 2, and its minimal form is $c=x_2+\overline{x_1}+x_0$.
+
+\begin{warnbox}[Active level]
+Many real displays have a common anode: a segment lights not when the
+decoder output is one but when it is \emph{zero}. Then all seven outputs must be
+inverted. If on the board you saw a ``negative'' instead of a digit, the likely
+cause is exactly this, not a mistake in the table.
+\end{warnbox}
+
+\begin{diybox}[A digit on seven segments]
+\textbf{Task.} \stars{1} Show the digits $0\ldots9$ on the display.
+\stars{2} Add the hexadecimal digits $A\ldots F$ and see
+how they differ from the ``digits.'' \stars{3} Find the minimal form of
+segment $c$ and build it from two gates: $c=x_2+\overline{x_1}+x_0$.
+
+\textbf{In Logra.} \stars{1} The lesson \emph{``A digit on seven segments''} (book
+``Displays''); the example \code{segment-decoder} (the example library).
+\stars{2} The lesson \emph{``Digits from 0 to F''}. \stars{3} The \emph{Designer}
+tab: an OR block with three inputs and an inverter.
+
+\textbf{Expected result.} A seven-bit output; the least significant bit is segment
+$a$, the most significant is $g$. For the digit 1 you get \code{0000110} ($b$ and $c$ lit).
+For the codes $10$--$15$ the ``BCD\,$\to$\,7 segments'' block turns all
+segments off, that is, it chooses zeros for the don't-care states.
+
+\textbf{How to check.} The \emph{Waveforms} tab: sweep $0$--$9$
+and compare with Table~\ref{tab:7seg}. For your own segment
+$c$, compare the output with one column of the table on all ten digits; on
+$10$--$15$ the result does not matter.
+\end{diybox}
+
+\section{The encoder}
+
+An \term{encoder} (labeled CD in schematics) performs the inverse
+conversion: from a one-hot code on $2^n$ inputs it produces the $n$-bit
+binary number of the line that carries the one.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.38\textwidth}
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=FpgaLight] (0,0) rectangle (2.6,3.0);
+  \draw[thick] (0.6,0) -- (0.6,3.0); \draw[thick] (2.0,0) -- (2.0,3.0);
+  \node[font=\sffamily\bfseries\large] at (1.3,1.5) {CD};
+  \foreach \i in {0,...,3} {
+    \draw[wire] (-0.6,2.4-\i*0.65) node[left] {$x_\i$} -- (0,2.4-\i*0.65);
+    \node[font=\sffamily\small] at (0.3,2.4-\i*0.65) {\i};
+  }
+  \foreach \i/\w in {0/1, 1/2} {
+    \draw[wire] (2.6,1.9-\i*0.9) -- (3.2,1.9-\i*0.9) node[right] {$y_\i$};
+    \node[font=\sffamily\small] at (2.3,1.9-\i*0.9) {\w};
+  }
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.58\textwidth}
+\centering
+\begin{tabular}{cccc|cc}
+\toprule
+$x_0$ & $x_1$ & $x_2$ & $x_3$ & $y_1$ & $y_0$ \\
+\midrule
+1 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & 1 \\
+0 & 0 & 1 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1 & 1 & 1 \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\caption{A $4\to2$ encoder: symbol and truth table}
+\end{figure}
+
+The table shows that $y_0$ equals 1 when line 1 or 3 is active; $y_1$ when
+line 2 or 3 is active. So the encoder is built from OR gates alone:
+\[
+  y_0 = x_1 + x_3, \qquad y_1 = x_2 + x_3.
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \foreach \i in {0,...,3} \draw[very thick, FpgaBlue] (\i*0.7,0.6) node[above, text=FpgaDark] {$x_\i$} -- (\i*0.7,-2.4);
+  \node[gOR] (o0) at (4.2,-0.4) {};
+  \node[gOR] (o1) at (4.2,-1.7) {};
+  \draw[wire] (o0.input 1) -- (0.7,0 |- o0.input 1) node[circle, fill, inner sep=1.1pt] {};
+  \draw[wire] (o0.input 2) -- (2.1,0 |- o0.input 2) node[circle, fill, inner sep=1.1pt] {};
+  \draw[wire] (o1.input 1) -- (1.4,0 |- o1.input 1) node[circle, fill, inner sep=1.1pt] {};
+  \draw[wire] (o1.input 2) -- (2.1,0 |- o1.input 2) node[circle, fill, inner sep=1.1pt] {};
+  \draw[wire] (o0.output) -- ++(0.6,0) node[right] {$y_0$};
+  \draw[wire] (o1.output) -- ++(0.6,0) node[right] {$y_1$};
+  \node[lbl, text=FpgaGray] at (0,-2.7) {unused};
+\end{tikzpicture}
+\caption{A $4\to2$ encoder from two OR gates}
+\end{figure}
+
+\subsection{The priority encoder}
+
+What happens if a one appears on two inputs at once, for example if
+buttons 1 and 2 are pressed at the same time? The simple encoder outputs $y_1y_0 = 11$, that is,
+the number 3, which is plainly an error. So in practice a
+\term{priority encoder} is used: it outputs the number of the \emph{highest} active
+input and ignores the others. An additional output $V$ (valid) shows
+that at least one input is active.
+
+\begin{table}[H]
+\centering
+\caption{A $4\to2$ priority encoder ($\times$ means the value does not matter)}
+\begin{tabular}{cccc|ccc}
+\toprule
+$x_3$ & $x_2$ & $x_1$ & $x_0$ & $y_1$ & $y_0$ & $V$ \\
+\midrule
+0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0 & 0 & 1 \\
+0 & 0 & 1 & $\times$ & 0 & 1 & 1 \\
+0 & 1 & $\times$ & $\times$ & 1 & 0 & 1 \\
+1 & $\times$ & $\times$ & $\times$ & 1 & 1 & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The expressions: $y_1 = x_3 + x_2$, \ $y_0 = x_3 + \overline{x_2}\,x_1$, \
+$V = x_3 + x_2 + x_1 + x_0$.
+
+\begin{infobox}[Where encoders are used]
+\begin{itemize}
+  \item \textbf{Keyboards}: the number of the pressed key is turned into a code.
+  \item \textbf{Interrupt controllers}: of several simultaneous requests,
+        the number of the most important one is passed to the processor.
+  \item \textbf{Position sensors}: from the readings of a row of photosensors
+        you get a number, the coordinate.
+\end{itemize}
+\end{infobox}
+
+Why the highest and not the lowest? The convention is arbitrary; what matters
+is only that it is \emph{the same} everywhere: in the keyboard, in the interrupt
+controller, in the security panel. In the panel this means: if zones~1 and~3 trigger
+at the same time, the display will show the number~3, and the guard
+will go where it is ``more important.'' The output $V$ is needed to tell ``zone~0
+triggered'' from ``nothing triggered'': in both cases $y_1y_0=00$.
+
+\begin{diybox}[Encoder and priority]
+\textbf{Task.} \stars{1} For the inputs $x_3x_2x_1x_0=0101$ and $1010$,
+determine the output of the priority encoder ($y_1y_0$, $V$). \stars{2}
+Build an encoder from OR gates using the formulas $y_0=x_1+x_3$,
+$y_1=x_2+x_3$ and compare it with the priority encoder when there are two ones on the input.
+\stars{3} Add the output $V$ to the priority encoder using gates
+(the formula $V=x_3+x_2+x_1+x_0$).
+
+\textbf{In Logra.} \stars{1} The lesson \emph{``Priority encoder''} (book
+``Selection and distribution''); the example \code{priority} (the example library).
+\stars{2}, \stars{3} The \emph{Designer} tab: OR, NOT, and AND blocks.
+
+\textbf{Expected result.} For $0101$: $y_1y_0=10$, $V=1$; for $1010$:
+$y_1y_0=11$, $V=1$. With two ones the simple encoder outputs
+the \emph{wrong} number: for example, with $x_1=x_2=1$ it gives $11$, that is,
+the number~3, which is not on the input.
+
+\textbf{How to check.} The \emph{Waveforms} tab: apply all
+16 combinations to $x$; make sure that with a one in $x_3$ you always get $y=11$,
+and that $V=0$ only when $x=0000$.
+\end{diybox}
+
+\section{Code converters}
+
+Decoders and encoders are special cases of \term{code converters}.
+Another useful example is the conversion of binary code to \term{Gray code}, in
+which adjacent numbers differ in exactly one bit. This matters for
+shaft angle sensors: on the transition from 3 (\code{011}) to 4 (\code{100}), three bits
+change at once in binary code, and at the intermediate moment the sensor may output
+anything. In Gray code only one bit changes. (This is the same
+mechanism as the glitches in Chapter~\ref{ch:comb}: several signals change
+at different times, and a false value flashes between them.)
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.45\textwidth}
+\centering
+\begin{tabular}{c c c}
+\toprule
+\textbf{Number} & \textbf{Binary} & \textbf{Gray} \\
+\midrule
+0 & \code{000} & \code{000} \\
+1 & \code{001} & \code{001} \\
+2 & \code{010} & \code{011} \\
+3 & \code{011} & \code{010} \\
+4 & \code{100} & \code{110} \\
+5 & \code{101} & \code{111} \\
+6 & \code{110} & \code{101} \\
+7 & \code{111} & \code{100} \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}{0.5\textwidth}
+\centering
+\begin{tikzpicture}
+  \draw[very thick, FpgaBlue] (0,0) node[left, text=FpgaDark] {$b_2$} -- (3.2,0) node[right, text=FpgaDark] {$g_2$};
+  \node[gXOR, minimum width=10mm, minimum height=7mm] (x1) at (2.2,-1.0) {};
+  \node[gXOR, minimum width=10mm, minimum height=7mm] (x0) at (2.2,-2.2) {};
+  \draw[wire] (x1.input 1) -- (0.6,0 |- x1.input 1) -- (0.6,0); \fill (0.6,0) circle (1.3pt);
+  \draw[wire] (x1.input 2) -- (0,0 |- x1.input 2) node[left] {$b_1$};
+  \fill (1.0,0 |- x1.input 2) circle (1.3pt);
+  \draw[wire] (x0.input 1) -- (1.0,0 |- x0.input 1) -- (1.0,0 |- x1.input 2);
+  \draw[wire] (x0.input 2) -- (0,0 |- x0.input 2) node[left] {$b_0$};
+  \draw[wire] (x1.output) -- ++(0.5,0) node[right] {$g_1$};
+  \draw[wire] (x0.output) -- ++(0.5,0) node[right] {$g_0$};
+\end{tikzpicture}
+
+\small $g_i = b_{i+1} \oplus b_i$
+\end{minipage}
+\caption{Binary code and Gray code; a converter built from ``exclusive OR'' gates}
+\end{figure}
+
+The inverse conversion goes as a ``chain'': the high bit stays, and each
+next bit equals the XOR of the binary bit already obtained and the current Gray bit,
+$b_{n-1}=g_{n-1}$, $b_i=b_{i+1}\oplus g_i$. For example, the Gray code \code{110}
+gives $b_2=1$, $b_1=1\oplus1=0$, $b_0=0\oplus0=0$, that is, the binary
+\code{100} (the number~4). The forward conversion is simpler: each Gray
+bit depends only on two adjacent binary bits, so all the XORs work
+in parallel, with no chain.
+
+\begin{diybox}[Gray code]
+\textbf{Task.} \stars{1} Write the numbers $0\ldots7$ in Gray code and
+check that adjacent ones differ in one bit. \stars{2} Build a
+converter from binary code to Gray code from XOR gates for three bits.
+\stars{3} Build the inverse converter and make sure that the double
+conversion returns the original number.
+
+\textbf{In Logra.} \stars{1} The lesson \emph{``Gray code with a block''} (book ``Comparison
+and codes''). \stars{2} The \emph{Designer} tab: two XOR blocks. The example
+\code{gray} (the example library): compare \code{binary} and \code{gray} on
+the transition $3\to4$. \stars{3} The example \code{binary-onehot} as a model of
+a ``code $\to$ code'' conversion.
+
+\textbf{Expected result.} On the transition $3\to4$, three
+bits of the binary code change and one bit of the Gray code. The double conversion
+returns the number.
+
+\textbf{How to check.} The \emph{Waveforms} tab: drive the input $b$ with a
+counter $0$--$7$ and count how many Gray bits change on
+each step; there should be exactly one change everywhere.
+\end{diybox}
+
+\section{Running project: the zone number on the display}
+
+Let us put everything we have learned into one security panel circuit. There are four zone sensors
+$z_3z_2z_1z_0$ (zone~0 means ``nothing triggered''). A priority encoder
+turns them into a number ($2$ bits). The display needs a digit in the form of
+four bits, so we prepend two zeros to the number on the left. The decoder for the
+display converts the digit into seven segments.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=15mm, block/.append style={minimum width=22mm, font=\sffamily\footnotesize}]
+  \node[block] (enc) {Priority\\encoder};
+  \node[block, right=of enc] (cat) {Concatenation\\\code{00}\,\&\,number};
+  \node[block, right=of cat] (seg) {BCD$\to$7\\segments};
+  \node[block, right=of seg] (ind) {Display\\$a\ldots g$};
+  \draw[arr] ($(enc.west)+(-0.9,0)$) node[left] {$z$ (4)} -- (enc.west);
+  \draw[arr] (enc.east) -- node[above, lbl] {2 bits} (cat.west);
+  \draw[arr] (cat.east) -- node[above, lbl] {4 bits} (seg.west);
+  \draw[arr] (seg.east) -- node[above, lbl] {7 bits} (ind.west);
+\end{tikzpicture}
+\caption{Stage~4a of the ``Security Panel'' project: from four zone sensors to a digit on the display}
+\label{fig:zone_display}
+\end{figure}
+
+What the result should be (the higher zone has priority):
+
+\begin{table}[H]
+\centering
+\caption{Test table for the zone number}
+\begin{tabular}{c|c|c}
+\toprule
+Sensors $z_3z_2z_1z_0$ & Number on the display & Comment \\
+\midrule
+\code{0000} & 0 & all quiet \\
+\code{0010} & 1 & zone 1 triggered \\
+\code{0100} & 2 & zone 2 triggered \\
+\code{1000} & 3 & zone 3 triggered \\
+\code{0110} & 2 & two zones: show the higher one \\
+\code{1010} & 3 & two zones: show the higher one \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{diybox}[Security Panel: stage 4a, the zone number]
+\textbf{Task.} \stars{1} Build the chain ``priority encoder
+$\to$ concatenation $\to$ BCD$\to$7 segments'' and check all six
+rows of the table. \stars{2} Use the encoder output $V$ so that for
+$z=0000$ the display goes dark instead of showing ``0'' (pass each segment
+through an AND with $V$). \stars{3} \emph{A stage of the ``Security Panel'' project:} instead of
+going dark, show a dash ``$-$'' when all is quiet (only segment
+$g$ is lit): pass the segments $a\ldots f$ through an AND with $V$, and segment $g$
+through an OR with $\overline V$.
+
+\textbf{In Logra.} The \emph{Designer} tab. The blocks ``Priority
+encoder'' (width 4), ``Bus concatenation,'' ``Constant,'' and ``BCD\,$\to$\,7
+segments'' from the ``Select'' group. Models: the lessons \emph{``Priority
+encoder''} and \emph{``A digit on seven segments''}; the example
+\code{segment-decoder} (the example library).
+
+\textbf{Expected result.} A seven-bit output: for zone~1 the code
+\code{0000110}, for zone~2 \code{1011011}, for zone~3
+\code{1001111}; for zone~0 \code{0111111} (in variant \stars{2}
+all zeros, in variant \stars{3} \code{1000000}).
+
+\textbf{How to check.} Acceptance criterion: all six rows of the table give the
+expected codes on the \emph{Waveforms} tab. On the \emph{RTL} tab you can see
+three main blocks. The result of this stage will come in handy in the chapter where
+we teach the circuit to compare numbers.
+\end{diybox}
+
+\begin{warnbox}[Common mistakes]
+\begin{itemize}
+  \item \textbf{Mixing up the order of bits.} In a decoder, $a_0$ is the least significant
+        bit of the number. If you swap $a_0$ and $a_1$, the wrong line will light, but the
+        circuit will still be ``working.'' Test with the number 1 ($01$), not 0 or 3.
+  \item \textbf{Forgetting the enable input.} When $E=0$ all outputs are zero.
+        If the circuit is ``silent,'' check $E$ first.
+  \item \textbf{A simple encoder where several inputs may be active.}
+        Two ones on the input give a wrong number. If simultaneous events
+        are possible, you need a priority encoder, and $V$ for the ``nothing there'' case.
+  \item \textbf{The display shows a ``negative.''} Common anode: a segment
+        lights at zero, and you are applying one. You need inverters on all seven
+        outputs.
+\end{itemize}
+\end{warnbox}
+
+\begin{ideabox}
+\textbf{Decoder}: a number $\to$ a one on one of $2^n$ outputs.
+\textbf{Encoder}: a one on one of the inputs $\to$ its number.
+\textbf{A priority encoder}, when several inputs are active, chooses the highest.
+\textbf{Gray code} changes one bit per step. A digital display is also a
+decoder, only its output is not a ``one hot line'' but a set of segments.
+\end{ideabox}
+
+\section{Questions and problems}
+\label{sec:tasks-coders}
+
+The answers are collected in Appendix~\ref{app:answers}.
+
+\begin{taskbox}[Problems for the chapter]
+\begin{enumerate}
+  \item \stars{1}~A $3\to 8$ decoder: how many inputs and outputs does it have? Which line is active if the input is 101?
+  \item \stars{1}~Write the expressions for all four outputs of a $2\to 4$ decoder with an enable input EN.
+  \item \stars{1}~Which segments of a seven-segment display must be lit for the digit 7 (segments $a$--$g$ in the standard layout)?
+  \item \stars{1}~A $4\to 2$ priority encoder has inputs $I_3I_2I_1I_0 = 0110$. What code is on the output and why?
+  \item \stars{1}~Write the number 6 in binary code and in Gray code. Why is Gray code convenient for angle sensors?
+  \item \stars{2}~How many $2\to 4$ decoders are needed to build a $4\to 16$ decoder?
+  \item \stars{2}~Find the minimal form of segment $c$ of a seven-segment display, treating the codes $10$--$15$ as don't-care. How many gates are needed?
+  \item \stars{2}~Convert the Gray code \code{110} to binary code. Then check the result with the inverse conversion.
+  \item \stars{2}~\emph{Find the error.} A student built a $4\to2$ encoder from two OR gates ($y_0=x_1+x_3$, $y_1=x_2+x_3$) and got the code $11$ for the inputs $x_3x_2x_1x_0=0110$. He believes it should be $10$. Who is right? What needs to be changed in the circuit?
+  \item \stars{2}~\emph{Find the error.} For the number 5, a student wrote the Gray code \code{100}, ``just by shifting the number.'' What is the actual Gray code of the number 5? Which number does \code{100} correspond to?
+  \item \stars{3}~\emph{A project with an acceptance criterion (a stage of the ``Security Panel'' project, 4a).} In the Designer, build the chain ``priority encoder $\to$ concatenation $\to$ BCD$\to$7 segments'' for four zone sensors. Acceptance criterion: all rows of the test table (zone zero, zones 1, 2, 3, two zones at once) give the correct segment code on the Waveforms tab.
+  \item \stars{3}~\emph{A project with an acceptance criterion.} Build a $3\to8$ decoder from two $2\to4$ decoders with an enable input. Acceptance criterion: for each of the eight numbers exactly one line is active, and for $E=0$ all outputs are zero.
+  \item \stars{3}~\emph{A project with an acceptance criterion.} Build a converter from $3$-bit binary code to Gray code and back. Acceptance criterion: with the double conversion the output equals the input on all eight values, and on the output of the forward converter, while counting $0$--$7$, exactly one bit changes on each step.
+\end{enumerate}
+\end{taskbox}
+
+\section{What's next}
+
+We can now turn a number into a ``one-hot line'' and back, show
+a digit on a display, and safely read the position of a sensor. One
+related task remains: not just to light one line, but to \emph{select} one of
+several signals and pass it to a single output. Today's
+decoder, combined with AND gates, turns exactly into such a
+selector: a multiplexer. The next chapter is devoted to it.

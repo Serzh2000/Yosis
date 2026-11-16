@@ -1,0 +1,323 @@
+\chapter{Building a Processor}
+\label{ch:cpu}
+
+We have studied adders, registers, counters, memory, and finite-state machines.
+Together they make up a processor. In this chapter we will build one from start
+to finish: an eight-bit processor with ten instructions that runs a program from
+ROM and can, for example, compute Fibonacci numbers. It takes a few dozen lines
+of Verilog and runs in Logra. This is the finale of the book: every building
+block we have studied will be needed here.
+
+\section{What a Processor Is Made Of}
+
+Every processor splits into two parts: the \term{datapath}, where numbers are
+stored and transformed, and the \term{control unit}, which decides what to do
+on each clock cycle.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\small, bx/.style={draw, minimum width=24mm, minimum height=11mm, fill=white, rounded corners=2pt, align=center}]
+  \node[bx, fill=FpgaLight] (pc) at (0,3) {Program\\counter PC};
+  \node[bx] (rom) at (4,3) {Program\\ROM};
+  \node[bx] (ir) at (9,3) {Instruction\\register IR};
+  \node[bx, fill=green!10] (ctl) at (9,0.8) {Control\\FSM};
+  \node[bx, fill=FpgaLight] (acc) at (0,0.8) {Accumulator\\ACC};
+  \node[bx] (alu) at (0,-1.5) {Adder /\\subtractor};
+  \node[bx] (ram) at (4,-1.5) {Data RAM\\16$\times$8};
+  \draw[-{Stealth}] (pc) -- node[above] {address} (rom);
+  \draw[-{Stealth}] (rom) -- node[above] {instruction} (ir);
+  \draw[-{Stealth}] (ir) -- (ctl);
+  \draw[-{Stealth}] (ctl.west) -- ++(-1.0,0) |- (acc.east) node[pos=0.25, above, font=\sffamily\scriptsize] {control};
+  \draw[-{Stealth}] (acc) -- (alu);
+  \draw[-{Stealth}] (ram) -- (alu);
+  \draw[-{Stealth}] (alu.west) -- ++(-0.7,0) |- (acc.west);
+  \draw[-{Stealth}] (acc.south east) -- (ram.north west);
+\end{tikzpicture}
+\caption{Processor structure. The datapath is on the left, the control unit on the right}
+\end{figure}
+
+\begin{itemize}
+  \item The \textbf{program counter} (PC) holds the address of the next instruction
+        and increases by one after each fetch---an ordinary counter from
+        Chapter~\ref{ch:regs}.
+  \item The \textbf{program ROM} holds the instruction codes. To the processor it is
+        a table: given an address, it returns an instruction (Chapter~\ref{ch:sync}).
+  \item The \textbf{instruction register} (IR) holds the instruction while it executes.
+  \item The \textbf{accumulator} (ACC) is the main register: it holds the result of
+        every operation.
+  \item The \textbf{adder/subtractor} is the ALU from Chapter~\ref{ch:arith}.
+  \item The \textbf{data RAM} has 16 cells of 8 bits for intermediate values.
+  \item The \textbf{control FSM} is a finite-state machine with two states,
+        ``fetch an instruction'' and ``execute'', which generates all the control
+        signals.
+\end{itemize}
+
+An organization in which program memory and data memory are separate is called a
+\term{Harvard architecture}. Desktop computers use a shared memory (the von
+Neumann architecture), but in an FPGA separate blocks are simpler: each has its
+own ports.
+
+\begin{diybox}[Find the processor blocks in the RTL]
+\textbf{Task.} Match the blocks in the structure figure with the elements of the schematic that the synthesizer builds.
+
+\textbf{In Logra.} The ``From an example'' card $\to$ ``A tiny processor: fetch and execute'', or \code{tiny\_cpu.v} from the book; Code tab $\to$ ``Synthesize''; RTL tab (the ``Check'' group).
+
+\textbf{Expected result.} The schematic shows the flip-flops \code{pc}, \code{ir}, \code{acc}, \code{out}, the memory \code{ram}, an adder, and multiplexers. The schematic is large (about fifty elements), so look for what you need by name rather than by position.
+
+\textbf{How to check.} Compare the names with Fig.~\ref{fig:n-cpu-rtl}: every name in a box must be found on the RTL.
+
+\stars{1} repeat: find \code{pc}, \code{ir}, \code{acc}. \stars{2} change: rename \code{acc} to \code{a} and see what changes on the schematic. \stars{3} project: ``Security Panel'' stage---the processor as a service block; acceptance criterion: a table ``panel function $\to$ processor block that performs it'' is written.
+\end{diybox}
+
+\section{The Instruction Set}
+
+An instruction occupies one byte: the upper 4 bits are the opcode and the lower 4
+are the operand (a number or the address of a RAM cell).
+
+\begin{table}[H]
+\centering
+\caption{The processor instruction set}
+\small
+\begin{tabular}{clll}
+\toprule
+\textbf{Code} & \textbf{Mnemonic} & \textbf{Action} & \textbf{Operand} \\
+\midrule
+0 & NOP & do nothing & --- \\
+1 & LDI $k$ & ACC $\leftarrow k$ & number 0--15 \\
+2 & ADD $a$ & ACC $\leftarrow$ ACC + RAM[$a$] & address \\
+3 & STA $a$ & RAM[$a$] $\leftarrow$ ACC & address \\
+4 & LDA $a$ & ACC $\leftarrow$ RAM[$a$] & address \\
+5 & SUB $a$ & ACC $\leftarrow$ ACC $-$ RAM[$a$] & address \\
+6 & JMP $a$ & PC $\leftarrow a$ & instruction address \\
+7 & JZ $a$ & if ACC = 0, then PC $\leftarrow a$ & instruction address \\
+8 & OUT & show ACC on the output & --- \\
+9 & HLT & stop & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The short instruction names are called \term{mnemonics}. A program written in
+mnemonics is called assembly text, and translating it into numbers is the job of
+an assembler. For us this takes a minute of manual work: LDI 1 is \code{0x11},
+STA 1 is \code{0x31}, and so on.
+
+\begin{diybox}[Your own assembler by hand]
+\textbf{Task.} Write a program that adds 1 and 2 and outputs the result, and translate it into codes.
+
+\textbf{In Logra.} Code tab: in the \code{rom} function, replace the \code{case} branches with the values \code{11 30 12 20 80 90}. This is \code{LDI 1; STA 0; LDI 2; ADD 0; OUT; HLT}. Waveforms tab: \code{pc}, \code{acc}, \code{out}.
+
+\textbf{Expected result.} After \code{OUT}, the value of \code{out} is 3, and then the processor stops (\code{HLT}).
+
+\textbf{How to check.} Waveforms: number of cycles 20; \code{pc} goes $0,1,2,3,4,5$ and no longer grows.
+
+\stars{1} repeat: the program $1+2$. \stars{2} change: compute $5-3$ with \code{SUB} instructions. \stars{3} project: ``Security Panel'' stage---a program using processor instructions; acceptance criterion: a table of addresses and codes is written, the value of \code{out} is predicted from it by hand, and it matches the waveform.
+\end{diybox}
+
+\section{A Program: Fibonacci Numbers}
+
+Each Fibonacci number equals the sum of the two previous ones: $0, 1, 1, 2, 3, 5, 8,
+13, \ldots$. We will keep two numbers $a$ and $b$ in RAM cells 0 and 1 and a
+temporary value $t$ in cell 2. At each step we show $a$, then compute $a+b$ and
+shift the pair: $a \leftarrow b$, $b \leftarrow t$.
+
+\begin{table}[H]
+\centering
+\caption{A program that computes Fibonacci numbers}
+\small
+\begin{tabular}{rllll}
+\toprule
+\textbf{Address} & \textbf{Code} & \textbf{Instruction} & \textbf{Meaning} \\
+\midrule
+0 & \code{0x11} & LDI 1 & \\
+1 & \code{0x31} & STA 1 & $b = 1$ \\
+2 & \code{0x10} & LDI 0 & \\
+3 & \code{0x30} & STA 0 & $a = 0$ \\
+4 & \code{0x40} & LDA 0 & \textbf{loop start} \\
+5 & \code{0x80} & OUT & show $a$ \\
+6 & \code{0x21} & ADD 1 & ACC $= a + b$ \\
+7 & \code{0x32} & STA 2 & $t = a + b$ \\
+8 & \code{0x41} & LDA 1 & \\
+9 & \code{0x30} & STA 0 & $a = b$ \\
+10 & \code{0x42} & LDA 2 & \\
+11 & \code{0x31} & STA 1 & $b = t$ \\
+12 & \code{0x64} & JMP 4 & back to the loop start \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{diybox}[Fibonacci numbers step by step]
+\textbf{Task.} Run the program from the table on the waveform and check every number.
+
+\textbf{In Logra.} A project with \code{tiny\_cpu.v}; Waveforms tab: number of cycles 140, signals \code{pc}, \code{ir}, \code{acc}, \code{out}.
+
+\textbf{Expected result.} \code{out} shows $0, 1, 1, 2, 3, 5, 8, 13, \ldots$ in turn; one pass of the loop takes 18 clock cycles.
+
+\textbf{How to check.} Waveforms: Fig.~\ref{fig:n-cpu-wave} shows \code{pc} returning to \code{0x4} on the \code{JMP 4} instruction.
+
+\stars{1} repeat: the first six numbers. \stars{2} change: start with $a=1$, $b=2$ (change the constants in the first four instructions) and predict the sequence. \stars{3} project: ``Security Panel'' stage---a counter of code entry attempts; acceptance criterion: the program outputs 3, 2, 1, 0 and stops.
+\end{diybox}
+
+\section{Description in Verilog}
+
+The processor is written in a single module. The comments list all the
+instructions first; the ROM is described by a function with a \code{case}
+statement---this is the table of codes from the previous section.
+
+\vfile{\codepath/09_cpu/tiny_cpu.v}{code/09\_cpu/tiny\_cpu.v}
+
+Let us look at the control unit. The \code{phase} register holds the current
+state of the FSM. In phase 0 the processor reads an instruction from the ROM into
+the \code{ir} register and increments the \code{pc} counter; in phase 1 it
+executes it: a \code{case} statement on the opcode chooses what to write into the
+accumulator, into RAM, or into the program counter. This is why each instruction
+takes two clock cycles. Figure~\ref{fig:n-cpu-rtl} shows the same blocks with the
+same names as in the code: use it to read the RTL tab, where the automatic layout
+shows half a hundred elements and hundreds of connections.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\scriptsize,
+  bx/.style={draw=FpgaBlue, thick, rounded corners=2pt, minimum width=24mm, minimum height=11mm, align=center, fill=white},
+  reg/.style={bx, fill=FpgaLight},
+  mem/.style={bx, fill=orange!12, draw=FpgaOrange},
+  ctlb/.style={bx, fill=green!10, draw=FpgaGreen, minimum height=9mm},
+  d/.style={-{Stealth[length=2mm]}, thick, FpgaDark},
+  c/.style={-{Stealth[length=2mm]}, thick, FpgaGreen!60!black, dashed},
+  t/.style={font=\sffamily\tiny, text=FpgaDark, inner sep=1.5pt}]
+  % top row: instruction fetch
+  \node[reg] (pc)  at (0,0)    {Program counter\\{\ttfamily pc[3:0]}};
+  \node[mem] (rom) at (3.5,0)  {Program ROM\\{\ttfamily rom(pc)}};
+  \node[reg] (ir)  at (7.0,0)  {Instruction reg.\\{\ttfamily ir[7:0]}};
+  \draw[d] (pc) -- node[t, above] {address} (rom);
+  \draw[d] (rom) -- node[t, above] {instruction} (ir);
+  % control unit
+  \node[ctlb, minimum width=95mm] (ctl) at (3.5,-2.3) {Control FSM: {\ttfamily phase} (fetch / execute), {\ttfamily case (op)}};
+  \draw[d] (ir.south) -- node[t, right] {{\ttfamily op = ir[7:4]}} (ir.south |- ctl.north);
+  \draw[d] (ctl.west) -- ++(-0.6,0) |- node[t, pos=0.25, left] {{\ttfamily pc <= arg} (JMP, JZ)} (pc.west);
+  % bottom row: datapath
+  \node[reg] (acc) at (0,-5.2)  {Accumulator\\{\ttfamily acc[7:0]}};
+  \node[bx]  (alu) at (3.5,-5.2) {Adder /\\subtractor};
+  \node[mem] (ram) at (7.0,-5.2) {Data RAM\\{\ttfamily ram[0:15]}};
+  \draw[c] (acc.north |- ctl.south) -- node[t, right] {load} (acc.north);
+  \draw[c] (alu.north |- ctl.south) -- node[t, right] {$+$ or $-$} (alu.north);
+  \draw[c] (ram.north |- ctl.south) -- node[t, right] {write} (ram.north);
+  \draw[d] ([yshift=2mm]acc.east) -- node[t, above] {acc} ([yshift=2mm]alu.west);
+  \draw[d] ([yshift=-2mm]alu.west) -- node[t, below] {result} ([yshift=-2mm]acc.east);
+  \draw[d] (ram.west) -- node[t, above] {ram[arg]} (alu.east);
+  % RAM address from the low bits of the instruction
+  \draw[d] (ir.east) -- ++(1.0,0) |- node[t, pos=0.25, right] {{\ttfamily arg = ir[3:0]}} (ram.east);
+  % accumulator write to RAM (STA) and output (OUT)
+  \draw[d] (acc.south) -- ++(0,-0.9) -| node[t, pos=0.25, below] {acc $\to$ ram (STA)} (ram.south);
+  \draw[d] (acc.west) -- ++(-1.0,0) node[t, left] {{\ttfamily out[7:0]} (OUT)};
+\end{tikzpicture}
+\caption{Processor structure with the names from the code. Solid arrows are data, dashed ones are control signals}
+\label{fig:n-cpu-rtl}
+\end{figure}
+
+
+\begin{diybox}[The control FSM: phase and instruction]
+\textbf{Task.} Work out how the \code{phase} register splits the work into fetch and execute.
+
+\textbf{In Logra.} \code{tiny\_cpu.v}; Waveforms tab: signals \code{phase}, \code{pc}, \code{ir}, \code{acc}.
+
+\textbf{Expected result.} \code{phase} alternates $0,1,0,1,\ldots$; \code{pc} grows only in phase 0; \code{acc} changes only in phase 1.
+
+\textbf{How to check.} Waveforms: make sure that every instruction takes exactly two clock cycles. On the RTL, find the \code{phase} register.
+
+\stars{1} repeat: find the clock cycle on which \code{ir} receives \code{0x31}. \stars{2} change: make the \code{HLT} state visible---output \code{halted} as a port. \stars{3} project: ``Security Panel'' stage---control of the processor; acceptance criterion: on the \code{rst} signal the processor returns to the fetch state with \code{pc = 0}.
+\end{diybox}
+
+\section{Running It in Logra}
+
+Open the Waveforms tab, set the number of cycles to 140 in the scenario
+settings, and run the simulation. Select \code{pc}, \code{ir}, \code{acc}, and
+\code{out} in the signal list.
+
+\shot{n-cpu-wave}{The processor runs the program: the counter \code{pc} walks through the addresses, \code{ir} shows the instruction codes, and the numbers 0, 1, 2, 3, 5, 8 appear in \code{out}}{fig:n-cpu-wave}
+
+On the waveform (Fig.~\ref{fig:n-cpu-wave}) you can follow the processor at work:
+the counter \code{pc} takes the values 0, 1, 2, and so on in turn, the register
+\code{ir} contains the instruction codes from the table (\code{0x11}, \code{0x31},
+\code{0x10}, \ldots), values appear in the accumulator \code{acc}, and after each
+\code{OUT} instruction the next Fibonacci number appears in \code{out}. Because
+the first two numbers (1 and 1) are equal, the output stays at 1 longer on the
+waveform. After address 12 the \code{JMP 4} instruction returns the counter to
+the start of the loop: that is why \code{pc} on the waveform again shows
+\code{0x4}.
+
+\begin{ideabox}
+A processor is just a finite-state machine whose state contains registers (PC,
+IR, ACC) and whose memory works as a program ROM. We have already studied
+everything that is needed: a counter, an adder, a register, an instruction
+decoder, a multiplexer, memory, and an FSM. Modern processors differ in scale
+(pipelines, caches, hundreds of instructions), but not in principle.
+\end{ideabox}
+
+\begin{diybox}[Slow the processor down for LEDs]
+\textbf{Task.} Output \code{out} to the board LEDs so that you can see the numbers with your eyes.
+
+\textbf{In Logra.} Code tab: add a divider with an enable pulse \code{tick} (Chapter~\ref{ch:clocks}) and execute a processor step only when \code{tick = 1}. Connect \code{out[5:0]} to \code{led}. Pins tab: assign the LEDs.
+
+\textbf{Expected result.} The LEDs show the Fibonacci sequence in binary, changing once every 0.5~s.
+
+\textbf{How to check.} Waveforms: with a reduced divider, \code{out} changes every $N$ clock cycles. Then the Lab tab or the board.
+
+\stars{1} repeat: the values of \code{out} on the waveform. \stars{2} change: make it twice as fast. \stars{3} project: ``Security Panel'' stage---output to the board; acceptance criterion: the LEDs change no more often than once per 0.5~s, and all flip-flops are clocked by a single \code{clk}.
+\end{diybox}
+
+\section{Where to Go Next}
+
+This model is easy to extend, and each extension makes a good exercise.
+
+\begin{itemize}
+  \item \textbf{Conditional jumps.} Add a ``carry'' flag and a \code{JC} instruction
+        so that the program can stop when a number no longer fits in 8 bits.
+  \item \textbf{Subroutines and a stack.} \code{CALL} and \code{RET} instructions with
+        a small stack memory.
+  \item \textbf{Input and output.} Connect \code{out} to the board LEDs and
+        \code{in} to the buttons; to make it visible, slow the processor down with a
+        frequency divider (with an enable signal, Chapter~\ref{ch:clocks}).
+  \item \textbf{Pipelining.} Overlap the fetch of the next instruction with the
+        execution of the current one: the speed almost doubles.
+  \item \textbf{Loading a program over UART.} Receive the program bytes over
+        UART from Chapter~\ref{ch:uart} and write them into the ROM, turning it into RAM.
+\end{itemize}
+
+\begin{diybox}[The JNZ instruction]
+\textbf{Task.} Add the instruction \code{JNZ a} (code 10 $=$ \code{0xA}) to the processor: if \code{acc} is not zero, then \code{pc <= a}.
+
+\textbf{In Logra.} Add \code{4'd10: if (acc != 8'd0) pc <= arg;} to the \code{case (op)} block. In the \code{rom} function, write the program \code{15 30 11 31 40 80 51 30 A4 90}, that is, \code{LDI 5; STA 0; LDI 1; STA 1; LDA 0; OUT; SUB 1; STA 0; JNZ 4; HLT}.
+
+\textbf{Expected result.} \code{out} shows 5, 4, 3, 2, 1 in turn, after which the processor stops.
+
+\textbf{How to check.} Waveforms: number of cycles 100; \code{out} takes the values 5 down to 1 and no longer changes; \code{pc} returns to 4 on the \code{JNZ} instruction.
+
+\stars{1} repeat: run the program with \code{JNZ}. \stars{2} find the bug: replace \code{JNZ 4} with \code{JNZ 2} and explain why the output looped. \stars{3} project: ``Security Panel'' stage---lockout after three wrong codes; acceptance criterion: the program counts the attempts 3, 2, 1, 0 and stops.
+\end{diybox}
+
+\section{Questions and Problems}
+\label{sec:tasks-cpu}
+
+The answers are collected in Appendix~\ref{app:answers}.
+
+\begin{taskbox}[Chapter problems]
+\begin{enumerate}
+  \item \stars{1}~How many clock cycles does one pass of the Fibonacci program's loop
+        (addresses 4--12) take?
+  \item \stars{2}~Write a program that counts from 5 down to 0 and puts the number on
+        the output at every step. Hint: use \code{SUB} and \code{JZ}.
+  \item \stars{1}~How many program memory cells can a 4-bit program counter address?
+        What would you have to change to make the program twice as long?
+  \item \stars{2}~Which Fibonacci number is the last one that fits in 8 bits?
+        What appears on the output next?
+  \item \stars{1}~How does the Harvard architecture differ from the von Neumann architecture?
+  \item \stars{2}~How would you modify the processor so that an instruction executes in one clock cycle?
+  \item \stars{2}~Find the bug. In the program from Problem~2, the last instruction of the loop is written as
+        \code{JMP 2} instead of \code{JMP 3}. The processor outputs the number 5 forever. Explain why.
+  \item \stars{3}~Project. Add the \code{JNZ} instruction and write a program that counts from 5 to 1.
+        Acceptance criterion: on the waveform \code{out} takes the values 5, 4, 3, 2, 1, and then the processor stops.
+  \item \stars{3}~Project ``Security Panel'', the ``lockout'' stage. The program counts wrong code
+        entry attempts (3, 2, 1, 0) and stops at zero. Acceptance criterion: on the waveform, after the third
+        attempt \code{pc} stops changing and \code{out} equals 0.
+\end{enumerate}
+\end{taskbox}

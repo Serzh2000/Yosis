@@ -1,0 +1,335 @@
+\chapter{64-Mbit SDRAM Memory}
+\label{ch:sdram}
+
+\section{Why an FPGA Needs External Memory}
+
+Flip-flops and BSRAM block memory are very fast, but there is little of them.
+For an image, sound, or a large array of data, you need a larger memory. This
+is exactly why the GW2AR-18 package includes an SDRAM chip of
+\textbf{64 Mbit = 8 MB}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  xbar, bar width=5mm, width=0.8\textwidth, height=5.8cm,
+  xmode=log, log origin=infty, xmin=1e3, xmax=3e8,
+  xlabel={Capacity, bits (logarithmic scale)},
+  symbolic y coords={Flip-flops, SSRAM, BSRAM, SDRAM},
+  ytick=data, y tick label style={font=\sffamily\small},
+  nodes near coords, nodes near coords style={font=\sffamily\small, anchor=west},
+  point meta=explicit symbolic,
+  label style={font=\sffamily\small}, x tick label style={font=\small},
+  axis lines*=left, grid=major, grid style={FpgaGray!20}, enlarge y limits=0.2,
+]
+  \addplot[fill=FpgaOrange!70, draw=FpgaOrange] coordinates {
+    (15552,Flip-flops) [$\approx$1.9 KB] (41472,SSRAM) [$\approx$5 KB]
+    (847872,BSRAM) [$\approx$103 KB] (67108864,SDRAM) [8 MB]};
+\end{axis}
+\end{tikzpicture}
+\caption{How much data can be stored in the different kinds of memory of the Tang Nano 20K}
+\end{figure}
+
+For example, one image frame of $640\times480$ pixels at 16 bits per pixel
+takes
+\[
+  640 \cdot 480 \cdot 16 = 4\,915\,200 \text{ bits} \approx 600 \text{ KB},
+\]
+which is six times more than all the FPGA's block memory, but fits easily in
+SDRAM: more than ten such frames fit there.
+
+\begin{diybox}[How much data fits in internal memory]
+\textbf{Task.} Estimate whether your data array fits in block memory, and see how the synthesizer places a small memory.
+
+\textbf{In Logra.} The From an example card: RAM: write and read, and Eight-word ROM. Code tab $\to$ Synthesize; the Gowin tab or the cell list in the report.
+
+\textbf{Expected result.} The array \code{reg [7:0] mem [0:15]} is placed by the synthesizer as a memory (not a hundred flip-flops), while for a $640\times 480\times 16$-bit frame ($\approx 4.9$ Mbit) the block memory (about 0.85 Mbit) is not enough.
+
+\textbf{How to check.} Make a table ``array $\to$ size in bits $\to$ fits in BSRAM or not'' and compare it with the memory-size figure at the beginning of the chapter.
+
+\stars{1} repeat: the size of an 8-word by 8-bit ROM. \stars{2} modify: make the array 256$\times$8 and see how the report changed. \stars{3} project: Security Panel stage---event log; acceptance criterion: you have calculated how many 8-bit events fit in internal memory and how many fit in SDRAM.
+\end{diybox}
+
+\section{How DRAM Works}
+
+A dynamic memory (DRAM) cell consists of just \textbf{one transistor and one
+capacitor}. A charged capacitor stores 1, a discharged one stores 0. That is
+why DRAM is so dense and cheap. But it has two inconveniences:
+\begin{itemize}
+  \item the capacitor gradually \textbf{discharges}, so every row
+        must be periodically rewritten (\term{refresh})---all
+        rows within 64~ms;
+  \item reading destroys the charge, so a row is first copied into a
+        fast buffer (this is called \term{opening} it), and when the work is done it is written
+        back (\term{closing} it).
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.9, transform shape]
+  \draw (3,1.5) node[nmos] (T) {};
+  \draw (0,0 |- T.gate) node[left, font=\sffamily\small] {row (WL)} -- (T.gate);
+  \draw (T.drain) -- (T.drain |- 0,3.4) node[above, font=\sffamily\small] {column (BL)};
+  \draw (T.source) to[C, l_=$C$] ++(0,-1.6) node[ground]{};
+  \node[font=\sffamily\small, align=left, anchor=west] at (4.6,1.2) {1 bit = 1 transistor + 1 capacitor\\[1mm]
+  \textcolor{FpgaRed}{charge leaks away} $\Rightarrow$ refresh is needed};
+\end{circuitikz}
+\caption{A DRAM cell (simplified)}
+\end{figure}
+
+\begin{diybox}[Refresh counter]
+\textbf{Task.} All 2048 rows must be refreshed within 64~ms. Build a module that issues a \code{refresh\_req} request with the right period.
+
+\textbf{In Logra.} Code tab: a counter with the constant $N = 100\,\text{MHz} \cdot 31.25\,\mu\text{s} = 3125$ (for the simulation, use $N=25$). Waveforms: \code{cnt}, \code{refresh\_req}.
+
+\textbf{Expected result.} One request per 3125 clock cycles (per 25 in the simulation); \code{refresh\_req} lasts one clock cycle.
+
+\textbf{How to check.} Waveforms: there is exactly one pulse per period $N$; $2048\cdot 31.25$~$\mu$s $=64$~ms.
+
+\stars{1} repeat: a period of 31.25 $\mu$s. \stars{2} modify: the SDRAM frequency is 133~MHz---recalculate $N$. \stars{3} project: Security Panel stage---log refresh; acceptance criterion: a refresh request is never skipped, even while the log is being written.
+\end{diybox}
+
+\section{Memory Organization}
+
+The SDRAM in the GW2AR-18 has a 32-bit data bus and is organized as
+$4 \text{ banks} \times 2048 \text{ rows} \times 256 \text{ columns}
+\times 32 \text{ bits}$:
+\[
+  4 \cdot 2048 \cdot 256 \cdot 32 = 67\,108\,864 \text{ bits} = 64 \text{ Mbit}.
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \foreach \b/\c in {3/FpgaBlue!15, 2/FpgaBlue!25, 1/FpgaBlue!35, 0/FpgaBlue!50} {
+    \begin{scope}[shift={(\b*0.45,\b*0.45)}]
+      \fill[\c, draw=FpgaBlue] (0,0) rectangle (5,3.2);
+      \ifnum\b>0 \node[font=\sffamily\scriptsize, anchor=north east] at (5,3.2) {bank \b};\fi
+    \end{scope}
+  }
+  \foreach \y in {0.4,0.8,...,3.0} \draw[FpgaBlue!40] (0,\y) -- (5,\y);
+  \foreach \x in {0.5,1.0,...,4.6} \draw[FpgaBlue!40] (\x,0) -- (\x,3.2);
+  \node[font=\sffamily\scriptsize, anchor=north east, fill=FpgaBlue!50, inner sep=1pt] at (5,3.2) {bank 0};
+  \fill[FpgaOrange!80] (0,1.6) rectangle (5,2.0);
+  \fill[FpgaRed] (2.5,1.6) rectangle (3.0,2.0);
+  \draw[decorate, decoration={brace, amplitude=5pt}, thick] (-0.2,0) -- (-0.2,3.2) node[midway, left=6pt, font=\sffamily\small, align=right] {2048 rows\\\scriptsize address A[10:0]};
+  \draw[decorate, decoration={brace, amplitude=5pt, mirror}, thick] (0,-0.2) -- (5,-0.2) node[midway, below=6pt, font=\sffamily\small, align=center] {256 columns, address A[7:0]};
+  \node[font=\sffamily\small, align=left, anchor=west] at (7.4,2.6) {\textcolor{FpgaOrange}{\rule{3mm}{3mm}} open row};
+  \node[font=\sffamily\small, align=left, anchor=west] at (7.4,1.9) {\textcolor{FpgaRed}{\rule{3mm}{3mm}} one 32-bit word};
+  \node[font=\sffamily\small, align=left, anchor=west] at (7.4,1.2) {the bank is selected by BA[1:0]};
+\end{tikzpicture}
+\caption{SDRAM organization: bank, row, column}
+\end{figure}
+
+\begin{diybox}[Split an address into bank, row, and column]
+\textbf{Task.} A word is addressed by 21 bits. Split the address into a bank (2 bits), a row (11 bits), and a column (8 bits).
+
+\textbf{In Logra.} Code tab: a module with \code{input [20:0] addr} and \code{output [1:0] ba, output [10:0] row, output [7:0] col}; the line \code{assign \{ba, row, col\} = addr;}.
+
+\textbf{Expected result.} For \code{addr = 0x1FFFFF} you get \code{ba = 3}, \code{row = 0x7FF}, \code{col = 0xFF}; for \code{addr = 0x000100}---\code{ba = 0}, \code{row = 0}, \code{col = 0x00} and \code{row = 1} (the next row).
+
+\textbf{How to check.} Waveforms: apply several addresses and compare the fields; on the RTL tab there is not a single gate---only wires, because this is just a renaming of bits.
+
+\stars{1} repeat: the split for \code{0x1FFFFF}. \stars{2} modify: change the field order to \code{\{row, ba, col\}} and explain why interleaving banks speeds up the exchange. \stars{3} project: Security Panel stage---log address; acceptance criterion: the write-address counter reaches $2^{21}-1$ and returns to 0.
+\end{diybox}
+
+\section{SDRAM Commands}
+
+Unlike BSRAM, you cannot simply apply an address to SDRAM and get data back.
+The chip is controlled by \term{commands}, which are encoded by a combination
+of the signals \code{CS\#}, \code{RAS\#}, \code{CAS\#}, \code{WE\#} (the hash
+sign means active low) on the clock edge.
+
+\begin{table}[H]
+\centering
+\caption{The main SDRAM commands}
+\begin{tabular}{l c c c c l}
+\toprule
+\textbf{Command} & \textbf{CS\#} & \textbf{RAS\#} & \textbf{CAS\#} & \textbf{WE\#} & \textbf{Action} \\
+\midrule
+NOP        & 0 & 1 & 1 & 1 & do nothing \\
+ACTIVE     & 0 & 0 & 1 & 1 & open a row in a bank \\
+READ       & 0 & 1 & 0 & 1 & read from the open row \\
+WRITE      & 0 & 1 & 0 & 0 & write to the open row \\
+PRECHARGE  & 0 & 0 & 1 & 0 & close a row \\
+AUTO REFRESH & 0 & 0 & 0 & 1 & refresh \\
+LOAD MODE  & 0 & 0 & 0 & 0 & configuration (CAS latency, burst length) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.1, xscale=1.9, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.3ex]
+  CLK      & 9{1L 1H} \\
+  Command  & 2D{ACTIVE} 2D{NOP} 2D{READ} 2D{NOP} 2D{NOP} 2D{PRE} 6D{NOP} \\
+  Address  & 2D{row} 2U 2D{col.} 12U \\
+  DQ[31:0] & 10Z 2D{D0} 2D{D1} 4Z \\
+\extracode
+  \draw[FpgaOrange, <->, thick] (1,-6.6) -- (5,-6.6) node[midway, below, font=\sffamily\scriptsize] {$t_\text{RCD}$};
+  \draw[FpgaPurple, <->, thick] (5,-6.6) -- (9,-6.6) node[midway, below, font=\sffamily\scriptsize] {CAS latency = 2};
+\end{tikztimingtable}
+\caption{Reading from SDRAM: open a row (ACTIVE), wait $t_\text{RCD}$,
+issue the READ command, and receive the data after CAS latency clock cycles}
+\label{fig:sdram_read}
+\end{figure}
+
+\begin{diybox}[SDRAM command encoder]
+\textbf{Task.} Build a module that, given a command number, produces the four signals \code{cs\_n}, \code{ras\_n}, \code{cas\_n}, \code{we\_n} according to the command table.
+
+\textbf{In Logra.} Code tab: \code{case (cmd)} with branches NOP, ACTIVE, READ, WRITE, PRECHARGE, REFRESH, LOAD MODE. Waveforms: step through \code{cmd = 0\ldots6}.
+
+\textbf{Expected result.} NOP $=0111$, ACTIVE $=0011$, READ $=0101$, WRITE $=0100$, PRECHARGE $=0010$, AUTO REFRESH $=0001$, LOAD MODE $=0000$ (the order is \code{cs\_n, ras\_n, cas\_n, we\_n}).
+
+\textbf{How to check.} Waveforms: compare all seven combinations with the table; the \code{default} branch must produce NOP.
+
+\stars{1} repeat: ACTIVE and READ. \stars{2} find the bug: remove the \code{default} branch and explain where the latch on the RTL came from. \stars{3} project: Security Panel stage---log commands; acceptance criterion: all seven commands are checked on the waveform with no gaps.
+\end{diybox}
+
+\section{The SDRAM Controller}
+
+Remembering all the commands and delays for every memory access is
+inconvenient. That is why a \term{controller} is placed between the user logic
+and the SDRAM---a module (usually a finite-state machine, as in project 5) that:
+\begin{itemize}
+  \item initializes the chip after power-up;
+  \item turns simple requests like ``read the word at address X'' into a
+        sequence of commands ACTIVE $\to$ READ $\to$ PRECHARGE;
+  \item performs the refresh on time by itself.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=24mm]
+  \node[gblock, minimum height=24mm, minimum width=24mm] (user) {Your logic\\\scriptsize (video, sound\ldots)};
+  \node[hblock, right=of user, minimum height=24mm, minimum width=26mm] (ctrl) {SDRAM\\controller\\\scriptsize state machine};
+  \node[oblock, right=of ctrl, minimum height=24mm, minimum width=20mm] (mem) {SDRAM\\64 Mbit};
+  \draw[arr] ([yshift=6mm]user.east) -- node[above, lbl] {addr, wr, rd} ([yshift=6mm]ctrl.west);
+  \draw[arr] ([yshift=0mm]user.east) -- node[above, lbl] {din[31:0]} ([yshift=0mm]ctrl.west);
+  \draw[arr] ([yshift=-6mm]ctrl.west) -- node[below, lbl] {dout, busy} ([yshift=-6mm]user.east);
+  \draw[arr] ([yshift=6mm]ctrl.east) -- node[above, lbl] {commands} ([yshift=6mm]mem.west);
+  \draw[arr] ([yshift=0mm]ctrl.east) -- node[above, lbl] {A, BA} ([yshift=0mm]mem.west);
+  \draw[arr, <->] ([yshift=-6mm]ctrl.east) -- node[below, lbl] {DQ[31:0]} ([yshift=-6mm]mem.west);
+  \node[lbl, below=2mm of user] {simple requests};
+  \node[lbl, below=2mm of mem] {complex protocol};
+\end{tikzpicture}
+\caption{The controller hides the complexity of the SDRAM protocol}
+\end{figure}
+
+\subsection{Ports of the Built-in Memory}
+
+In a Gowin project, the built-in SDRAM is connected to the top-level module
+through ports with special (reserved) names. You do not need to specify pin
+numbers in the \code{.cst} file for them: the connection is inside the
+package.
+
+\begin{vcode}
+module top (
+    input  wire        clk,
+    // --- Built-in SDRAM (do not change the names!) ---
+    output wire        O_sdram_clk,
+    output wire        O_sdram_cke,
+    output wire        O_sdram_cs_n,    // CS#
+    output wire        O_sdram_ras_n,   // RAS#
+    output wire        O_sdram_cas_n,   // CAS#
+    output wire        O_sdram_wen_n,   // WE#
+    output wire [3:0]  O_sdram_dqm,     // byte mask
+    output wire [10:0] O_sdram_addr,    // row/column address
+    output wire [1:0]  O_sdram_ba,      // bank number
+    inout  wire [31:0] IO_sdram_dq      // data
+);
+\end{vcode}
+
+\begin{infobox}[Where to get a controller]
+\begin{itemize}
+  \item Gowin EDA has a ready-made IP block: \textbf{Tools $\to$ IP Core Generator
+        $\to$ Memory Interface $\to$ SDRAM Controller}. The wizard
+        generates a module with a simple interface.
+  \item There are open-source controllers written for the Tang Nano 20K
+        by enthusiasts; they are used, for example, in the retro-console projects NESTang and
+        SNESTang.
+  \item A good advanced exercise is to write your own controller,
+        following Fig.~\ref{fig:sdram_read} and the chip documentation.
+\end{itemize}
+\end{infobox}
+
+\begin{diybox}[Controller skeleton: ACTIVE, READ, PRECHARGE]
+\textbf{Task.} Describe a state machine that, on a \code{rd} request, issues the sequence from Fig.~\ref{fig:sdram_read}: ACTIVE, wait $t_\text{RCD}=2$, READ, wait CAS latency $=2$, PRECHARGE.
+
+\textbf{In Logra.} Code tab: the states IDLE, ACT, WAIT1, RD, WAIT2, PRE (modeled on the traffic-light state machine from project 5). The output is the command number from the previous task. Waveforms: the \code{rd} pulse.
+
+\textbf{Expected result.} After \code{rd}, the commands go in the order ACTIVE, NOP, READ, NOP, NOP, PRECHARGE, and then back to IDLE.
+
+\textbf{How to check.} Waveforms: put the cursor on READ and make sure there are exactly two clock cycles between ACTIVE and READ. RTL: a state register and transition logic.
+
+\stars{1} repeat: the command sequence from the figure. \stars{2} modify: make $t_\text{RCD}=3$ a \code{parameter}. \stars{3} project: Security Panel stage---log controller; acceptance criterion: writing one word to the log takes the sequence ACTIVE, WRITE, PRECHARGE without violating the delays.
+\end{diybox}
+
+\section{Bandwidth}
+
+At an SDRAM clock frequency of, say, 100~MHz and a 32-bit bus, the peak
+transfer rate is
+\[
+  B = 100 \cdot 10^6 \ \text{Hz} \cdot 32 \ \text{bits} = 3.2 \ \text{Gbit/s} = 400 \ \text{MB/s}.
+\]
+The real rate is lower because of opening and closing rows and because of
+refresh. The longer the bursts of consecutive addresses, the closer the rate
+gets to the peak.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.82\textwidth, height=5.6cm,
+  xlabel={Burst length, words}, ylabel={Effective rate, MB/s},
+  xmin=1, xmax=256, xmode=log, log basis x=2, ymin=0, ymax=420,
+  xtick={1,2,4,8,16,32,64,128,256}, xticklabels={1,2,4,8,16,32,64,128,256},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  grid=major, grid style={FpgaGray!20}, axis lines*=left,
+]
+  \addplot[very thick, FpgaBlue, samples at={1,2,4,8,16,32,64,128,256}, mark=*] {400*x/(x+6)};
+  \addplot[thick, dashed, FpgaRed, domain=1:256] {400};
+  \node[font=\sffamily\small, text=FpgaRed, anchor=north west] at (axis cs:1.3,388) {peak 400 MB/s};
+\end{axis}
+\end{tikzpicture}
+\caption{An estimate of the transfer rate at 100 MHz: each burst has about
+6 ``overhead'' clock cycles (ACTIVE, $t_\text{RCD}$, CAS latency, PRECHARGE)}
+\end{figure}
+
+\begin{ideabox}
+SDRAM gives a lot of memory (8 MB), but it needs a controller: rows must be
+opened and closed, and the memory must be refreshed regularly. The highest
+speed is obtained when data is read and written in long consecutive bursts.
+\end{ideabox}
+
+\begin{diybox}[Measure the effective rate]
+\textbf{Task.} Calculate the effective transfer rate for bursts of 1, 8, 64, and 256 words.
+
+\textbf{In Logra.} Waveforms tab, on the model from the previous task: add a clock-cycle counter that runs while \code{busy = 1}, and compare with the formula $B(L)=400\cdot L/(L+6)$.
+
+\textbf{Expected result.} For $L=1$ you get about 57~MB/s, for 8---229, for 64---366, for 256---391~MB/s: the longer the burst, the closer the rate to the peak of 400.
+
+\textbf{How to check.} Substitute the values into the formula and plot the points on the chapter's graph.
+
+\stars{1} repeat: $L=64$. \stars{2} modify: take 8 overhead clock cycles instead of 6 and recalculate. \stars{3} project: Security Panel stage---log capacity and speed; acceptance criterion: one formula estimates how long it takes to write a log of 100\,000 events.
+\end{diybox}
+
+\section{Questions and Problems}
+\label{sec:tasks-sdram}
+
+The answers are collected in Appendix~\ref{app:answers}.
+
+\begin{taskbox}[Chapter problems]
+\begin{enumerate}
+  \item \stars{1}~How many 32-bit words does the SDRAM from this chapter store? How many bits must a word address have?
+  \item \stars{1}~What is the peak rate at a frequency of 133~MHz and a 32-bit bus?
+  \item \stars{2}~All 2048 rows must be refreshed within 64~ms. What is the period of the AUTO REFRESH commands? How many clock cycles is that at 100~MHz?
+  \item \stars{2}~Find the bug. A controller issues READ on the clock cycle right after ACTIVE, although $t_\text{RCD}=2$.
+        What will happen? How can the state machine be fixed?
+  \item \stars{3}~Project. Write a module that splits a 21-bit word address into a bank, a row, and a column
+        and encodes the SDRAM commands. Acceptance criterion: on the waveform, all seven commands and several addresses give
+        values from the tables of the chapter.
+  \item \stars{3}~Security Panel project, stage ``log.'' Describe how the event log will be stored in external
+        memory. Acceptance criterion: the width of the address counter, the refresh period, and an estimate of the log fill time are given.
+\end{enumerate}
+\end{taskbox}

@@ -1,0 +1,153 @@
+\chapter{Assignments for Independent Work}
+\label{ch:tasks}
+
+The assignments are arranged in order of increasing difficulty. The stars mark
+the difficulty: \textcolor{FpgaOrange}{$\star$}---warm-up,
+\textcolor{FpgaOrange}{$\star\star$}---you need to think,
+\textcolor{FpgaOrange}{$\star\star\star$}---a mini-project. Each assignment
+reinforces a particular chapter of Part~I (Table~\ref{tab:task-map}); the
+final assignment 13 puts all the blocks together into the ``Security Panel''
+and moves it onto the board.
+
+\begin{table}[H]
+\centering
+\caption{Which chapter of Part~I each assignment reinforces}
+\label{tab:task-map}
+\small
+\begin{tabularx}{\textwidth}{c X X}
+\toprule
+\textbf{No.} & \textbf{Assignment} & \textbf{Reinforces the chapter of Part~I} \\
+\midrule
+1  & Half adder on buttons & ``Arithmetic Blocks'' (Ch.~\ref{ch:arith}) \\
+2  & Functions through NAND & ``Logic Gates and Boolean Algebra'' (Ch.~\ref{ch:gates}) \\
+3  & Encoder on buttons & ``Decoders and Encoders'' (Ch.~\ref{ch:coders}) \\
+4  & Binary counter on LEDs & ``Registers and Counters'' (Ch.~\ref{ch:regs}) \\
+5  & Gray code counter & ``Number Systems and Codes'' (Ch.~\ref{ch:codes}) \\
+6  & Running lights with buttons & ``Registers and Counters'' (Ch.~\ref{ch:regs}) \\
+7  & Code lock & ``Synchronous Circuits, FSMs'' (Ch.~\ref{ch:sync}), ``FSM Design'' (Ch.~\ref{ch:fsmdesign}) \\
+8  & Stopwatch & ``Registers and Counters'' (Ch.~\ref{ch:regs}), ``Synchronous Circuits'' (Ch.~\ref{ch:sync}) \\
+9  & UART transmitter & ``Registers and Counters'' (Ch.~\ref{ch:regs}), ``FSM Design'' (Ch.~\ref{ch:fsmdesign}) \\
+10 & UART receiver & ``Synchronous Circuits'' (Ch.~\ref{ch:sync}), the synchronizer \\
+11 & The ``Reaction'' game & ``Registers and Counters'' (Ch.~\ref{ch:regs}): a shift register with feedback \\
+12 & PWM for a servo & ``Digital and the Analog World'' (Ch.~\ref{ch:analog}) \\
+13 & Security Panel on the board & all chapters of Part~I (the running project) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=5mm and 7mm,
+  t/.style={block, minimum width=24mm, minimum height=11mm, font=\sffamily\scriptsize}]
+  \node[t] (a) {1--3\\combinational\\logic};
+  \node[t, right=of a] (b) {4--6\\counters\\and registers};
+  \node[t, right=of b] (c) {7--8\\FSMs};
+  \node[oblock, minimum width=24mm, minimum height=11mm, font=\sffamily\scriptsize, right=of c] (d) {9--10\\interfaces};
+  \node[hblock, minimum width=24mm, minimum height=11mm, font=\sffamily\scriptsize, right=of d] (e) {11--13\\projects};
+  \draw[arr] (a) -- (b); \draw[arr] (b) -- (c); \draw[arr] (c) -- (d); \draw[arr] (d) -- (e);
+\end{tikzpicture}
+\caption{Map of the assignments}
+\end{figure}
+
+\begin{taskbox}[Assignment 1 \quad \textcolor{FpgaOrange}{$\star$}]
+Implement a \textbf{half adder} on two buttons: \code{led[0]} is the sum,
+\code{led[1]} is the carry. Write the truth table and check it on the board.
+\end{taskbox}
+
+\begin{taskbox}[Assignment 2 \quad \textcolor{FpgaOrange}{$\star$}]
+Express the AND, OR and NOT functions \textbf{using only NAND} and describe the
+resulting circuit with the operators \code{\textasciitilde{}(... \& ...)}. How many
+LUTs will the result take according to the synthesizer report? Explain why.
+\end{taskbox}
+
+\begin{taskbox}[Assignment 3 \quad \textcolor{FpgaOrange}{$\star\star$}]
+Build an \textbf{encoder}: when one button is pressed the LEDs show the binary
+code 1, for the other---2, for both---3. Use
+\code{always @(*)} and \code{case}. Don't forget \code{default}!
+\end{taskbox}
+
+\begin{taskbox}[Assignment 4 \quad \textcolor{FpgaOrange}{$\star$}]
+A binary counter on 6 LEDs that adds one 4 times per second.
+After how many seconds will it overflow?
+\end{taskbox}
+
+\begin{taskbox}[Assignment 5 \quad \textcolor{FpgaOrange}{$\star\star$}]
+A counter in \textbf{Gray code}: neighboring values differ in exactly one bit.
+Hint: \code{gray = bin \^{} (bin >> 1)}. Compare the blinking with the
+counter from assignment 4.
+\end{taskbox}
+
+\begin{taskbox}[Assignment 6 \quad \textcolor{FpgaOrange}{$\star\star$}]
+Running lights in which button S1 changes the direction and S2 changes the
+speed (3 speeds in a cycle).
+\end{taskbox}
+
+\begin{taskbox}[Assignment 7 \quad \textcolor{FpgaOrange}{$\star\star$}]
+A \textbf{code lock}. The correct sequence of presses is:
+S1, S1, S2, S1. After a correct entry all the LEDs light up; after
+a mistake \code{led[5]} blinks and the entry starts over. Draw the
+state transition graph of the machine.
+\end{taskbox}
+
+\begin{taskbox}[Assignment 8 \quad \textcolor{FpgaOrange}{$\star\star$}]
+A \textbf{stopwatch}: S1 is start/stop, S2 is reset. The LEDs show the
+number of seconds in binary (up to 63).
+\end{taskbox}
+
+\begin{taskbox}[Assignment 9 \quad \textcolor{FpgaOrange}{$\star\star\star$}]
+A \textbf{UART transmitter}. Once per second send the character
+\code{'A'} to the computer at 115\,200 baud (pin 69). The UART frame: a start bit (0),
+8 data bits least significant bit first, a stop bit (1). The bit duration is
+$27\,000\,000 / 115\,200 \approx 234$ clock cycles. Watch the result in any
+terminal (PuTTY, \code{screen}, Arduino IDE).
+
+\centering
+\begin{tikztimingtable}[timing/slope=0.1, xscale=1.35, yscale=1.4, timing/font=\sffamily\small]
+  TX & 2H 2L 2H 2L 2L 2L 2L 2L 2H 2L 2H 2H \\
+\extracode
+  \foreach \x/\t in {3/start, 5/D0, 7/D1, 9/D2, 11/D3, 13/D4, 15/D5, 17/D6, 19/D7, 21/stop}
+    \node[font=\sffamily\tiny] at (\x,1.75) {\t};
+\end{tikztimingtable}
+\par\small Transmission of the character 'A' = \code{0x41} = \code{0100\,0001}$_2$
+\end{taskbox}
+
+\begin{taskbox}[Assignment 10 \quad \textcolor{FpgaOrange}{$\star\star\star$}]
+A \textbf{UART receiver}: show the byte received from the computer on the
+LEDs (the low 6 bits). The input is pin 70. Don't forget the synchronizer!
+\end{taskbox}
+
+\begin{taskbox}[Assignment 11 \quad \textcolor{FpgaOrange}{$\star\star\star$}]
+The \textbf{``Reaction'' game}. After a random time (use a
+linear-feedback shift register, LFSR) an LED lights up.
+The player must press S1 as fast as possible. The reaction time in tens of
+milliseconds is shown on the LEDs or sent over UART.
+\end{taskbox}
+
+\begin{taskbox}[Assignment 12 \quad \textcolor{FpgaOrange}{$\star\star\star$}]
+A \textbf{PWM generator for a servo}. Servos and drone motor controllers
+are driven by pulses 1--2~ms long with a period of 20~ms.
+Build a generator in which buttons S1 and S2 change the pulse width in
+steps of 0.1~ms, and output the signal to any free GPIO pin. Check it
+with an oscilloscope or with a real servo.
+\end{taskbox}
+
+\begin{taskbox}[Assignment 13 \quad \textcolor{FpgaOrange}{$\star\star\star$}\quad ``Security Panel'' on the board]
+\textbf{Final assignment.} Build on the Tang Nano 20K the security panel that you developed in Part~I and described in Verilog in Chapter~\ref{ch:bridge}: three sensors (door, window, motion), night mode, a noise threshold, arming, alarm memory, entering the code 1-0-1, a siren (an LED or a buzzer). The board has only two buttons, S1 and S2, so move some of the inputs to free GPIO pins with toggle switches (or build the circuit on the ``Lab'' tab): S1 is the door, S2 is arming and entering a code bit, the rest go on toggle switches.
+
+\textbf{How to proceed.}
+\begin{enumerate}
+  \item In Logra create a ``From scratch'' project, enter the \code{guard\_panel} module from Chapter~\ref{ch:bridge}, press ``Synthesize (Ctrl+Enter)'' and check the behavior on the ``Waveforms'' tab.
+  \item Add a synchronizer and debouncing to each button, and a synchronous reset (Chapter~\ref{ch:clocks}).
+  \item ``Pins'' tab: assign the buttons, LEDs and the buzzer; save the project. ``Chip'' tab: ``Place and build,'' $f_{max}$ not lower than 54~MHz.
+  \item ``Connect'' tab: load the design into SRAM and check it on the board.
+\end{enumerate}
+
+\textbf{Acceptance criterion.}
+\begin{enumerate}
+  \item The panel is armed by the button and does not react to the sensors in the OFF state.
+  \item An alarm is triggered by any of three causes: two sensors out of three, noise above the threshold, or the door at night.
+  \item The alarm is remembered and does not go off when the door is closed.
+  \item The alarm can be cleared only by entering the code 1-0-1; any other sequence does not work.
+  \item When a button bounces, the state changes exactly once; $f_{max}$ in the nextpnr report is not lower than 54~MHz.
+\end{enumerate}
+\end{taskbox}

@@ -3,11 +3,17 @@
 % Компиляция: xelatex main.tex (дважды, для оглавления и ссылок)
 % =============================================================================
 
+% --- Язык издания: \BookLang = ru (по умолчанию) или en (задаётся в tex-en/main.tex до \input) ---
+\providecommand{\BookLang}{ru}
+\providecommand{\StylesDir}{styles}
+\usepackage{etoolbox}
+\newcommand{\IfEnglishTF}[2]{\ifdefstring{\BookLang}{en}{#1}{#2}}
+
 % --- Языки и шрифты (XeLaTeX) ---
 \usepackage{fontspec}
 \usepackage{polyglossia}
-\setdefaultlanguage{russian}
-\setotherlanguage{english}
+\IfEnglishTF{\setdefaultlanguage{english}\setotherlanguage{russian}}
+  {\setdefaultlanguage{russian}\setotherlanguage{english}}
 
 % На Windows используются Times New Roman / Arial / Consolas,
 % на Linux -- метрически совместимые Liberation и DejaVu Sans Mono.
@@ -80,7 +86,7 @@
 \usepackage[automark, headsepline]{scrlayer-scrpage}
 \clearpairofpagestyles
 \ihead{\headmark}
-\ohead{\textbf{\textcolor{FpgaBlue}{ЦИФРОВАЯ СХЕМОТЕХНИКА}}}
+\ohead{\textbf{\textcolor{FpgaBlue}{\IfEnglishTF{DIGITAL DESIGN}{ЦИФРОВАЯ СХЕМОТЕХНИКА}}}}
 \cfoot{\pagemark}
 \setkomafont{pageheadfoot}{\sffamily\small\color{FpgaDark}}
 \setkomafont{pagenumber}{\sffamily\bfseries\color{FpgaBlue}}
@@ -117,7 +123,7 @@
 % --- Цветные блоки ---
 \usepackage[most]{tcolorbox}
 \tcbuselibrary{minted}
-\input{styles/codecopy.tex}
+\input{\StylesDir/codecopy.tex}
 \tcbset{codestyle/.style={enhanced, breakable, listing only, listing engine=minted,
   colback=CodeBack, colframe=FpgaBlue, boxrule=0pt, leftrule=2.2pt, arc=0pt,
   left=6pt, right=4pt, top=2pt, bottom=2pt, before skip=6pt, after skip=8pt,
@@ -130,30 +136,32 @@
 \newtcbinputlisting{\vfile}[3][verilog]{codestyle, minted language=#1,
   minted options={fontsize=\small, breaklines=true, tabsize=4},
   listing file={#2}, title={#3}}
-\newtcolorbox{infobox}[1][Справка]{
+\newtcolorbox{infobox}[1][\IfEnglishTF{Reference}{Справка}]{
   enhanced, breakable, colback=FpgaLight, colframe=FpgaBlue, frame hidden,
   borderline west={3pt}{0pt}{FpgaBlue}, sharp corners=east, arc=1.5mm, boxrule=0pt,
   colbacktitle=FpgaBlue!14, coltitle=FpgaDark, fonttitle=\sffamily\bfseries, title={#1}}
-\newtcolorbox{warnbox}[1][Внимание!]{
+\newtcolorbox{warnbox}[1][\IfEnglishTF{Warning!}{Внимание!}]{
   enhanced, breakable, colback=orange!6, colframe=FpgaOrange, frame hidden,
   borderline west={3pt}{0pt}{FpgaOrange}, sharp corners=east, arc=1.5mm, boxrule=0pt,
   colbacktitle=FpgaOrange!14, coltitle=FpgaDark, fonttitle=\sffamily\bfseries, title={#1}}
-\newtcolorbox{taskbox}[1][Задание]{
+\newtcolorbox{taskbox}[1][\IfEnglishTF{Task}{Задание}]{
   enhanced, breakable, colback=green!4, colframe=FpgaGreen, frame hidden,
   borderline west={3pt}{0pt}{FpgaGreen}, sharp corners=east, arc=1.5mm, boxrule=0pt,
   colbacktitle=FpgaGreen!14, coltitle=FpgaDark, fonttitle=\sffamily\bfseries, title={#1}}
-\newtcolorbox{ideabox}[1][Главная мысль]{
+\newtcolorbox{ideabox}[1][\IfEnglishTF{Key idea}{Главная мысль}]{
   enhanced, breakable, colback=purple!4, colframe=FpgaPurple, frame hidden,
   borderline west={3pt}{0pt}{FpgaPurple}, sharp corners=east, arc=1.5mm, boxrule=0pt,
   colbacktitle=FpgaPurple!14, coltitle=FpgaDark, fonttitle=\sffamily\bfseries, title={#1}}
 
 % --- Прочее ---
 \usepackage{siunitx}
-\sisetup{output-decimal-marker={,}, group-separator={\,}, locale=FR}
+\IfEnglishTF{\sisetup{output-decimal-marker={.}, group-separator={\,}}}{\sisetup{output-decimal-marker={,}, group-separator={\,}, locale=FR}}
 \usepackage{hyperref}
+\ifdefstring{\BookLang}{en}{\def\BookTitle{Digital Design: from Logic Gates to FPGAs}\def\BookAuthor{Sergey A. Koryagin}}{\def\BookTitle{Цифровая схемотехника: от логических элементов до ПЛИС}\def\BookAuthor{Корягин С.А.}}
 \hypersetup{colorlinks=true, linkcolor=FpgaBlue, urlcolor=FpgaBlue,
-  citecolor=FpgaBlue, pdftitle={Цифровая схемотехника: от логических элементов до ПЛИС},
-  pdfauthor={Корягин С.А.}}
+  citecolor=FpgaBlue,
+  pdftitle={\BookTitle},
+  pdfauthor={\BookAuthor}}
 
 % Удобные команды
 \newcommand{\code}[1]{\texttt{\small #1}}
@@ -196,8 +204,8 @@
                minimum width=9mm, minimum height=6mm, inner sep=0pt},
 }
 
-% --- Снимки экрана Yosis ---
-\graphicspath{{../img/}}
+% --- Снимки экрана Logra ---
+\IfEnglishTF{\graphicspath{{../img/en/}{../img/}}}{\graphicspath{{../img/}}}
 \usepackage{adjustbox}
 % \shot[ширина]{файл}{подпись}{метка}
 \newcommand{\shot}[4][\textwidth]{%
@@ -206,3 +214,24 @@
   \adjustbox{max width=#1, cfbox=FpgaGray!60 0.4pt 0pt}{\includegraphics[width=#1]{#2}}
   \caption{#3}\label{#4}
   \end{figure}}
+
+% --- Элементы «спринта» (часть I) ---
+% Уровень сложности: \stars{1} ... \stars{3}
+\newcommand{\stars}[1]{\textcolor{FpgaOrange}{\ifcase#1\or$\star$\or$\star\star$\or$\star\star\star$\fi}}
+% «Соберите сначала»: практическое задание в начале темы
+\newtcolorbox{buildbox}[1][\IfEnglishTF{Build it first}{Соберите сначала}]{
+  enhanced, breakable, colback=FpgaBlue!5, colframe=FpgaBlue, frame hidden,
+  borderline west={3pt}{0pt}{FpgaBlue}, sharp corners=east, arc=1.5mm, boxrule=0pt,
+  colbacktitle=FpgaBlue!16, coltitle=FpgaDark, fonttitle=\sffamily\bfseries, title={#1}}
+% «Сделай сам»: задание под каждым разделом (taskbox с готовым заголовком)
+\newtcolorbox{diybox}[1][]{
+  enhanced, breakable, colback=green!4, colframe=FpgaGreen, frame hidden,
+  borderline west={3pt}{0pt}{FpgaGreen}, sharp corners=east, arc=1.5mm, boxrule=0pt,
+  colbacktitle=FpgaGreen!14, coltitle=FpgaDark, fonttitle=\sffamily\bfseries,
+  title={\IfEnglishTF{Do it yourself}{Сделай сам}\ifstrempty{#1}{}{: #1}}}
+% Осознанный взгляд вперёд (часть II): \lookahead{текст}
+\newcommand{\lookahead}[1]{\emph{\IfEnglishTF{Looking ahead:}{Заглянем вперёд:}} #1}
+
+% Ширина номера раздела в оглавлении (номера вида 21.11 не слипаются с названием)
+\DeclareTOCStyleEntry[numwidth=3.4em]{tocline}{section}
+\DeclareTOCStyleEntry[numwidth=4.2em]{tocline}{subsection}

@@ -1,0 +1,31 @@
+// =====================================================================
+// Constraints file for Sipeed Tang Nano 20K
+// FPGA: GW2AR-LV18QN88C8/I7 (GW2AR-18C family)
+// Combined pinout: all pins used in the examples of the textbook.
+// This is a reference. Each project has its own .cst with exactly the ports it needs.
+// Copy into your project only the lines whose ports exist in the module!
+// =====================================================================
+
+// 27 MHz clock oscillator
+IO_LOC  "clk" 4;
+IO_PORT "clk" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+
+// Buttons S1 and S2 (pressed -> 1)
+IO_LOC  "btn[0]" 88;
+IO_PORT "btn[0]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+IO_LOC  "btn[1]" 87;
+IO_PORT "btn[1]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+// Six LEDs (active level is LOW: 0 -> lit)
+IO_LOC  "led[0]" 15;
+IO_PORT "led[0]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_LOC  "led[1]" 16;
+IO_PORT "led[1]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_LOC  "led[2]" 17;
+IO_PORT "led[2]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_LOC  "led[3]" 18;
+IO_PORT "led[3]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_LOC  "led[4]" 19;
+IO_PORT "led[4]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_LOC  "led[5]" 20;
+IO_PORT "led[5]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;

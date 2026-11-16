@@ -1,0 +1,289 @@
+\chapter{Clocking, Timing Analysis, and Multiple Clock Domains}
+\label{ch:clocks}
+\chaptermark{Clocking and timing analysis}
+
+A synchronous circuit works correctly only if every signal manages to travel
+from one flip-flop to the next within a single clock cycle. In
+Chapter~\ref{ch:sync} we derived the condition for the maximum frequency. Now
+we will see how software checks this condition, and what to do when a circuit
+has more than one clock signal or when a signal arrives from outside.
+
+\section{The Timing Condition in an FPGA}
+
+For a pair of flip-flops with combinational logic between them, the
+condition
+
+\[
+T \;\ge\; t_{cq} + t_{\text{logic}} + t_{\text{wire}} + t_{su}
+\]
+
+must hold, where $t_{cq}$ is the delay of the first flip-flop's output after
+the edge, $t_{\text{logic}}$ is the logic delay (LUT), $t_{\text{wire}}$ is the
+interconnect delay, and $t_{su}$ is the setup time of the second flip-flop. In
+an FPGA, wire delay makes up a significant part of the total time, so it
+cannot be estimated until the circuit has been placed on the chip.
+
+That is why, after place and route, nextpnr performs \term{static timing
+analysis}: it goes through all the paths between flip-flops, adds up the
+delays, and compares the result with the clock period. The difference between
+the period and the length of the longest path is the \term{slack}. It is
+positive if the circuit fits in the period and negative if it does not. The
+longest path is called the \term{critical path}, and the highest frequency
+that its delay allows is called $f_{max}$.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\small, x=1cm, y=1cm]
+  \draw[->] (-0.2,0) -- (11,0) node[right] {time};
+  \foreach \x/\t in {0/{edge 1}, 8/{edge 2}} {
+    \draw[FpgaBlue, thick] (\x,-0.3) -- (\x,2.8); \node at (\x,3.1) {\t};
+  }
+  \fill[FpgaLight, draw=FpgaBlue] (0,0.2) rectangle (1.2,0.8) node[midway] {$t_{cq}$};
+  \fill[FpgaLight!70!white, draw=FpgaBlue] (1.2,0.2) rectangle (3.4,0.8) node[midway] {$t_{\text{logic}}$};
+  \fill[orange!20, draw=FpgaOrange] (3.4,0.2) rectangle (6.6,0.8) node[midway] {$t_{\text{wire}}$};
+  \fill[FpgaLight, draw=FpgaBlue] (6.6,0.2) rectangle (7.5,0.8) node[midway] {$t_{su}$};
+  \fill[green!20, draw=FpgaGreen] (7.5,0.2) rectangle (8,0.8);
+  \draw[<->] (0,1.6) -- node[above] {period $T$} (8,1.6);
+  \node[text=FpgaGreen!50!black] at (7.75,-0.6) {slack};
+  \draw[->, FpgaGreen!50!black] (7.75,-0.4) -- (7.75,0.15);
+\end{tikzpicture}
+\caption{A path between two flip-flops. If the sum of the delays fits within the period, a positive slack remains}
+\end{figure}
+
+\subsection{How to Read the Report}
+
+Open the Chip tab (the Real board group, which is collapsed by default), enter
+the required value in the Frequency, MHz field, and click Place and build.
+After the build, the Placement and routing panel shows the nextpnr result: the
+maximum achievable frequency for each clock signal and its comparison with the
+required one, while the Placement map on the chip shows where the cells were
+placed. In Fig.~\ref{fig:n-chip}, the \code{clk} signal (27~MHz) has an
+$f_{max}$ of about 339~MHz, which means a margin of roughly 12 times.
+
+\shot{app-chip}{The nextpnr report in Logra (Running light project): the achievable frequency is 338.87~MHz against the required 27~MHz}{fig:n-chip}
+
+If $f_{max}$ is lower than the required frequency, the circuit on the board
+will work \emph{incorrectly, but without any error message}: the flip-flops
+will capture values that have not had time to settle yet. That is why you must
+look at the report after every build. A shortage of time can be fixed in
+several ways: split long logic with a pipeline (Chapter~\ref{ch:sync}),
+simplify the expression, reduce the number of inputs, or allow the synthesizer
+to duplicate cells.
+
+\begin{infobox}[The hold check]
+Besides the setup slack, there is also a hold slack: the new value must not
+arrive \emph{too early} after the edge, while the flip-flop is still holding the
+old one. In an FPGA this margin is provided by the routing itself and by the
+shared clock network, so engineers usually worry about it less.
+\end{infobox}
+
+\begin{diybox}[Find the critical path]
+\textbf{Task.} Measure the maximum frequency of your project and see what happens when the required frequency is higher than the maximum.
+
+\textbf{In Logra.} Open the Running light project and click Synthesize (Ctrl+Enter). On the Chip tab (Real board group), set the frequency to 27~MHz, click Place and build, and write down $f_{max}$. Then set a frequency above the recorded $f_{max}$ and build again.
+
+\textbf{Expected result.} At 27~MHz, $f_{max}$ is about 339~MHz (a margin of 12 times); at a frequency above $f_{max}$, nextpnr reports that the requirement is not met, and the slack is negative.
+
+\textbf{How to check.} The Placement and routing panel shows $f_{max}$ and a flag saying whether the requirement is met. Compare $T=1/f_{max}$ with the sum $t_{cq}+t_{\text{logic}}+t_{\text{wire}}+t_{su}$.
+
+\stars{1} repeat: write down $f_{max}$ for the Running light. \stars{2} modify: lengthen the logic (for example, compare the counter with a 32-bit constant) and find out how $f_{max}$ changed. \stars{3} project: Security Panel stage---timing check; acceptance criterion: the panel build at 27~MHz meets timing with a margin of at least two times.
+\end{diybox}
+
+\section{Do Not Divide the Frequency---Use an Enable}
+
+Beginners often ``divide the frequency'' like this: a flip-flop toggles on
+every clock cycle, and its output is used as a new clock signal for another
+part of the circuit. This is \emph{bad} practice. Such a ``clock'' does not
+travel along the dedicated clock network but along ordinary wires, so it
+reaches the flip-flops with different delays, and timing analysis becomes
+unreliable.
+
+The right way is to keep a single clock signal for the whole circuit and to
+mark slow events with a \emph{clock enable pulse}. The divider counts clock
+cycles and once every $N$ cycles produces a short \code{tick} pulse, and only
+then do the flip-flops in other parts of the circuit change their values.
+
+\begin{vcode}
+reg [24:0] cnt = 0;
+reg        tick = 0;                      // one cycle once per second
+always @(posedge clk) begin
+    if (cnt == 27_000_000 - 1) begin
+        cnt  <= 0;
+        tick <= 1;
+    end else begin
+        cnt  <= cnt + 1;
+        tick <= 0;
+    end
+end
+
+always @(posedge clk)                      // the same clk!
+    if (tick) led <= ~led;                 // changes once per second
+\end{vcode}
+
+You used this technique in the projects of Chapter~\ref{ch:examples}. The
+\code{tick} signal lasts exactly one clock cycle, but it controls any number
+of flip-flops, and all of them stay synchronous with the single \code{clk}.
+
+\begin{diybox}[One clock, many paces]
+\textbf{Task.} Replace the ``divider-as-clock'' with an enable pulse: all flip-flops stay on one \code{clk}, and the slow events are marked by \code{tick}.
+
+\textbf{In Logra.} Code tab: enter the fragment above (for the simulation, replace $27\,000\,000$ with 20 cycles). Waveforms: the signals \code{cnt}, \code{tick}, \code{led}.
+
+\textbf{Expected result.} \code{tick} is 1 for exactly one cycle out of 20; \code{led} toggles only in the cycle with \code{tick = 1}.
+
+\textbf{How to check.} On the waveform, the width of the \code{tick} pulse equals one period of \code{clk}. On the RTL tab, the same \code{clk} goes to all flip-flops, and there is no separate ``slow'' clock net.
+
+\stars{1} repeat: the period of \code{tick} is 20 cycles. \stars{2} find the bug: take a counter bit as the clock for a second block and explain why timing analysis becomes unreliable because of this. \stars{3} project: Security Panel stage---paces; acceptance criterion: the siren beep and the exit delay both run from a single \code{clk} and the \code{tick} signals, and there is no second clock in the project.
+\end{diybox}
+
+\section{PLL: Multiplying the Frequency}
+
+The Tang Nano 20K board has a 27~MHz crystal oscillator, but that is not a
+limit. Inside the chip there is a \term{PLL} (phase-locked loop): a block that
+makes another frequency from the input frequency $f_{\text{in}}$ according to
+the formula
+
+\[
+f_{\text{out}} = f_{\text{in}}\cdot\frac{M}{N},
+\]
+
+where $M$ and $N$ are integer multiplication and division factors (the exact
+allowed ranges are in the chip documentation). In this way, from 27~MHz you
+can get, for example, 108~MHz for fast logic or 74.25~MHz for an HDMI video
+signal. A PLL also cleans the clock signal of jitter and can produce several
+phases.
+
+A PLL is connected as a ready-made primitive (in Gowin it is called
+\code{rPLL}), and its output goes to the global clock network. After that, the
+circuit behind the PLL counts as a new \term{clock domain} with its own
+frequency.
+
+\begin{diybox}[Choose a PLL on paper and check the timing]
+\textbf{Task.} Choose $M$ and $N$ so that 27~MHz becomes 108~MHz and 74.25~MHz, and estimate whether your logic can handle such a frequency.
+
+\textbf{In Logra.} Do the calculations with the formula $f_{\text{out}}=f_{\text{in}}M/N$. Then, on the Chip tab, enter 108 in the Frequency, MHz field and rebuild your project.
+
+\textbf{Expected result.} For 108~MHz, $M/N=4$ works; for 74.25~MHz, $M/N=2.75=11/4$. If the project's $f_{max}$ is below 108~MHz, nextpnr reports that the requirement is not met, and the logic will have to be made faster.
+
+\textbf{How to check.} Substitute the result into the formula; in the Placement and routing panel, compare $f_{max}$ with the required frequency.
+
+\stars{1} repeat: 108~MHz. \stars{2} modify: choose $M$ and $N$ for 148.5~MHz (an HDMI 1080p pixel clock; $M/N=5.5$). \stars{3} project: Security Panel stage---clock frequency; acceptance criterion: $M$, $N$, and the expected frequency are written down, and the panel's $f_{max}$ is higher than this frequency.
+\end{diybox}
+
+\section{Multiple Clock Domains}
+
+When a circuit has two different clock signals, a new problem appears: a signal
+that comes from one domain into another may change right \emph{during} the
+edge of the receiving clock. Then the setup/hold condition is violated, and
+the flip-flop enters a metastable state (Chapter~\ref{ch:ff}): its output hangs
+between 0 and 1 and decides on its own after an undefined time. If the
+unlucky value gets straight into the logic, the circuit breaks.
+
+\subsection{The Two-Flip-Flop Synchronizer}
+
+A simple solution is to pass the signal through a chain of \emph{two}
+flip-flops in the receiving domain. The first one may become metastable, but
+it has a whole clock cycle to ``decide,'' and the second one receives an
+already stable value. The probability that metastability survives a whole
+clock cycle is negligibly small.
+
+\vfile{\codepath/10_clocks/sync2ff.v}{code/10\_clocks/sync2ff.v}
+
+\shot{n-sync-rtl}{The synchronizer in Logra: two flip-flops one after another, followed by the debounce filter}{fig:n-sync-rtl}
+
+The same synchronizer is needed for any asynchronous signal: a button, or a
+signal from another chip (for example, the input of a serial-interface
+receiver, Chapter~\ref{ch:uart}).
+
+\begin{warnbox}
+A two-flip-flop synchronizer works only for \emph{a single bit}. If you pass a
+multi-bit number (for example, a counter), the bits may arrive with different
+delays, and the receiving side will briefly see a value that never existed.
+Buses call for other techniques: pass the data one bit at a time with a
+handshake (request---acknowledge), use a \emph{Gray code}, where only one bit
+changes at any step (Chapter~\ref{ch:codes}), or use dual-clock FIFOs whose
+pointers are sent across in Gray code.
+\end{warnbox}
+
+\subsection{Contact Bounce}
+
+A mechanical button does not close just once when pressed: the contacts bounce
+for several milliseconds, and the signal chatters between 0 and 1. A digital
+circuit perceives this as many presses. The fix is a counter that accepts a
+new value only if it holds for $N$ clock cycles in a row.
+
+\shot{n-debounce-wave}{The debounce filter: the input \code{in} jumps 1-0-1-0-1, but the output \code{out} switches only after the value has held for several clock cycles}{fig:n-debounce}
+
+The waveform (Fig.~\ref{fig:n-debounce}) shows two important things. The signal
+\code{s} after the synchronizer repeats \code{in} with a delay of two clock
+cycles. And the output \code{out} waits until \code{s} settles: it ignores
+false short pulses.
+
+\begin{diybox}[Synchronizer and bounce]
+\textbf{Task.} Pass an asynchronous button through a two-flip-flop synchronizer and a debounce filter, and make sure the output changes only once on a burst of noise.
+
+\textbf{In Logra.} Code tab: \code{sync2ff.v} from the book; Synthesize; the RTL tab.
+
+\textbf{Expected result.} Two flip-flops go one after another, followed by the debounce filter; the output \code{out} changes only after the value has held for several clock cycles.
+
+\textbf{How to check.} Waveforms: apply the series 1-0-1-0-1 to \code{in} and then a long 1; the signal \code{s} repeats \code{in} with a two-cycle delay, and \code{out} ignores the short pulses.
+
+\stars{1} repeat: the series 1-0-1-0-1. \stars{2} modify: double the number of filter cycles and check that short pulses are still rejected. \stars{3} project: Security Panel stage---code entry; acceptance criterion: on the waveform, three presses of the code button with bounce on the input give exactly three \code{code\_step} pulses.
+\end{diybox}
+
+\section{Reset}
+
+The reset signal must also be synchronous. An asynchronous reset acts
+instantly, but its \emph{release} at a random moment can violate the setup time
+of some of the flip-flops and bring the circuit into different states. The
+right approach is to apply the reset to the flip-flops synchronously, and to
+pass an external reset button through the same two-flip-flop synchronizer. The
+examples in this book use a synchronous reset everywhere: it is simpler and
+more reliable, and a chip of this type does not need separate circuits for it.
+
+\begin{diybox}[Synchronous reset of the panel]
+\textbf{Task.} Apply the reset to the panel synchronously: the external button passes through a synchronizer, and all registers are reset on the clock edge.
+
+\textbf{In Logra.} Code tab: first the \code{guard\_panel} module from Chapter~\ref{ch:bridge} (it has \code{if (rst)} inside \code{always @(posedge clk)}), then put two flip-flops in front of \code{rst}.
+
+\textbf{Expected result.} The reset acts on the nearest clock edge, not instantly; all the panel's flip-flops are reset in the same cycle.
+
+\textbf{How to check.} Waveforms: raise \code{rst} between edges and see when \code{state} returns to OFF. RTL: there are no elements with an asynchronous reset, only the synchronous \code{SRST}.
+
+\stars{1} repeat: find the reset cycle on the waveform. \stars{2} find the bug: describe the reset asynchronously (\code{always @(posedge clk or posedge rst)}) and explain why releasing the reset is dangerous. \stars{3} project: Security Panel stage---reset; acceptance criterion: on reset, in any state, the panel ends up in OFF within one clock cycle after the synchronizer.
+\end{diybox}
+
+\section{Questions and Problems}
+\label{sec:tasks-clocks}
+
+The answers are collected in Appendix~\ref{app:answers}.
+
+\begin{taskbox}[Chapter problems]
+\begin{enumerate}
+  \item \stars{1}~A path between flip-flops: $t_{cq}=0.5$~ns, logic $4$~ns, wires $3$~ns,
+        setup time $0.5$~ns. What must the period be? What is $f_{max}$?
+  \item \stars{1}~The clock period is 10~ns, and the total path delay is 8.2~ns. What is the slack?
+        What does it become at 150~MHz?
+  \item \stars{2}~Describe a divider that produces a \code{tick} pulse at 1~kHz
+        from 27~MHz. What value must the counter count up to?
+  \item \stars{1}~A PLL receives 27~MHz, $M=4$, $N=1$. What is the output frequency?
+  \item \stars{2}~Why can't you pass an 8-bit counter from one domain to another
+        through eight separate synchronizers?
+  \item \stars{2}~A debounce filter must reject noise of up to 5~ms at a clock frequency of
+        27~MHz. What is the value of $N$?
+  \item \stars{2}~Find the bug. According to the report, the longest path between flip-flops takes 12~ns.
+        The designer reasons: ``I'll set the PLL to 100~MHz, since the chip's frequency allows it.''
+        What will actually happen? What is the slack?
+  \item \stars{2}~Find the bug. In a circuit, a slow block is clocked by the output of a flip-flop
+        ``divide by 2'' (\code{always @(posedge slow\_clk)}). In simulation everything works, but on the board
+        there are occasional failures. Name the cause and rewrite the circuit with an enable pulse.
+  \item \stars{3}~Security Panel project, stage ``timing and reset.'' Build the panel from Chapter~\ref{ch:bridge},
+        feed the buttons through a synchronizer and debouncing, and use a synchronous reset. Acceptance
+        criterion: on the Chip tab, $f_{max}$ is at least 54~MHz (twice 27~MHz), and on the waveform
+        a burst of bounce on the button leads to exactly one transition.
+  \item \stars{3}~Project. Build a counter with a clock of $f=27$~MHz that toggles an LED every 0.5~s,
+        using only an enable pulse (no second clock). Acceptance criterion:
+        in the RTL there are no nets where a flip-flop output goes to a clock input, and $f_{max}$ in the report
+        is at least 100~MHz.
+\end{enumerate}
+\end{taskbox}

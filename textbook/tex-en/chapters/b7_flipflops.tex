@@ -1,0 +1,585 @@
+\chapter{Flip-Flops}
+\label{ch:ff}
+
+So far we have built circuits \emph{without memory}: adders, comparators,
+decoders. Their output is completely determined by what is on the inputs
+\emph{right now}. In the security panel this already gives an alarm on the
+condition ``door open and guard on'', and with a noise threshold also on
+``noise above normal''. But as soon as the intruder closes the door, the
+condition disappears and the siren falls silent. The question of this chapter
+remains: \emph{how can a circuit remember that an alarm happened?} The answer
+is an element that stores one bit---the flip-flop.
+
+\begin{buildbox}
+In Logra, open the \term{Learn} tab, the ``Flip-flops and registers'' chapter
+of the ``Circuits and the board'' book, and go through the lesson ``D flip-flop:
+remember a bit''. Apply a few values to the input and look at the
+\term{Waveforms} tab: the output changes only at the moments of the clock edge
+and keeps the past between edges. Without reading further, say in one sentence
+how this differs from a circuit made of gates. The theory in this chapter will
+explain how such a ``brick'' is built inside.
+\end{buildbox}
+
+\section{Why a Circuit Needs Memory}
+
+Imagine a ``on/off'' button on a remote control: you press it and the light
+comes on, you release it and it keeps burning, you press again and it goes
+out. At the moment the button is released, the circuit inputs are the same, yet
+the output may be either 0 or 1---depending on \emph{what happened earlier}. A
+combinational circuit cannot do this. We need \term{memory}.
+
+The simplest memory element stores one bit and is called a \term{flip-flop}
+(its close relative, the latch, is described below).
+
+\begin{diybox}[See Memory]
+\textbf{Task.} \stars{1} In Logra, go through the lesson ``Remember one bit''
+(section ``Time and memory'' of the Learn course). \stars{2} Open the example
+\code{edge-toggle} and compare its behavior with the example \code{button}: what
+happens to the output on a repeated press?\\
+\textbf{In Logra:} the Learn, Code and Waveforms tabs.\\
+\textbf{Expected result:} in \code{button} the output repeats the input,
+in \code{edge-toggle} it also depends on the past.\\
+\textbf{How to check:} in Waveforms, find two moments where the inputs are the
+same but the outputs differ.
+\end{diybox}
+
+\section{The Bistable Cell}
+
+Connect two inverters in a ring. If the output of the first is 1, then the
+output of the second is 0, and this 0 keeps the output of the first at 1. The
+state \emph{sustains itself}. The opposite stable state is also possible. The
+circuit has two stable states---it is \term{bistable} and can store one bit.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[gNOT, minimum width=12mm, minimum height=8mm] (n1) at (0,0.8) {};
+  \node[gNOT, minimum width=12mm, minimum height=8mm, rotate=180] (n2) at (0,-0.8) {};
+  \draw[wire] (n1.output) -- ++(0.6,0) |- (n2.input);
+  \draw[wire] (n2.output) -- ++(-0.6,0) |- (n1.input);
+  \node[font=\sffamily\small, text=FpgaRed] at (1.4,1.15) {1};
+  \node[font=\sffamily\small, text=FpgaBlue] at (-1.75,-0.45) {0};
+  \fill ($(n1.output)+(0.6,-0.8)$) circle (1.3pt);
+  \draw[wire] ($(n1.output)+(0.6,-0.8)$) -- ++(0.6,0) node[right] {$Q$};
+  \node[font=\sffamily\small, align=left, anchor=west] at (3.4,0.3) {The state sustains itself,};
+  \node[font=\sffamily\small, align=left, anchor=west] at (3.4,-0.3) {but there is no way to change it yet.};
+\end{tikzpicture}
+\caption{Two inverters in a ring---a bistable cell}
+\end{figure}
+
+\begin{diybox}[A Ring of Two Inverters]
+\textbf{Task.} \stars{2} In the Designer, connect two NOT blocks in a ring and
+send the output of one of them to an LED. \stars{1} If you do not want to build
+the loop from scratch, read the step ``One bit of memory'' in the lesson ``D
+flip-flop: remember a bit'' (chapter ``Flip-flops and registers'').\\
+\textbf{Expected result:} the ring holds either of the two states, but there is
+no way to write a new value into it. The simulator may show an undefined value
+\code{X}: the cell has no input that sets the initial state.\\
+\textbf{How to check:} Waveforms (the output does not change by itself) and RTL
+(two inversions in a circle).
+\end{diybox}
+
+\section{The RS Flip-Flop}
+
+To write a new value into the cell, replace the inverters with NOR gates and
+use their second inputs. The result is the \term{RS flip-flop}
+(an asynchronous RS latch):
+\begin{itemize}
+  \item input $S$ (Set) writes 1;
+  \item input $R$ (Reset) writes 0;
+  \item if $S = R = 0$, the flip-flop \textbf{holds} its previous value.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.48\textwidth}
+\centering
+\begin{tikzpicture}
+  \node[gNOR, minimum height=10mm] (g1) at (0,1) {};
+  \node[gNOR, minimum height=10mm] (g2) at (0,-1) {};
+  \draw[wire] (g1.input 1) -- ++(-1.2,0) node[left] {$R$};
+  \draw[wire] (g2.input 2) -- ++(-1.2,0) node[left] {$S$};
+  \draw[wire] (g1.output) -- ++(1.2,0) node[right] {$Q$};
+  \draw[wire] (g2.output) -- ++(1.2,0) node[right] {$\overline{Q}$};
+  \draw[wire] ($(g1.output)+(0.4,0)$) -- ++(0,-0.6) -- ($(g2.input 1)+(-0.4,0.8)$) -- ($(g2.input 1)+(-0.4,0)$) -- (g2.input 1);
+  \draw[wire] ($(g2.output)+(0.4,0)$) -- ++(0,0.6) -- ($(g1.input 2)+(-0.4,-0.8)$) -- ($(g1.input 2)+(-0.4,0)$) -- (g1.input 2);
+  \fill ($(g1.output)+(0.4,0)$) circle (1.3pt); \fill ($(g2.output)+(0.4,0)$) circle (1.3pt);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.48\textwidth}
+\centering
+\begin{tabular}{cc|c|l}
+\toprule
+$S$ & $R$ & $Q$ & \textbf{Mode} \\
+\midrule
+0 & 0 & $Q$ & hold \\
+1 & 0 & 1 & set \\
+0 & 1 & 0 & reset \\
+1 & 1 & \textcolor{FpgaRed}{?} & \textcolor{FpgaRed}{forbidden} \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\caption{An RS flip-flop made of two NOR gates and its transition table}
+\label{fig:rs}
+\end{figure}
+
+Let us see why it works. Remember: the output of a NOR gate is 0 if at least
+one input is 1.
+\begin{itemize}
+  \item $S=1$: the lower gate outputs $\overline{Q}=0$. Both inputs of the upper
+        gate are zero ($R=0$, $\overline{Q}=0$), so $Q=1$.
+  \item Now $S$ returns to 0. On the lower gate $Q=1$, so $\overline{Q}$ is
+        still 0, and $Q$ is still 1: the flip-flop has
+        \emph{remembered} the one.
+  \item $S=R=1$---both outputs become zeros (although they should be
+        opposite), and when the signals are released at the same time, it is
+        unknown which state the flip-flop will ``fall'' into. That is why this
+        combination is forbidden.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.1, xscale=3.0, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  $S$ & 1L 1H 10L \\
+  $R$ & 5L 1H 6L \\
+  $Q$ & 1L 4H 7L \\
+\extracode
+  \node[lbl, text=FpgaOrange] at (1.5,1.7) {set};
+  \node[lbl, text=FpgaOrange] at (3.5,1.7) {hold 1};
+  \node[lbl, text=FpgaOrange] at (5.5,1.7) {reset};
+  \node[lbl, text=FpgaOrange] at (8.0,1.7) {hold 0};
+\end{tikztimingtable}
+\caption{Operation of the RS flip-flop: a short pulse on $S$ or $R$ switches the
+flip-flop, and without pulses it holds its value}
+\end{figure}
+
+\begin{infobox}[An RS Flip-Flop Made of NAND Gates]
+The flip-flop can be built in exactly the same way from two NAND gates. But then
+the inputs act on \emph{zero}: $\overline{S}=0$ sets, $\overline{R}=0$
+resets, and the combination $\overline{S}=\overline{R}=0$ is forbidden. Such a
+flip-flop is a classic way to suppress the contact bounce of a mechanical
+switch: at the very first touch of the contact it switches and does not notice
+the further ``jumps''.
+\end{infobox}
+
+\begin{diybox}[The RS Flip-Flop]
+\textbf{Task.} \stars{1} The lesson ``SR flip-flop: set and reset''; it also
+has a step ``The forbidden combination''. \stars{2} Apply $S=R=1$, then release
+both signals and describe what happened. \stars{3} Build a ``light-switch
+button'' from two buttons: one turns the light on, the other turns it off.\\
+\textbf{In Logra:} Learn, Designer, Waveforms.\\
+\textbf{Expected result:} a short press of $S$ turns the light on, and it stays
+on after release; pressing both at once gives an ambiguous result.\\
+\textbf{How to check:} Waveforms: run the sequence $S$, pause,
+$R$, pause and compare with Fig.~\ref{fig:rs}.
+\end{diybox}
+
+\section{The D Latch}
+
+The RS flip-flop has two inconveniences: there is a forbidden input combination,
+and it reacts to the inputs at any moment. Put two AND gates in front of it,
+a data input $D$ and an enable input $C$ (clock). The result is the
+\term{D latch}:
+\begin{itemize}
+  \item when $C=1$ the latch is \textbf{transparent}: the output follows the
+        input, $Q = D$;
+  \item when $C=0$ the latch \textbf{holds} the value that $D$ had at the moment
+        $C$ went from 1 to 0.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[gAND, minimum height=9mm] (a1) at (1.6,1) {};
+  \node[gAND, minimum height=9mm] (a2) at (1.6,-1) {};
+  \node[draw=FpgaGreen, fill=green!8, thick, minimum width=18mm, minimum height=30mm, font=\sffamily\small, align=center] (rs) at (4.4,0) {RS\\flip-flop};
+  \node[font=\sffamily\scriptsize] at ($(rs.west)+(0.25,1)$) {R};
+  \node[font=\sffamily\scriptsize] at ($(rs.west)+(0.25,-1)$) {S};
+  \node[gNOT, minimum width=7mm, minimum height=5mm] (n) at (-0.2,1.12) {};
+  \draw[wire] (-1.6,-0.88) node[left] {$D$} -- (a2.input 1);
+  \draw[wire] (-0.9,-0.88) |- (n.input); \fill (-0.9,-0.88) circle (1.3pt);
+  \draw[wire] (n.output) -- (a1.input 1);
+  \draw[wire, FpgaBlue] (-1.6,0) node[left, text=FpgaDark] {$C$} -- (0.4,0);
+  \draw[wire, FpgaBlue] (0.4,0) |- (a1.input 2); \draw[wire, FpgaBlue] (0.4,0) |- (a2.input 2);
+  \fill[FpgaBlue] (0.4,0) circle (1.3pt);
+  \draw[wire] (a1.output) -- ($(rs.west)+(0,1)$);
+  \draw[wire] (a2.output) -- ($(rs.west)+(0,-1)$);
+  \draw[wire] ($(rs.east)+(0,1)$) -- ++(0.8,0) node[right] {$Q$};
+  \draw[wire] ($(rs.east)+(0,-1)$) -- ++(0.8,0) node[right] {$\overline{Q}$};
+\end{tikzpicture}
+\caption{The D latch: the forbidden combination $S=R=1$ is now impossible,
+because $S$ and $R$ receive $D$ and $\overline{D}$}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.08, xscale=1.6, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  $C$ & 2L 4H 4L 4H 2L \\
+  $D$ & 1L 2H 1L 4H 3L 1H 4L \\
+  $Q$ & 2L 1H 1L 6H 1L 1H 4L \\
+\extracode
+  \begin{pgfonlayer}{background}
+    \fill[green!10] (2,0.6) rectangle (6,-5.2);
+    \fill[green!10] (10,0.6) rectangle (14,-5.2);
+  \end{pgfonlayer}
+  \node[lbl, text=FpgaGreen] at (4,1.7) {transparent};
+  \node[lbl] at (8,1.7) {holds};
+  \node[lbl, text=FpgaGreen] at (12,1.7) {transparent};
+\end{tikztimingtable}
+\caption{At $C=1$ the D latch passes all changes of $D$ to the output; at $C=0$
+it ``freezes'' the output}
+\label{fig:dlatch_t}
+\end{figure}
+
+\begin{diybox}[The D Latch]
+\textbf{Task.} \stars{2} In the Designer, build the latch of Fig.~\ref{fig:dlatch_t}
+from gates: NOT, two ANDs and an RS flip-flop made of two NORs. \stars{3} Apply
+a changing $D$ and the enable $C$ as a long pulse.\\
+\textbf{In Logra:} Designer, Waveforms.\\
+\textbf{Expected result:} while $C=1$ the output follows $D$ (including all its
+changes), and at $C=0$ the value is frozen.\\
+\textbf{How to check:} Waveforms; compare with Fig.~\ref{fig:dlatch_t}.
+Save the circuit: you will need it in the next section.
+\end{diybox}
+
+\section{The D Flip-Flop}
+
+The transparency of a latch is both an advantage and a drawback. If the output
+of a latch goes back to its own input through combinational logic (as in a
+counter), then while $C=1$ the signal will run around the loop, and the result
+will be unpredictable. We need an element that stores the value at \emph{one
+moment in time}---at the \emph{edge} of the clock signal. This is the
+\term{D flip-flop}, the main memory element of all modern digital
+technology.
+
+It can be built from two D latches connected in series with opposite enable
+signals. Such a circuit is called \term{master--slave}:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[lt/.style={draw=FpgaGreen, fill=green!8, thick, minimum width=24mm, minimum height=16mm, font=\sffamily\small, align=center}]
+  \node[lt] (m) at (0,0) {\quad master\\\quad latch};
+  \node[lt] (s) at (4.2,0) {\quad slave\\\quad latch};
+  \node[font=\sffamily\scriptsize] at ($(m.west)+(0.2,0.45)$) {D};
+  \node[font=\sffamily\scriptsize] at ($(m.west)+(0.2,-0.45)$) {C};
+  \node[font=\sffamily\scriptsize] at ($(s.west)+(0.2,0.45)$) {D};
+  \node[font=\sffamily\scriptsize] at ($(s.west)+(0.2,-0.45)$) {C};
+  \draw[wire] ($(m.west)+(-1.2,0.45)$) node[left] {$D$} -- ($(m.west)+(0,0.45)$);
+  \draw[wire] ($(m.east)+(0,0.45)$) -- node[above, lbl] {$Q_m$} ($(s.west)+(0,0.45)$);
+  \draw[wire] ($(s.east)+(0,0.45)$) -- ++(1,0) node[right] {$Q$};
+  \node[gNOT, minimum width=7mm, minimum height=5mm] (n) at (-2.1,-1.3) {};
+  \draw[wire, FpgaBlue] (-3.4,-1.3) node[left, text=FpgaDark] {CLK} -- (n.input);
+  \draw[wire, FpgaBlue] (n.output) -- ++(0.2,0) |- ($(m.west)+(0,-0.45)$);
+  \draw[wire, FpgaBlue] (-2.9,-1.3) |- (2.5,-1.9) |- ($(s.west)+(0,-0.45)$);
+  \fill[FpgaBlue] (-2.9,-1.3) circle (1.3pt);
+  \node[font=\sffamily\small, align=left, anchor=north west] at (-2.4,-2.2) {CLK $=0$: master transparent, slave holds;\\
+  CLK $=1$: master holds, slave transparent;\\ $\Rightarrow$ $Q$ changes only when CLK goes from 0 to 1.};
+\end{tikzpicture}
+\caption{A D flip-flop built as a master--slave circuit}
+\label{fig:ms}
+\end{figure}
+
+In schematics a D flip-flop is drawn as a rectangle whose clock input is
+marked with a triangle (the ``edge-triggered'' sign):
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=green!8] (0,0) rectangle (1.8,2.2);
+  \node[font=\sffamily\small] at (0.3,1.7) {D}; \node[font=\sffamily\small] at (1.5,1.7) {Q};
+  \node[font=\sffamily\small] at (1.5,0.5) {$\overline{\text{Q}}$};
+  \draw[thick] (0,0.3) -- (0.25,0.5) -- (0,0.7);
+  \draw[wire] (-0.7,1.7) node[left] {$D$} -- (0,1.7);
+  \draw[wire] (-0.7,0.5) node[left] {CLK} -- (0,0.5);
+  \draw[wire] (1.8,1.7) -- (2.5,1.7) node[right] {$Q$};
+  \draw[wire] (1.8,0.5) -- (2.1,0.5); \draw[thick] (2.18,0.5) circle (0.08); \draw[wire] (2.26,0.5) -- (2.5,0.5) node[right] {$\overline{Q}$};
+  \draw[wire] (0.9,2.2) -- (0.9,2.7) node[above] {$\overline{\text{SET}}$}; \draw[thick, fill=white] (0.9,2.28) circle (0.08);
+  \draw[wire] (0.9,0) -- (0.9,-0.5) node[below] {$\overline{\text{RST}}$}; \draw[thick, fill=white] (0.9,-0.08) circle (0.08);
+  \node[font=\sffamily\small, align=left, anchor=west] at (4.2,1.6) {triangle---triggers on the edge};
+  \node[font=\sffamily\small, align=left, anchor=west] at (4.2,1.0) {circle---active level is 0};
+  \node[font=\sffamily\small, align=left, anchor=west] at (4.2,0.4) {SET, RST---asynchronous set and reset:};
+  \node[font=\sffamily\small, align=left, anchor=west] at (4.2,-0.1) {they act immediately, without waiting for an edge};
+\end{tikzpicture}
+\caption{The schematic symbol of a D flip-flop}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.08, xscale=1.6, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  CLK                  & 2L 4H 4L 4H 2L \\
+  $D$                  & 1L 2H 1L 4H 3L 1H 4L \\
+  $Q$ of the latch     & 2L 1H 1L 6H 1L 1H 4L \\
+  $Q$ of the flip-flop & 2L 8H 6L \\
+\extracode
+  \begin{pgfonlayer}{background}
+    \draw[FpgaOrange, dashed] (2,1.3) -- (2,-7.2);
+    \draw[FpgaOrange, dashed] (10,1.3) -- (10,-7.2);
+  \end{pgfonlayer}
+  \node[lbl, text=FpgaOrange] at (2,1.6) {edge}; \node[lbl, text=FpgaOrange] at (10,1.6) {edge};
+\end{tikztimingtable}
+\caption{Comparison: the latch (Fig.~\ref{fig:dlatch_t}) passes all changes of
+$D$ while CLK $=1$, whereas the flip-flop takes the value of $D$ \emph{only at the edge}}
+\label{fig:latch_vs_ff}
+\end{figure}
+
+\begin{diybox}[Latch Versus Flip-Flop]
+\textbf{Task.} \stars{1} The lesson ``D flip-flop: remember a bit''. \stars{2} Apply
+the same signal $D$ to the latch from the previous section and to the ``D
+flip-flop'' block, and make the clock a long pulse. Find the moment where their
+outputs diverge.
+\stars{3} Apply $D=\overline{Q}$ first to the flip-flop, then to the latch.\\
+\textbf{In Logra:} Designer, Waveforms, RTL.\\
+\textbf{Expected result:} the flip-flop divides the frequency by 2, and the latch
+at $C=1$ goes into fast oscillations (in the simulator this appears as \code{X} or
+alternation).\\
+\textbf{How to check:} Waveforms; compare with Fig.~\ref{fig:latch_vs_ff}.
+\end{diybox}
+
+\section{Flip-Flop Timing Parameters}
+
+For a flip-flop to store a value reliably, the input $D$ must stay unchanged for
+some time before the edge and after it:
+\begin{itemize}
+  \item $t_\text{su}$ (setup, the \term{setup time})---how long $D$ must
+        be stable \emph{before} the edge;
+  \item $t_\text{h}$ (hold, the \term{hold time})---how long \emph{after} the edge;
+  \item $t_\text{co}$ (clock-to-output)---how long after the edge $Q$ changes.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \draw[very thick, FpgaBlue] (0,2.2) -- (4,2.2) -- (4.1,3) -- (8,3);
+  \node[font=\sffamily\small, anchor=east] at (-0.1,2.6) {CLK};
+  \draw[very thick] (0,1.1) -- (1.5,1.1) -- (1.7,1.5) -- (6,1.5) -- (6.2,1.1) -- (8,1.1);
+  \draw[very thick] (0,1.5) -- (1.5,1.5) -- (1.7,1.1) -- (6,1.1) -- (6.2,1.5) -- (8,1.5);
+  \node[font=\sffamily\small, anchor=east] at (-0.1,1.3) {$D$};
+  \node[font=\sffamily\scriptsize] at (3.9,1.3) {stable};
+  \draw[very thick, FpgaGreen] (0,0) -- (4.8,0) -- (4.9,0.4) -- (8,0.4);
+  \node[font=\sffamily\small, anchor=east] at (-0.1,0.2) {$Q$};
+  \fill[FpgaRed, opacity=0.15] (2.6,0.9) rectangle (4.05,1.7);
+  \fill[FpgaOrange, opacity=0.2] (4.05,0.9) rectangle (4.8,1.7);
+  \draw[dashed, FpgaGray] (4.05,3.3) -- (4.05,-0.5);
+  \draw[<->] (2.6,-0.35) -- (4.05,-0.35) node[midway, below, font=\sffamily\small] {$t_\text{su}$};
+  \draw[<->] (4.05,-0.35) -- (4.8,-0.35) node[midway, below, font=\sffamily\small] {$t_\text{h}$};
+  \draw[<->] (4.05,-1.1) -- (4.85,-1.1) node[midway, below, font=\sffamily\small] {$t_\text{co}$};
+\end{tikzpicture}
+\caption{Setup time, hold time and the output delay of a flip-flop}
+\label{fig:setup_hold}
+\end{figure}
+
+\begin{warnbox}[Metastability]
+If $D$ changes inside the window $t_\text{su}$--$t_\text{h}$, the flip-flop may
+``hang'' for some time in an intermediate state---neither 0 nor 1---and
+only then fall randomly into one of them. This is \term{metastability}. It
+inevitably arises when a signal unrelated to the clock (for example, from a
+button) arrives at a flip-flop. The protection is a \term{synchronizer} made of
+two flip-flops in a row: by the time of the next edge the first flip-flop has
+almost certainly settled.
+\end{warnbox}
+
+\begin{diybox}[An Asynchronous Button]
+\textbf{Task.} \stars{1} The lesson ``Synchronizer: tie the button to the clock''.
+\stars{2} In Waveforms, move the button press to different moments of the clock
+and explain on which clock cycle the result becomes visible. \stars{3} Add the
+``Edge detector: one pulse per press'' (a lesson of the same name) after the
+synchronizer.\\
+\textbf{In Logra:} Learn, Designer, Waveforms.\\
+\textbf{Expected result:} the synchronizer output changes only on an edge,
+lagging by two clock cycles; the detector gives exactly one pulse per press,
+however many cycles the button is held.\\
+\textbf{How to check:} Waveforms: holding the button for 10 cycles gives
+one pulse.
+\end{diybox}
+
+\section{The Enable Input}
+
+Often we need a flip-flop to update not on every edge, but only on command. For
+this a clock enable input CE is added. It is simple: a multiplexer is placed in
+front of the input $D$, and at CE $=0$ it feeds the flip-flop's own output back
+to its input---the flip-flop rewrites itself and does not change.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=orange!15] (0,0.9) -- (0.9,0.5) -- (0.9,-0.5) -- (0,-0.9) -- cycle;
+  \node[font=\sffamily\scriptsize] at (0.45,0) {MUX};
+  \node[font=\tiny, anchor=west] at (0.02,0.5) {0}; \node[font=\tiny, anchor=west] at (0.02,-0.5) {1};
+  \draw[thick, fill=green!8] (1.8,-0.8) rectangle (3.2,0.8);
+  \node[font=\sffamily\small] at (2.05,0) {D}; \node[font=\sffamily\small] at (2.95,0) {Q};
+  \draw[thick] (2.3,-0.8) -- (2.5,-0.6) -- (2.7,-0.8);
+  \draw[wire] (0.9,0) -- (1.8,0);
+  \draw[wire] (3.2,0) -- (4.4,0) node[right] {$Q$};
+  \draw[wire] (3.8,0) -- (3.8,1.5) -| (-0.6,0.5) -- (0,0.5); \fill (3.8,0) circle (1.3pt);
+  \draw[wire] (-1.2,-0.5) node[left] {$D$} -- (0,-0.5);
+  \draw[wire, FpgaBlue] (0.45,-0.7) -- (0.45,-1.4) node[below, text=FpgaDark] {CE};
+  \draw[wire, FpgaBlue] (2.5,-0.8) -- (2.5,-1.4) node[below, text=FpgaDark] {CLK};
+\end{tikzpicture}
+\caption{A D flip-flop with an enable input: a multiplexer plus feedback}
+\label{fig:ce}
+\end{figure}
+
+\begin{diybox}[Write Enable]
+\textbf{Task.} \stars{1} The lesson ``A register with write enable''. \stars{2}
+The lesson ``A register with reset'': add a synchronous reset and check that
+when reset and write happen together, the reset wins. \stars{3} Build the same
+without the ready-made block: a multiplexer plus the ``D flip-flop'' block as in
+Fig.~\ref{fig:ce}.\\
+\textbf{In Logra:} Learn, Designer, Waveforms, RTL.\\
+\textbf{Expected result:} at $\text{CE}=0$ the output holds its value, however
+$D$ changes.\\
+\textbf{How to check:} Waveforms (change $D$ at $\text{CE}=0$); RTL
+will show the same multiplexer in front of the flip-flop.
+\end{diybox}
+
+\section{The T Flip-Flop and the JK Flip-Flop}
+
+The \term{T flip-flop} (toggle) changes its state to the opposite one at every
+edge if the input is $T=1$, and holds it at $T=0$. It is easy to make from a D
+flip-flop and an XOR gate: $D = T \oplus Q$.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.5\textwidth}
+\centering
+\begin{tikzpicture}
+  \node[gXOR, minimum width=10mm, minimum height=8mm] (x) at (0,0) {};
+  \draw[thick, fill=green!8] (1.2,-0.8) rectangle (2.6,0.8);
+  \node[font=\sffamily\small] at (1.45,0) {D}; \node[font=\sffamily\small] at (2.35,0) {Q};
+  \draw[thick] (1.7,-0.8) -- (1.9,-0.6) -- (2.1,-0.8);
+  \draw[wire] (x.output) -- (1.2,0);
+  \draw[wire] (2.6,0) -- (3.6,0) node[right] {$Q$};
+  \draw[wire] (3.1,0) -- (3.1,1.3) -| (-1.0,0 |- x.input 1) -- (x.input 1); \fill (3.1,0) circle (1.3pt);
+  \draw[wire] (x.input 2) -- ++(-0.9,0) node[left] {$T$};
+  \draw[wire, FpgaBlue] (1.9,-0.8) -- (1.9,-1.3) node[below, text=FpgaDark] {CLK};
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.45\textwidth}
+\centering
+\begin{tabular}{c|c|l}
+\toprule
+$T$ & $Q$ after the edge & \\
+\midrule
+0 & $Q$ & hold \\
+1 & $\overline{Q}$ & toggle \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\caption{A T flip-flop made of a D flip-flop and an XOR gate}
+\end{figure}
+
+If you keep $T=1$ on a T flip-flop, it toggles at every edge, and the frequency
+at its output is \emph{half} the clock frequency. This is the simplest
+\term{divide-by-2 frequency divider}.
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.08, xscale=1.5, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  CLK            & 8{1L 1H} \\
+  $Q$ ($T=1$)    & 1L 2H 2L 2H 2L 2H 2L 2H 1L \\
+\end{tikztimingtable}
+\caption{A T flip-flop with $T=1$ divides the frequency by 2}
+\end{figure}
+
+The \term{JK flip-flop} combines the abilities of the RS and T flip-flops: $J$ is
+set, $K$ is reset, $J = K = 1$ is toggle (there is no forbidden combination). In
+old circuits built from the 155-series chips, JK flip-flops were very
+popular. In modern programmable-logic chips only D flip-flops remain, and the
+other kinds are obtained from them when needed by adding logic at the input.
+
+\begin{table}[H]
+\centering
+\caption{Summary: kinds of flip-flops}
+\small
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Type} & \textbf{When it acts} & \textbf{What it does} \\
+\midrule
+RS latch & immediately & $S$ sets to 1, $R$ resets to 0, $S=R=1$ is forbidden \\
+D latch  & while $C = 1$ & follows $D$, holds at $C = 0$ \\
+\textbf{D flip-flop} & \textbf{on the edge} of CLK & stores $D$ at the moment of the edge \\
+T flip-flop  & on the edge of CLK & at $T=1$ changes state to the opposite one \\
+JK flip-flop & on the edge of CLK & $J$ is set, $K$ is reset, $J=K=1$ is toggle \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{ideabox}
+A flip-flop stores one bit. The main memory element in digital technology is the
+\textbf{D flip-flop}: it stores the value of the input $D$ at the moment of the
+\emph{rising edge} of the clock signal and holds it until the next edge. For the
+flip-flop to work reliably, the input must not change in the window
+$t_\text{su}$--$t_\text{h}$ around the edge.
+\end{ideabox}
+
+\begin{diybox}[T and JK Flip-Flops; Project Stage]
+\textbf{Task.} \stars{1} The lessons ``T flip-flop: a toggle'' and ``JK flip-flop''.
+\stars{2} The lesson ``A divide-by-2 frequency divider'' (chapter ``Counters and
+dividers''): make sure the output is half as fast as the clock. \stars{3}
+\textbf{Project stage ``Security Panel'': remembering the alarm.} Open the
+project ``An alarm with memory'' (chapter ``Projects'' of the ``Circuits and the
+board'' book): the sensor \code{sensor} gave 1 once, and the output \code{y}
+stays 1 until the reset \code{reset} arrives. Take as the sensor the signal
+``door open and guard on'' from stage~2, and as the reset the guard's key.\\
+\textbf{In Logra:} Learn (chapter ``Projects''), Designer, Waveforms, RTL.\\
+\textbf{Expected result:} the door was open for one clock cycle and then closed---the
+siren keeps sounding; the key clears the alarm, and the reset is stronger than the
+sensor.\\
+\textbf{Acceptance criterion:} all six checks of the lesson are green; Waveforms
+shows a ``step'' of the output that does not disappear after the door closes; RTL
+shows one flip-flop and one OR gate in the feedback path.
+\end{diybox}
+
+\section{Common Mistakes}
+
+\begin{warnbox}[Common Mistakes]
+\begin{enumerate}
+  \item \textbf{``A latch is the same as a flip-flop.''} A latch is transparent
+        the whole time while $C=1$; a flip-flop takes the value only at the
+        moment of the edge. Put a latch in a feedback loop (for example, $D=\overline{Q}$)---
+        you get not a divide-by-2 but a noise generator.
+  \item \textbf{Releasing both signals $S=R=1$ at the same time.} The state after
+        that is unpredictable: both gates ``want'' to switch at once, and
+        whichever happens to be slightly faster wins.
+  \item \textbf{``A two-flip-flop synchronizer solves the problem forever.''} It
+        only makes metastability at the output extremely
+        rare, but not impossible. And it is good for one bit: a bus of
+        several bits cannot be passed this way, because the bits may arrive in
+        different clock cycles.
+  \item \textbf{Not setting the initial state.} After power-up
+        a flip-flop is in a random state. If the alarm is ``remembered'' out of
+        nothing, the siren will wail right after power-on. You need a reset.
+  \item \textbf{Expecting $Q$ to change at the moment of the edge.} The output changes
+        $t_\text{co}$ \emph{after} the edge, and the inputs of its own
+        flip-flop ``see'' the old value. That is exactly why chains of flip-flops shift
+        rather than fly straight through.
+\end{enumerate}
+\end{warnbox}
+
+\section{Questions and Problems}
+\label{sec:tasks-ff}
+
+Answers are collected in Appendix~\ref{app:answers}.
+
+\begin{taskbox}[Chapter Problems]
+\begin{enumerate}
+  \item \stars{1}~For an RS flip-flop made of NOR gates, which input combination is forbidden and why?
+  \item \stars{2}~How does a D latch differ from a D flip-flop? Draw the response of both to the same input signal during a clock pulse.
+  \item \stars{2}~The setup time is 0.4~ns, the flip-flop output delay is 0.5~ns, and the combinational logic between flip-flops is 3~ns. What is the minimum period and what is the maximum frequency?
+  \item \stars{1}~How do you make a T flip-flop from a D flip-flop? What appears at the output if $T=1$ constantly?
+  \item \stars{1}~What does a JK flip-flop do at $J=K=1$ on a clock edge?
+  \item \stars{2}~What is metastability and in what situation does it arise? Why is an asynchronous signal passed through two flip-flops in a row?
+  \item \stars{2}~\textbf{Find the error.} A student wanted to make a divide-by-2 frequency divider and connected the output $\overline{Q}$ of a D latch to its input $D$, using a 1~MHz signal as the clock. What will happen and how can it be fixed?
+  \item \stars{2}~\textbf{Find the error.} In the ``alarm with memory'' the input $D$ of the flip-flop was connected only to the sensor (without feedback through an OR). What will happen after the door closes?
+  \item \stars{3}~\textbf{Project.} In the Designer, build the ``alarm with memory'' without the ready-made lesson: sensor \code{sensor}, key \code{key} (reset), a synchronous flip-flop. Acceptance criterion: in Waveforms the door is open for one clock cycle, the alarm holds, the key resets, and when \code{key} and \code{sensor} are active together the key wins.
+  \item \stars{3}~\textbf{Project.} One pulse per press: put a synchronizer and an edge detector in front of the alarm. Acceptance criterion: the button is held for 10 cycles, and the event counter (one press) increased by 1.
+\end{enumerate}
+\end{taskbox}
+
+\section{What's Next}
+
+We have learned to store \emph{one} bit and know when it can be trusted. But the
+lock code, the alarm time and the zone number are numbers, not single bits. The
+next question: what happens if we put several flip-flops side by side, and how
+can we make them count time for the siren's ``beep''? That is the subject of the
+next chapter: registers, shifting and counters.

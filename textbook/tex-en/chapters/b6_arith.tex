@@ -1,0 +1,612 @@
+\chapter{Arithmetic Units}
+\label{ch:arith}
+
+We can select (Chapter~\ref{ch:mux}) and distribute signals, but so far we work
+only with yes/no bits. A question remains: how does a circuit made of gates
+\emph{calculate}? The word ``computer'' means ``one that computes'', and the
+main thing a computer does is calculate. In this chapter we will see that
+adding, subtracting, and comparing numbers are done by the very same logic
+gates, and then we will assemble them into an arithmetic logic unit.
+
+\begin{buildbox}
+\textbf{Task.} Add two one-bit numbers and get a sum and a carry.
+
+\textbf{In Logra.} Learn tab, the ``Circuits and the board'' book, the
+``Arithmetic'' chapter, the lesson ``A half adder from gates'' (Designer): you
+need two gates, XOR and AND.
+
+\textbf{Expected result.} For inputs $a,b$ the sum output equals $a\oplus b$ and
+the carry output equals $a\cdot b$; for $1+1$ you get sum 0 and carry 1. The
+rest of the chapter shows how to extend this circuit to multibit numbers,
+negative numbers, and comparison.
+\end{buildbox}
+
+\section{Adding Binary Numbers}
+
+Binary numbers are added in columns, like decimal ones, except that a carry to
+the next position occurs when the sum reaches two:
+\[
+  0+0 = 0, \quad 0+1 = 1, \quad 1+0 = 1, \quad 1+1 = 10_2 \ (\text{zero and a carry of one}).
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=9mm, y=7mm, font=\ttfamily\large]
+  \node[text=FpgaRed, font=\ttfamily\small] at (1,3) {1}; \node[text=FpgaRed, font=\ttfamily\small] at (2,3) {1};
+  \node[text=FpgaRed, font=\ttfamily\small] at (3,3) {1};
+  \foreach \d [count=\i] in {0,1,1,1} \node at (\i,2) {\d};
+  \foreach \d [count=\i] in {0,0,1,1} \node at (\i,1) {\d};
+  \foreach \d [count=\i from 0] in {1,0,1,0} \node at (\i+1,-0.2) {\d};
+  \node at (-0.2,1.5) {$+$};
+  \draw[thick] (0.4,0.5) -- (4.5,0.5);
+  \node[font=\sffamily\small, anchor=west] at (5.2,2) {$0111_2 = 7$};
+  \node[font=\sffamily\small, anchor=west] at (5.2,1) {$0011_2 = 3$};
+  \node[font=\sffamily\small, anchor=west] at (5.2,-0.2) {$1010_2 = 10$};
+  \node[font=\sffamily\small, anchor=west, text=FpgaRed] at (5.2,3) {carries};
+\end{tikzpicture}
+\caption{Column addition in the binary system}
+\end{figure}
+
+\begin{diybox}[Column addition]
+\textbf{Task.} \stars{1} Add $0111_2+0011_2$ on paper and confirm the carry
+between bit positions. \stars{2} Predict for which $a,b$ the top carry occurs in
+the $4$-bit sum $a+b$, and check in Logra.
+
+\textbf{In Logra.} Learn tab, the ``Arithmetic'' chapter, the lesson ``An adder
+as one block''; then Waveforms.
+
+\textbf{Expected result.} The sum $7+3=10=1010_2$ with no carry out of the top
+bit; $15+1$ gives zero and carry 1.
+
+\textbf{How to check.} Waveforms: apply $7$ and $3$, then $15$ and $1$, and
+compare the sum and carry-output values with your paper calculation.
+\end{diybox}
+
+\section{The Half Adder}
+
+Adding two one-bit numbers $a$ and $b$ gives a two-bit result: a sum bit $s$ and
+a carry bit $c$. The truth table:
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.35\textwidth}
+\centering
+\begin{tabular}{cc|cc}
+\toprule
+$a$ & $b$ & $c$ & $s$ \\
+\midrule
+0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 1 \\
+1 & 0 & 0 & 1 \\
+1 & 1 & 1 & 0 \\
+\bottomrule
+\end{tabular}
+
+\medskip
+$s = a \oplus b, \qquad c = a\cdot b$
+\end{minipage}
+\begin{minipage}{0.55\textwidth}
+\centering
+\begin{tikzpicture}
+  \node[gXOR, minimum height=12mm] (x) at (2,0.8) {};
+  \node[gAND, minimum height=12mm] (g) at (2,-0.8) {};
+  \draw[wire] (x.input 1) -- ++(-2.0,0) node[left] {$a$};
+  \draw[wire] (x.input 2) -- ++(-2.0,0) node[left] {$b$};
+  \coordinate (A) at ($(x.input 1)+(-1.4,0)$); \coordinate (B) at ($(x.input 2)+(-0.9,0)$);
+  \draw[wire] (A) |- (g.input 1); \fill (A) circle (1.3pt);
+  \draw[wire] (B) |- (g.input 2); \fill (B) circle (1.3pt);
+  \draw[wire] (x.output) -- ++(0.6,0) node[right] {$s$ (sum)};
+  \draw[wire] (g.output) -- ++(0.6,0) node[right] {$c$ (carry)};
+\end{tikzpicture}
+\end{minipage}
+\caption{The half adder}
+\label{fig:ha}
+\end{figure}
+
+\begin{diybox}[The half adder]
+\textbf{Task.} \stars{1} Build a half adder from an XOR gate and an AND gate.
+\stars{2} Connect the outputs to two lamps and check all four combinations.
+
+\textbf{In Logra.} Learn tab, the ``Arithmetic'' chapter, the lesson ``A half
+adder from gates''; the reference is the example \code{half-adder}.
+
+\textbf{Expected result.} The sum $s$ and carry $c$ as in the table above.
+
+\textbf{How to check.} Waveforms: the four combinations of $a,b$; RTL: two gates
+on the inputs $a,b$, as in Fig.~\ref{fig:ha}.
+\end{diybox}
+
+\section{The Full Adder}
+
+A half adder is good only for the lowest bit. In the other bit positions
+\emph{three} bits are added: $a_i$, $b_i$, and the carry $c_\text{in}$ from the
+previous position. Such a unit is called a \term{full adder}.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.38\textwidth}
+\centering
+\small
+\begin{tabular}{ccc|cc}
+\toprule
+$a$ & $b$ & $c_\text{in}$ & $c_\text{out}$ & $s$ \\
+\midrule
+0&0&0 & 0&0 \\
+0&0&1 & 0&1 \\
+0&1&0 & 0&1 \\
+0&1&1 & 1&0 \\
+1&0&0 & 0&1 \\
+1&0&1 & 1&0 \\
+1&1&0 & 1&0 \\
+1&1&1 & 1&1 \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\begin{minipage}{0.58\textwidth}
+\[
+  s = a \oplus b \oplus c_\text{in}
+\]
+\[
+  c_\text{out} = ab + ac_\text{in} + bc_\text{in}
+\]
+\small Note that $c_\text{out}$ is the ``2 out of 3'' majority function from
+Chapter~\ref{ch:comb}! A carry occurs when there are at least two ones.
+\end{minipage}
+\caption{The full adder: truth table and formulas}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[ha/.style={draw=FpgaBlue, fill=FpgaLight, thick, minimum width=14mm, minimum height=14mm, font=\sffamily\small, align=center}]
+  \node[ha] (h1) at (0,0) {HA};
+  \node[ha] (h2) at (2.8,-0.6) {HA};
+  \node[gOR, minimum width=10mm, minimum height=7mm] (o) at (5.4,-1.8) {};
+  \draw[wire] ([yshift=3.5mm]h1.west) -- ++(-0.8,0) node[left] {$a$};
+  \draw[wire] ([yshift=-3.5mm]h1.west) -- ++(-0.8,0) node[left] {$b$};
+  \draw[wire] ([yshift=3.5mm]h1.east) -- node[above, lbl] {$s$} ++(0.4,0) |- ([yshift=3.5mm]h2.west);
+  \draw[wire] (-0.8,-1.4) node[left] {$c_\text{in}$} -- (1.7,-1.4) |- ([yshift=-3.5mm]h2.west);
+  \draw[wire] ([yshift=3.5mm]h2.east) -- ++(3.4,0) node[right] {$s$};
+  \draw[wire] ([yshift=-3.5mm]h1.east) -- node[below, lbl, pos=0.3] {$c$} ++(0.25,0) |- (0.95,-2.2) -- (4.7,-2.2) |- (o.input 2);
+  \draw[wire] ([yshift=-3.5mm]h2.east) -- node[above, lbl] {$c$} ++(0.4,0) |- (o.input 1);
+  \draw[wire] (o.output) -- ++(0.6,0) node[right] {$c_\text{out}$};
+\end{tikzpicture}
+\caption{A full adder made of two half adders and an OR gate}
+\label{fig:fa}
+\end{figure}
+
+\begin{diybox}[The full adder]
+\textbf{Task.} \stars{1} Build a full adder from two half adders and an OR gate
+as in Fig.~\ref{fig:fa}. \stars{2} Build the carry differently: as ``2 out of
+3'' ($ab+ac_\text{in}+bc_\text{in}$) and compare the two versions.
+
+\textbf{In Logra.} Learn tab, the ``Arithmetic'' chapter, the lesson ``A full
+adder''; the reference is the example \code{full-adder}.
+
+\textbf{Expected result.} All $8$ combinations give the values of the table
+$c_\text{out}$, $s$; both ways of getting the carry agree.
+
+\textbf{How to check.} Waveforms: go through all $8$ rows; RTL: compare the
+number of gates in the two versions.
+\end{diybox}
+
+\section{The Multibit Adder}
+
+To add $n$-bit numbers, $n$ full adders are connected in a chain: the carry
+output of each bit position goes to the carry input of the next. Such an adder
+is called a \term{ripple-carry adder}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[fa/.style={draw=FpgaBlue, fill=FpgaLight, thick, minimum width=15mm, minimum height=13mm, font=\sffamily\small}]
+  \foreach \i [evaluate=\i as \x using (3-\i)*2.9] in {0,...,3} {
+    \node[fa] (f\i) at (\x,0) {FA$_\i$};
+    \draw[wire] ([xshift=-3mm]f\i.north) -- ++(0,0.6) node[above] {$a_\i$};
+    \draw[wire] ([xshift=3mm]f\i.north) -- ++(0,0.6) node[above] {$b_\i$};
+    \draw[wire] (f\i.south) -- ++(0,-0.6) node[below] {$s_\i$};
+  }
+  \foreach \i [evaluate=\i as \j using int(\i+1)] in {0,1,2}
+    \draw[arr, FpgaRed] (f\i.west) -- node[above, lbl] {$c_\j$} (f\j.east);
+  \draw[arr] ($(f0.east)+(0.8,0)$) node[right] {$c_0 = 0$} -- (f0.east);
+  \draw[arr, FpgaRed] (f3.west) -- ++(-0.8,0) node[left, text=FpgaDark] {$c_4$ (carry)};
+\end{tikzpicture}
+\caption{A four-bit ripple-carry adder. The carry chain is shown in red}
+\label{fig:rca}
+\end{figure}
+
+The drawback of such an adder: the top bit cannot compute its result until it
+receives the carry from the lower bit, and that bit waits for the carry from an
+even lower one. The delay grows in proportion to the number of bits. That is why
+fast processors use adders with \term{carry lookahead}, in which the carry is
+computed in parallel by a special circuit. \lookahead{in an FPGA, a separate
+fast \emph{carry chain} is laid next to each logic block for this purpose
+(Chapter~\ref{ch:inside}).}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.8\textwidth, height=5.4cm, xlabel={Width, bits}, ylabel={Delay, $t_\text{d}$},
+  xmin=0, xmax=64, ymin=0, ymax=140, xtick={8,16,32,48,64},
+  legend pos=north west, legend style={font=\sffamily\small, draw=none, fill=white, fill opacity=0.8},
+  label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
+  grid=major, grid style={FpgaGray!20}, axis lines*=left,
+]
+  \addplot[very thick, FpgaRed, domain=1:64, samples=2] {2*x};
+  \addlegendentry{ripple carry ($\sim n$)}
+  \addplot[very thick, FpgaGreen, domain=1:64, samples=64] {4+4*ln(x)/ln(2)};
+  \addlegendentry{carry lookahead ($\sim \log_2 n$)}
+\end{axis}
+\end{tikzpicture}
+\caption{Adder delay as a function of width (an estimate)}
+\end{figure}
+
+\begin{diybox}[A four-bit adder]
+\textbf{Task.} \stars{1} Build a 4-bit adder from four full adders as in
+Fig.~\ref{fig:rca}. \stars{2} Check $7+9$ and $15+1$ and explain where $c_4$
+comes from. \stars{3} Using problem~5 of this chapter, estimate how long the
+carry takes to travel along the chain.
+
+\textbf{In Logra.} Designer; the reference is the lesson ``An adder as one
+block'' and the example \code{carry-overflow}.
+
+\textbf{Expected result.} $7+9=0000$ with carry $c_4=1$ (the number 16 does not
+fit in 4 bits); $15+1=0000$ with $c_4=1$.
+
+\textbf{How to check.} Waveforms: in a chain of four adders the output $s_3$
+changes later than $s_0$; compare the ready-made block and your chain with the
+same inputs.
+\end{diybox}
+
+\section{Negative Numbers and Subtraction}
+
+How do we write a negative number if we have only zeros and ones? We use
+\term{two's complement}: the top bit is considered to have a \emph{negative}
+weight. For 4 bits the weights of the bit positions are $-8, 4, 2, 1$.
+
+\begin{table}[H]
+\centering
+\caption{Four-bit numbers in two's complement}
+\small
+\begin{tabular}{c c @{\hspace{10mm}} c c}
+\toprule
+\textbf{Code} & \textbf{Number} & \textbf{Code} & \textbf{Number} \\
+\midrule
+\code{0000} & 0 & \code{1000} & $-8$ \\
+\code{0001} & 1 & \code{1001} & $-7$ \\
+\code{0010} & 2 & \code{1010} & $-6$ \\
+\code{0011} & 3 & \code{1011} & $-5$ \\
+\code{0100} & 4 & \code{1100} & $-4$ \\
+\code{0101} & 5 & \code{1101} & $-3$ \\
+\code{0110} & 6 & \code{1110} & $-2$ \\
+\code{0111} & 7 & \code{1111} & $-1$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \foreach \i in {0,...,15} {
+    \pgfmathsetmacro{\ang}{90-\i*22.5}
+    \pgfmathtruncatemacro{\v}{\i<8 ? \i : \i-16}
+    \fill[\ifnum\i<8 FpgaBlue\else FpgaOrange\fi] (\ang:2.2) circle (0.09);
+    \node[font=\sffamily\small] at (\ang:2.65) {\v};
+  }
+  \draw[thick, FpgaGray] (0,0) circle (2.2);
+  \node[font=\ttfamily\scriptsize] at (90:1.75) {0000};
+  \node[font=\ttfamily\scriptsize] at (90-7*22.5:1.75) {0111};
+  \node[font=\ttfamily\scriptsize] at (90-8*22.5:1.75) {1000};
+  \node[font=\ttfamily\scriptsize] at (90-15*22.5:1.75) {1111};
+  \draw[-{Stealth}, thick, FpgaGreen] (60:1.2) arc (60:-30:1.2);
+  \node[font=\sffamily\small, text=FpgaGreen] at (0,0) {$+1$};
+  \node[font=\sffamily\small, align=left, anchor=west] at (3.6,0.8) {\textcolor{FpgaBlue}{$\bullet$} positive: top bit 0};
+  \node[font=\sffamily\small, align=left, anchor=west] at (3.6,0.1) {\textcolor{FpgaOrange}{$\bullet$} negative: top bit 1};
+  \node[font=\sffamily\small, align=left, anchor=west] at (3.6,-0.8) {$7 + 1 = -8$: \textbf{overflow}!};
+\end{tikzpicture}
+\caption{Two's complement numbers are conveniently shown on a circle: adding
+one is a step clockwise}
+\end{figure}
+
+The main advantage of two's complement: \textbf{one and the same adder can both
+add and subtract}. To get $-b$, invert all the bits of $b$ and add one:
+\[
+  a - b = a + \overline{b} + 1.
+\]
+The inversion is done by XOR gates (with a control signal of 1, the gate
+$x\oplus 1 = \overline{x}$ inverts), and the one is supplied by the carry input
+of the lowest bit.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[hblock, minimum width=40mm, minimum height=14mm] (add) at (0,0) {4-bit\\adder};
+  \node[block, minimum width=22mm, minimum height=10mm] (xr) at (1.0,2.2) {4 XOR\\\scriptsize gates};
+  \draw[bus, -{Stealth}] (1.0,3.6) node[above, text=FpgaDark] {$B$} -- (xr.north);
+  \draw[bus, -{Stealth}] (xr.south) -- node[right, lbl] {$B$ or $\overline{B}$} (1.0,0.7);
+  \draw[bus, -{Stealth}] (-1.0,3.6) node[above, text=FpgaDark] {$A$} -- (-1.0,0.7);
+  \draw[arr, FpgaRed] (-3.2,2.2) node[left, text=FpgaDark] {SUB} -- (xr.west);
+  \draw[arr, FpgaRed] (-2.6,2.2) |- node[pos=0.75, above, lbl, text=FpgaRed] {$c_0$} (add.west);
+  \fill[FpgaRed] (-2.6,2.2) circle (1.5pt);
+  \draw[bus, -{Stealth}] (add.south) -- ++(0,-0.8) node[below, text=FpgaDark] {$S = A \pm B$};
+\end{tikzpicture}
+\caption{An adder-subtractor: with SUB $= 0$ it computes $A+B$, with SUB $= 1$
+it computes $A-B$}
+\end{figure}
+
+\begin{diybox}[Subtraction]
+\textbf{Task.} \stars{1} Compute $7-3$ by hand as $0111+1101$ and confirm in
+Logra. \stars{2} Build an adder-subtractor as in the figure: four XOR gates on
+the input $B$ and the carry $c_0=\text{SUB}$. \stars{3} Apply $3-5$ and explain
+the negative result.
+
+\textbf{In Logra.} Learn tab, the ``Arithmetic'' chapter, the lessons
+``Subtraction'' and ``Changing the sign''; the reference is the example
+\code{full-subtractor}.
+
+\textbf{Expected result.} $7-3=0100=4$; $3-5=1110=-2$ (top bit 1).
+
+\textbf{How to check.} Waveforms: with SUB $=0$ the output is $A+B$, with
+SUB $=1$ the output is $A-B$; compare with the table of four-bit numbers in
+two's complement.
+\end{diybox}
+
+\section{Overflow and Sign}
+
+Four bits hold numbers from $-8$ to $+7$. If a result does not fit in this
+range, the adder still outputs four bits, but they are \emph{wrong}. This is
+\term{overflow}. For example:
+\begin{gather*}
+  5 + 3:\ 0101_2 + 0011_2 = 1000_2 = -8, \\
+  (-8) + (-1):\ 1000_2 + 1111_2 = 1\,0111_2 \to 0111_2 = +7.
+\end{gather*}
+Two positive numbers gave a negative one, two negative numbers gave a positive
+one. This is the sign of overflow in signed numbers: \emph{the addends have one
+sign, and the result has the other}. Addends of different signs cannot overflow:
+their sum lies between them.
+
+The circuit detects overflow from the carries of the top bit. Let $c_3$ be the
+carry \emph{into} the top bit and $c_4$ the carry \emph{out of} it. Then
+\[
+  V = c_3 \oplus c_4 .
+\]
+Let us check: in $5+3$ we have $c_3=1$, $c_4=0$, $V=1$; in $7-3$ ($0111+1101$)
+$c_3=1$, $c_4=1$, $V=0$, and the carry $c_4=1$ is simply discarded---the result
+$0100=4$ is correct. We see that \textbf{a carry out of the top bit and overflow
+are different things}: the carry $c_4$ means going out of range only for
+\emph{unsigned} numbers ($15+1$), while overflow $V$ does so for signed ones.
+
+Next to the result, an ALU usually outputs four \term{flags}:
+\begin{itemize}
+  \item $Z$ (zero) --- all bits of the result are zero;
+  \item $N$ (negative) --- the top bit of the result;
+  \item $C$ (carry) --- $c_4$;
+  \item $V$ (overflow) --- $c_3\oplus c_4$.
+\end{itemize}
+
+The flags give a comparison from the result of the subtraction $A-B$. For signed
+numbers, $A<B$ if $N\oplus V=1$ (the sign of the result corrected for overflow).
+For unsigned numbers, $A<B$ if the carry $C=0$: when subtraction is done as
+addition of $\overline{B}+1$, the absence of a carry means a ``borrow''. Check
+with $3-5$: $0011+1011=1110$, $c_4=0$, $N=1$, $V=0$---both tests say ``less''.
+
+\begin{table}[H]
+\centering
+\caption{Flags in addition of four-bit numbers (signed values in parentheses)}
+\small
+\begin{tabular}{l c c c c c c}
+\toprule
+\textbf{Example} & \textbf{Result} & $Z$ & $N$ & $C$ & $V$ & \textbf{Correct?} \\
+\midrule
+$5+3$ (8) & \code{1000} & 0 & 1 & 0 & 1 & no, overflow \\
+$7+(-3)$ (4) & \code{0100} & 0 & 0 & 1 & 0 & yes \\
+$(-8)+(-1)$ (7) & \code{0111} & 0 & 0 & 1 & 1 & no, overflow \\
+$3+(-3)$ (0) & \code{0000} & 1 & 0 & 1 & 0 & yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+What to do on overflow is up to the designer: raise an error signal, take the
+result with \emph{saturation} (show the maximum $7$ instead of $8$), or widen
+the number. Signed numbers are widened by \term{sign extension}: the top bit is
+copied into the new upper bits (for example, $1101_2=-3$ becomes
+$1111\,1101_2=-3$).
+
+\begin{diybox}[Overflow and sign]
+\textbf{Task.} \stars{1} Add $0110_2+0101_2$ and explain why the result is
+wrong. \stars{2} Build an adder with an output $V$ (\code{V = c3 xor c4}) and
+check the table above. \stars{3} Make a saturating adder: when $V=1$ the result
+is $0111$ (if the addends are positive) or $1000$ (if they are negative).
+
+\textbf{In Logra.} Designer tab; the references are the examples
+\code{carry-overflow} and \code{saturating}; to bring out the carries $c_3,c_4$
+you need the chain of adders from the previous task.
+
+\textbf{Expected result.} $6+5$ gives \code{1011} with $V=1$; $7+(-3)$ gives
+\code{0100} with $V=0$.
+
+\textbf{How to check.} Waveforms: go through the four examples of the flags
+table and check $V$ and $C$.
+\end{diybox}
+
+\section{Comparators}
+
+A \term{comparator} compares two numbers. The easiest thing to check is
+\emph{equality}: the numbers are equal if all their bits are equal. Equality of
+two bits is checked by an XNOR gate ($\overline{a\oplus b} = 1$ when $a = b$),
+and an AND gate combines the results of all the bits.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \foreach \i in {0,...,3} {
+    \node[gXNOR, minimum width=10mm, minimum height=7mm] (x\i) at (1.5,1.8-\i*1.2) {};
+    \draw[wire] (x\i.input 1) -- ++(-0.6,0) node[left] {$a_\i$};
+    \draw[wire] (x\i.input 2) -- ++(-0.6,0) node[left] {$b_\i$};
+  }
+  \node[gAND, logic gate inputs=nnnn, minimum height=18mm] (g) at (4.2,0) {};
+  \foreach \i [evaluate=\i as \j using int(\i+1)] in {0,...,3}
+    \draw[wire] (x\i.output) -- ++(0.3,0) |- (g.input \j);
+  \draw[wire] (g.output) -- ++(0.6,0) node[right] {$A = B$};
+\end{tikzpicture}
+\caption{An equality comparator for 4-bit numbers}
+\label{fig:cmp}
+\end{figure}
+
+Comparing ``greater/less'' is more involved: the numbers are compared starting
+from the top bit. The first bit in which they differ determines the result. For
+one bit:
+\[
+  (a > b) = a\,\overline{b}, \qquad (a < b) = \overline{a}\,b, \qquad (a = b) = \overline{a\oplus b}.
+\]
+By the way, $A < B$ can also be checked with a subtractor: if $A - B$ is
+negative (the top bit of the result is 1, with no overflow), then $A < B$. The
+exact rule with the flags $N$ and $V$ is given in the section ``Overflow and
+Sign''.
+
+\begin{diybox}[Security Panel: a threshold alarm]
+\textbf{Task.} \stars{1} Build an equality comparator for 4-bit numbers as in
+Fig.~\ref{fig:cmp}. \stars{2} Build an ``$A<B$'' block and check it on the pairs
+$(3,5)$, $(5,3)$, $(5,5)$. \stars{3} Connect it up: $A$ is the noise level
+(4 bits, set by switches), $B$ is the threshold; the alarm LED is on if the
+level is \emph{greater} than the threshold.
+
+\textbf{In Logra.} Learn tab, the ``Comparison and codes'' chapter, the lessons
+``Equality in one block'' and ``Less than: A < B''; the ``Projects'' chapter, the
+lesson ``A three-way comparator''; the references are the examples
+\code{comparator} and \code{range-check}.
+
+\textbf{Expected result.} The alarm is on if the level $A>B$ and off for
+$A\le B$; when $A=B$ there is no alarm.
+
+\textbf{Security Panel project milestone: milestone~5.} A threshold alarm.
+Acceptance criterion: with the threshold $B=8$ the LED is on for levels
+$9\ldots 15$ and off for $0\ldots 8$ (Waveforms tab, going through all 16
+levels); changing the threshold moves the boundary.
+
+\textbf{How to check.} Waveforms: of the outputs $A>B$, $A=B$, $A<B$, exactly one
+is 1 for any inputs.
+\end{diybox}
+
+\section{Multiplication and the ALU}
+
+Binary multiplication is even simpler than decimal: each digit of the
+multiplier is 0 or 1, so the partial products are either zero or a shifted
+multiplicand. All that remains is to add them.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=8mm, y=6.5mm, font=\ttfamily]
+  \foreach \d [count=\i] in {1,0,1,1} \node at (\i+3,4) {\d};
+  \foreach \d [count=\i] in {0,1,1,0} \node at (\i+3,3) {\d};
+  \node at (2.8,3.5) {$\times$};
+  \draw (3.3,2.5) -- (7.6,2.5);
+  \foreach \d [count=\i] in {0,0,0,0} \node[text=FpgaGray] at (\i+3,2) {\d};
+  \foreach \d [count=\i] in {1,0,1,1} \node[text=FpgaBlue] at (\i+2,1) {\d};
+  \foreach \d [count=\i] in {1,0,1,1} \node[text=FpgaBlue] at (\i+1,0) {\d};
+  \foreach \d [count=\i] in {0,0,0,0} \node[text=FpgaGray] at (\i,-1) {\d};
+  \draw (0.5,-1.5) -- (7.6,-1.5);
+  \foreach \d [count=\i] in {1,0,0,0,0,1,0} \node at (\i+0.0,-2) {\d};
+  \node[font=\sffamily\small, anchor=west] at (8.5,4) {$1011_2 = 11$};
+  \node[font=\sffamily\small, anchor=west] at (8.5,3) {$0110_2 = 6$};
+  \node[font=\sffamily\small, anchor=west] at (8.5,-2) {$1000010_2 = 66$};
+  \node[font=\sffamily\small, anchor=west, text=FpgaBlue] at (8.5,0.5) {shifted copies};
+\end{tikzpicture}
+\caption{Long multiplication: shifts and additions}
+\end{figure}
+
+An $n\times n$-bit multiplier requires about $n^2$ full adders, so it turns out
+large. \lookahead{an FPGA has ready-made hardware multipliers for this (DSP
+blocks, from digital signal processing; Chapter~\ref{ch:inside}).}
+
+An adder, a subtractor, logic operations, and shifts, put together and selected
+by a multiplexer according to an operation code, form an \term{arithmetic logic
+unit} (ALU)---the heart of every processor.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=FpgaLight] (0,1.8) -- (0.9,1.8) -- (1.35,1.1) -- (1.8,1.8) -- (2.7,1.8) -- (2.0,-0.4) -- (0.7,-0.4) -- cycle;
+  \node[font=\sffamily\bfseries] at (1.35,0.5) {ALU};
+  \draw[bus, -{Stealth}] (0.45,2.6) node[above, text=FpgaDark] {$A$} -- (0.45,1.8);
+  \draw[bus, -{Stealth}] (2.25,2.6) node[above, text=FpgaDark] {$B$} -- (2.25,1.8);
+  \draw[bus, -{Stealth}] (1.35,-0.4) -- (1.35,-1.2) node[below, text=FpgaDark] {result};
+  \draw[arr, FpgaBlue] (-1.3,0.7) node[left, text=FpgaDark, align=right] {operation\\code} -- (0.33,0.7);
+  \draw[arr] (2.37,0.7) -- (3.4,0.7) node[right, font=\sffamily\small, align=left] {flags: zero,\\carry, sign,\\overflow};
+  \node[font=\sffamily\small, align=left, anchor=west] at (7.2,0.7) {\code{000}: $A+B$\\\code{001}: $A-B$\\\code{010}: $A \,\&\, B$\\\code{011}: $A \mid B$\\\code{100}: $A \oplus B$\ldots};
+\end{tikzpicture}
+\caption{The arithmetic logic unit}
+\end{figure}
+
+\begin{ideabox}
+Addition is performed by full adders connected by a carry chain. Negative
+numbers are written in two's complement, and then subtraction reduces to
+addition. Overflow of a signed result is determined as $V=c_3\oplus c_4$. An
+equality comparator is built from XNOR and AND gates, and ``greater/less'' is
+built with a subtractor and flags.
+\end{ideabox}
+
+\begin{diybox}[A two-bit ALU]
+\textbf{Task.} \stars{1} Go through the lesson and build a two-bit ALU with four
+operations. \stars{2} Check each operation on several pairs $a,b$ and write down
+a table of results. \stars{3} Add a fifth operation (for example, $A\oplus B$)
+and an output $Z$ (the result is zero).
+
+\textbf{In Logra.} Learn tab, the ``Projects'' chapter (the ``Circuits and the
+board'' book), the lesson ``A two-bit ALU''; the reference is the example
+\code{alu}.
+
+\textbf{Expected result.} For each operation code $op$, the result of the
+corresponding unit (adder, logic gates) passes to the output---this is the
+multiplexer from Chapter~\ref{ch:mux}; the other units compute too, but their
+results are not used.
+
+\textbf{How to check.} Waveforms: with $a=2$, $b=1$ go through $op$ and compare
+the outputs with the table; RTL: find the multiplexer that selects the result.
+\end{diybox}
+
+\section{Common Mistakes}
+
+\begin{warnbox}[Common mistakes]
+\begin{itemize}
+  \item \textbf{Confusing carry and overflow.} With signed numbers the carry $c_4=1$ can occur with a correct result ($7+(-3)$); the sign of an error is $V=c_3\oplus c_4$. And conversely: $15+1$ in unsigned numbers gives an error, yet $V=0$.
+  \item \textbf{Forgetting the ``$+1$'' in subtraction.} $A-B=A+\overline{B}+1$. If you apply only $A+\overline{B}$, the result will be one too small (for example, $6-2$ gives 3). The one is supplied by the carry $c_0$ of the lowest bit.
+  \item \textbf{Comparing signed numbers as unsigned.} $1111_2$ as unsigned is 15 and is greater than $0001_2$, but as signed it is $-1$ and is smaller. The type of the numbers must be known before choosing a comparator.
+  \item \textbf{Extending a signed number with zeros.} To turn $1101_2=-3$ into eight bits you must append ones ($1111\,1101$), not zeros ($0000\,1101=13$).
+\end{itemize}
+\end{warnbox}
+
+\section{Questions and Problems}
+\label{sec:tasks-arith}
+
+Answers are collected in Appendix~\ref{app:answers}.
+
+\begin{taskbox}[Chapter problems]
+\begin{enumerate}
+  \item \stars{1}~Add $1011_2 + 0110_2$ in binary and check the result in decimal.
+  \item \stars{1}~Write the number $-5$ in 8-bit two's complement.
+  \item \stars{1}~What is the range of numbers held by an 8-bit signed register in two's complement?
+  \item \stars{1}~A full adder received $a=1$, $b=1$, $c_{in}=1$. What are $sum$ and $c_{out}$?
+  \item \stars{1}~The carry delay of one bit is 0.5~ns. What is the delay of an 8-bit ripple-carry adder?
+  \item \stars{2}~Compute $7 - 3$ in 4-bit two's complement, replacing subtraction with addition.
+  \item \stars{2}~A comparator received $A=1010_2$ and $B=1001_2$. Which of the outputs ($A>B$, $A=B$, $A<B$) becomes one, and how can you see it from the bits?
+  \item \stars{2}~Add the signed 4-bit numbers $0110_2+0101_2$. What is the result, what are $c_3$, $c_4$, $V$, and is the answer correct?
+  \item \stars{2}~For $A=1101_2$ and $B=0010_2$ (signed), compute $A-B$ as $A+\overline{B}+1$ and use the flags $N$, $V$ to determine whether $A<B$ is true.
+  \item \stars{2}~\emph{Find the error.} A student computes $6-2$ in 4 bits like this: $0110+\overline{0010}=0110+1101=1\,0011$, takes the low four bits and gets $0011=3$. Where is the mistake?
+  \item \stars{2}~A four-bit ALU adds for code \code{000} and subtracts for code \code{001}. For $A=0111_2$, $B=0001_2$ and code \code{000} (the numbers are signed), find the result and the flags $Z,N,C,V$.
+  \item \stars{3}~\textbf{Project: Security Panel milestone 5.} A threshold alarm: a 4-bit noise level $A$ and a threshold $B$; the lamp is on when $A>B$. \emph{Acceptance criterion:} with $B=8$ the lamp is on exactly for $A=9\ldots 15$ (going through 16 values on the Waveforms tab); with $B=15$ it never turns on.
+  \item \stars{3}~\textbf{Project: ``Saturating adder''.} A 4-bit unsigned adder whose result is clamped to $1111$ when the carry $c_4=1$. \emph{Acceptance criterion:} $7+3=10$, $9+9=15$, $15+1=15$ (Waveforms tab; the reference is the example \code{saturating}).
+  \item \stars{3}~\textbf{Project: ``ALU with flags''.} Extend the two-bit ALU: operations $A+B$, $A-B$, $A\,\&\,B$, $A\mid B$ and a flag $Z$ (the result is zero). \emph{Acceptance criterion:} for the pairs $(2,1)$, $(3,3)$, $(0,0)$ all four operations give the values from a hand-made table, and $Z=1$ only for the result $0$.
+\end{enumerate}
+\end{taskbox}
+
+\section{What's Next}
+
+All the circuits of this chapter and the previous ones are \emph{combinational}:
+the output at each moment is determined only by the inputs at that moment.
+Change an input and the output changes; remove it and the effect disappears.
+They remember nothing: an adder does not know what it added a second ago, and a
+comparator will not notice that an alarm happened and passed. But a security
+panel must \emph{remember} an alarm after the door has been closed, a counter
+must keep its value, and a calculator needs to store an intermediate result. So
+far we have had circuits without memory; the next chapter (Chapter~\ref{ch:ff})
+adds the key missing piece---an element that stores one bit.

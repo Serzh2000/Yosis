@@ -1,0 +1,261 @@
+\chapter{Answers to the Problems}
+\label{app:answers}
+
+This appendix collects the answers and brief solutions to the chapter problems, in the order of the book.
+
+\section*{Signals}
+\begin{enumerate}
+  \item \stars{1}~$101101_2=32+8+4+1=45$; $11111111_2=255$ ($2^8-1$).
+  \item \stars{1}~$37=100101_2$ ($32+4+1$); $200=11001000_2$ ($128+64+8$).
+  \item \stars{1}~$2^{10}=1024$ values; to distinguish 1000 items you need 10 bits ($2^9=512<1000\le 1024$).
+  \item \stars{2}~The level is undefined: 1.4~V lies between the thresholds 0.8 and 2.0~V. Such a signal can be read as either 0 or 1, so the circuit behaves unpredictably.
+  \item \stars{1}~$T = 1/27\,\text{MHz}\approx 37$~ns; $27\,000\,000$ clock cycles pass in one second.
+  \item \stars{2}~The signal changes on every second edge: its frequency is half as high and its period twice as long. To check in Logra: the lesson ``A divide-by-2 frequency divider'', Waveforms tab.
+  \item \stars{2}~The button gives 1 when pressed, while the board LED lights at 0 (port \code{led\_n}). A direct connection gives the opposite behavior. Fix: put an inverter (a NOT gate) between them, and then pressing the button lights the LED.
+  \item \stars{2}~The mistake is in the weights: the most significant bit is on the left, and the weight grows from right to left. The correct value is $1\cdot8+0\cdot4+1\cdot2+1\cdot1=11$.
+  \item \stars{3}~Circuit: door $\to$ NOT $\to$ \code{led\_n}. Reasoning: the LED lights at zero, so an inversion is needed. To check in Logra: Waveforms tab, \code{led\_n} must be an exact inversion of door; the \code{button} example (direct connection) shows the ``wrong'' variant, and the \code{not} example the correct one.
+  \item \stars{3}~The number $37=100101_2$ has ones in bits 5, 2, and 0. The LEDs light at zero, so \code{led\_n} needs the inverted code $011010_2$ (that is, $26$). To check in Logra: a six-bit bus, a NOT block of width 6; when you enter 37, the LEDs of bits 5, 2, and 0 light up, and sweeping 0--63 matches the table.
+\end{enumerate}
+
+\section*{Number Systems and Codes}
+\begin{enumerate}
+  \item \stars{1}~$\text{B7}_{16}=10110111_2=183$; $\text{3C}_{16}=00111100_2=60$.
+  \item \stars{1}~$1998 \to 0001\ 1001\ 1001\ 1000$ (the digits 1, 9, 9, 8, four bits each).
+  \item \stars{2}~$p_1=0\oplus1\oplus0=1$, $p_2=0\oplus1\oplus0=1$, $p_3=1\oplus1\oplus0=0$; the word (positions 1--7) is \code{1100110}. To check: the \code{hamming-encode} example.
+  \item \stars{2}~$s_1=1$, $s_2=1$, $s_3=1$, the syndrome is $111_2=7$: the error is in position seven. After correction the word is \code{1100110}, and the data is $0110$ (positions 3, 5, 6, 7).
+  \item \stars{1}~There are four ones, so the parity bit is 0.
+  \item \stars{1}~$0010\,1010 = 2 + \tfrac{10}{16} = 2.625$.
+  \item \stars{2}~$1000+0101=1101$ is 13, which is not a BCD digit (greater than 9). Add the correction $0110$: $1101+0110=1\,0011$, that is, carry 1 and digit 3: the BCD representation is \code{0001\,0011}.
+  \item \stars{2}~A parity bit only tells you that the number of ones is odd, but does not show the position of the error: it is unknown which bit to flip. A Hamming code can correct errors because its syndrome equals the position number.
+  \item \stars{3}~Output: $d_3d_2d_1d_0p$ with $p=d_3\oplus d_2\oplus d_1\oplus d_0$. Example: the digit 7 (\code{0111}) gives $p=1$, the word \code{01111}. To check in Logra: the lesson ``Word parity check'', the \code{parity} example; on the Waveforms tab, sweep the digits 0--9; the number of ones at the output must be even.
+  \item \stars{3}~High half \code{0101}: $p_1=0$, $p_2=1$, $p_3=0$, word \code{0100101}; low half \code{1010}: $p_1=1$, $p_2=0$, $p_3=1$, word \code{1011010}. Corrupting position 3 in the high word gives \code{0110101}: $s_1=1$, $s_2=1$, $s_3=0$, syndrome $011_2=3$. Flip bit 3, and the data (positions 3, 5, 6, 7) is \code{0101}. To check in Logra: the examples \code{hamming-encode} and \code{hamming-syndrome}, Waveforms tab.
+\end{enumerate}
+
+\section*{Logic Gates and Boolean Algebra}
+\begin{enumerate}
+  \item \stars{1}~$F=1$ for the combinations $ABC = 001,\ 011,\ 110,\ 111$; for the other four, $F=0$.
+  \item \stars{1}~$A$. This is the absorption law: $A + AB = A(1+B) = A$.
+  \item \stars{2}~$\overline{A}\cdot(\overline{B}+\overline{C})$. Reasoning: $\overline{A+X}=\overline{A}\cdot\overline{X}$, then $\overline{B\cdot C}=\overline{B}+\overline{C}$.
+  \item \stars{2}~NOT: both inputs together (1 gate). AND: a NAND followed by a NOT (2 gates). OR: invert both inputs and feed them to a NAND (3 gates). To check in Logra: the lesson ``NAND from blocks''.
+  \item \stars{2}~$A\overline{B}+\overline{A}B$. Reasoning: exclusive OR equals 1 when the inputs differ.
+  \item \stars{1}~$2^6=64$ rows.
+  \item \stars{2}~The mistake: the inversion of a sum is not the sum of the inversions. For $A=1$, $B=0$ the left side is $\overline{1+0}=0$, the right side is $0+1=1$. The correct law is $\overline{A+B}=\overline{A}\cdot\overline{B}$.
+  \item \stars{2}~With inputs 11, OR gives 1 while exclusive OR gives 0. On the other combinations (00, 01, 10) they agree. To check in Logra: the \code{gates} example, Waveforms tab.
+  \item \stars{3}~Table: a one in the rows $(\text{door},\text{night},\text{armed})=101,\ 110,\ 111$. Circuit: OR(night, armed), then AND with door, then NOT for the board LED. To check in Logra: Waveforms tab, sweep all eight combinations; the LED lights in exactly three.
+  \item \stars{3}~Four NAND gates: $x=\overline{\text{night}}$ and $y=\overline{\text{armed}}$ (two NOTs built from NAND), $z=\overline{x\cdot y}=\text{night}+\text{armed}$, $\text{led\_n}=\overline{\text{door}\cdot z}$. Reasoning: the NAND of the last stage immediately gives the inversion the board LED needs. To check in Logra: the waveform must match the waveform of the circuit from Problem~9.
+\end{enumerate}
+
+\section*{Combinational Circuits}
+\begin{enumerate}
+  \item \stars{1}~$F_1=\overline{B}$ (ones in rows 0, 1, 4, 5, that is, wherever $B=0$); $F_2=C$; $F_3=AB+AC+BC$ (the majority function). To check: build it in the Designer and sweep the 8 combinations on the Waveforms tab.
+  \item \stars{1}~$5\times 1.5=7.5$~ns. The clock period cannot be shorter than this delay (plus the setup time), so the frequency is no higher than about 130~MHz.
+  \item \stars{2}~$F = D\cdot(N+S)$: a circuit of one OR gate and one AND gate. Reasoning: the AND condition ties the door to the sum ``night or armed''; expanding the brackets gives $DN+DS$ (three gates), so the bracketed form is more economical.
+  \item \stars{1}~Combinational: the adder and the multiplexer. Sequential: the counter and the toggle button; they need memory.
+  \item \stars{2}~Yes, when $A$ switches, a short zero ``glitch'' is possible at the output: $AB$ goes out while $\overline{A}C$ has not yet lit. Add the term $BC$ (it holds the one when $B=C=1$): $F = AB + \overline{A}C + BC$. On the Karnaugh map the groups $AB$ and $\overline{A}C$ touch but do not overlap.
+  \item \stars{2}~The student's answer is wrong in the row $abc=001$: $ab+c=1$, but the table has $y=0$ (the ones are only in rows $011,101,110,111$). Correct: $y=ab+ac+bc$. Reasoning: the map gives three pairs (cells 3 and 7, 5 and 7, 6 and 7); always check against the rows with a zero.
+  \item \stars{2}~A group of three cells is not allowed (the size is not a power of two). The student's answer $F=\overline{A}$ is also one in row $000$, where $F=0$. Correct: cells 1, 3 give $\overline{A}C$, cells 2, 3 give $\overline{A}B$, so $F=\overline{A}C+\overline{A}B=\overline{A}(B+C)$.
+  \item \stars{3}~$y=d(n+s)$: 2 gates (OR and AND). An 8-row table: a one in the rows $dn s=101,110,111$. To check: in the Designer, three inputs, switches, and the Waveforms tab; the criterion is 8 of 8 matching rows.
+  \item \stars{3}~$y=arm\cdot(ab+ac+bc)$: three 2-input ANDs, a 3-input OR, and one more AND with $arm$ (5 gates). The variant without brackets $arm\,ab+arm\,ac+arm\,bc$ is 4 gates, but 3-input ones. To check: on the Waveforms tab there is a one in exactly 4 rows of 16 ($arm\,abc=1011,1101,1110,1111$); when $arm=0$ the output is zero. Reference: the lesson ``A "2 of 3" vote with a guard''.
+  \item \stars{3}~With $B=C=1$ the first function equals $A+\overline{A}$, and because of the inverter delay a zero glitch appears at the output. The second has the added $BC=1$, which holds the output at one during the whole transition. On the map: the groups $AB$ and $\overline{A}C$ only touch, while $BC$ covers both cells at the boundary.
+\end{enumerate}
+
+\section*{Minimizing Logic Functions}
+\begin{enumerate}
+  \item \stars{1}~$F_1=\overline{B}\,\overline{D}$ (four corners); $F_2=D$ (eight cells); $F_3=\overline{A}\,\overline{B}$ (the top row). To check: build $F_1$ in the Designer and, by sweeping $0$--$15$, make sure the ones are only in rows 0, 2, 8, 10.
+  \item \stars{2}~$F=\overline{D}$: the even digits are exactly those with $D=0$, and the don't-care states 10, 12, 14 only extend the group to eight cells.
+  \item \stars{2}~Prime implicants: $\overline{A}\,\overline{B}$ (0,1), $\overline{A}\,\overline{C}$ (0,2), $\overline{B}C$ (1,5), $B\overline{C}$ (2,6), $AC$ (5,7), $AB$ (6,7). The minimal cover consists of three implicants, in two variants: $\overline{A}\,\overline{B}+B\overline{C}+AC$ and $\overline{A}\,\overline{C}+\overline{B}C+AB$ (a cyclic cover: there are no essential implicants).
+  \item \stars{1}~For example, $F=\overline{B}\,\overline{D}$: the four corners of the map form a single group. Another example: $F=\overline{B}\,\overline{C}$ ($\Sigma m(0,1,8,9)$), the group wraps around vertically.
+  \item \stars{2}~One LUT4 (a four-input lookup table in an FPGA) implements any function of four variables. The number of terms does not matter for its size, while a function of five or more variables will not fit into a single LUT.
+  \item \stars{1}~The minimal form: $F=\overline{A}B+B\overline{C}$ (the whole row $AB=01$ plus a $2\times2$ block). That is 4 literals instead of $6\cdot4=24$ in the canonical sum of products.
+  \item \stars{2}~$F=\overline{B}\,\overline{C}+\overline{B}\,\overline{D}+A\overline{C}$. Reasoning: $\{0,1,8,9\}$ is $\overline{B}\,\overline{C}$ (wrapping top to bottom), $\{0,2,8,10\}$ is the four corners, $\{8,9,12,13\}$ is $A\overline{C}$. Cells 1, 2, 12, and 13 are covered in only one way, so all three groups are essential.
+  \item \stars{2}~The redundant term is $BD$ (cells 5, 7, 13, 15): they are all already covered by the four mandatory pairs $\overline{A}\,\overline{C}D$, $\overline{A}BC$, $ACD$, $AB\overline{C}$. The minimal form consists of these four terms.
+  \item \stars{2}~Cells 3 ($0011$), 6 ($0110$), and 9 ($1001$) are pairwise non-adjacent and do not form a rectangle. The one in cell 3 combines with the don't-care 11 ($\overline{B}CD$), 6 with 14 ($BC\overline{D}$), and 9 with 11, 13, 15 into the square $AD$.
+  \item \stars{2}~$F=\overline{A}\,\overline{B}\,\overline{C}\,\overline{D}+\overline{B}CD+BC\overline{D}+AD$. Reasoning: cell 0 is isolated (its neighbors 1, 2, 4, 8 are zero), and the other three ones expand using the don't-care cells $10$--$15$.
+  \item \stars{3}~Both circuits agree on the values $0$--$9$ (and by the problem statement $10$--$15$ are don't-cares). From the map: $F=A+B+CD$---a three-input OR and one AND (2 blocks) versus five blocks in the variant with comparators. To check: Waveforms tab, sweep $x=0\ldots15$, compare with the table $3\le x\le9$ on the values $0$--$9$; on $10$--$15$ the second circuit's output is $1$, and that is acceptable.
+  \item \stars{3}~On the map the ones are in cells 11, 13, 14, 15: three groups of two cells, $y=ABD+ABC+ACD$ (with $A=arm$, $B=a$, $C=b$, $D=c$): 4 gates, 12 inputs; with a bracket $arm\cdot(ab+ac+bc)$---5 gates, 11 inputs. To check: on the Waveforms tab there is a one in exactly 4 rows of 16; both variants give the same table (reference: the lesson ``A "2 of 3" vote with a guard'').
+  \item \stars{3}~``At least two of four'': ones in all rows with two or more ones (11 rows of 16). The minimal form: $ab+ac+ad+bc+bd+cd$---six terms of two literals each (6 AND gates and one 6-input OR). To check: in the Designer all 16 combinations are compared with the map; there is a one in exactly 11 rows.
+\end{enumerate}
+
+\section*{Decoders and Encoders}
+\begin{enumerate}
+  \item \stars{1}~3 inputs and 8 outputs; for 101, line number 5 is active.
+  \item \stars{1}~$y_0=\overline{A_1}\,\overline{A_0}\,EN$, $y_1=\overline{A_1}A_0 EN$, $y_2=A_1\overline{A_0}EN$, $y_3=A_1A_0EN$.
+  \item \stars{1}~Segments $a$, $b$, and $c$ light up.
+  \item \stars{1}~The highest active input is $I_2$, so the output is 10 (the number 2); the input $I_1$ is ignored.
+  \item \stars{1}~$6=110_2$; in Gray code $101$. In Gray code neighboring numbers differ in one bit, so no false intermediate values appear during a transition.
+  \item \stars{2}~Five: one first-level decoder and four second-level ones ($1+4$). The first one chooses, by the top two bits, which of the four second-level decoders gets the enable $E$.
+  \item \stars{2}~Segment $c$ is off only for the digit 2 ($0010$). With the don't-care cell 10 (together with cell 2) we get $\overline{c}=\overline{x_2}\,x_1\overline{x_0}$, hence $c=x_2+\overline{x_1}+x_0$: two gates (a three-input OR and an inverter).
+  \item \stars{2}~$b_2=g_2=1$, $b_1=b_2\oplus g_1=1\oplus1=0$, $b_0=b_1\oplus g_0=0\oplus0=0$, that is, \code{100} (the number 4). In reverse: $g_2=1$, $g_1=1\oplus0=1$, $g_0=0\oplus0=0$---\code{110}.
+  \item \stars{2}~The student's estimate is correct only for a priority encoder. The circuit of two ORs for $0110$ gives $y_0=x_1+x_3=1$, $y_1=x_2+x_3=1$, that is, \code{11}. To get $10$ (the highest one is $x_2$), you need a priority encoder: $y_1=x_3+x_2$, $y_0=x_3+\overline{x_2}\,x_1$.
+  \item \stars{2}~The Gray code of the number 5 ($101$) is $111$: $g_2=1$, $g_1=1\oplus0=1$, $g_0=0\oplus1=1$. The code $100$ is the Gray code of the number 7. You cannot ``just shift'': $g=b\oplus(b\gg1)$.
+  \item \stars{3}~Chain: a priority encoder (width 4) $\to$ ``Bus concatenation'' (the constant $00$ of width 2 and the number) $\to$ ``BCD to 7 segments''. Segment codes: zone 1---\code{0000110}, zone 2---\code{1011011}, zone 3---\code{1001111}, zone 0---\code{0111111}; with two zones (\code{0110}, \code{1010}) the higher one is shown: 2 and 3. To check: on the Waveforms tab, apply six values of $z$ and compare. For the variant with blanking you need the output $V$ and AND gates.
+  \item \stars{3}~Two $2\to4$ decoders receive $a_1a_0$; the first gets the enable $\overline{a_2}$, the second $a_2$. The outputs of the first are $y_0\ldots y_3$, of the second $y_4\ldots y_7$. To check: on the Waveforms tab drive $a$ with a counter $0$--$7$; the one travels along the outputs, and when $E=0$ all are zeros. Blocks: ``Decoder'' (with enable), ``Bus slice'', NOT.
+  \item \stars{3}~$g_2=b_2$, $g_1=b_2\oplus b_1$, $g_0=b_1\oplus b_0$ (two XORs). The reverse: $b_2=g_2$, $b_1=b_2\oplus g_1$, $b_0=b_1\oplus g_0$ (two XORs in a chain). To check: a counter $0$--$7$ at the input; at each step exactly one bit of the Gray code changes; at the output of the reverse converter is the original number.
+\end{enumerate}
+
+\section*{Multiplexers and Demultiplexers}
+\begin{enumerate}
+  \item \textbf{(\stars{1})} 3 select inputs ($2^3=8$); a $16:1$ has 4 ($2^4=16$). The number of select inputs equals $\log_2$ of the number of data inputs.
+  \item \textbf{(\stars{1})} Seven ($4+2+1$): 4 at the first level, 2 at the second, 1 at the third.
+  \item \textbf{(\stars{1})} Eight, one per bit, with a common select input.
+  \item \textbf{(\stars{1})} Output $y_2$ is selected: $y_2=1$, the other three outputs are 0 (address $10_2=2$).
+  \item \textbf{(\stars{2})} Feed $C,\ \overline{C},\ \overline{C},\ C$ to $D_0..D_3$ (for $AB=00,01,10,11$): for $AB=00$ the function equals $C$, for $01$ and $10$ it equals $\overline{C}$, for $11$ it equals $C$. To check in Logra: sweep the 8 combinations on the Waveforms tab.
+  \item \textbf{(\stars{2})} Any function of $n$ variables is implemented by a multiplexer with $2^n$ data inputs fed with the constants from the truth table column. For AND feed \code{0001}, for OR \code{0111} (in the order $AB=00,01,10,11$). \lookahead{an FPGA LUT is built the same way.}
+  \item \textbf{(\stars{2})} The result is OR: the combination $AB=11$ gives 1, but a 0 is needed. The correct constants are $0,1,1,0$.
+  \item \textbf{(\stars{2})} The receiver addresses the outputs one step earlier (or later) than the transmitter: each channel's data lands on a neighboring output (throttle on ``roll'', roll on ``pitch'', etc., yaw on ``throttle''). The addresses at both ends must be synchronous.
+  \item \textbf{(\stars{3})} Reasoning: $x_0..x_3$ are the zone sensors, $s_1s_0$ is the zone number; a demultiplexer with the same address lights the zone lamp. To check: on the Waveforms tab, for the address $00..11$ the output equals the corresponding sensor, and changing the other sensors does not change the output; exactly one number lamp is lit.
+  \item \textbf{(\stars{3})} Reasoning: a 4:1 multiplexer with data width 4; feed $a,b,c,c$ to $D_0,D_1,D_2,D_3$. To check: on the Waveforms tab, for $s=0,1,2,3$ the output equals $a,b,c,c$.
+  \item \textbf{(\stars{3})} Reasoning: for the address $AB=00,01,10,11$ feed $0,\ C,\ C,\ 1$ to $D_0..D_3$ (the majority function: for $AB=01$ and $10$ the result equals $C$). To check: the 8 combinations on the Waveforms tab give a one if there are at least two ones at the inputs.
+\end{enumerate}
+
+\section*{Arithmetic Blocks}
+\begin{enumerate}
+  \item \textbf{(\stars{1})} $1011_2+0110_2=10001_2$, that is, $11+6=17$.
+  \item \textbf{(\stars{1})} $5=00000101_2$, inverted $11111010$, $+1$ gives $11111011_2=-5$.
+  \item \textbf{(\stars{1})} From $-128$ to $+127$ ($-2^7\ldots 2^7-1$).
+  \item \textbf{(\stars{1})} $sum=a\oplus b\oplus c_{in}=1$, $c_{out}=1$ (there are three ones, at least two).
+  \item \textbf{(\stars{1})} About $8\times 0.5=4$~ns: the carry passes through all the bits in turn.
+  \item \textbf{(\stars{2})} $7-3=7+\overline{3}+1$: $0111+1101=1\,0100$; the carry out of the top bit is discarded, leaving $0100=4$.
+  \item \textbf{(\stars{2})} The one will be $A>B$: the comparison goes from the most significant bit, and in the third bit $A=1$, $B=0$ (the top two matched).
+  \item \textbf{(\stars{2})} $0110+0101=1011_2$; as a signed number this is $-5$, and the correct answer $11$ does not fit the range $-8\ldots 7$. $c_3=1$, $c_4=0$, $V=c_3\oplus c_4=1$: overflow, the answer is wrong.
+  \item \textbf{(\stars{2})} $\overline{B}=1101$, $1101+1101+1=1\,1011$; the result $1011=-5$, $c_3=1$, $c_4=1$, $V=0$, $N=1$. $N\oplus V=1$: indeed $A<B$ ($-3<2$).
+  \item \textbf{(\stars{2})} The one was forgotten: $A-B=A+\overline{B}+1$, but the student added only $\overline{B}$. Correct: $0110+1101+1=1\,0100$, that is, $0100=4$ (with $c_0=1$ the subtractor does this itself).
+  \item \textbf{(\stars{2})} $0111+0001=1000$, as a signed number $-8$---wrong. $Z=0$, $N=1$, $C=0$ ($c_4=0$), $V=1$ ($c_3=1$, $c_4=0$): signed overflow, although there is no carry.
+  \item \textbf{(\stars{3})} Reasoning: a comparator $A>B$ (a ``Less than: A < B'' block with swapped inputs, or a subtractor). To check: with $B=8$ the lamp lights exactly for $A=9..15$ (Waveforms tab, sweep 16 values); with $B=15$ never.
+  \item \textbf{(\stars{3})} Reasoning: $s$ is the sum, $c_4$ is the carry; result $= c_4 ? 1111 : s$, that is, a 4-bit 2:1 multiplexer (Chapter~\ref{ch:mux}). To check: $7+3=10$, $9+9=15$, $15+1=15$.
+  \item \textbf{(\stars{3})} Reasoning: an adder and a subtractor, AND and OR gates, a 4:1 multiplexer on the operation code, and a NOR gate over the result bits (zero). To check: for $(2,1)$ expect $3,1,0,3$; for $(3,3)$---$2,0,3,3$ (in 2 bits); for $(0,0)$ all operations give 0 and $Z=1$.
+\end{enumerate}
+
+\section*{Flip-Flops}
+\begin{enumerate}
+  \item \stars{1} $S=R=1$: both outputs become zeros, and after the signals are released the state of the flip-flop is undefined. To check: the lesson ``SR flip-flop: set and reset'', the step ``The forbidden combination''.
+  \item \stars{2} A latch is transparent while the clock signal is 1; a flip-flop stores the value only at the moment of the edge. Reasoning: when $C=1$ the latch output follows all the changes of $D$, while the flip-flop output stays constant until the edge.
+  \item \stars{2} $T_{min}=0.5+3+0.4=3.9$~ns, $f_{max}\approx 256$~MHz. Reasoning: the period must fit the output delay, the logic, and the setup time.
+  \item \stars{1} $D=\overline{Q}$ turns a D flip-flop into a T flip-flop; with $T=1$ it divides the clock frequency by 2. To check: the lesson ``A divide-by-2 frequency divider''.
+  \item \stars{1} The output switches to the opposite value.
+  \item \stars{2} Metastability occurs when the input changes inside the setup/hold window: the flip-flop ``hangs'' between 0 and 1. Two flip-flops in a row give it time to settle (but the error probability is not zero, and this trick is unsuitable for a bus).
+  \item \stars{2} A latch with $C=1$ and $D=\overline{Q}$ turns into a ring with an odd number of inversions, that is, an oscillator: $Q$ switches continuously (the frequency depends on the gate delays, not on the clock). Fix: replace the latch with a D flip-flop, which takes the value at the edge.
+  \item \stars{2} Without feedback $D$ repeats the sensor: after the door closes the sensor is 0 again, and at the next edge the flip-flop will store 0, so the alarm is not remembered. You need to feed ``sensor OR $Q$'' to $D$.
+  \item \stars{3} Circuit: $D=\text{sensor}\lor Q$, with $\text{key}=1$ a synchronous reset (reset has priority: $D_{\text{new}}=\overline{\text{key}}\land(\text{sensor}\lor Q)$). To check in Logra: Designer + Waveforms; open the door for one clock cycle and make sure $Q$ holds; apply \code{key}; then apply \code{key} and \code{sensor} together: $Q=0$. Reference: the project ``An alarm with memory''.
+  \item \stars{3} Chain: button $\to$ two flip-flops (a synchronizer) $\to$ a flip-flop that stores the previous value $\to$ $\text{pulse}=\text{sync}\land\overline{\text{prev}}$. To check in Logra: the lessons ``Synchronizer: tie the button to the clock'' and ``Edge detector: one pulse per press''; on the Waveforms tab, with the button held for 10 clock cycles, pulse is 1 for exactly one clock cycle.
+\end{enumerate}
+
+\section*{Registers and Counters}
+\begin{enumerate}
+  \item \stars{1} $0010,\ 0100,\ 1000,\ 0001$.
+  \item \stars{1} After $1111$ the counter goes to $0000$; the counting modulus is 16.
+  \item \stars{2} 25 bits ($2^{25}=33\,554\,432\ge 27\,000\,000$). Reasoning: you need $\lceil\log_2 27\,000\,000\rceil=25$; for an exact second, count from 0 to $26\,999\,999$ and reset on the comparison.
+  \item \stars{1} It counts from 0 to 9; after 9 it returns to 0 on the comparison signal $Q=9$.
+  \item \stars{2} 15 states ($2^4-1$): the all-zero state is not part of the cycle.
+  \item \stars{1} All flip-flops are clocked at the same time, so there is no delay chain and the frequency is higher; the outputs change simultaneously.
+  \item \stars{2} With a reset on the value 10 ($1010$) the counter goes through $0,1,\ldots,9,10,0$: 11 states, and the extra value 10 appears for a moment. You must reset at $Q=9$ ($N-1$).
+  \item \stars{2} The state $000$ of an XOR LFSR is forbidden: from it $q_0=q_1\oplus q_2=0$, and the register stays at zero forever. You need to set a nonzero initial value (reset to $001$).
+  \item \stars{3} Circuit: a register, $+1$, a comparator $Q=N-1$, a multiplexer ``0 instead of $Q+1$'', a seven-segment decoder. To check in Logra: the lessons ``Counting from 0 to 5'' and ``A counter to a seven-segment display''; on the Waveforms tab the cycle is $0..N-1$, the value $N$ does not occur, and the carry is 1 only when $Q=N-1$.
+  \item \stars{3} Reasoning: with $N=4$ the pulse arrives once every 4 clock cycles (checked on the Waveforms tab); for the board $N=27\,000\,000$, count to $26\,999\,999$, 25 bits. To check in Logra: Waveforms with a small $N$, then replace the parameter. For a 1~Hz square wave, toggle a T flip-flop with the pulse $N=13\,500\,000$.
+  \item \stars{3} Reasoning: the seconds counter $c$ grows on the ``second'' pulse when $\text{alarm}=1$, saturates at 9, and is reset by the key. To check in Logra: four checks on the Waveforms tab (growth, stopping at 9, stopping when the alarm is cleared, clearing by the key); references: ``A counter with pause'', ``A counter with reset''.
+\end{enumerate}
+
+\section*{Synchronous Circuits, FSMs, and Memory}
+\begin{enumerate}
+  \item \stars{1} $T=8+0.5+0.5=9$~ns, $f_{max}\approx 111$~MHz.
+  \item \stars{2} The period shrinks by about half (to $0.5+4+0.5=5$~ns for two equal stages of 4~ns, that is, a frequency of about 200~MHz), but the result appears one clock cycle later: the latency in clock cycles grows, and the throughput (one result per clock cycle) increases.
+  \item \stars{1} In a Moore machine the outputs depend only on the state; in a Mealy machine they also depend on the inputs. The \code{101} detector from the chapter is a Moore machine: $y=1$ only in state S3. To get $y$ in the same clock cycle you need a Mealy machine with three states S0, S1, S2: $y=1$ on the transition from S2 on $x=1$ (to state S1).
+  \item \stars{1} For the Moore machine from the chapter---4 states and 2 flip-flops (binary encoding); for a Mealy machine 3 states are enough, also 2 flip-flops.
+  \item \stars{1} 8 address lines; $256\cdot 8=2048$ bits.
+  \item \stars{1} $1\text{K}\cdot 16=16\,384$ bits $=2$~KiB; 10 address lines and 16 data lines.
+  \item \stars{2} The mistake is in the transition of S3 on $x=1$: the correct transition goes to S1 (the last one can start a new triple), not to S0. On \code{101101} the correct machine outputs $y=1$ twice (after the 3rd and after the 6th bit), while the faulty one does so once: after the 4th bit it ends up in S0 instead of S1, and the pair ``0, 1'' does not complete a triple.
+  \item \stars{3} A Moore machine with 5 states (nothing, ``1'', ``11'', ``110'', ``1101''). Transitions on $x=0/1$: S0: S0/S1; ``1'': S0/``11''; ``11'': ``110''/``11''; ``110'': S0/``1101''; ``1101'': S0/``11''. For \code{11011011101} there are three matches (positions 1--4, 4--7, 8--11), so $y=1$ three times. To check in Logra: Waveforms tab, apply the stream and compare the number of $y$ pulses with the expected one; the overlap of positions 1--4 and 4--7 confirms the correctness of the transition ``1101''~---~``11''.
+  \item \stars{3} A 3-bit address counter steps through the words. Segment codes (order $gfedcba$, 1 means the segment is lit): 0---\code{0111111} (3F), 1---\code{0000110} (06), 2---\code{1011011} (5B), 3---\code{1001111} (4F), 4---\code{1100110} (66), 5---\code{1101101} (6D), 6---\code{1111101} (7D), 7---\code{0000111} (07). To check: Waveforms: over 8 clock cycles all 8 words in order; replacing one word changes exactly one clock cycle of the period.
+\end{enumerate}
+
+\section*{FSM Design and FIFO Queues}
+\begin{enumerate}
+  \item \stars{2} Three states (red, yellow, green); with binary encoding 2 flip-flops, with one-hot 3 (the timer for the time in a state is not counted).
+  \item \stars{2} The \code{if (c10)} branch has priority, so the five will be ignored and lost. You need to add a column ``both coins'' to the table (in $S_0$ it gives 15 units, that is, an immediate sale).
+  \item \stars{2} States: waiting for the first 1, saw 1, saw 11, saw 110. Moore machine: 4 states, the last one has output 1. Mealy machine: 3 states, output 1 on input 0 in state ``11''.
+  \item \stars{1} The pointers are 4-bit, the word counter is 5-bit (values 0--16).
+  \item \stars{1} 3 words are lost: when the queue is full, a write is ignored.
+  \item \stars{1} More convenient: fewer states and a reaction in the same clock cycle. More dangerous: the output depends on the input directly, so noise passes through to the output, and inputs and outputs form long combinational chains.
+  \item \stars{2} When the queue is both empty and full the pointers are equal, so the expressions for full and empty coincide and the flags give the same result (both 1 or both 0). Fix: store a word counter (\code{empty}: count=0, \code{full}: count=8) or make the pointers one bit wider (empty if the pointers are fully equal; full if the low bits are equal and the high bits differ).
+  \item \stars{2} Scenario: the owner opened the door ($d=1$) and in the same clock cycle entered the correct code ($c=1$). An empty cell leaves the behavior undefined: the machine may ``hang'' or raise the alarm. You need to write the transition to DISARMED (the code has priority over the sensor), as in the chapter's table.
+  \item \stars{3} The graph and table are as in the ``Running Project'' section: three states, transitions on $(d,c)$, the output ``siren''=1 only in ALARM. Check on the waveform: after \code{101} the state is ARMED; $d=1$ in ARMED turns on the siren on the next clock cycle; $d=1$ in DISARMED does not turn it on; a repeated \code{101} in ALARM turns the siren off. RTL tab: the state register and the transition and output logic; references: the lesson ``A code lock'' and the project \code{door-controller}.
+  \item \stars{3} A word counter \code{used} (0..4); a write is allowed only when $\text{used}<4$, a read when $\text{used}>0$; $\text{full}=(\text{used}=4)$, $\text{empty}=(\text{used}=0)$. With five writes in a row the write pointer stops at 0 (it wrapped around after 4 writes), \code{used}=4, the fifth word is ignored, and the first word is not overwritten. With five reads in a row the fifth changes nothing, \code{used}=0. To check: Waveforms tab (the \code{fifo-four} example).
+\end{enumerate}
+
+\section*{Electrical Basics: CMOS, Outputs, and Buses}
+\begin{enumerate}
+  \item \stars{2} Three pMOS transistors in series between the supply and the output and three nMOS transistors in parallel between the output and ground: 6 transistors (3 pMOS and 3 nMOS).
+  \item \stars{1} The power decreases by a factor of $(3.3/1.8)^2\approx 3.4$.
+  \item \stars{1} $P = 10\cdot 10^{-12}\cdot 3.3^2\cdot 27\cdot 10^6 \approx 2.9$~mW.
+  \item \stars{1} $N_H = 2.6 - 2.0 = 0.6$~V.
+  \item \stars{2} An open drain rules out conflicts: any device can only pull the line down to 0, and the one is provided by the resistor. The result is a wired AND, and a slave can stall the master.
+  \item \stars{1} One buffer pulls the line to the supply, the other to ground: shoot-through current flows through them, and the line voltage is undefined (\code{X} in simulation); overheating is possible.
+  \item \stars{2} Two push-pull outputs connected directly produce shoot-through current when they have different values (one pulls to the supply, the other to ground) and an undefined level. Fixes: (1) feed both signals to a logical OR gate; (2) use open-drain outputs with a common pull-up (the result is a wired AND of the inverted signals) or tri-state buffers of which only one is enabled.
+  \item \stars{2} $R=(3.3-2.0)/0.008=162.5$~$\Omega$. The nearest lower standard value, 150~$\Omega$, would give a current of $1.3/150\approx 8.7$~mA, more than allowed, so we take 180~$\Omega$: $I=1.3/180\approx 7.2$~mA. To check in Logra: the lesson ``An LED and current limiting'' and the Lab tab.
+  \item \stars{3} The line is 1 if no button is pressed and 0 if at least one is pressed: the table (none pressed, A pressed, B pressed, both) gives $1,0,0,0$, that is, a wired AND of the levels (a NAND of the presses). The current through the pull-up with both buttons pressed is $3.3/10\,000=0.33$~mA, since there is one resistor and the current does not depend on the number of pressed buttons. To check: the Pins tab (pull-up ``to 1'') and the Waveforms tab.
+  \item \stars{3} From the rise time $2.2\cdot R\cdot 100\cdot 10^{-12}\le 10^{-6}$ we get $R\le 4.55$~k$\Omega$. From the current $3.3/R\le 0.8\cdot 10^{-3}$ we get $R\ge 4.1$~k$\Omega$. The range 4.1--4.55~k$\Omega$ works, for example 4.3~k$\Omega$ from the E24 series: rise time $2.2\cdot4300\cdot10^{-10}\approx 0.95$~$\mu$s, current $\approx 0.77$~mA. Both conditions are met, but with a small margin.
+\end{enumerate}
+
+\section*{The Digital and Analog Worlds}
+\begin{enumerate}
+  \item \stars{1} $3.3/1024\approx 3.2$~mV.
+  \item \stars{1} $5/0.01 = 500$ levels, you need 9 bits ($2^9=512$).
+  \item \stars{1} No less than 6~kHz (twice the highest frequency).
+  \item \stars{1} $192/256=75\,\%$; the average voltage is $0.75\cdot 3.3\approx 2.5$~V.
+  \item \stars{2} 12 clock cycles; a parallel ADC needs $2^{12}-1 = 4095$ comparators.
+  \item \stars{2} The DAC trial codes: \code{0x80}, \code{0x40}, \code{0x60}, \code{0x70}, \code{0x68}, \code{0x64}, \code{0x66}, \code{0x65}. The result is \code{0x64}, that is, 100.
+  \item \stars{2} When the answer is ``no'' (the input is less than the trial code), the bit must be \emph{cleared}: the result stays \code{0x00}, not \code{0x80}. The second trial value is \code{0x40}.
+  \item \stars{3} An eight-bit counter counts $0,1,\ldots,255$ and wraps to zero; the output is $\text{pwm}=(\text{counter}<\text{level})$. With $\text{level}=64$ it is one for 64 clock cycles out of 256 (25\,\%); with $\text{level}=0$ the condition is never true; with $\text{level}=255$ the output is 0 only on the last clock cycle. To check: Waveforms tab (the \code{pwm} example).
+  \item \stars{3} The period is $27\,000\,000/2000=13\,500$ clock cycles; the one lasts $0.25\cdot 13\,500=3375$ clock cycles, the zero 10\,125. Circuit: a counter modulo 13\,500 (14 bits), output $=(\text{counter}<3375)\ \&\ \text{alarm}$. To check: Waveforms: the period is 13\,500 clock cycles, and after the alarm ends the output is zero; then the buzzer on the Connect tab.
+\end{enumerate}
+
+\section*{Clocking and Timing Analysis}
+\begin{enumerate}
+  \item \stars{1}~$T = 0.5+4+3+0.5 = 8$~ns, $f_{max}=125$~MHz.
+  \item \stars{1}~The slack is $10-8.2=1.8$~ns. At 150~MHz the period is 6.67~ns and the slack is negative ($-1.5$~ns): the circuit will not meet timing.
+  \item \stars{2}~Count to $27\,000-1 = 26\,999$.
+  \item \stars{1}~$27\cdot 4/1 = 108$~MHz.
+  \item \stars{2}~The bits can arrive with different delays, and the receiver will briefly see a value that never existed (on the transition \code{0111}$\to$\code{1000}, \code{1111} or \code{0000} are possible). You need Gray code, a handshake, or a FIFO.
+  \item \stars{2}~$N = 0.005\cdot 27\cdot 10^6 = 135\,000$ clock cycles.
+  \item \stars{2}~At 100~MHz the period is 10~ns and the path is 12~ns: the slack is $10-12=-2$~ns, so the circuit will not meet timing. The maximum frequency is about $1/12~\text{ns}\approx 83$~MHz. Fix: split the logic with a pipeline, or use a PLL at 80~MHz or less. To check: ``Chip'' with a 100~MHz frequency will show the failed requirement.
+  \item \stars{2}~A flip-flop output travels over ordinary wires, not over the clock network: for different flip-flops it arrives with different delays (skew), and this is not visible in a simulation without delays. Correct: \code{reg en; always @(posedge clk) en <= ~en; always @(posedge clk) if (en) ...;}---a single \code{clk}, and the slow block is enabled by a pulse.
+  \item \stars{3}~Project. To check: on ``Chip'' $f_{max}\ge 54$~MHz; on the waveform the series \code{1-0-1-0-1} on the button after the synchronizer and filter gives one \code{code\_step} pulse; \code{rst} brings \code{state} to OFF on the nearest edge.
+  \item \stars{3}~Project. A divider counting to $13\,500\,000-1$ gives \code{tick} every 0.5~s; \code{if (tick) led <= ~led;}. To check: on the RTL a single \code{clk} on all flip-flops; on the waveform (with a reduced constant) \code{led} changes only when \code{tick = 1}; on ``Chip'' $f_{max}$ is no lower than 100~MHz.
+\end{enumerate}
+
+\section*{Serial Interfaces}
+\begin{enumerate}
+  \item \stars{1}~$27\,000\,000/9600 \approx 2812.5$, that is, about 2813 clock cycles.
+  \item \stars{1}~$10\cdot 8.68 = 86.8$~$\mu$s; $115\,200/10 = 11\,520$ bytes per second.
+  \item \stars{1}~Start 0, then the bits $1,0,1,0,1,0,1,0$ (least significant first), stop 1: the line strictly alternates \code{0101010101}.
+  \item \stars{2}~In the middle the signal has settled and is farthest from the edges, so small speed mismatches and noise will not cause an error.
+  \item \stars{2}~Yes: over a frame the error accumulates to $9.5\cdot 3\,\% \approx 0.29$ bit, less than half. The permissible speed mismatch is about $0.5/9.5\approx 5\,\%$.
+  \item \stars{2}~SPI has a shared clock, no start and stop bits, and the data flows in both directions at once. The drawback: more wires (a CS line for each slave device) and no addressing or acknowledgment.
+  \item \stars{2}~The mistake: sampling is done at the bit boundaries, where the signal changes. Any edge delay or noise on a long wire causes a neighboring bit to be read. Fix: after the line falls, count half a bit (the middle of the start bit), check that the line is still 0, and then read every \code{CLKS\_PER\_BIT} clock cycles. To check in Logra: ``UART receiver 8N1'', the frame \code{0x41} with a slight edge shift.
+  \item \stars{3}~Project. Once a second (a counter to $27\,000\,000-1$) a \code{start} pulse is issued; into \code{uart\_tx} goes the data \code{state} (0, 1, or 2), \code{CLKS\_PER\_BIT=234}. To check: on the waveform (with \code{CLKS\_PER\_BIT=8}) a start 0, 8 bits least significant first, a stop 1; on the board, in the ``UART terminal'' of the Connect tab, a character arrives once a second.
+  \item \stars{3}~Project. The transmitter output \code{tx} is fed to the receiver input \code{rx}, and \code{rx\_data} is shown on the LEDs. To check: sweep 256 values on the waveform; for each, \code{rx\_data} matches what was sent; with a stop bit of 0 the signal \code{rx\_valid} does not rise (the frame is discarded).
+\end{enumerate}
+
+\section*{64-Mbit SDRAM Memory}
+\begin{enumerate}
+  \item \stars{1}~$4\cdot 2048\cdot 256 = 2\,097\,152=2^{21}$ words, a 21-bit address (2 bank bits, 11 row bits, 8 column bits).
+  \item \stars{1}~$133\cdot 10^6\cdot 4~\text{bytes}\approx 532$~MB/s.
+  \item \stars{2}~$64~\text{ms}/2048=31.25$~$\mu$s; at 100~MHz this is 3125 clock cycles.
+  \item \stars{2}~The row is not yet open until $t_\text{RCD}$ clock cycles have passed: the data will be wrong or undefined. After ACTIVE the FSM must wait two clock cycles (NOP) and only then issue READ.
+  \item \stars{3}~Project. \code{assign \{ba, row, col\} = addr;} and \code{case (cmd)} according to the command table; to check: for \code{0x1FFFFF} $ba=3$, $row=0x7FF$, $col=0xFF$; on the waveform all seven commands give the combinations from the table, and the \code{default} branch outputs NOP.
+  \item \stars{3}~Project. A 21-bit address counter, refresh every 31.25~$\mu$s (3125 clock cycles at 100~MHz), a write on an event. Fill time: $2^{21}$ words; at one event per second about 24 days. To check: on a model with small constants the counter returns to 0 after the maximum address.
+\end{enumerate}
+
+\section*{Building a Processor}
+\begin{enumerate}
+  \item \stars{1}~The loop takes 9 instructions at two clock cycles each: 18 clock cycles.
+  \item \stars{2}~\code{LDI 1; STA 0; LDI 5; OUT; SUB 0; JZ 8; JMP 3; NOP; OUT; HLT}, that is, the codes \code{11 30 15 80 50 78 63 00 80 90}. The constant 1 must first be written into RAM, because memory is not cleared at power-up. The output will show 5, 4, 3, 2, 1, 0.
+  \item \stars{1}~16 cells. To make the program twice as long you need a 5-bit program counter and a wider instruction (the jump address must have 5 bits).
+  \item \stars{2}~The last number that fits in 8 bits is 233 (the fourteenth in order, $F_{13}$); the next one, $377 - 256 = 121$, will appear after the accumulator overflows.
+  \item \stars{1}~In the Harvard architecture the program memory and data memory are separate (with their own buses); in the von Neumann architecture the memory is shared.
+  \item \stars{2}~Read the ROM combinationally and execute the instruction in the same clock cycle (a single-cycle processor); the critical path becomes longer and the frequency lower.
+  \item \stars{2}~The instruction \code{JMP 2} returns the counter to \code{LDI 5}: the accumulator becomes 5 again each time, \code{SUB} gives 4, \code{JZ} does not fire, and \code{OUT} again outputs 5. To check: on the waveform \code{pc} loops around 2--6 and \code{out} is always 5.
+  \item \stars{3}~Add \code{4'd10: if (acc != 8'd0) pc <= arg;} to \code{case (op)}. The program is \code{15 30 11 31 40 80 51 30 A4 90} (\code{LDI 5; STA 0; LDI 1; STA 1; LDA 0; OUT; SUB 1; STA 0; JNZ 4; HLT}). To check: on the waveform \code{out} takes 5, 4, 3, 2, 1, and then \code{pc} freezes at address 9.
+  \item \stars{3}~Project. The program \code{13 30 11 31 40 80 51 30 A4 80 90} (\code{LDI 3; STA 0; LDI 1; STA 1; LDA 0; OUT; SUB 1; STA 0; JNZ 4; OUT; HLT}): \code{out} takes 3, 2, 1 and finally 0, after which \code{pc} stops changing. To check: on the waveform after the third ``attempt'' \code{out = 0} and \code{halted = 1}.
+\end{enumerate}
+

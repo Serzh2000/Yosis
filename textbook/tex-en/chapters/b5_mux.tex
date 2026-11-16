@@ -1,0 +1,550 @@
+\chapter{Multiplexers and Demultiplexers}
+\label{ch:mux}
+
+In Chapter~\ref{ch:coders} we learned to light \emph{one} line out of $2^n$ by
+its number: a decoder answers the question ``which one is it?''. But a line by
+itself carries nothing. A question remains: how can we use a number not just to
+point at a signal but to \emph{pass it through}, that is, to choose one of
+several sources and send it onward? The answer is the multiplexer, and we will
+see that inside it is built from the decoder we already know.
+
+\begin{buildbox}
+\textbf{Task.} Choose whose value to show on an LED: switch \code{a} or switch
+\code{b}, according to a third switch \code{s}.
+
+\textbf{In Logra.} Learn tab, the ``Circuits and the board'' book, the
+``Selection and distribution'' chapter, the lesson ``2-to-1 multiplexer''
+(Designer). You need one ``2:1 multiplexer'' block from the Select group.
+
+\textbf{Expected result.} When $s=0$ the LED repeats \code{a}; when $s=1$ it
+repeats \code{b}. The rest of this chapter explains what is inside this block
+and what it can be turned into.
+\end{buildbox}
+
+\section{A Digital Switch}
+
+Picture an old rotary switch: you turn the knob and it connects a common
+contact to one of several others. A \term{multiplexer} (MUX) does the same with
+digital signals: it has several data inputs, one output, and \term{select}
+(control) inputs that choose which data input is connected to the output.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  % mechanical switch
+  \foreach \i in {0,...,3} {
+    \fill (0,1.5-\i) circle (2pt);
+    \draw[wire] (-1,1.5-\i) node[left] {$x_\i$} -- (0,1.5-\i);
+  }
+  \fill (2,0) circle (2.5pt);
+  \draw[very thick, FpgaOrange] (2,0) -- (0.08,0.5);
+  \draw[wire] (2,0) -- (3,0) node[right] {$y$};
+  \node[lbl] at (1.2,-2.3) {mechanical switch};
+  % multiplexer
+  \begin{scope}[xshift=7.5cm]
+    \draw[thick, fill=orange!15] (0,2) -- (1.6,1.2) -- (1.6,-1.2) -- (0,-2) -- cycle;
+    \node[font=\sffamily\bfseries] at (0.8,0) {MUX};
+    \foreach \i in {0,...,3} {
+      \draw[wire] (-1,1.5-\i) node[left] {$x_\i$} -- (0,1.5-\i);
+      \node[font=\sffamily\scriptsize, anchor=west] at (0.05,1.5-\i) {\i};
+    }
+    \draw[wire] (1.6,0) -- (2.6,0) node[right] {$y$};
+    \draw[wire, FpgaBlue] (0.6,-1.7) -- (0.6,-2.6) node[below] {$s_1$};
+    \draw[wire, FpgaBlue] (1.1,-1.45) -- (1.1,-2.6) node[below] {$s_0$};
+    \node[lbl] at (0.8,-3.3) {digital 4:1 multiplexer};
+  \end{scope}
+  \draw[-{Stealth[length=4mm]}, line width=2pt, FpgaOrange] (4.2,0) -- (5.6,0);
+\end{tikzpicture}
+\caption{A multiplexer is a controlled switch: when $s_1s_0 = 01$ the output is
+connected to input $x_1$}
+\end{figure}
+
+A multiplexer with $n$ select inputs can choose from $2^n$ data inputs. It is
+written as a ratio: \textbf{2:1}, \textbf{4:1}, \textbf{8:1} (how many inputs :
+how many outputs).
+
+\begin{diybox}[A four-input switch]
+\textbf{Task.} \stars{1} Repeat: in the Designer place a ``4:1 multiplexer''
+block (the ``Number of inputs'' parameter is 4), connect four different sources
+(switches or constants) to the inputs $D_0\ldots D_3$, and make the $S$ input
+two bits wide. \stars{2} Modify: make input number 2 go to the output, and write
+down which code is needed on $S$.
+
+\textbf{In Logra.} The Designer and Waveforms tabs; the reference is the example
+\code{mux-four}.
+
+\textbf{Expected result.} For $S=00,01,10,11$ the output equals $D_0$, $D_1$,
+$D_2$, $D_3$; the input number equals the binary number on $S$.
+
+\textbf{How to check.} On the Waveforms tab go through the four values of $S$
+and compare with Fig.~\ref{fig:mux41} and the timing diagram later in the text.
+\end{diybox}
+
+\section{The 2:1 Multiplexer}
+
+The simplest multiplexer has two inputs $a$, $b$ and one select input $s$: if
+$s = 0$, then $a$ passes to the output; if $s = 1$, then $b$ passes.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.28\textwidth}
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=orange!15] (0,1.1) -- (1.1,0.6) -- (1.1,-0.6) -- (0,-1.1) -- cycle;
+  \node[font=\sffamily\small] at (0.55,0) {MUX};
+  \draw[wire] (-0.7,0.6) node[left] {$a$} -- (0,0.6); \node[font=\sffamily\scriptsize, anchor=west] at (0.02,0.6) {0};
+  \draw[wire] (-0.7,-0.6) node[left] {$b$} -- (0,-0.6); \node[font=\sffamily\scriptsize, anchor=west] at (0.02,-0.6) {1};
+  \draw[wire] (1.1,0) -- (1.7,0) node[right] {$y$};
+  \draw[wire, FpgaBlue] (0.55,-0.85) -- (0.55,-1.5) node[below] {$s$};
+\end{tikzpicture}
+\end{minipage}
+\begin{minipage}{0.27\textwidth}
+\centering
+\begin{tabular}{c|c}
+\toprule
+$s$ & $y$ \\
+\midrule
+0 & $a$ \\
+1 & $b$ \\
+\bottomrule
+\end{tabular}
+
+\medskip
+$y = \overline{s}\,a + s\,b$
+\end{minipage}
+\begin{minipage}{0.43\textwidth}
+\centering
+\begin{tikzpicture}
+  \node[gAND, minimum width=10mm, minimum height=7mm] (g1) at (2,0.6) {};
+  \node[gAND, minimum width=10mm, minimum height=7mm] (g2) at (2,-0.6) {};
+  \node[gOR, minimum width=10mm, minimum height=7mm] (o) at (3.7,0) {};
+  \node[gNOT, minimum width=7mm, minimum height=5mm] (n) at (0.9,0.48) {};
+  \draw[wire] (g1.input 1) -- ++(-1.8,0) node[left] {$a$};
+  \draw[wire] (g2.input 2) -- ++(-1.8,0) node[left] {$b$};
+  \draw[wire, FpgaBlue] (0.2,-1.4) node[below] {$s$} -- (0.2,0.48) -- (n.input);
+  \draw[wire, FpgaBlue] (0.2,-0.48) -- (g2.input 1); \fill[FpgaBlue] (0.2,-0.48) circle (1.3pt);
+  \draw[wire] (n.output) -- (g1.input 2);
+  \draw[wire] (g1.output) -- ++(0.15,0) |- (o.input 1);
+  \draw[wire] (g2.output) -- ++(0.15,0) |- (o.input 2);
+  \draw[wire] (o.output) -- ++(0.4,0) node[right] {$y$};
+\end{tikzpicture}
+\end{minipage}
+\caption{The 2:1 multiplexer: symbol, table, formula, and gate-level circuit}
+\label{fig:mux21}
+\end{figure}
+
+How the circuit works: when $s = 0$ the upper AND gate ``lets $a$ through'',
+while the lower one is ``closed'' (it has a 0 on its input). When $s = 1$ it is
+the other way around. The OR gate collects the result.
+
+\begin{diybox}[A multiplexer from gates]
+\textbf{Task.} \stars{1} Build a 2:1 multiplexer from NOT, AND, and OR gates as
+in Fig.~\ref{fig:mux21}. \stars{2} Replace all three kinds of gates with NAND
+gates (Chapter~\ref{ch:gates}) and compare the number of gates.
+
+\textbf{In Logra.} Learn tab, the ``Selection and distribution'' chapter, the
+lesson ``A multiplexer from NOT, AND, OR''; for comparison, the ready-made block
+and the example \code{mux}.
+
+\textbf{Expected result.} Your circuit and the ready-made block give the same
+output for all eight combinations of $a,b,s$.
+
+\textbf{How to check.} Waveforms: feed the same inputs to both circuits and
+compare the outputs; RTL: compare your drawing with the drawing of the block.
+\end{diybox}
+
+\section{The 4:1 Multiplexer}
+
+In a 4:1 multiplexer, two select inputs $s_1 s_0$ give the number of the input,
+from 0 to 3.
+\[
+  y = \overline{s_1}\,\overline{s_0}\,x_0 + \overline{s_1}\,s_0\,x_1 + s_1\,\overline{s_0}\,x_2 + s_1\,s_0\,x_3.
+\]
+Look closely at the formula: the factors multiplying $x_i$ are exactly the
+outputs of the 2$\to$4 \emph{decoder} from Chapter~\ref{ch:coders}! So a
+multiplexer consists of an address decoder, four AND gates, and one OR gate.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=FpgaLight] (0,-2.6) rectangle (1.6,1.0);
+  \node[font=\sffamily\bfseries] at (0.8,-0.8) {DC};
+  \draw[wire, FpgaBlue] (-0.8,0.2) node[left, text=FpgaDark] {$s_1$} -- (0,0.2);
+  \draw[wire, FpgaBlue] (-0.8,-1.8) node[left, text=FpgaDark] {$s_0$} -- (0,-1.8);
+  \foreach \i in {0,...,3} {
+    \pgfmathsetmacro{\y}{0.6-\i*1.0}
+    \node[gAND, minimum width=10mm, minimum height=7mm] (g\i) at (4.6,\y-0.12) {};
+    \draw[wire] (1.6,\y) -- ++(0.8,0) |- (g\i.input 2);
+    \node[font=\sffamily\scriptsize, anchor=east] at (1.55,\y) {\i};
+    \draw[wire] (g\i.input 1) -- ++(-0.8,0) node[left, font=\small] {$x_\i$};
+  }
+  \node[gOR, logic gate inputs=nnnn, minimum height=18mm] (o) at (7.2,-0.9) {};
+  \foreach \i in {0,...,3} {
+    \pgfmathtruncatemacro{\j}{\i+1}
+    \draw[wire] (g\i.output) -- ++(0.35,0) |- (o.input \j);
+  }
+  \draw[wire] (o.output) -- ++(0.7,0) node[right] {$y$};
+\end{tikzpicture}
+\caption{The 4:1 multiplexer = address decoder + AND gates + OR gate}
+\label{fig:mux41}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.05, xscale=0.9, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  $x_0$     & 16{1L 1H} \\
+  $x_1$     & 8{2L 2H} \\
+  $x_2$     & 32H \\
+  $x_3$     & 32L \\
+  $s_1s_0$  & 8D{00} 8D{01} 8D{10} 8D{11} \\
+  $y$       & 4{1L 1H} 2{2L 2H} 8H 8L \\
+\end{tikztimingtable}
+\caption{The 4:1 multiplexer passes different input signals to the output in
+turn}
+\end{figure}
+
+\begin{diybox}[The 4:1 multiplexer]
+\textbf{Task.} \stars{1} Go through the lesson and build the 4:1 multiplexer
+from a block. \stars{2} Build it again ``as in Fig.~\ref{fig:mux41}'': an
+address decoder, four AND gates, one OR gate.
+
+\textbf{In Logra.} Learn tab, the ``Selection and distribution'' chapter, the
+lesson ``4-to-1 multiplexer''; for the second part, the lesson ``Decoder'' as a
+source of the decoder.
+
+\textbf{Expected result.} Both circuits give the same table: the output equals
+the input whose number is set on $s_1s_0$.
+
+\textbf{How to check.} Waveforms: go through all $4$ addresses for different
+values of $x_0\ldots x_3$ (two sets are enough); RTL: the block and your
+assembly should differ only in appearance, not in logic.
+\end{diybox}
+
+\section{A Tree of Multiplexers}
+
+A large multiplexer can be built from small ones. A 4:1 multiplexer is three
+2:1 multiplexers: the first level chooses by the low address bit, the second by
+the high bit. An 8:1 multiplexer is a tree of seven 2:1 multiplexers in three
+levels, and so on.
+
+\newcommand{\muxsym}[3]{% name, x, y
+  \draw[thick, fill=orange!15] (#2,#3+0.55) -- (#2+0.7,#3+0.3) -- (#2+0.7,#3-0.3) -- (#2,#3-0.55) -- cycle;
+  \coordinate (#1-i0) at (#2,#3+0.3); \coordinate (#1-i1) at (#2,#3-0.3);
+  \coordinate (#1-o) at (#2+0.7,#3); \coordinate (#1-s) at (#2+0.35,#3-0.42);}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \muxsym{m0}{0}{1}
+  \muxsym{m1}{0}{-1}
+  \muxsym{m2}{2}{0}
+  \foreach \m/\a/\b in {m0/x_0/x_1, m1/x_2/x_3} {
+    \draw[wire] (\m-i0) -- ++(-0.6,0) node[left] {$\a$};
+    \draw[wire] (\m-i1) -- ++(-0.6,0) node[left] {$\b$};
+  }
+  \draw[wire] (m0-o) -- ++(0.4,0) |- (m2-i0);
+  \draw[wire] (m1-o) -- ++(0.4,0) |- (m2-i1);
+  \draw[wire] (m2-o) -- ++(0.6,0) node[right] {$y$};
+  \draw[wire, FpgaBlue] (m0-s) -- (0.35,0.25) -- (-0.9,0.25) node[left, text=FpgaDark] {$s_0$};
+  \draw[wire, FpgaBlue] (m1-s) -- (0.35,-1.8) -- (-0.4,-1.8) -- (-0.4,0.25); \fill[FpgaBlue] (-0.4,0.25) circle (1.3pt);
+  \draw[wire, FpgaBlue] (m2-s) -- (2.35,-1.2) node[below, text=FpgaDark] {$s_1$};
+  \node[lbl] at (0.35,-2.4) {level 1};
+  \node[lbl] at (2.35,-2.4) {level 2};
+\end{tikzpicture}
+\caption{A 4:1 multiplexer made of three 2:1 multiplexers}
+\label{fig:muxtree}
+\end{figure}
+
+\begin{diybox}[A tree of multiplexers]
+\textbf{Task.} \stars{1} Build a 4:1 multiplexer from three ``2:1 multiplexer''
+blocks as in Fig.~\ref{fig:muxtree}. \stars{2} Add four more blocks to get an
+8:1 multiplexer; write down which address bits go to which level.
+
+\textbf{In Logra.} The Designer and RTL tabs; the reference is the example
+\code{mux-four} (compare with the ready-made block).
+
+\textbf{Expected result.} The tree and the ready-made block give the same
+output for all addresses; the low address bit $s_0$ goes to the first level.
+
+\textbf{How to check.} Waveforms: apply the constant values $0,1,0,1$ to
+$x_0\ldots x_3$ and go through the addresses---the output should alternate
+$0,1,0,1$.
+\end{diybox}
+
+\section{The Multiplexer as a Universal Gate}
+
+Here is a remarkable property of the multiplexer. Apply the \emph{variables}
+$a$ and $b$ to the select inputs, and apply the \emph{constants} 0 and 1,
+taken from the right-hand column of some function's truth table, to the data
+inputs. The multiplexer will then pick the needed row of the table and output
+the value of the function! Any function of $n$ variables can be implemented with
+a single $2^n$:1 multiplexer.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=orange!15] (0,2) -- (1.6,1.2) -- (1.6,-1.2) -- (0,-2) -- cycle;
+  \node[font=\sffamily\bfseries] at (0.8,0) {MUX};
+  \foreach \i/\v/\ab in {0/0/00, 1/1/01, 2/1/10, 3/0/11} {
+    \draw[wire] (-0.8,1.5-\i) -- (0,1.5-\i);
+    \node[draw=FpgaGreen, fill=green!8, thick, minimum size=6mm, font=\ttfamily] at (-1.1,1.5-\i) {\v};
+    \node[font=\sffamily\scriptsize, anchor=west] at (0.05,1.5-\i) {\i};
+    \node[lbl, anchor=east] at (-1.5,1.5-\i) {$ab=\ab$};
+  }
+  \draw[wire] (1.6,0) -- (2.6,0) node[right] {$y = a\oplus b$};
+  \draw[wire, FpgaBlue] (0.6,-1.7) -- (0.6,-2.6) node[below, text=FpgaDark] {$a$};
+  \draw[wire, FpgaBlue] (1.1,-1.45) -- (1.1,-2.6) node[below, text=FpgaDark] {$b$};
+  \node[lbl, align=center, text=FpgaGreen] at (-1.1,2.3) {truth\\table};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5.0,0.8) {Substitute \code{0001} --- you get AND,};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5.0,0.2) {\code{0111} --- OR, \code{1110} --- NAND\ldots};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5.0,-0.4) {The circuit is the same --- only};
+  \node[font=\sffamily\small, align=left, anchor=west] at (5.0,-1.0) {the four bits on the left change.};
+\end{tikzpicture}
+\caption{A 4:1 multiplexer with constants on its inputs computes any function of
+two variables (here, exclusive OR)}
+\label{fig:mux_lut}
+\end{figure}
+
+\begin{ideabox}[Remember this figure]
+The four constants on the left are simply a column of values from the truth
+table. By changing them we change the function, while the circuit stays the
+same. If these bits are stored in a small memory, you get ``programmable''
+logic.
+
+\lookahead{a multiplexer with a memory like this is called a LUT; an FPGA
+consists of thousands of such blocks (Chapter~\ref{ch:inside}).}
+\end{ideabox}
+
+\begin{diybox}[Any function on one multiplexer]
+\textbf{Task.} \stars{1} Implement $A\oplus B$ on a 4:1 multiplexer as in
+Fig.~\ref{fig:mux_lut}. \stars{2} Implement $F=A\oplus B\oplus C$ (problem~5 of
+this chapter): $A,B$ go to the select inputs, and the data inputs get constants
+and $C$ or $\overline{C}$. \stars{3} Implement the ``2 out of 3'' (majority)
+function from Chapter~\ref{ch:comb} on a single block.
+
+\textbf{In Logra.} The Designer, Waveforms, and RTL tabs; the reference is the
+example \code{mux-four}.
+
+\textbf{Expected result.} The output table matches the function's truth table
+for all combinations; by changing only the constants on the data inputs, you get
+AND, OR, NAND without rebuilding the circuit.
+
+\textbf{How to check.} Waveforms: go through all combinations and compare with
+the table; RTL: make sure the structure is the same for different functions.
+\end{diybox}
+
+\section{The Demultiplexer}
+
+A \term{demultiplexer} (DEMUX) does the opposite: it has one data input $x$ and
+$2^n$ outputs. The address $s$ determines which of the outputs receives the
+input signal; the other outputs are 0.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.35\textwidth}
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=orange!15] (0,1.2) -- (1.6,2) -- (1.6,-2) -- (0,-1.2) -- cycle;
+  \node[font=\sffamily\small\bfseries] at (0.8,0) {DEMUX};
+  \draw[wire] (-0.8,0) node[left] {$x$} -- (0,0);
+  \foreach \i in {0,...,3} {
+    \draw[wire] (1.6,1.5-\i) -- (2.4,1.5-\i) node[right] {$y_\i$};
+    \node[font=\sffamily\scriptsize, anchor=east] at (1.55,1.5-\i) {\i};
+  }
+  \draw[wire, FpgaBlue] (0.5,-1.45) -- (0.5,-2.6) node[below, text=FpgaDark] {$s_1$};
+  \draw[wire, FpgaBlue] (1.0,-1.7) -- (1.0,-2.6) node[below, text=FpgaDark] {$s_0$};
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.6\textwidth}
+\centering
+\begin{tabular}{cc|cccc}
+\toprule
+$s_1$ & $s_0$ & $y_0$ & $y_1$ & $y_2$ & $y_3$ \\
+\midrule
+0 & 0 & $x$ & 0 & 0 & 0 \\
+0 & 1 & 0 & $x$ & 0 & 0 \\
+1 & 0 & 0 & 0 & $x$ & 0 \\
+1 & 1 & 0 & 0 & 0 & $x$ \\
+\bottomrule
+\end{tabular}
+
+\medskip
+$y_0 = x\,\overline{s_1}\,\overline{s_0}, \ \ y_1 = x\,\overline{s_1}\,s_0, \ \ \ldots$
+\end{minipage}
+\caption{The 1:4 demultiplexer}
+\end{figure}
+
+Compare the formulas with the decoder with an enable input
+(Fig.~\ref{fig:dc24}): they coincide if the enable input $E$ is renamed $x$.
+Therefore \textbf{a demultiplexer is a decoder whose enable input receives the
+data signal}. In reference books these two chips are often listed under a single
+name.
+
+\begin{diybox}[The demultiplexer]
+\textbf{Task.} \stars{1} Build a demultiplexer: one button, four lamps, and two
+switches that set the lamp number. \stars{2} Build the same thing from a decoder
+with an enable input $E$, connecting the button to $E$.
+
+\textbf{In Logra.} Learn tab, the ``Selection and distribution'' chapter, the
+lesson ``Demultiplexer''; the example \code{demux-four}; for the second part,
+the lesson ``Decoder''.
+
+\textbf{Expected result.} A pressed button lights only one lamp, the one chosen
+by the address; the others stay off.
+
+\textbf{How to check.} Waveforms: at address 10 the output $y_2$ repeats the
+button, the rest are 0; RTL: the block and the decoder with $E$ give identical
+waveforms.
+\end{diybox}
+
+\section{Transmission over a Single Line}
+
+Together, a multiplexer and a demultiplexer let you send several signals over a
+\emph{single} wire. The address quickly cycles through the values $0, 1, 2, 3, 0,
+1\ldots$, and at each moment the line carries the signal of one of the sources.
+On the receiving side, a demultiplexer with the same address distributes them to
+its outputs. This is \term{time-division multiplexing}: it is how telephone
+lines and computer buses work, and in drones it is how a remote-control receiver
+sends the signals of all channels over one wire (the PPM and SBUS protocols).
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=orange!15] (0,1.3) -- (1.2,0.7) -- (1.2,-0.7) -- (0,-1.3) -- cycle;
+  \node[font=\sffamily\scriptsize\bfseries] at (0.6,0) {MUX};
+  \foreach \i/\t in {0/throttle, 1/roll, 2/pitch, 3/yaw}
+    \draw[wire] (-0.6,0.9-\i*0.6) node[left, font=\sffamily\small] {\t} -- (0,0.9-\i*0.6);
+  \draw[very thick, FpgaOrange] (1.2,0) -- node[above, font=\sffamily\small, text=FpgaDark] {single line} (5.0,0);
+  \begin{scope}[xshift=5cm]
+  \draw[thick, fill=orange!15] (0,0.7) -- (1.2,1.3) -- (1.2,-1.3) -- (0,-0.7) -- cycle;
+  \node[font=\sffamily\tiny\bfseries] at (0.6,0) {DEMUX};
+  \foreach \i/\t in {0/throttle, 1/roll, 2/pitch, 3/yaw}
+    \draw[wire] (1.2,0.9-\i*0.6) -- (1.8,0.9-\i*0.6) node[right, font=\sffamily\small] {\t};
+  \end{scope}
+  \node[block, minimum width=20mm, minimum height=7mm] (ctr) at (3.1,-2.1) {Address\\\scriptsize counter};
+  \draw[arr, FpgaBlue] (ctr.west) -| node[pos=0.25, below, lbl] {$s$} (0.6,-1.05);
+  \draw[arr, FpgaBlue] (ctr.east) -| node[pos=0.25, below, lbl] {$s$} (5.6,-1.05);
+\end{tikzpicture}
+\caption{Four remote-control channels over a single wire}
+\end{figure}
+
+\begin{diybox}[Security Panel: four zones through one multiplexer]
+\textbf{Task.} \stars{1} Build a ``4:1 multiplexer for four sensors'':
+$x_0\ldots x_3$ are the zone sensors, the address $s_1s_0$ is set by two
+switches, and the output shows the state of the selected zone. \stars{2} Add a
+demultiplexer and show the number of the selected zone with a separate lamp.
+\stars{3} Replace the address switches with a counter so that the zones are
+polled in turn (counters are in Chapter~\ref{ch:regs}; for now you can change
+the address by hand).
+
+\textbf{In Logra.} The Designer and Waveforms tabs; references are the lesson
+``4-to-1 multiplexer'' and the example \code{mux-four}.
+
+\textbf{Expected result.} The multiplexer output equals the sensor of the
+selected zone and depends on nothing else.
+
+\textbf{Security Panel project milestone: milestone~4b.} Four zones through one
+multiplexer. Acceptance criterion: for all $4\times 2=8$ combinations of ``zone
+address --- the sensor of that zone open/closed'' the output equals the sensor
+of the selected zone, and changing the sensors of the other zones does not
+affect the output (check on the Waveforms tab).
+\end{diybox}
+
+\section{Multibit Multiplexers}
+
+Often we need to choose not between bits but between \emph{numbers}. For this,
+several multiplexers are placed in parallel with a common address. For example,
+an 8-bit 2:1 multiplexer is eight 2:1 multiplexers whose select inputs are
+connected together. In schematics such a unit is drawn as a single symbol with
+buses.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[thick, fill=orange!15] (0,1.1) -- (1.1,0.6) -- (1.1,-0.6) -- (0,-1.1) -- cycle;
+  \node[font=\sffamily\small] at (0.55,0) {MUX};
+  \draw[bus] (-1.4,0.6) node[left, text=FpgaDark] {$A$} -- (0,0.6);
+  \draw[bus] (-1.4,-0.6) node[left, text=FpgaDark] {$B$} -- (0,-0.6);
+  \draw[bus] (1.1,0) -- (2.4,0) node[right, text=FpgaDark] {$Y$};
+  \foreach \x/\y in {-0.8/0.6, -0.8/-0.6, 1.7/0} {
+    \draw[thick] (\x-0.1,\y-0.15) -- (\x+0.1,\y+0.15);
+    \node[font=\sffamily\scriptsize, above] at (\x,\y+0.1) {8};
+  }
+  \draw[wire, FpgaBlue] (0.55,-0.85) -- (0.55,-1.5) node[below, text=FpgaDark] {$s$};
+  \node[font=\sffamily\small, anchor=west] at (4.0,0.3) {$s=0$: \ $Y = A$};
+  \node[font=\sffamily\small, anchor=west] at (4.0,-0.3) {$s=1$: \ $Y = B$};
+\end{tikzpicture}
+\caption{A multiplexer for 8-bit numbers. The slash with a number shows how many
+wires are in the bus}
+\end{figure}
+
+\begin{ideabox}
+A \textbf{multiplexer} chooses one of $2^n$ inputs by an address. It consists of
+an address decoder and AND--OR gates, and it can implement any function if
+constants are applied to its inputs. A \textbf{demultiplexer} passes one input
+to the chosen output---it is a decoder with a data signal on its enable input.
+\end{ideabox}
+
+\begin{diybox}[Choosing between numbers]
+\textbf{Task.} \stars{1} Choose one of three 4-bit numbers $a,b,c$ by a 2-bit
+code $s$ (when $s=3$, let $c$ be chosen). \stars{2} Describe the choice between
+two 8-bit buses with a single line in Code:
+\code{assign y = s ? b : a;}, where \code{a} and \code{b} are 8 bits each.
+\stars{3} Add a third source and compare with the ``4:1 multiplexer'' block
+whose ``Data width'' parameter is~8.
+
+\textbf{In Logra.} Learn tab, the ``Selection and distribution'' chapter, the
+lesson ``Choosing from three sources''; the Code tab for the second and third
+tasks; the example \code{mux}.
+
+\textbf{Expected result.} One block (one line of code) switches all the bits at
+once; the select input $s$ stays one bit wide (or two bits wide).
+
+\textbf{How to check.} Waveforms: apply two different numbers, for example
+\code{0xA5} and \code{0x3C}, and toggle $s$---the output should repeat the
+chosen number in full; RTL: one multiplexer symbol with buses, as in the figure
+above.
+\end{diybox}
+
+\section{Common Mistakes}
+
+\begin{warnbox}[Common mistakes]
+\begin{itemize}
+  \item \textbf{Mixing up the order of the address bits.} In the code $s_1s_0=01$ the high bit is $s_1$, so $x_1$ is selected, not $x_2$. If you swap the wires $s_1$ and $s_0$ in the Designer, zones 1 and 2 trade places, while the circuit still looks like it ``works''.
+  \item \textbf{Thinking there are $2^n$ select inputs.} A $2^n{:}1$ multiplexer has $n$ select inputs: a $4{:}1$ has two, not four, and an $8{:}1$ has three.
+  \item \textbf{Expecting a demultiplexer to ``remember'' a value.} It has no memory: unselected outputs are always 0, and when the address changes, the previous output goes dark immediately.
+  \item \textbf{Letting the addresses at the transmitter and receiver drift apart.} In single-line transmission the multiplexer and the demultiplexer must receive \emph{the same} address at the same moment; even a one-step shift sends the channels to the wrong outputs.
+\end{itemize}
+\end{warnbox}
+
+\section{Questions and Problems}
+\label{sec:tasks-mux}
+
+Answers are collected in Appendix~\ref{app:answers}.
+
+\begin{taskbox}[Chapter problems]
+\begin{enumerate}
+  \item \stars{1}~How many select inputs does an $8:1$ multiplexer have? And a $16:1$?
+  \item \stars{1}~How many $2:1$ multiplexers are needed to build an $8:1$ multiplexer?
+  \item \stars{1}~How many $2:1$ multiplexers are needed to choose between two 8-bit buses?
+  \item \stars{1}~A $1:4$ demultiplexer has data equal to 1 at address 10. What are the values of the four outputs?
+  \item \stars{2}~Implement the function $F = A\oplus B\oplus C$ on a single $4:1$ multiplexer, applying $A$ and $B$ to the select inputs. What must be applied to the data inputs?
+  \item \stars{2}~Why is the multiplexer called a universal gate? Which four constants on the inputs $D_0\ldots D_3$ (at address $AB$) give the AND and OR functions?
+  \item \stars{2}~\emph{Find the error.} A student implements $A\oplus B$ on a $4:1$ multiplexer with address $AB$ and applies the constants $0,1,1,1$ to $D_0,D_1,D_2,D_3$. Which function did they actually get, and which constants are needed?
+  \item \stars{2}~\emph{Find the error.} In a single-line transmission system (the section ``Transmission over a Single Line''), the receiver's address counter is started one clock cycle later than the transmitter's counter. What will appear on the outputs ``throttle'', ``roll'', ``pitch'', ``yaw''?
+  \item \stars{3}~\textbf{Project: Security Panel milestone 4b.} Four zone sensors through one $4:1$ multiplexer, the zone address set by two switches; a demultiplexer shows the zone number with a lamp. \emph{Acceptance criterion:} at each of the four addresses the output repeats the sensor of exactly that zone, and changing the other zones has no effect; only one number lamp is lit (Waveforms tab).
+  \item \stars{3}~\textbf{Project: ``Three sources''.} Choose one of three 4-bit numbers $a,b,c$ by a 2-bit code $s$ (when $s=3$ --- $c$). \emph{Acceptance criterion:} for $s=0,1,2,3$ the output equals $a,b,c,c$ (Waveforms tab, any numbers in the example).
+  \item \stars{3}~\textbf{Project: ``Majority vote''.} Implement the ``2 out of 3'' function $F=AB+AC+BC$ on a single $4:1$ multiplexer. \emph{Acceptance criterion:} the output table matches the truth table from Chapter~\ref{ch:comb} for all 8 combinations.
+\end{enumerate}
+\end{taskbox}
+
+\section{What's Next}
+
+We have learned to select and distribute: to get one signal out of many and
+back again. But we can select not only sensors but also the \emph{results of
+computations}: let the sum, the difference, and the logical AND be computed
+first, and let a multiplexer pass the needed answer according to an operation
+code. A question remains: how does a circuit made of gates \emph{calculate} at
+all? In the next chapter (Chapter~\ref{ch:arith}) we will build an adder, a
+subtractor, and a comparator, and from them and the multiplexer of this chapter
+we will assemble an arithmetic logic unit.

@@ -1,0 +1,485 @@
+\chapter{Logic Gates and Boolean Algebra}
+\label{ch:gates}
+
+In Chapter~\ref{ch:signals} the door sensor became one bit and the LED
+another, and between them stood a single inverter. But the security panel needs a
+more complex rule: raise the alarm if the door is open \emph{and} (it is night \emph{or}
+the guard mode is on). How do we tell this to a circuit? For that we need logic
+functions, logic gates, and Boolean algebra, by which expressions can be
+simplified and rewritten.
+
+\begin{buildbox}
+Open Logra, go to the \emph{Learn} tab, and complete the lessons ``NAND from blocks'' and
+``De Morgan's law''. Then open the \code{gates} example and the
+\emph{Waveforms} tab: go through the input combinations 00, 01, 10, 11 and find
+the row where exclusive OR differs from ordinary OR.
+\end{buildbox}
+
+\section{Logic Functions}
+
+A \term{logic function} assigns to each combination of input
+bits an output value: 0 or 1. A function is conveniently specified by a \term{truth
+table}---a list of all input combinations and the output values. A function of
+$n$ inputs has $2^n$ rows in its table.
+
+A circuit that computes a logic function is called a
+\term{logic gate}. Logic gates are drawn with
+standard symbols. In Russia the GOST standard is used (a rectangle with a
+symbol inside), while in foreign literature and in software the
+American (ANSI) symbols are often used. It is useful to recognize both.
+
+Functions from everyday life are everywhere. A hallway lamp with two
+switches: the lamp is on if the switches are in \emph{different} positions
+(this is exclusive OR). An elevator moves only if the doors are closed \emph{and} the
+button is pressed (this is AND). A doorbell rings from the button at the building entrance \emph{or} from the button
+at the apartment door (this is OR).
+
+\begin{diybox}[The alarm in words and as a table]
+\textbf{Task.} The panel rule: raise the alarm if the door is open and (it is night or
+the guard mode is on). Write it as a truth table: inputs door, night, armed.\par
+\textbf{In Logra.} The \code{logic} example (the \emph{Designer} and
+\emph{Waveforms} tabs)---see how several inputs are combined into an
+expression.\par
+\textbf{Expected result.} A table of eight rows; the output is one in three
+rows: door${}=1$ and at least one of night, armed equals 1.\par
+\textbf{How to check.} Check the number of ones: $2^3=8$ rows, of which three have
+an alarm.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: build the table for $F = A\cdot B + \overline{A}\cdot C$
+    (problem~1).
+  \item[\stars{2}] Modify: add a fourth input (a panic button that always triggers the alarm)
+    and count the rows of the new table.
+  \item[\stars{3}] Project: describe in words and as a table the rule ``the siren sounds if
+    there is an alarm and the user has not entered the code''; how many rows does the table have?
+\end{itemize}
+\end{diybox}
+
+\section{Basic Gates}
+
+\newcommand{\gaterow}[5]{%
+  \begin{tikzpicture}[baseline=-1mm]
+    \node[#1, minimum width=10mm, minimum height=7mm] (g) at (0,0) {};
+    \ifstrequal{#1}{gNOT}{\draw[wire] (g.input) -- ++(-0.35,0);}{%
+      \draw[wire] (g.input 1) -- ++(-0.35,0); \draw[wire] (g.input 2) -- ++(-0.35,0);}
+    \draw[wire] (g.output) -- ++(0.35,0);
+  \end{tikzpicture} &
+  \begin{tikzpicture}[baseline=-1mm]
+    \node[#2] (h) at (0,0) {};
+    \ifstrequal{#2}{iNOT}{\draw[wire] (h.input) -- ++(-0.35,0);}{%
+      \draw[wire] (h.input 1) -- ++(-0.35,0); \draw[wire] (h.input 2) -- ++(-0.35,0);}
+    \draw[wire] (h.output) -- ++(0.35,0);
+  \end{tikzpicture} & #3 & #4 & #5 \\[3mm]}
+
+\begin{table}[H]
+\centering
+\caption{Basic logic gates. The ``table'' column gives the output values
+for the inputs $ab = 00, 01, 10, 11$}
+\label{tab:gates_all}
+\small
+\begin{tabular}{c c l l c}
+\toprule
+\textbf{ANSI} & \textbf{GOST / IEC} & \textbf{Name} & \textbf{Formula} & \textbf{Table} \\
+\midrule
+\gaterow{gNOT}{iNOT}{NOT (inversion)}{$y=\overline{a}$}{\code{10} (for $a=0,1$)}
+\gaterow{gAND}{iAND}{AND (conjunction)}{$y=a\cdot b$}{\code{0001}}
+\gaterow{gOR}{iOR}{OR (disjunction)}{$y=a+b$}{\code{0111}}
+\gaterow{gNAND}{iNAND}{NAND (Sheffer stroke)}{$y=\overline{a\cdot b}$}{\code{1110}}
+\gaterow{gNOR}{iNOR}{NOR (Peirce arrow)}{$y=\overline{a+b}$}{\code{1000}}
+\gaterow{gXOR}{iXOR}{Exclusive OR (XOR)}{$y=a\oplus b$}{\code{0110}}
+\gaterow{gXNOR}{iXNOR}{Exclusive NOR (XNOR)}{$y=\overline{a\oplus b}$}{\code{1001}}
+\bottomrule
+\end{tabular}
+\end{table}
+
+A small circle on the output of a gate denotes inversion. That is why NAND is drawn as
+an AND gate with a circle, and NOR as an OR gate with a circle.
+
+In words:
+\begin{itemize}
+  \item \textbf{NOT}: the output is the opposite of the input;
+  \item \textbf{AND}: the output is 1 only if \emph{all} inputs are 1;
+  \item \textbf{OR}: the output is 1 if \emph{at least one} input is 1;
+  \item \textbf{Exclusive OR}: the output is 1 if the inputs \emph{differ}
+        (for many inputs---if the number of ones is odd).
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikztimingtable}[timing/slope=0.05, xscale=2.4, yscale=1.4, timing/font=\sffamily\small, timing/rowdist=3.2ex]
+  $a$              & 2L 2L 2H 2H \\
+  $b$              & 2L 2H 2L 2H \\
+  $a\cdot b$       & 6L 2H \\
+  $a+b$            & 2L 6H \\
+  $\overline{a\cdot b}$ & 6H 2L \\
+  $a\oplus b$      & 2L 4H 2L \\
+\end{tikztimingtable}
+\caption{The gates on a timing diagram: all four
+input combinations are tried in turn}
+\end{figure}
+
+\begin{diybox}[Basic gates in action]
+\textbf{Task.} Build the NOR and exclusive NOR (equality) gates and
+verify that their tables match the table in the chapter.\par
+\textbf{In Logra.} The \emph{Learn} tab, the lessons ``NOR from blocks'' and
+``Equality: XNOR''; the \code{gates} example on the \emph{Designer} tab.\par
+\textbf{Expected result.} NOR gives \code{1000}, XNOR gives \code{1001} for
+the inputs 00, 01, 10, 11.\par
+\textbf{How to check.} The built-in lesson check goes through all
+combinations; on the \emph{Waveforms} tab compare the output with the table.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: complete both lessons.
+  \item[\stars{2}] Modify: in the \code{gates} example find the combination where exclusive
+    OR differs from OR, and explain why.
+  \item[\stars{3}] Project: build the function $F=A\cdot B+\overline{A}\cdot C$ from
+    problem~1. Acceptance criterion: all eight combinations on the waveform
+    match your truth table.
+\end{itemize}
+\end{diybox}
+
+\section{How a Gate Is Built Inside}
+
+Inside chips, logic gates are built from transistors. In
+modern CMOS technology, pairs of transistors of two types are used:
+a $p$-channel transistor conducts when its gate is at zero, an $n$-channel one when it is at one.
+The simplest gate---the inverter---consists of just two transistors.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95, transform shape]
+  \draw (0,0) node[pmos, anchor=D] (P) {};
+  \draw (P.S) node[vcc] {$+3.3$\,V};
+  \draw (P.D) -- ++(0,-0.3) coordinate (mid) -- ++(0,-0.3) node[nmos, anchor=D] (N) {};
+  \draw (N.S) node[ground] {};
+  \draw (P.G) -- ++(-0.5,0) coordinate (g1);
+  \draw (N.G) -- ++(-0.5,0) coordinate (g2);
+  \draw (g1) -- (g2);
+  \draw ($(g1)!0.5!(g2)$) to[short, -o] ++(-1,0) node[left] {$a$};
+  \draw (mid) to[short, *-o] ++(1.6,0) node[right] {$y=\overline{a}$};
+  \node[font=\sffamily\small, align=left, anchor=west] at (3.6,0.2) {$a=0$: the upper one conducts, $y$ is connected to $+3.3$\,V $\to$ 1};
+  \node[font=\sffamily\small, align=left, anchor=west] at (3.6,-1.9) {$a=1$: the lower one conducts, $y$ is connected to ground $\to$ 0};
+\end{circuitikz}
+\caption{A CMOS inverter: two transistors work as switches}
+\end{figure}
+
+NAND and NOR gates are made of four transistors, while AND and OR are
+a NAND and a NOR with an inverter on the output (six transistors). That is why in
+chips the inverting gates turn out to be the ``cheapest''.
+
+\begin{infobox}[Why 3.3~V]
+The first mass-produced series of logic chips (TTL, the 1960s) ran on
+5~V, and this voltage remained the standard for a long time. Later transistors became
+so small that their very thin gate layer cannot withstand 5~V.
+Besides, at every switching the circuit spends energy of about
+$C\,U^2$, where $C$ is the load capacitance and $U$ is the supply voltage: by lowering the
+voltage from 5 to 3.3~V we get $(3.3/5)^2\approx 0.44$, that is, almost
+half the losses. That is how 3.3~V appeared, then 2.5, 1.8 and 1.2~V; the core of
+modern chips runs at about 1~V. The thresholds of 0.8 and 2.0~V in 3.3~V logic
+were kept the same as in TTL, so that old and new chips could be
+connected directly.
+\end{infobox}
+
+\begin{diybox}[What a gate is made of]
+\textbf{Task.} Build a NOT gate from NAND gates by connecting both inputs
+together, and count the transistors of the CMOS versions: NOT, NAND, AND.\par
+\textbf{In Logra.} The \emph{Learn} tab, the lesson ``NAND from blocks'' and the lesson
+``XOR from four NANDs''; the \emph{Designer} tab.\par
+\textbf{Expected result.} NOT takes 2 transistors, NAND 4, AND 6;
+exclusive OR built from NANDs requires four gates.\par
+\textbf{How to check.} The built-in lesson check; for your own circuit,
+go through the inputs on the \emph{Waveforms} tab.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: build NOT from NAND (problem~4).
+  \item[\stars{2}] Modify: build XOR from four NANDs and compare with your calculation of
+    the number of gates.
+  \item[\stars{3}] Project: estimate how many times more transistors an
+    exclusive OR built from NANDs needs than a single NAND.
+\end{itemize}
+\end{diybox}
+
+\section{Boolean Algebra}
+
+Logic expressions can be handled almost like ordinary
+algebraic ones: expand brackets, factor out common terms, cancel.
+These rules are the subject of \term{Boolean algebra}, named after the
+English mathematician George Boole. The AND operation is written as multiplication
+($a\cdot b$ or $ab$), OR as addition ($a+b$), and NOT with an overbar
+($\overline{a}$).
+
+\begin{table}[H]
+\centering
+\caption{The basic laws of Boolean algebra}
+\label{tab:bool}
+\begin{tabular}{l l l}
+\toprule
+\textbf{Law} & \textbf{For AND} & \textbf{For OR} \\
+\midrule
+Operations with constants & $a\cdot 0 = 0$, \ $a\cdot 1 = a$ & $a+1 = 1$, \ $a+0 = a$ \\
+Idempotence            & $a\cdot a = a$ & $a+a = a$ \\
+Complement             & $a\cdot\overline{a} = 0$ & $a+\overline{a} = 1$ \\
+Double negation        & \multicolumn{2}{c}{$\overline{\overline{a}} = a$} \\
+Commutative            & $ab = ba$ & $a+b = b+a$ \\
+Associative            & $(ab)c = a(bc)$ & $(a+b)+c = a+(b+c)$ \\
+Distributive           & $a(b+c) = ab+ac$ & $a+bc = (a+b)(a+c)$ \\
+Absorption             & $a(a+b) = a$ & $a+ab = a$ \\
+\textbf{De Morgan's laws} & $\overline{a\cdot b} = \overline{a}+\overline{b}$ & $\overline{a+b} = \overline{a}\cdot\overline{b}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{warnbox}[Warning: an unusual law]
+The second distributive law $a+bc = (a+b)(a+c)$ does not hold in ordinary
+arithmetic, but it is true in Boolean algebra. Check it with a truth table!
+\end{warnbox}
+
+\subsection{De Morgan's Laws}
+
+De Morgan's laws are the most useful in practice. They say: \emph{an inversion
+over an expression can be ``pushed'' inside by replacing AND with OR and vice versa}.
+Graphically this means that a NAND gate can be drawn as an OR gate with
+inversions on its inputs:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[gNAND] (g1) at (0,0) {};
+  \draw[wire] (g1.input 1) -- ++(-0.6,0) node[left] {$a$};
+  \draw[wire] (g1.input 2) -- ++(-0.6,0) node[left] {$b$};
+  \draw[wire] (g1.output) -- ++(0.6,0) node[right] {$\overline{ab}$};
+  \node[font=\Large] at (2.6,0) {$=$};
+  \begin{scope}[xshift=5.2cm]
+    \node[gOR] (g2) at (0,0) {};
+    \node[gNOT, minimum width=6mm, minimum height=4mm] (n1) at (-1.3,0.18) {};
+    \node[gNOT, minimum width=6mm, minimum height=4mm] (n2) at (-1.3,-0.18) {};
+    \draw[wire] (n1.output) -- (g2.input 1);
+    \draw[wire] (n2.output) -- (g2.input 2);
+    \draw[wire] (n1.input) -- ++(-0.4,0) node[left] {$a$};
+    \draw[wire] (n2.input) -- ++(-0.4,0) node[left] {$b$};
+    \draw[wire] (g2.output) -- ++(0.6,0) node[right] {$\overline{a}+\overline{b}$};
+  \end{scope}
+\end{tikzpicture}
+\caption{De Morgan's law as a circuit}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Checking De Morgan's law with a truth table}
+\begin{tabular}{cc|c|cc|c}
+\toprule
+$a$ & $b$ & $\overline{a\cdot b}$ & $\overline{a}$ & $\overline{b}$ & $\overline{a}+\overline{b}$ \\
+\midrule
+0 & 0 & \textbf{1} & 1 & 1 & \textbf{1} \\
+0 & 1 & \textbf{1} & 1 & 0 & \textbf{1} \\
+1 & 0 & \textbf{1} & 0 & 1 & \textbf{1} \\
+1 & 1 & \textbf{0} & 0 & 0 & \textbf{0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{diybox}[Two circuits for one function]
+\textbf{Task.} Prove De Morgan's law in practice: build two circuits,
+$\overline{a\cdot b}$ and $\overline{a}+\overline{b}$, and compare their outputs.\par
+\textbf{In Logra.} The \emph{Learn} tab, the lesson ``De Morgan's law''; the example
+\code{demorgan} (the \emph{Designer} and \emph{Waveforms} tabs).\par
+\textbf{Expected result.} The outputs of both circuits coincide on all four
+combinations; the ``mismatch'' output is always 0.\par
+\textbf{How to check.} The \emph{Waveforms} tab: go through the input combinations.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: complete the lesson ``De Morgan's law''.
+  \item[\stars{2}] Modify: build and compare $\overline{a+b}$ and
+    $\overline{a}\cdot\overline{b}$ (problem~3).
+  \item[\stars{3}] Project: simplify $A+A\cdot B$ using the absorption law and verify on the
+    waveform that the result matches $A$ (problem~2).
+\end{itemize}
+\end{diybox}
+
+\section{Universal Gates}
+
+A surprising fact: \textbf{any logic circuit can be built from NAND gates
+alone}. The same is true for NOR. Such gates are called
+\term{universal}. It is enough to show how to get NOT, AND and OR from NAND---and
+everything else can be built from them.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  % NOT
+  \node[font=\sffamily\small\bfseries] at (0.3,1.3) {NOT};
+  \node[gNAND] (a1) at (0.3,0) {};
+  \draw[wire] (a1.input 1) -- ++(-0.35,0) coordinate (t1);
+  \draw[wire] (a1.input 2) -- ++(-0.35,0) coordinate (t2);
+  \draw[wire] (t1) -- (t2); \draw[wire] ($(t1)!0.5!(t2)$) -- ++(-0.5,0) node[left] {$a$};
+  \fill ($(t1)!0.5!(t2)$) circle (1.3pt);
+  \draw[wire] (a1.output) -- ++(0.4,0) node[right] {$\overline{a}$};
+  % AND
+  \begin{scope}[xshift=4.2cm]
+  \node[font=\sffamily\small\bfseries] at (0.9,1.3) {AND};
+  \node[gNAND] (b1) at (0,0) {};
+  \node[gNAND] (b2) at (2.0,0) {};
+  \draw[wire] (b1.input 1) -- ++(-0.4,0) node[left] {$a$};
+  \draw[wire] (b1.input 2) -- ++(-0.4,0) node[left] {$b$};
+  \draw[wire] (b1.output) -- ++(0.2,0) coordinate (m);
+  \draw[wire] (m) |- (b2.input 1); \draw[wire] (m) |- (b2.input 2); \fill (m) circle (1.3pt);
+  \draw[wire] (b2.output) -- ++(0.4,0) node[right] {$ab$};
+  \end{scope}
+  % OR
+  \begin{scope}[xshift=10cm]
+  \node[font=\sffamily\small\bfseries] at (0.9,1.3) {OR};
+  \node[gNAND, minimum width=9mm, minimum height=6mm] (c1) at (0,0.45) {};
+  \node[gNAND, minimum width=9mm, minimum height=6mm] (c2) at (0,-0.45) {};
+  \node[gNAND] (c3) at (2.0,0) {};
+  \foreach \c/\n in {c1/a, c2/b} {
+    \draw[wire] (\c.input 1) -- ++(-0.3,0) coordinate (u1);
+    \draw[wire] (\c.input 2) -- ++(-0.3,0) coordinate (u2);
+    \draw[wire] (u1) -- (u2); \draw[wire] ($(u1)!0.5!(u2)$) -- ++(-0.35,0) node[left] {$\n$};
+  }
+  \draw[wire] (c1.output) -- ++(0.3,0) |- (c3.input 1);
+  \draw[wire] (c2.output) -- ++(0.3,0) |- (c3.input 2);
+  \draw[wire] (c3.output) -- ++(0.4,0) node[right] {$a+b$};
+  \end{scope}
+\end{tikzpicture}
+\caption{NOT, AND and OR built only from NAND gates}
+\end{figure}
+
+Let us check the OR circuit using De Morgan's laws:
+$\overline{\overline{a}\cdot\overline{b}} = \overline{\overline{a}} + \overline{\overline{b}} = a + b$.
+
+\begin{infobox}[Why this matters]
+In the era of the K155 series chips (TTL), designers often built entire
+devices from K155LA3 chips, each containing four NAND gates.
+This made the circuit cheaper and required fewer different parts. \lookahead{in
+programmable chips (FPGAs) the question is solved differently: there, instead of gates,
+truth tables are used (Chapter~\ref{ch:inside}).}
+\end{infobox}
+
+\begin{diybox}[Everything from NAND]
+\textbf{Task.} Build the NOT, AND and OR gates using only NAND gates.
+Then build the panel rule $\text{led\_n}=\overline{\text{door}\cdot
+(\text{night}+\text{armed})}$ entirely from NAND gates.\par
+\textbf{In Logra.} The \emph{Learn} tab, the lesson ``NAND from blocks''; the
+\emph{Designer} tab.\par
+\textbf{Expected result.} NOT takes 1 gate, AND 2, OR 3; the panel
+rule comes out with four NAND gates.\par
+\textbf{How to check.} The \emph{Waveforms} tab: go through the eight combinations of
+door, night, armed; the output \code{led\_n} is 0 (the LED is on) in three
+rows.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: build AND and OR from NAND.
+  \item[\stars{2}] Modify: build the expression without the common inversion, using De Morgan's
+    law, and compare the number of gates.
+  \item[\stars{3}] Project: build the circuit with four NANDs and confirm the
+    table from the first section (problem~10).
+\end{itemize}
+\end{diybox}
+
+\section{Multi-Input Gates}
+
+The AND, OR and exclusive OR gates can have more than two inputs. They can be
+built from two-input gates by connecting them in a ``chain'' or in a ``tree'':
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[font=\sffamily\small\bfseries] at (1.2,2.0) {Chain: 3 levels};
+  \node[gAND, minimum width=9mm, minimum height=10mm] (a1) at (0,1.0) {};
+  \node[gAND, minimum width=9mm, minimum height=10mm] (a2) at (1.3,0) {};
+  \node[gAND, minimum width=9mm, minimum height=10mm] (a3) at (2.6,-1.0) {};
+  \draw[wire] (a1.input 1) -- ++(-0.4,0) node[left, yshift=1.3mm] {$a$};
+  \draw[wire] (a1.input 2) -- ++(-0.4,0) node[left, yshift=-1.3mm] {$b$};
+  \draw[wire] (a1.output) -- ++(0.1,0) |- (a2.input 1);
+  \draw[wire] (a2.input 2) -- ++(-1.7,0) node[left] {$c$};
+  \draw[wire] (a2.output) -- ++(0.1,0) |- (a3.input 1);
+  \draw[wire] (a3.input 2) -- ++(-3.0,0) node[left] {$d$};
+  \draw[wire] (a3.output) -- ++(0.4,0) node[right] {$abcd$};
+  \begin{scope}[xshift=7.5cm]
+  \node[font=\sffamily\small\bfseries] at (0.7,2.0) {Tree: 2 levels};
+  \node[gAND, minimum width=9mm, minimum height=10mm] (b1) at (0,0.8) {};
+  \node[gAND, minimum width=9mm, minimum height=10mm] (b2) at (0,-0.8) {};
+  \node[gAND, minimum width=9mm, minimum height=10mm] (b3) at (1.5,0) {};
+  \draw[wire] (b1.input 1) -- ++(-0.4,0) node[left, yshift=1.3mm] {$a$};
+  \draw[wire] (b1.input 2) -- ++(-0.4,0) node[left, yshift=-1.3mm] {$b$};
+  \draw[wire] (b2.input 1) -- ++(-0.4,0) node[left, yshift=1.3mm] {$c$};
+  \draw[wire] (b2.input 2) -- ++(-0.4,0) node[left, yshift=-1.3mm] {$d$};
+  \draw[wire] (b1.output) -- ++(0.1,0) |- (b3.input 1);
+  \draw[wire] (b2.output) -- ++(0.1,0) |- (b3.input 2);
+  \draw[wire] (b3.output) -- ++(0.4,0) node[right] {$abcd$};
+  \end{scope}
+\end{tikzpicture}
+\caption{A four-input AND gate built from two-input gates. The tree is faster:
+the signal passes through two gates rather than three}
+\end{figure}
+
+\begin{ideabox}
+The seven basic logic gates (NOT, AND, OR, NAND, NOR, exclusive
+OR and exclusive NOR) are defined by truth tables. Expressions with them are simplified by
+the laws of Boolean algebra, and De Morgan's laws let us change AND to OR.
+The NAND and NOR gates are universal: any circuit can be built from either of them.
+\end{ideabox}
+
+\begin{diybox}[Alarm: stage 2 of the project]
+\textbf{Task.} Build the security panel rule
+$\text{alarm}=\text{door}\cdot(\text{night}+\text{armed})$ and show it on an
+LED.\par
+\textbf{In Logra.} The \emph{Learn} tab, the lesson ``AND with three inputs''; the example
+\code{exactly-two} as a model of multi-input logic; the
+\emph{Designer} tab.\par
+\textbf{Expected result.} The alarm is 1 in three combinations out of eight:
+$(\text{door},\text{night},\text{armed})=101,\ 110,\ 111$.\par
+\textbf{How to check.} The \emph{Waveforms} tab: go through all eight
+combinations and compare the output with the table from the first section; on the
+\emph{RTL} tab compare the circuit with the figure in the chapter.
+\begin{itemize}[leftmargin=3.4em,labelwidth=3em,labelsep=0.4em,align=left]
+  \item[\stars{1}] Repeat: complete the lesson ``AND with three inputs''.
+  \item[\stars{2}] Modify: in the \code{exactly-two} example explain how ``exactly two''
+    differs from ``at least two''.
+  \item[\stars{3}] Project. \emph{Stage of the ``Security Panel'' project:
+    $\text{alarm}=\text{door}\,\&\,(\text{night}\,|\,\text{armed})$.} Acceptance
+    criterion: out of the eight combinations the alarm is on in exactly three, and the board
+    LED (which lights on zero) turns on in exactly those.
+\end{itemize}
+\end{diybox}
+
+\section{Common Mistakes}
+
+\begin{warnbox}[Common mistakes]
+\begin{itemize}
+  \item \textbf{Confusing OR and exclusive OR.} For $a=b=1$ OR gives 1, while
+    exclusive OR gives 0. In everyday speech ``or'' often means exactly
+    ``one of the two''.
+  \item \textbf{Extra inversions.} $\overline{A+B}\neq\overline{A}+\overline{B}$:
+    by De Morgan's law the inversion changes both the operation and the variables,
+    $\overline{A+B}=\overline{A}\cdot\overline{B}$.
+  \item \textbf{Thinking that nothing changes for a NAND with two connected inputs.}
+    By connecting both inputs you get not a NAND but a NOT.
+  \item \textbf{Operator precedence.} $A+B\cdot C$ means $A+(B\cdot C)$, not
+    $(A+B)\cdot C$: AND binds more strongly than OR, just as multiplication binds more strongly than addition.
+\end{itemize}
+\end{warnbox}
+
+\section{Questions and Problems}
+\label{sec:tasks-gates}
+
+The answers are collected in Appendix~\ref{app:answers}.
+
+\begin{taskbox}[Chapter problems]
+\begin{enumerate}
+  \item \stars{1}~Build the truth table of the function $F = A\cdot B + \overline{A}\cdot C$.
+  \item \stars{1}~Simplify the expression $A + A\cdot B$ and name the law you used.
+  \item \stars{2}~Apply De Morgan's law and write $\overline{A + B\cdot C}$ without the common inversion over the sum.
+  \item \stars{2}~Build the NOT, AND and OR gates using only NAND gates. How many gates are needed for each?
+  \item \stars{2}~Express exclusive OR through AND, OR and NOT.
+  \item \stars{1}~How many rows does the truth table of a function of six variables have?
+  \item \stars{2}~\emph{Find the mistake.} A student ``simplified'' $\overline{A+B}=\overline{A}+\overline{B}$. Find an input combination for which the equality fails, and write the correct law.
+  \item \stars{2}~\emph{Find the mistake.} A student replaced an exclusive OR gate in a circuit with an OR gate because ``they do the same thing''. For which input combination will the behavior of the circuit change?
+  \item \stars{3}~\emph{Project.} Stage 2 of the ``Security Panel'' project: $\text{alarm}=\text{door}\cdot(\text{night}+\text{armed})$. Build the truth table, build the circuit in Logra and send the output to the board LED (it lights on zero, so an inversion is needed). Acceptance criterion: on the \emph{Waveforms} tab, when going through all eight combinations, the LED is on in exactly three.
+  \item \stars{3}~\emph{Project.} Build the panel output \code{led\_n} using only NAND gates. How many gates are needed? Acceptance criterion: the waveform matches the waveform of the circuit from problem~9 on all combinations.
+\end{enumerate}
+\end{taskbox}
+
+\section{What's Next}
+
+We can write logic functions and build them from gates, but the
+security panel has three sensors, and so far we have made up the rule ourselves. How do we systematically obtain a circuit
+from a verbal condition, how do we find out whether it is too large, and
+how do we tell a circuit ``without memory'' from a circuit with memory? We will deal with this in
+Chapter~\ref{ch:comb}, where we go from the truth table to a circuit and study
+minimization.

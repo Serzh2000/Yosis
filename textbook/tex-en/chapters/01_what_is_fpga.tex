@@ -1,0 +1,252 @@
+\chapter{What Is an FPGA}
+\label{ch:fpga}
+
+\section{A circuit you can rewire without a soldering iron}
+
+Imagine you need to build a device that turns on a lamp
+when \emph{both} buttons are pressed. You take a chip with AND gates,
+solder some wires, and it works. Tomorrow the customer asks: ``Let the lamp
+light when \emph{exactly one} button is pressed.'' You will have to desolder
+the AND gate, put in an ``exclusive OR'' gate, and move the wires around.
+
+Now imagine a chip that contains thousands of
+``blank'' logic gates and flip-flops and a huge network of
+wires with controllable switches at every crossing. Which
+blanks become what, and which switches are closed, is set by a
+special configuration file that is loaded into the chip over a cable
+in a fraction of a second. This is an \term{FPGA}.
+
+\begin{ideabox}
+An \textbf{FPGA} (\textbf{F}ield-\textbf{P}rogrammable \textbf{G}ate
+\textbf{A}rray) is a chip whose internal
+digital circuit can be changed many times after the chip has been manufactured.
+\end{ideabox}
+
+It is important to understand the difference right away: an FPGA does \emph{not run a program}, as a
+processor does. It \emph{becomes a circuit}. Once the configuration is loaded, the
+chip contains real logic gates and real wires,
+and signals travel along them at the same time, just as in a circuit on a breadboard.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  % Variant 1
+  \begin{scope}
+    \node[font=\sffamily\bfseries\small] at (1.4,1.9) {Configuration 1};
+    \node[gAND] (g1) at (1.4,0) {};
+    \draw[wire] (g1.input 1) -- ++(-0.8,0) node[left] {$a$};
+    \draw[wire] (g1.input 2) -- ++(-0.8,0) node[left] {$b$};
+    \draw[wire] (g1.output) -- ++(0.8,0) node[right] {$y=a\cdot b$};
+  \end{scope}
+  % Arrow
+  \draw[-{Stealth[length=4mm]}, line width=2pt, FpgaOrange] (4.8,0) -- (6.4,0)
+    node[midway, above=2mm, font=\sffamily\scriptsize, text=FpgaDark, align=center] {new configuration\\file};
+  % Variant 2
+  \begin{scope}[xshift=8.6cm]
+    \node[font=\sffamily\bfseries\small] at (0.3,1.9) {Configuration 2};
+    \node[gXOR] (g2) at (0.3,0) {};
+    \draw[wire] (g2.input 1) -- ++(-0.8,0) node[left] {$a$};
+    \draw[wire] (g2.input 2) -- ++(-0.8,0) node[left] {$b$};
+    \draw[wire] (g2.output) -- ++(0.8,0) node[right] {$y=a\oplus b$};
+  \end{scope}
+  \draw[dashed, FpgaGray, rounded corners] (-1.0,-1.1) rectangle (13.0,2.4);
+  \node[lbl, anchor=north] at (6.0,-1.2) {the same FPGA chip, the same pins};
+\end{tikzpicture}
+\caption{The same FPGA after loading different configurations}
+\label{fig:reconfig}
+\end{figure}
+
+\begin{diybox}[One chip, two circuits]
+\textbf{Task.} Repeat the experiment of Fig.~\ref{fig:reconfig}: first build an AND circuit, then ``rewire'' it into an ``exclusive OR'' without changing the inputs and output.\\
+\textbf{In Logra.} ``New project'' $\to$ ``From logic elements''; the \emph{Designer} tab; then \emph{Waveforms}.\\
+\textbf{Expected result.} For AND, the output is 1 only when $a=b=1$; after replacing the gate with XOR, it is 1 when $a\ne b$.\\
+\textbf{How to check.} On the \emph{Waveforms} tab, press ``Sweep inputs'' in both versions and compare the four combinations; on the RTL tab, make sure that only one element has changed.
+\end{diybox}
+
+\section{A little history}
+
+The idea of programmable logic appeared in the 1970s. At first these were
+small AND--OR arrays (PAL, PLA) in which fuses were blown.
+Then came CPLDs (complex programmable logic devices), and in 1985 Xilinx
+released the first FPGA, the XC2064, which had only 64 logic blocks.
+Modern FPGAs contain millions of logic cells.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \draw[line width=2pt, FpgaBlue, -{Stealth[length=4mm]}] (0,0) -- (15,0);
+  \foreach \x/\y/\t/\d in {
+      0.8/1/1975/PLA, 3.2/-1/1978/PAL,
+      5.6/1/1984/CPLD (Altera), 8/-1/1985/{Xilinx XC2064,\\ the first FPGA},
+      10.4/1/2000s/{FPGAs with DSP\\and memory}, 13/-1/2020s/{Tang Nano 20K:\\ 20\,736 LUTs for pennies}} {
+    \fill[FpgaOrange] (\x,0) circle (1.1mm);
+    \draw[FpgaGray] (\x,0) -- (\x,\y*0.55);
+    \node[font=\sffamily\bfseries\small, text=FpgaDark] at (\x,\y*0.85) {\t};
+    \node[font=\sffamily\scriptsize, align=center, text=FpgaDark, anchor={\ifnum\y>0 south\else north\fi}] at (\x,\y*1.1) {\d};
+  }
+\end{tikzpicture}
+\caption{The evolution of programmable logic}
+\end{figure}
+
+\begin{diybox}[The scale of a chip]
+\textbf{Task.} Compare the 64 logic blocks of the first FPGA (1985) with the Tang Nano 20K chip.\\
+\textbf{In Logra.} Open the ``Running light'' project and press ``Synthesize''; in the ``Real board'' group, open the \emph{Chip} tab, then ``Place and build'' and the ``Whole chip'' button.\\
+\textbf{Expected result.} A map of the whole chip; the caption under it gives the size of the tile grid (X from 0 to 55, Y from 0 to 54), and above it are counters of the used LUT, FF, ALU, and IO resources.\\
+\textbf{How to check.} Write down the number of used LUTs (15) and the total number of LUTs (20\,736, see Chapter~\ref{ch:inside}), and compute the percentage; compare it with the 64 blocks of the XC2064.
+\end{diybox}
+
+\section{FPGA, microcontroller, and custom chip}
+
+To understand why FPGAs are needed, let us compare three ways of making a ``smart''
+digital device.
+
+\begin{description}
+  \item[Microcontroller (MCU)] --- a ready-made processor that
+    runs a program \emph{sequentially}, one instruction after another. For example,
+    the autopilot of the Geoscan Pioneer quadcopter runs on an STM32 MCU.
+  \item[Custom chip (ASIC)] --- a circuit ``burned'' into silicon at a
+    factory. It is faster and more economical than anything else, but developing it costs
+    millions of dollars, and it can no longer be changed.
+  \item[FPGA] --- the golden mean: a hardware circuit, like an ASIC,
+    that can be changed like the program of an MCU.
+\end{description}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  % MCU
+  \begin{scope}
+    \node[font=\sffamily\bfseries] at (2.6,3.6) {Microcontroller};
+    \node[hblock, minimum width=16mm] (cpu) at (2.6,2.4) {CPU};
+    \foreach \i/\t in {0/{$a\cdot b$}, 1/{$c+d$}, 2/{$e\oplus f$}, 3/{$g\cdot h$}} {
+      \node[block, minimum width=14mm, minimum height=6mm, font=\sffamily\scriptsize]
+        (t\i) at (2.6, 1.2-\i*0.8) {\t};
+    }
+    \draw[arr] (cpu) -- (t0);
+    \draw[arr] (t0) -- (t1); \draw[arr] (t1) -- (t2); \draw[arr] (t2) -- (t3);
+    \draw[arr, FpgaOrange] (0.9,1.3) -- (0.9,-1.3) node[midway, left, font=\sffamily\scriptsize, align=right] {time\\4 steps};
+  \end{scope}
+  % FPGA
+  \begin{scope}[xshift=7.2cm]
+    \node[font=\sffamily\bfseries] at (2.8,3.6) {FPGA};
+    \foreach \i/\t in {0/{$a\cdot b$}, 1/{$c+d$}, 2/{$e\oplus f$}, 3/{$g\cdot h$}} {
+      \node[gblock, minimum width=12mm, minimum height=6mm, font=\sffamily\scriptsize]
+        (p\i) at (\i*1.5+0.5, 1.2) {\t};
+      \draw[arr] (\i*1.5+0.5, 2.5) -- (p\i);
+      \draw[arr] (p\i) -- (\i*1.5+0.5, 0);
+    }
+    \draw[arr, FpgaOrange] (-0.5,1.5) -- (-0.5,0.9) node[midway, left, font=\sffamily\scriptsize, align=right] {1 step};
+    \node[lbl, align=center] at (2.75,-0.6) {all four operations are\\ separate circuits that work \emph{at the same time}};
+  \end{scope}
+\end{tikzpicture}
+\caption{A processor performs actions one after another; an FPGA performs them in parallel}
+\label{fig:par}
+\end{figure}
+
+Figure~\ref{fig:par} shows the main superpower of FPGAs: \term{parallelism}.
+If you need to perform 1000 independent operations, a processor needs
+1000 steps, while in an FPGA you can build 1000 circuits that finish in a single
+clock cycle.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.82\textwidth, height=6.2cm,
+  xlabel={Number of independent operations}, ylabel={Time, $\mu$s},
+  xmin=0, xmax=1000, ymin=0, ymax=12,
+  grid=major, grid style={FpgaGray!25},
+  legend pos=north west, legend style={font=\sffamily\small, draw=none, fill=white, fill opacity=0.8},
+  tick label style={font=\small}, label style={font=\sffamily\small},
+]
+  \addplot[very thick, FpgaRed, domain=0:1000, samples=2] {x*0.0104};
+  \addlegendentry{Microcontroller, 96\,MHz (1 operation per cycle)}
+  \addplot[very thick, FpgaGreen, domain=0:1000, samples=2] {0.037};
+  \addlegendentry{FPGA, 27\,MHz (all operations in 1 cycle)}
+\end{axis}
+\end{tikzpicture}
+\caption{Processing time as the number of operations grows (a simplified estimate)}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Comparison of the three approaches}
+\small
+\begin{tabularx}{\textwidth}{>{\bfseries}X c c c}
+\toprule
+ & \textbf{Microcontroller} & \textbf{FPGA} & \textbf{ASIC} \\
+\midrule
+How it works          & a program, step by step & a circuit, in parallel & a circuit, in parallel \\
+Response time         & microseconds        & nanoseconds        & nanoseconds \\
+Can be changed?       & yes                 & yes                & no \\
+Cost of one unit      & low                 & medium             & enormous \\
+Development effort    & low                 & medium             & very high \\
+Power consumption     & low                 & medium             & lowest \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{diybox}[Parallelism with your own eyes]
+\textbf{Task.} Make sure that independent circuits in an FPGA work at the same time.\\
+\textbf{In Logra.} \emph{Designer}: put two independent elements, AND and XOR, in one project, with shared inputs $a$ and $b$ and two different outputs; then open the \emph{Waveforms} tab.\\
+\textbf{Expected result.} Both outputs change at the same moment, as in Fig.~\ref{fig:par}; there is no ordering at all.\\
+\textbf{How to check.} Use ``Sweep inputs'' and, on the waveform, find a combination where the outputs differ and combinations where they match. \stars{2} Add a third element and make sure that the response time has not grown.
+\end{diybox}
+
+\section{Where FPGAs are used}
+
+FPGAs are chosen where one of three things is needed: \emph{very high speed},
+\emph{a great deal of parallel work}, or \emph{exact timing}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  app/.style={block, minimum width=34mm, minimum height=13mm, font=\sffamily\scriptsize},
+]
+  \node[hblock, circle, minimum size=24mm, font=\sffamily\bfseries] (c) at (0,0) {FPGA};
+  \foreach \a/\t/\s in {
+     90/{Video processing\\and machine vision}/app,
+     30/{Communications: 5G, radar,\\software-defined radio}/app,
+    -30/{Motor control,\\PWM, drone sensors}/app,
+    -90/{Prototyping\\processors (ASICs)}/app,
+   -150/{Interface\\bridging}/app,
+    150/{AI and computing\\acceleration}/app} {
+    \node[\s] (n\a) at (\a:4.1) {\t};
+    \draw[thick, FpgaBlue!60] (c) -- (n\a);
+  }
+\end{tikzpicture}
+\caption{The main application areas of FPGAs}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{Digital signal processing}: filters, the Fourier
+        transform, processing of audio and radio signals in real time.
+  \item \textbf{Video}: generating the image for HDMI, processing frames from cameras,
+        finding objects right ``on the fly.''
+  \item \textbf{Communications and interfaces}: an FPGA can ``speak'' any
+        protocol (UART, SPI, I$^2$C, Ethernet, USB), even one you invented yourself.
+        Here a protocol is a set of rules by which two chips
+        exchange bits over a few wires. We will study the simple serial
+        protocols UART, SPI, and I$^2$C in Chapter~\ref{ch:uart}.
+  \item \textbf{Robotics and UAVs}: precise generation of dozens of PWM signals (pulse-width modulation:
+        fast pulses whose ``one'' fraction sets, for example, the speed
+        of a motor; Chapter~\ref{ch:examples}),
+        simultaneous polling of many sensors, video stabilization.
+  \item \textbf{Prototyping}: before ordering an ASIC for
+        millions of dollars, engineers test it on an FPGA.
+  \item \textbf{Retro computers}: FPGAs are used to recreate old game
+        consoles and computers (the MiSTer project), accurate down to the clock cycle.
+\end{itemize}
+
+\begin{ideabox}
+An FPGA is ``modeling clay'' for digital circuit design. You describe a circuit,
+a synthesis program lays it out on the resources of the chip, and within
+a minute your circuit is already running in hardware.
+\end{ideabox}
+
+\begin{diybox}[Where an FPGA will go]
+\textbf{Task.} Pick one example from the Logra catalog for each of three application areas from the figure.\\
+\textbf{In Logra.} ``New project'' $\to$ ``From an example'' (the catalog has 275 projects): browse the categories and choose three examples, for instance one on PWM, one on communications, and one on displays.\\
+\textbf{Expected result.} A table of three rows: the application area, the name of the example, and one sentence about what it does.\\
+\textbf{How to check.} Open each example, press ``Synthesize'', and make sure that the RTL is built without errors.
+\end{diybox}
