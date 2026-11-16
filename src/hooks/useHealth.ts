@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ToolchainStatus } from '../../shared/types';
 import { request } from '../lib/api';
+import { t } from '../../shared/i18n';
 
 export function useHealth() {
   const [health, setHealth] = useState<ToolchainStatus | null>(null);
@@ -12,7 +13,7 @@ export function useHealth() {
       setHealth(await request<ToolchainStatus>('/api/health'));
       setHealthError('');
     } catch (cause) {
-      setHealthError(cause instanceof Error ? cause.message : 'Сервис сборки недоступен.');
+      setHealthError(cause instanceof Error ? cause.message : t('Сервис сборки недоступен.'));
     } finally {
       setHealthLoading(false);
     }

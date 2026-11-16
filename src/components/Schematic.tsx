@@ -7,6 +7,7 @@ import { buildGraph, resourceCategory, type GraphNode, type SourceLocation } fro
 import { friendlyCellName, getBusTapAnnotation } from '../lib/schematic-labels';
 import { getRtlSymbol, RtlSymbol } from './RtlSymbol';
 import './schematic.css';
+import { t } from '../lib/i18n';
 
 export interface SchematicProps {
   netlist: YosysNetlist;
@@ -173,7 +174,7 @@ export function Schematic({
     // ELK's worker is a classic script. Loading its API separately avoids a nested worker
     // and keeps the bundled GWT engine off the browser's main thread.
     const worker = new Worker(elkWorkerUrl);
-    worker.onerror = (event) => setError(event.message || 'Не удалось построить схему');
+    worker.onerror = (event) => setError(event.message || t('Не удалось построить схему'));
     const elk = new ELK({ workerFactory: () => worker });
     void elk
       .layout({
@@ -303,27 +304,35 @@ export function Schematic({
         <div className="schematic-summary">
           <span>{moduleName}</span>
           <small>
-            {graph.totalCells} элементов · {graph.edges.length} связей
+            {t('{cells} элементов · {edges} связей', {
+              cells: graph.totalCells,
+              edges: graph.edges.length,
+            })}
           </small>
         </div>
         <div className="schematic-tools">
           <button
             type="button"
             onClick={() => zoom(1 / 1.25)}
-            title="Уменьшить"
-            aria-label="Уменьшить"
+            title={t('Уменьшить')}
+            aria-label={t('Уменьшить')}
           >
             <Minus size={15} />
           </button>
           <span className="schematic-scale">{Math.round(view.scale * 100)}%</span>
-          <button type="button" onClick={() => zoom(1.25)} title="Увеличить" aria-label="Увеличить">
+          <button
+            type="button"
+            onClick={() => zoom(1.25)}
+            title={t('Увеличить')}
+            aria-label={t('Увеличить')}
+          >
             <Plus size={15} />
           </button>
           <button
             type="button"
             onClick={fit}
-            title="Показать всю схему"
-            aria-label="Показать всю схему"
+            title={t('Показать всю схему')}
+            aria-label={t('Показать всю схему')}
           >
             <Maximize2 size={15} />
           </button>
@@ -331,8 +340,8 @@ export function Schematic({
             type="button"
             onClick={focusSelection}
             disabled={!selectedCell}
-            title="Найти выбранный элемент"
-            aria-label="Найти выбранный элемент"
+            title={t('Найти выбранный элемент')}
+            aria-label={t('Найти выбранный элемент')}
           >
             <Focus size={15} />
           </button>
@@ -340,17 +349,22 @@ export function Schematic({
       </div>
       {(graph.hiddenCells > 0 || graph.hiddenEdges > 0) && (
         <div className="schematic-limit" role="status">
-          Показано {graph.totalCells - graph.hiddenCells} из {graph.totalCells} элементов.{' '}
+          {t('Показано {shown} из {total} элементов.', {
+            shown: graph.totalCells - graph.hiddenCells,
+            total: graph.totalCells,
+          })}{' '}
           {graph.hiddenCells > 0
-            ? 'Связи со скрытыми элементами опущены. Откройте вложенный модуль для подробностей.'
-            : `${graph.hiddenEdges} связей опущено.`}
+            ? t('Связи со скрытыми элементами опущены. Откройте вложенный модуль для подробностей.')
+            : t('{count} связей опущено.', { count: graph.hiddenEdges })}
         </div>
       )}
       {error ? (
-        <div className="schematic-message schematic-error">Не удалось построить схему: {error}</div>
+        <div className="schematic-message schematic-error">
+          {t('Не удалось построить схему')}: {error}
+        </div>
       ) : !layout ? (
         <div className="schematic-message" role="status">
-          Раскладываем элементы…
+          {t('Раскладываем элементы…')}
         </div>
       ) : (
         <svg
@@ -358,7 +372,7 @@ export function Schematic({
           width="100%"
           height="100%"
           role="group"
-          aria-label={`Схема модуля ${moduleName}`}
+          aria-label={t('Схема модуля {module}', { module: moduleName })}
           onPointerDown={pointerDown}
           onPointerMove={pointerMove}
           onPointerUp={pointerUp}
@@ -413,8 +427,9 @@ export function Schematic({
                   onClick={() => setActiveEdge(edge.id)}
                 >
                   <title>
-                    {tap?.description ?? `${data.label || 'Связь'} · ${data.width} бит`} · ID:{' '}
-                    {data.bits.join(', ')}
+                    {tap?.description ??
+                      `${data.label || t('Связь')} · ${t('{count} бит', { count: data.width })}`}{' '}
+                    · ID: {data.bits.join(', ')}
                   </title>
                   {edge.sections?.map((section, index) => {
                     const points = [
@@ -500,9 +515,9 @@ export function Schematic({
                       node.type,
                       ...node.source.map((item) => `${item.file}:${item.line}`),
                       ...(node.moduleName
-                        ? ['Двойной щелчок: открыть модуль']
+                        ? [t('Двойной щелчок: открыть модуль')]
                         : navigableSource
-                          ? ['Двойной щелчок: открыть исходник']
+                          ? [t('Двойной щелчок: открыть исходник')]
                           : []),
                     ].join('\n')}
                   </title>
@@ -583,9 +598,9 @@ export function Schematic({
                               <circle cx={x} cy={y} r={3} className="schematic-port" />
                             )}
                             <title>
-                              {data.name}: {data.bits.length} бит
+                              {data.name}: {t('{count} бит', { count: data.bits.length })}
                               {data.bits.length > 1
-                                ? ' · ветви с индексами подключают отдельные разряды шины'
+                                ? ` · ${t('ветви с индексами подключают отдельные разряды шины')}`
                                 : ''}
                             </title>
                             {node.kind === 'cell' && (
@@ -612,23 +627,23 @@ export function Schematic({
       )}
       {active ? (
         <div className="schematic-edge-info" title={activeTap?.description}>
-          <strong>{activeTap?.label ?? (active.label || 'Связь')}</strong>
+          <strong>{activeTap?.label ?? (active.label || t('Связь'))}</strong>
           <span>
-            {active.width} бит{activeTap ? ' · разряды шины' : ''} · ID:{' '}
-            {active.bits.slice(0, 12).join(', ')}
+            {t('{count} бит', { count: active.width })}
+            {activeTap ? ` · ${t('разряды шины')}` : ''} · ID: {active.bits.slice(0, 12).join(', ')}
             {active.bits.length > 12 ? '…' : ''}
           </span>
           <button
             type="button"
             onClick={() => setActiveEdge(null)}
-            aria-label="Закрыть сведения о связи"
+            aria-label={t('Закрыть сведения о связи')}
           >
             ×
           </button>
         </div>
       ) : (
         <div className="schematic-hint">
-          Колесо — масштаб · перетаскивание — перемещение · щелчок — выбрать элемент
+          {t('Колесо — масштаб · перетаскивание — перемещение · щелчок — выбрать элемент')}
         </div>
       )}
     </div>

@@ -18,6 +18,7 @@ import { runSimulation } from '../lib/simulation-client';
 import { getProjectSnapshot } from '../lib/projects';
 import { parseVcd, type VcdTrace } from '../lib/vcd';
 import './mission-tour.css';
+import { t } from '../lib/i18n';
 
 interface Props {
   open: boolean;
@@ -189,7 +190,7 @@ export function MissionTour(props: Props) {
         id: result.id,
         vcd: result.vcd!,
         snapshot: captured,
-        name: 'Миссия · маяк · HALF_PERIOD = 4 (копия для симуляции)',
+        name: t('Миссия · маяк · HALF_PERIOD = 4 (копия для симуляции)'),
       });
       setProgress((current) => ({
         ...current,
@@ -215,19 +216,19 @@ export function MissionTour(props: Props) {
       )}
       <aside
         className={`mission-guide ${minimized ? 'minimized' : ''}`}
-        aria-label="Гид: первая миссия в IDE"
+        aria-label={t('Гид: первая миссия в IDE')}
       >
         <header>
           <Flag size={17} />
-          <strong>МИССИЯ 01 · МАЯК</strong>
-          <span>{progress.step ? `${Math.min(progress.step, 10)} / 10` : 'Старт'}</span>
+          <strong>{t('МИССИЯ 01 · МАЯК')}</strong>
+          <span>{progress.step ? `${Math.min(progress.step, 10)} / 10` : t('Старт')}</span>
           <button
-            aria-label={minimized ? 'Развернуть задание' : 'Свернуть задание'}
+            aria-label={minimized ? t('Развернуть задание') : t('Свернуть задание')}
             onClick={() => setMinimized(!minimized)}
           >
             <Minimize2 size={14} />
           </button>
-          <button aria-label="Приостановить гид" onClick={props.onClose}>
+          <button aria-label={t('Приостановить гид')} onClick={props.onClose}>
             <X size={14} />
           </button>
         </header>
@@ -235,10 +236,11 @@ export function MissionTour(props: Props) {
           <div className="mission-guide-body">
             {virtualFinish ? (
               <>
-                <h2>Виртуальная часть пройдена</h2>
+                <h2>{t('Виртуальная часть пройдена')}</h2>
                 <p>
-                  Твой код прошёл симуляцию, синтез и размещение. Запись на реальную плату ещё не
-                  засчитана. Её можно продолжить, когда доступ к отладчику будет готов.
+                  {t(
+                    t('Твой код прошёл симуляцию, синтез и размещение. Запись на реальную плату ещё не засчитана. Её можно продолжить, когда доступ к отладчику будет готов.'),
+                  )}
                 </p>
                 <button
                   className="button primary"
@@ -247,7 +249,7 @@ export function MissionTour(props: Props) {
                     props.onNavigate('board');
                   }}
                 >
-                  Вернуться к плате
+                  {t('Вернуться к плате')}
                 </button>
                 <button
                   className="mission-link"
@@ -256,7 +258,7 @@ export function MissionTour(props: Props) {
                     props.onNavigate('lessons');
                   }}
                 >
-                  Продолжить курс Verilog
+                  {t('Продолжить курс Verilog')}
                   <ArrowRight size={14} />
                 </button>
               </>
@@ -266,12 +268,12 @@ export function MissionTour(props: Props) {
                   <progress max={10} value={progress.step} />
                   <small>
                     {step.id === 'complete'
-                      ? 'Устройство проверено на плате'
+                      ? t('Устройство проверено на плате')
                       : step.id === 'brief'
-                        ? 'Действуй в самой IDE — подсветка покажет куда'
+                        ? t('Действуй в самой IDE — подсветка покажет куда')
                         : checked && progress.step >= 2
-                          ? 'Код прошёл настоящую симуляцию'
-                          : 'Проверяем результат каждого действия'}
+                          ? t('Код прошёл настоящую симуляцию')
+                          : t('Проверяем результат каждого действия')}
                   </small>
                 </div>
                 <h2>{step.title}</h2>
@@ -283,15 +285,16 @@ export function MissionTour(props: Props) {
                 {progress.step > 0 && !ours ? (
                   <div className="mission-feedback">
                     <span>
-                      Сейчас открыт другой проект. Вернись к {progress.projectName}, чтобы
-                      продолжить.
+                      {t('Сейчас открыт другой проект. Вернись к {name}, чтобы продолжить.', {
+                        name: progress.projectName,
+                      })}
                     </span>
                     <button
                       className="button subtle"
                       disabled={props.busy}
                       onClick={() => props.onRestore(progress.projectName)}
                     >
-                      Вернуть миссию
+                      {t('Вернуть миссию')}
                     </button>
                   </div>
                 ) : (
@@ -308,7 +311,7 @@ export function MissionTour(props: Props) {
                         ) : (
                           <Play size={14} />
                         )}{' '}
-                        {checking ? 'Проверяем маяк…' : 'Проверить маяк'}
+                        {checking ? t('Проверяем маяк…') : t('Проверить маяк')}
                       </button>
                     )}
                     {feedback && (
@@ -319,15 +322,16 @@ export function MissionTour(props: Props) {
                     )}
                     {trace && step.id === 'simulate' && (
                       <p>
-                        Диаграммы открыты в рабочей области. Сравни phase и led_n: после смены phase
-                        меняется выбранная группа.
+                        {t(
+                          t('Диаграммы открыты в рабочей области. Сравни phase и led_n: после смены phase меняется выбранная группа.'),
+                        )}
                       </p>
                     )}
                     {step.id === 'pins' && (
                       <div
                         className="mission-choices"
                         role="group"
-                        aria-label="Уровень включения LED"
+                        aria-label={t('Уровень включения LED')}
                       >
                         {[0, 1].map((value) => (
                           <button
@@ -335,14 +339,15 @@ export function MissionTour(props: Props) {
                             aria-pressed={pinAnswer === value}
                             onClick={() => setPinAnswer(value)}
                           >
-                            Уровень {value}
+                            {t('Уровень {value}', { value })}
                             {pinAnswer === value && value === 0 && <Check size={14} />}
                           </button>
                         ))}
                         {pinAnswer === 1 && (
                           <small>
-                            У LED активный низкий уровень: ток идёт, когда FPGA выдаёт 0. Суффикс _n
-                            напоминает об этом.
+                            {t(
+                              t('У LED активный низкий уровень: ток идёт, когда FPGA выдаёт 0. Суффикс _n напоминает об этом.'),
+                            )}
                           </small>
                         )}
                       </div>
@@ -357,7 +362,7 @@ export function MissionTour(props: Props) {
                           }
                         >
                           <Check size={14} />
-                          Чередуются две группы по три
+                          {t('Чередуются две группы по три')}
                         </button>
                         <button
                           className="mission-link"
@@ -366,7 +371,7 @@ export function MissionTour(props: Props) {
                             props.onNavigate('board');
                           }}
                         >
-                          Результат отличается — проверить загрузку
+                          {t('Результат отличается — проверить загрузку')}
                         </button>
                       </div>
                     )}
@@ -379,19 +384,20 @@ export function MissionTour(props: Props) {
                             props.onNavigate('lessons');
                           }}
                         >
-                          Начать курс Verilog
+                          {t('Начать курс Verilog')}
                           <ArrowRight size={14} />
                         </button>
                         <p>
-                          Дальше — 11 уроков с задачами, подсказками и проверками. Маяк сохранён в
-                          библиотеке проектов.
+                          {t(
+                            t('Дальше — 11 уроков с задачами, подсказками и проверками. Маяк сохранён в библиотеке проектов.'),
+                          )}
                         </p>
                       </>
                     ) : (
                       <footer>
                         {step.id === 'brief' ? (
                           <button className="button primary" disabled={props.busy} onClick={start}>
-                            Начать миссию
+                            {t('Начать миссию')}
                             <ArrowRight size={14} />
                           </button>
                         ) : (
@@ -401,7 +407,7 @@ export function MissionTour(props: Props) {
                               disabled={!passed || checking}
                               onClick={advance}
                             >
-                              {passed ? 'Шаг выполнен. Дальше' : 'Сначала выполни действие'}
+                              {passed ? t('Шаг выполнен. Дальше') : t('Сначала выполни действие')}
                               <ArrowRight size={14} />
                             </button>
                           )
@@ -411,7 +417,7 @@ export function MissionTour(props: Props) {
                             className="mission-link"
                             onClick={() => props.onNavigate(step.tab!)}
                           >
-                            К нужной вкладке
+                            {t('К нужной вкладке')}
                           </button>
                         )}
                       </footer>
@@ -422,7 +428,7 @@ export function MissionTour(props: Props) {
                         disabled={!checked || !props.physicalFresh}
                         onClick={() => setVirtualFinish(true)}
                       >
-                        Продолжить обучение без платы
+                        {t('Продолжить обучение без платы')}
                       </button>
                     )}
                   </>

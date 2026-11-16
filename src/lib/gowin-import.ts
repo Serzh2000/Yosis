@@ -1,4 +1,5 @@
 import type { Project } from '../../shared/types';
+import { t } from '../../shared/i18n';
 
 /** One file of a folder the pupil picked: its path inside the folder and its text. */
 export interface FolderFile {
@@ -75,7 +76,7 @@ export function projectFromFolder(files: FolderFile[], which?: string): Project 
     );
   }
   if (!chosen.some((file) => /\.(v|sv)$/i.test(file.path)))
-    throw new Error('В папке не нашлось файлов Verilog (.v или .sv).');
+    throw new Error(t('В папке не нашлось файлов Verilog (.v или .sv).'));
   // Paths stay as they are in the folder (src/…): the pupil sees the same tree as on disk.
   const prefix = base;
   const named = chosen.map((file) => ({
@@ -88,7 +89,7 @@ export function projectFromFolder(files: FolderFile[], which?: string): Project 
   }));
   if (named.length > MAX_FILES)
     throw new Error(
-      `В проекте ${named.length} файлов, а Logra принимает не больше ${MAX_FILES}. Уберите из папки лишнее.`,
+      t('В проекте {named} файлов, а Logra принимает не больше {MAX_FILES}. Уберите из папки лишнее.', { named: named.length, MAX_FILES }),
     );
   const config = normal.find((file) => file.path === `${base}impl/project_process_config.json`);
   let top: string | undefined;
@@ -107,7 +108,7 @@ export function projectFromFolder(files: FolderFile[], which?: string): Project 
     ].map((match) => match[1]),
   );
   if (!top || !declared.has(top)) top = guessTop(sources);
-  if (!top) throw new Error('В исходниках не найден ни один модуль Verilog.');
+  if (!top) throw new Error(t('В исходниках не найден ни один модуль Verilog.'));
   const folder = (gprj?.path ?? normal[0]?.path ?? 'project').split('/');
   const name = (gprj ? folder[folder.length - 1].replace(/\.gprj$/i, '') : folder[0]) || 'project';
   // The file with the top module opens first, then the other sources, then the rest.

@@ -1,3 +1,4 @@
+import { t } from '../../lib/i18n';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTheme } from '../../hooks/useTheme';
 import type { WireProgress } from '../../../shared/learn-sync';
@@ -28,7 +29,7 @@ export function CabinetFrame({
   const account = useAccount();
   useEffect(() => {
     const previous = document.title;
-    document.title = `${title} — Logra`;
+    document.title = t('{title} — Logra', { title });
     return () => {
       document.title = previous;
     };
@@ -37,7 +38,7 @@ export function CabinetFrame({
     <div className="mcu-studio acct-page">
       <header className="acct-top">
         <a className="acct-back" href="/learn">
-          ← К учебнику
+          {t('← К учебнику')}
         </a>
         <h1>{title}</h1>
         {account.user ? (
@@ -48,7 +49,7 @@ export function CabinetFrame({
               className="acct-link"
               onClick={() => void account.signOut().then(() => (location.href = '/learn'))}
             >
-              Выйти
+              {t('Выйти')}
             </button>
           </span>
         ) : null}
@@ -64,7 +65,7 @@ function SignInPrompt({ text }: { text: string }) {
     <section className="acct-card">
       <p>{text}</p>
       <button type="button" className="acct-primary" onClick={account.openAuth}>
-        Войти или создать аккаунт
+        {t('Войти или создать аккаунт')}
       </button>
     </section>
   );
@@ -80,7 +81,7 @@ function StudentCabinet() {
       .progress()
       .then((answer) => setWire(answer.books))
       .catch((error) =>
-        setProblem(error instanceof ApiError ? error.message : 'Не удалось загрузить прогресс.'),
+        setProblem(error instanceof ApiError ? error.message : t('Не удалось загрузить прогресс.')),
       );
   }, []);
 
@@ -108,21 +109,21 @@ function StudentCabinet() {
     <>
       {user.mustChangePassword ? (
         <section className="acct-card warn" role="status">
-          <p>Пароль тебе выдал учитель. Задай свой в блоке «Профиль» ниже.</p>
+          <p>{t('Пароль тебе выдал учитель. Задай свой в блоке «Профиль» ниже.')}</p>
         </section>
       ) : null}
       <section className="acct-card" aria-labelledby="acct-continue">
-        <h2 id="acct-continue">Продолжить</h2>
+        <h2 id="acct-continue">{t('Продолжить')}</h2>
         <p>
           {placeBook.title}
           {placeLesson ? `: ${placeLesson.title}` : ''}
         </p>
         <a className="acct-primary as-link" href={learnRoutePath(place)}>
-          Продолжить с этого места
+          {t('Продолжить с этого места')}
         </a>
       </section>
       <section className="acct-card" aria-labelledby="acct-progress">
-        <h2 id="acct-progress">Прогресс по книгам</h2>
+        <h2 id="acct-progress">{t('Прогресс по книгам')}</h2>
         {problem ? <Message text={problem} bad /> : null}
         <ul className="acct-books">
           {books
@@ -144,7 +145,7 @@ function StudentCabinet() {
                     aria-label={`${book.title}: ${percent}%`}
                   />
                   <span className="acct-book-count">
-                    {share.done} из {share.total} заданий
+                    {t('{done} из {total} заданий', { done: share.done, total: share.total })}
                   </span>
                 </li>
               );
@@ -152,7 +153,7 @@ function StudentCabinet() {
         </ul>
         {credits.length ? (
           <>
-            <h3>Засчитал учитель</h3>
+            <h3>{t('Засчитал учитель')}</h3>
             <ul className="acct-credits">
               {credits.map((credit) => (
                 <li key={credit.key}>
@@ -171,15 +172,15 @@ function StudentCabinet() {
 
 function Body({ view }: { view: CabinetView }) {
   const account = useAccount();
-  const title = view === 'teacher' ? 'Кабинет учителя' : 'Мой кабинет';
+  const title = view === 'teacher' ? t('Кабинет учителя') : t('Мой кабинет');
   let content: ReactNode;
-  if (account.status === 'loading') content = <p role="status">Загрузка…</p>;
+  if (account.status === 'loading') content = <p role="status">{t('Загрузка…')}</p>;
   else if (account.status === 'off')
     content = (
       <section className="acct-card">
         <p>
-          Аккаунты на этом сервере не включены. Учебник работает без них: прогресс хранится в
-          браузере.
+          {t('Аккаунты на этом сервере не включены. Учебник работает без них: прогресс хранится в браузере.')}
+
         </p>
       </section>
     );
@@ -188,8 +189,8 @@ function Body({ view }: { view: CabinetView }) {
       <SignInPrompt
         text={
           view === 'teacher'
-            ? 'Кабинет учителя открывается после входа.'
-            : 'Кабинет открывается после входа. Без аккаунта прогресс хранится только в этом браузере.'
+            ? t('Кабинет учителя открывается после входа.')
+            : t('Кабинет открывается после входа. Без аккаунта прогресс хранится только в этом браузере.')
         }
       />
     );
@@ -199,9 +200,9 @@ function Body({ view }: { view: CabinetView }) {
         <TeacherCabinet />
       ) : (
         <section className="acct-card">
-          <p>Кабинет учителя доступен только учителю.</p>
+          <p>{t('Кабинет учителя доступен только учителю.')}</p>
           <a className="acct-link" href="/learn/cabinet">
-            Мой кабинет
+            {t('Мой кабинет')}
           </a>
         </section>
       );
@@ -209,9 +210,9 @@ function Body({ view }: { view: CabinetView }) {
     content =
       account.user.role === 'teacher' ? (
         <section className="acct-card">
-          <p>Ты вошёл как учитель.</p>
+          <p>{t('Ты вошёл как учитель.')}</p>
           <a className="acct-primary as-link" href="/learn/teacher">
-            Открыть кабинет учителя
+            {t('Открыть кабинет учителя')}
           </a>
         </section>
       ) : (

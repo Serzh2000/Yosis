@@ -5,6 +5,7 @@ import {
   type CircuitNode,
   type Params,
 } from './schematic';
+import { t } from './i18n';
 
 export interface CircuitExample {
   id: string;
@@ -46,9 +47,9 @@ function sketch(
 export const circuitExamples: CircuitExample[] = [
   {
     id: 'button-led',
-    title: 'Кнопка → светодиод',
-    description: 'Самая простая схема: пока нажата S1, светится LED0.',
-    behavior: 'Нажмите S1 — загорается LED0. Отпустите — гаснет.',
+    title: t('Кнопка → светодиод'),
+    description: t('Самая простая схема: пока нажата S1, светится LED0.'),
+    behavior: t('Нажмите S1 — загорается LED0. Отпустите — гаснет.'),
     build: () =>
       sketch(
         [
@@ -60,9 +61,11 @@ export const circuitExamples: CircuitExample[] = [
   },
   {
     id: 'two-buttons-gates',
-    title: 'И, ИЛИ, исключающее ИЛИ на двух кнопках',
-    description: 'Две кнопки и три элемента: каждый показывает результат на своём светодиоде.',
-    behavior: 'LED0 — обе кнопки нажаты (И); LED1 — хотя бы одна (ИЛИ); LED2 — ровно одна (XOR).',
+    title: t('И, ИЛИ, исключающее ИЛИ на двух кнопках'),
+    description: t('Две кнопки и три элемента: каждый показывает результат на своём светодиоде.'),
+    behavior: t(
+      'LED0 — обе кнопки нажаты (И); LED1 — хотя бы одна (ИЛИ); LED2 — ровно одна (XOR).',
+    ),
     build: () =>
       sketch(
         [
@@ -90,9 +93,9 @@ export const circuitExamples: CircuitExample[] = [
   },
   {
     id: 'blinker',
-    title: 'Мигалка 1 Гц',
-    description: 'Делитель частоты превращает 27 МГц в ровное мигание раз в секунду.',
-    behavior: 'LED0 сам мигает: полсекунды горит, полсекунды не горит. Кнопки не нужны.',
+    title: t('Мигалка 1 Гц'),
+    description: t('Делитель частоты превращает 27 МГц в ровное мигание раз в секунду.'),
+    behavior: t('LED0 сам мигает: полсекунды горит, полсекунды не горит. Кнопки не нужны.'),
     build: () =>
       sketch(
         [
@@ -108,11 +111,13 @@ export const circuitExamples: CircuitExample[] = [
   },
   {
     id: 'led-counter',
-    title: 'Счётчик на светодиодах',
-    description:
+    title: t('Счётчик на светодиодах'),
+    description: t(
       'Раз в четверть секунды счётчик увеличивается на 1; число показано на шести светодиодах двоичным кодом.',
-    behavior:
+    ),
+    behavior: t(
       'Светодиоды считают от 0 до 63 в двоичном коде и начинают заново. Кнопка S1 обнуляет счёт.',
+    ),
     build: () =>
       sketch(
         [
@@ -133,9 +138,11 @@ export const circuitExamples: CircuitExample[] = [
   },
   {
     id: 'running-light',
-    title: 'Бегущий огонь на сдвиговом регистре',
-    description: 'Единица «бежит» по шести светодиодам и возвращается в начало.',
-    behavior: 'Один светящийся светодиод перемещается от LED0 к LED5 примерно три раза в секунду.',
+    title: t('Бегущий огонь на сдвиговом регистре'),
+    description: t('Единица «бежит» по шести светодиодам и возвращается в начало.'),
+    behavior: t(
+      'Один светящийся светодиод перемещается от LED0 к LED5 примерно три раза в секунду.',
+    ),
     build: () =>
       sketch(
         [
@@ -159,10 +166,13 @@ export const circuitExamples: CircuitExample[] = [
   },
   {
     id: 'debounced-toggle',
-    title: 'Кнопка с антидребезгом переключает светодиод',
-    description:
+    title: t('Кнопка с антидребезгом переключает светодиод'),
+    description: t(
       'Кнопку «чистят» синхронизатором и антидребезгом; каждое нажатие меняет состояние LED0 на противоположное.',
-    behavior: 'Каждое нажатие S1 включает или выключает LED0, без случайных двойных срабатываний.',
+    ),
+    behavior: t(
+      'Каждое нажатие S1 включает или выключает LED0, без случайных двойных срабатываний.',
+    ),
     build: () =>
       sketch(
         [

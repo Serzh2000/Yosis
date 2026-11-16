@@ -5,6 +5,7 @@ import type { PhysicalResult } from '../../shared/physical';
 import { parseCstPins } from '../lib/physical';
 import { ProgrammingPanel } from './ProgrammingPanel';
 import './physical.css';
+import { t } from '../lib/i18n';
 
 interface BrowserSerialPort {
   readable: ReadableStream<Uint8Array> | null;
@@ -77,7 +78,9 @@ export function BoardPanel({
       if (strict) {
         portRef.current = port;
         throw new Error(
-          `Не удалось закрыть UART перед загрузкой: ${cause instanceof Error ? cause.message : 'порт занят'}`,
+          t('Не удалось закрыть UART перед загрузкой: {reason}', {
+            reason: cause instanceof Error ? cause.message : t('порт занят'),
+          }),
           { cause },
         );
       }
@@ -91,7 +94,7 @@ export function BoardPanel({
     mounted.current = true;
     const disconnected = (event: Event) => {
       if (event.target === portRef.current) {
-        setError('USB-порт отключён.');
+        setError(t('USB-порт отключён.'));
         void closePort();
       }
     };
@@ -120,7 +123,7 @@ export function BoardPanel({
       const info = port.getInfo();
       setIdentity(
         info.usbVendorId === undefined
-          ? 'Последовательный порт'
+          ? t('Последовательный порт')
           : `USB ${info.usbVendorId.toString(16).padStart(4, '0')}:${(info.usbProductId ?? 0).toString(16).padStart(4, '0')}`,
       );
       setConnected(true);
@@ -139,7 +142,7 @@ export function BoardPanel({
           }
         } catch (cause) {
           if (mounted.current && portRef.current === port)
-            setError(cause instanceof Error ? cause.message : 'Ошибка чтения UART.');
+            setError(cause instanceof Error ? cause.message : t('Ошибка чтения UART.'));
         } finally {
           reader.releaseLock();
           if (readerRef.current === reader) readerRef.current = null;
@@ -147,7 +150,7 @@ export function BoardPanel({
       })();
     } catch (cause) {
       if (mounted.current && !(cause instanceof DOMException && cause.name === 'NotFoundError'))
-        setError(cause instanceof Error ? cause.message : 'Не удалось открыть порт.');
+        setError(cause instanceof Error ? cause.message : t('Не удалось открыть порт.'));
       if (port && portRef.current !== port) {
         try {
           await port.close();
@@ -173,7 +176,7 @@ export function BoardPanel({
           setMessage((current) => (current === line ? '' : current));
       } catch (cause) {
         if (mounted.current && portRef.current === port)
-          setError(cause instanceof Error ? cause.message : 'Ошибка отправки UART.');
+          setError(cause instanceof Error ? cause.message : t('Ошибка отправки UART.'));
       } finally {
         writer?.releaseLock();
       }
@@ -191,15 +194,15 @@ export function BoardPanel({
     <section className="physical-workspace board-workspace">
       <header className="physical-heading">
         <div>
-          <h2>Подключение платы</h2>
-          <p>Tang Nano 20K, кристалл GW2AR-LV18QN88C8/I7</p>
+          <h2>{t('Подключение платы')}</h2>
+          <p>{t('Tang Nano 20K, кристалл GW2AR-LV18QN88C8/I7')}</p>
         </div>
-        <nav className="board-mode-nav" aria-label="Работа с платой">
+        <nav className="board-mode-nav" aria-label={t('Работа с платой')}>
           {(
             [
-              ['program', 'Загрузить схему'],
-              ['uart', 'UART-терминал'],
-              ['maintenance', 'Отладчик'],
+              ['program', t('Загрузить схему')],
+              ['uart', t('UART-терминал')],
+              ['maintenance', t('Отладчик')],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -230,26 +233,26 @@ export function BoardPanel({
             onProgrammed={onProgrammed}
           />
           <aside className="physical-card board-profile-card">
-            <h3>Паспорт платы</h3>
+            <h3>{t('Паспорт платы')}</h3>
             <dl className="board-profile">
               <div>
-                <dt>Семейство</dt>
+                <dt>{t('Семейство')}</dt>
                 <dd>GW2A-18C</dd>
               </div>
               <div>
-                <dt>Корпус</dt>
+                <dt>{t('Корпус')}</dt>
                 <dd>QN88</dd>
               </div>
               <div>
-                <dt>Светодиоды</dt>
-                <dd>6 · выводы 15–20</dd>
+                <dt>{t('Светодиоды')}</dt>
+                <dd>{t('6 · выводы 15–20')}</dd>
               </div>
               <div>
-                <dt>Кнопки</dt>
-                <dd>Выводы 87 / 88</dd>
+                <dt>{t('Кнопки')}</dt>
+                <dd>{t('Выводы 87 / 88')}</dd>
               </div>
               <div>
-                <dt>Назначения .cst</dt>
+                <dt>{t('Назначения .cst')}</dt>
                 <dd>{pins.length}</dd>
               </div>
             </dl>
@@ -258,27 +261,30 @@ export function BoardPanel({
               target="_blank"
               rel="noreferrer"
             >
-              Распиновка Apicula <ExternalLink size={12} />
+              {t('Распиновка Apicula')} <ExternalLink size={12} />
             </a>
           </aside>
         </div>
         <section className="physical-card uart-card" hidden={view !== 'uart'}>
           <div className="physical-card-title">
             <Cable size={19} />
-            <h3>UART в браузере</h3>
+            <h3>{t('UART в браузере')}</h3>
             <span className={`connection-badge ${connected ? 'is-connected' : ''}`}>
-              {connected ? 'Подключено' : 'Нет подключения'}
+              {connected ? t('Подключено') : t('Нет подключения')}
             </span>
           </div>
           <p>
-            Выберите USB Serial-порт платы. Терминал читает данные устройства и отправляет строки с
-            окончанием CRLF.
+            {t(
+              t(
+                'Выберите USB Serial-порт платы. Терминал читает данные устройства и отправляет строки с окончанием CRLF.',
+              ),
+            )}
           </p>
           <div className="physical-controls">
             <label>
-              Скорость
+              {t('Скорость')}
               <select
-                aria-label="Скорость UART"
+                aria-label={t('Скорость UART')}
                 value={baudRate}
                 disabled={connected || busy || programmingBusy}
                 onChange={(event) => setBaudRate(Number(event.target.value))}
@@ -296,18 +302,21 @@ export function BoardPanel({
               onClick={() => (connected ? void closePort() : void connect())}
             >
               {connected ? <Unplug size={15} /> : <Link2 size={15} />}{' '}
-              {busy ? 'Подключение…' : connected ? 'Отключить' : 'Выбрать порт'}
+              {busy ? t('Подключение…') : connected ? t('Отключить') : t('Выбрать порт')}
             </button>
           </div>
           {!serial && (
             <div className="physical-note">
-              Этот браузер не предоставляет Web Serial. Откройте приложение в браузере с поддержкой
-              Web Serial (например, Chrome или Edge) на localhost.
+              {t(
+                t(
+                  'Этот браузер не предоставляет Web Serial. Откройте приложение в браузере с поддержкой Web Serial (например, Chrome или Edge) на localhost.',
+                ),
+              )}
             </div>
           )}
           {connected && (
             <small className="physical-muted">
-              {identity} · {baudRate} бод
+              {identity} · {baudRate} {t('бод')}
             </small>
           )}
           {error && (
@@ -315,11 +324,11 @@ export function BoardPanel({
               {error}
             </div>
           )}
-          <pre className="uart-terminal" aria-label="Данные UART">
+          <pre className="uart-terminal" aria-label={t('Данные UART')}>
             {terminal ||
               (connected
-                ? 'Порт открыт. Ожидаем данные…'
-                : 'Здесь появятся сообщения подключённого устройства.')}
+                ? t('Порт открыт. Ожидаем данные…')
+                : t('Здесь появятся сообщения подключённого устройства.'))}
           </pre>
           <form
             className="uart-send"
@@ -329,8 +338,8 @@ export function BoardPanel({
             }}
           >
             <input
-              aria-label="Строка для UART"
-              placeholder="Строка для устройства"
+              aria-label={t('Строка для UART')}
+              placeholder={t('Строка для устройства')}
               value={message}
               maxLength={4096}
               disabled={!connected || programmingBusy}
@@ -341,10 +350,10 @@ export function BoardPanel({
               disabled={!connected || !message || sending || programmingBusy}
             >
               <Send size={15} />
-              {sending ? 'Отправка…' : 'Отправить'}
+              {sending ? t('Отправка…') : t('Отправить')}
             </button>
             <button type="button" className="button subtle" onClick={() => setTerminal('')}>
-              Очистить
+              {t('Очистить')}
             </button>
           </form>
         </section>

@@ -15,7 +15,7 @@ import {
   type Params,
   type BlockKind,
 } from './circuit-types';
-import { lit, range } from './circuit-util';
+import { lit, range, tn } from './circuit-util';
 
 export * from './circuit-types';
 export {
@@ -26,6 +26,7 @@ export {
   libraryEntry,
   categories,
 } from './circuit-registry';
+import { t } from './i18n';
 export { dividerPlan, formatHz, formatSeconds } from './circuit-blocks-memory';
 
 export const MAX_NODES = 400;
@@ -36,17 +37,19 @@ export const blockCatalog = blockKinds.map(
 );
 
 export const fail = (message: string): never => {
-  throw new RequestError(`Схема: ${message}`);
+  throw new RequestError(tn(t('Схема: {message}'), { message }));
 };
 const integer = (value: unknown, min: number, max: number) =>
   typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
 
 function paramError(spec: ParamSpec, value: unknown, params: Params): string | null {
-  const bad = `неверное значение параметра «${spec.label}»`;
+  const bad = tn(t('неверное значение параметра «{label}»'), { label: spec.label });
   switch (spec.type) {
     case 'int': {
       const max = typeof spec.max === 'function' ? spec.max(params) : spec.max;
-      return integer(value, spec.min, max) ? null : `${bad}: нужно целое от ${spec.min} до ${max}`;
+      return integer(value, spec.min, max)
+        ? null
+        : tn(t('{bad}: нужно целое от {min} до {max}'), { bad, min: spec.min, max });
     }
     case 'float':
       return typeof value === 'number' &&
@@ -54,7 +57,7 @@ function paramError(spec: ParamSpec, value: unknown, params: Params): string | n
         value >= spec.min &&
         value <= spec.max
         ? null
-        : `${bad}: нужно число от ${spec.min} до ${spec.max}`;
+        : tn(t('{bad}: нужно число от {min} до {max}'), { bad, min: spec.min, max: spec.max });
     case 'bool':
       return typeof value === 'boolean' ? null : bad;
     case 'select':
@@ -89,17 +92,18 @@ function paramError(spec: ParamSpec, value: unknown, params: Params): string | n
 function checkParams(kind: BlockKind, params: unknown): Params {
   const def = blocks[kind];
   if (!params || typeof params !== 'object' || Array.isArray(params))
-    return fail('нет параметров элемента.');
+    return fail(t('нет параметров элемента.'));
   const given = params as Record<string, unknown>,
     keys = Object.keys(def.defaults);
   if (Object.keys(given).some((key) => !keys.includes(key)))
-    return fail(`неизвестные параметры элемента ${def.title}.`);
+    return fail(tn(t('неизвестные параметры элемента {title}.'), { title: def.title }));
   for (const key of keys) {
     const spec = def.params.find((value) => value.key === key);
-    if (!spec || !(key in given)) return fail(`у элемента ${def.title} нет параметра ${key}.`);
+    if (!spec || !(key in given))
+      return fail(tn(t('у элемента {title} нет параметра {key}.'), { title: def.title, key }));
     const error =
       spec.type === 'select' && typeof given[key] !== typeof def.defaults[key]
-        ? `неверное значение параметра «${spec.label}»`
+        ? tn(t('неверное значение параметра «{label}»'), { label: spec.label })
         : paramError(spec, given[key], given as Params);
     if (error) return fail(`${def.title}: ${error}.`);
   }
@@ -114,17 +118,17 @@ export function parseCircuit(content: string): CircuitDocument {
   try {
     value = JSON.parse(content);
   } catch {
-    return fail('файл .ysch должен содержать JSON.');
+    return fail(t('файл .ysch должен содержать JSON.'));
   }
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return fail('нет документа.');
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return fail(t('нет документа.'));
   const raw = value as Record<string, unknown>;
   if (raw.format !== 'yosis-schematic' || (raw.version !== 1 && raw.version !== 2))
-    return fail('неподдерживаемый формат или версия .ysch.');
+    return fail(t('неподдерживаемый формат или версия .ysch.'));
   const doc = (raw.version === 1 ? migrateV1(raw) : raw) as unknown as CircuitDocument;
   if (raw.version === 2) {
     const allowed = ['format', 'version', 'nodes', 'wires'];
     if (Object.keys(raw).some((key) => !allowed.includes(key)))
-      return fail('в документе есть неизвестные поля.');
+      return fail(t('в документе есть неизвестные поля.'));
   }
   if (
     !Array.isArray(doc.nodes) ||
@@ -132,7 +136,9 @@ export function parseCircuit(content: string): CircuitDocument {
     !Array.isArray(doc.wires) ||
     doc.wires.length > MAX_WIRES
   )
-    return fail(`максимум ${MAX_NODES} элементов и ${MAX_WIRES} соединений.`);
+    return fail(
+      tn(t('максимум {MAX_NODES} элементов и {MAX_WIRES} соединений.'), { MAX_NODES, MAX_WIRES }),
+    );
   const ids = new Set<string>(),
     nodes: CircuitNode[] = [];
   const nodeKeys = ['id', 'kind', 'name', 'x', 'y', 'rot', 'flip', 'params'];
@@ -144,13 +150,13 @@ export function parseCircuit(content: string): CircuitDocument {
       !nodeId.test(node.id) ||
       ids.has(node.id)
     )
-      return fail('неверный или повторяющийся ID элемента.');
+      return fail(t('неверный или повторяющийся ID элемента.'));
     ids.add(node.id);
     if (
       Object.keys(node).some((key) => !nodeKeys.includes(key)) ||
       nodeKeys.some((key) => !(key in node))
     )
-      return fail(`неверные свойства элемента ${node.id}.`);
+      return fail(tn(t('неверные свойства элемента {id}.'), { id: node.id }));
     if (
       !(blockKinds as readonly string[]).includes(node.kind) ||
       typeof node.name !== 'string' ||
@@ -162,7 +168,7 @@ export function parseCircuit(content: string): CircuitDocument {
       ![0, 90, 180, 270].includes(node.rot) ||
       typeof node.flip !== 'boolean'
     )
-      return fail(`неверные свойства элемента ${node.id}.`);
+      return fail(tn(t('неверные свойства элемента {id}.'), { id: node.id }));
     nodes.push({
       id: node.id,
       kind: node.kind,
@@ -184,7 +190,7 @@ export function parseCircuit(content: string): CircuitDocument {
       !wireId.test(wire.id) ||
       ids.has(wire.id)
     )
-      return fail('неверный или повторяющийся ID соединения.');
+      return fail(t('неверный или повторяющийся ID соединения.'));
     ids.add(wire.id);
     for (const endpoint of [wire.from, wire.to])
       if (
@@ -194,7 +200,7 @@ export function parseCircuit(content: string): CircuitDocument {
         typeof endpoint.pin !== 'string' ||
         !pinName.test(endpoint.pin)
       )
-        return fail(`неверный контакт в ${wire.id}.`);
+        return fail(tn(t('неверный контакт в {id}.'), { id: wire.id }));
     wires.push({
       id: wire.id,
       from: { node: wire.from.node, pin: wire.from.pin },
@@ -293,13 +299,18 @@ export function circuitProblems(doc: CircuitDocument): CircuitIssue[] {
     if (/^__ys_/.test(node.name))
       error({
         node: node.id,
-        message: `${node.name}: префикс __ys_ зарезервирован для внутренних связей.`,
+        message: tn(t('{name}: префикс __ys_ зарезервирован для внутренних связей.'), {
+          name: node.name,
+        }),
       });
     if (node.kind !== 'tag_in') {
       if (seenNames.has(node.name))
         error({
           node: node.id,
-          message: `Имя ${node.name} повторяется. Дайте элементам разные имена: двойным щелчком по элементу.`,
+          message: tn(
+            t('Имя {name} повторяется. Дайте элементам разные имена: двойным щелчком по элементу.'),
+            { name: node.name },
+          ),
         });
       seenNames.set(node.name, node);
     }
@@ -316,7 +327,12 @@ export function circuitProblems(doc: CircuitDocument): CircuitIssue[] {
       if (other && other !== node.id && node.kind !== 'tag_in')
         error({
           node: node.id,
-          message: `Имя цепи ${decl.name} получается у двух элементов (${nodes.get(other)?.name} и ${node.name}). Переименуйте один из них.`,
+          message: tn(
+            t(
+              'Имя цепи {name} получается у двух элементов ({v2} и {name2}). Переименуйте один из них.',
+            ),
+            { name: decl.name, v2: nodes.get(other)?.name, name2: node.name },
+          ),
         });
       used.set(decl.name, node.id);
     }
@@ -329,7 +345,12 @@ export function circuitProblems(doc: CircuitDocument): CircuitIssue[] {
       if (other && other.id !== node.id)
         error({
           node: node.id,
-          message: `${node.name}: вывод платы ${item.pin} уже занят элементом ${other.name}. Каждую кнопку и светодиод можно использовать один раз.`,
+          message: tn(
+            t(
+              '{name}: вывод платы {pin} уже занят элементом {name2}. Каждую кнопку и светодиод можно использовать один раз.',
+            ),
+            { name: node.name, pin: item.pin, name2: other.name },
+          ),
         });
       pins.set(item.pin, node);
     }
@@ -341,12 +362,21 @@ export function circuitProblems(doc: CircuitDocument): CircuitIssue[] {
     if (!out)
       error({
         node: node.id,
-        message: `Метка «принять» ${node.name} не нашла метку «передать» с таким именем. Поставьте метку «передать» на нужный провод.`,
+        message: tn(
+          t(
+            'Метка «принять» {name} не нашла метку «передать» с таким именем. Поставьте метку «передать» на нужный провод.',
+          ),
+          { name: node.name },
+        ),
       });
     else if (out.params.width !== node.params.width)
       error({
         node: node.id,
-        message: `Метки ${node.name} имеют разную ширину: ${out.params.width} и ${node.params.width} бит.`,
+        message: tn(t('Метки {name} имеют разную ширину: {width} и {width2} бит.'), {
+          name: node.name,
+          width: out.params.width,
+          width2: node.params.width,
+        }),
       });
   }
   const adjacency = new Map(doc.nodes.map((node) => [node.id, new Set<string>()]));
@@ -362,12 +392,14 @@ export function circuitProblems(doc: CircuitDocument): CircuitIssue[] {
     if (!source || !target) {
       error({
         wire: wire.id,
-        message: `${wire.id}: контакт отсутствует. Удалите этот провод и проведите его заново.`,
+        message: tn(t('{id}: контакт отсутствует. Удалите этот провод и проведите его заново.'), {
+          id: wire.id,
+        }),
       });
       continue;
     }
     if (source.direction !== 'output' || target.direction !== 'input') {
-      error({ wire: wire.id, message: `${wire.id}: соединяйте выход с входом.` });
+      error({ wire: wire.id, message: tn(t('{id}: соединяйте выход с входом.'), { id: wire.id }) });
       continue;
     }
     if (source.width !== target.width)
@@ -375,7 +407,19 @@ export function circuitProblems(doc: CircuitDocument): CircuitIssue[] {
         wire: wire.id,
         node: b!.id,
         pin: target.name,
-        message: `${a!.name}.${source.name} (${source.width} бит) → ${b!.name}.${target.name} (${target.width} бит): ширины не совпадают. Вставьте «Срез шины» или «Расширение шины» либо поменяйте ширину.`,
+        message: tn(
+          t(
+            '{v1}.{name} ({width} бит) → {v4}.{name2} ({width2} бит): ширины не совпадают. Вставьте «Срез шины» или «Расширение шины» либо поменяйте ширину.',
+          ),
+          {
+            v1: a!.name,
+            name: source.name,
+            width: source.width,
+            v4: b!.name,
+            name2: target.name,
+            width2: target.width,
+          },
+        ),
       });
     if (target.clock) {
       const origin = resolveSource(doc, wire.from),
@@ -385,7 +429,12 @@ export function circuitProblems(doc: CircuitDocument): CircuitIssue[] {
           wire: wire.id,
           node: b!.id,
           pin: target.name,
-          message: `${b!.name}.${target.name}: такт должен приходить непосредственно со входа устройства или «Такта 27 МГц». Для медленной работы используйте «Делитель частоты» и вход разрешения EN.`,
+          message: tn(
+            t(
+              '{v1}.{name}: такт должен приходить непосредственно со входа устройства или «Такта 27 МГц». Для медленной работы используйте «Делитель частоты» и вход разрешения EN.',
+            ),
+            { v1: b!.name, name: target.name },
+          ),
         });
     }
     const key = endpointKey(wire.to);
@@ -402,8 +451,18 @@ export function circuitProblems(doc: CircuitDocument): CircuitIssue[] {
           node: node.id,
           pin: pin.name,
           message: count
-            ? `${node.name}.${pin.name}: несколько источников. К одному входу можно подключить только один провод.`
-            : `${node.name}.${pin.name}: вход не соединён. Протяните провод от выхода другого элемента к этому входу.`,
+            ? tn(
+                t(
+                  '{name}.{name2}: несколько источников. К одному входу можно подключить только один провод.',
+                ),
+                { name: node.name, name2: pin.name },
+              )
+            : tn(
+                t(
+                  '{name}.{name2}: вход не соединён. Протяните провод от выхода другого элемента к этому входу.',
+                ),
+                { name: node.name, name2: pin.name },
+              ),
         });
     }
   const visited = new Set<string>(),
@@ -424,11 +483,12 @@ export function circuitProblems(doc: CircuitDocument): CircuitIssue[] {
   if (doc.nodes.some((node) => visit(node.id)))
     error({
       node: loopNode,
-      message:
+      message: t(
         'Комбинационная петля. Выход элемента возвращается на его же вход без триггера. Обратная связь должна проходить через регистр или счётчик.',
+      ),
     });
   if (!doc.nodes.some((node) => blocks[node.kind].port?.direction === 'output'))
-    error({ message: 'Добавьте хотя бы один выход устройства или светодиод.' });
+    error({ message: t('Добавьте хотя бы один выход устройства или светодиод.') });
   // Предупреждения: схема соберётся, но, скорее всего, это недосмотр.
   const connectedOut = new Set(doc.wires.map((wire) => endpointKey(wire.from)));
   for (const node of doc.nodes) {
@@ -439,8 +499,13 @@ export function circuitProblems(doc: CircuitDocument): CircuitIssue[] {
       warning({
         node: node.id,
         message: def.port
-          ? `${node.name}: вход устройства нигде не используется.`
-          : `${node.name}: выход никуда не подключён, элемент ничего не делает. Подключите его или удалите.`,
+          ? tn(t('{name}: вход устройства нигде не используется.'), { name: node.name })
+          : tn(
+              t(
+                '{name}: выход никуда не подключён, элемент ничего не делает. Подключите его или удалите.',
+              ),
+              { name: node.name },
+            ),
       });
   }
   return issues;
@@ -461,18 +526,23 @@ export function connectCircuit(
     source = a && circuitPins(a).find((pin) => pin.name === from.pin),
     target = b && circuitPins(b).find((pin) => pin.name === to.pin);
   if (!source || !target || source.direction !== 'output' || target.direction !== 'input')
-    return fail('выберите выход, затем вход.');
+    return fail(t('выберите выход, затем вход.'));
   if (source.width !== target.width)
-    return fail(`ширины ${source.width} и ${target.width} не совпадают.`);
+    return fail(
+      tn(t('ширины {width} и {width2} не совпадают.'), {
+        width: source.width,
+        width2: target.width,
+      }),
+    );
   if (base.wires.some((wire) => endpointKey(wire.to) === endpointKey(to)))
-    return fail('этот вход уже соединён. Удалите старое соединение.');
-  if (base.wires.length >= MAX_WIRES) return fail('достигнут предел соединений.');
+    return fail(t('этот вход уже соединён. Удалите старое соединение.'));
+  if (base.wires.length >= MAX_WIRES) return fail(t('достигнут предел соединений.'));
   const next = {
     ...base,
     wires: [...base.wires, { id: replace ?? nextWireId(base), from, to }],
   };
-  if (circuitIssues(next).some((issue) => issue.message.startsWith('Комбинационная петля')))
-    return fail('это соединение создаёт комбинационную петлю.');
+  if (circuitIssues(next).some((issue) => issue.message.startsWith(t('Комбинационная петля'))))
+    return fail(t('это соединение создаёт комбинационную петлю.'));
   return next;
 }
 export function removeCircuitNodes(doc: CircuitDocument, ids: Iterable<string>): CircuitDocument {
@@ -496,7 +566,8 @@ export function newCircuitNode(
   params: Partial<Params> = {},
   base: string = kind,
 ): CircuitNode {
-  if (doc.nodes.length >= MAX_NODES) return fail(`достигнут предел ${MAX_NODES} элементов.`);
+  if (doc.nodes.length >= MAX_NODES)
+    return fail(tn(t('достигнут предел {MAX_NODES} элементов.'), { MAX_NODES }));
   const index = freeIndex(
     doc.nodes.map((node) => node.id),
     'n',
@@ -515,7 +586,7 @@ export function newCircuitNode(
 /** Новый элемент из библиотеки; кнопки и светодиоды сразу получают свободный номер. */
 export function newLibraryNode(doc: CircuitDocument, entryId: string): CircuitNode {
   const entry = libraryEntry(entryId);
-  if (!entry) return fail(`в библиотеке нет элемента ${entryId}.`);
+  if (!entry) return fail(tn(t('в библиотеке нет элемента {entryId}.'), { entryId }));
   const node = newCircuitNode(doc, entry.kind, entry.params ?? {}, entry.base);
   if (entry.kind === 'led') {
     const used = new Set(
@@ -537,7 +608,7 @@ export function newLibraryNode(doc: CircuitDocument, entryId: string): CircuitNo
 }
 
 export function compileCircuit(doc: CircuitDocument, top: string): string {
-  if (!validIdentifier(top)) return fail('неверное имя верхнего модуля.');
+  if (!validIdentifier(top)) return fail(t('неверное имя верхнего модуля.'));
   const issues = circuitIssues(doc);
   if (issues.length) return fail(issues.map((issue) => issue.message).join('\n'));
   const byId = new Map(doc.nodes.map((node) => [node.id, node]));
@@ -603,11 +674,15 @@ export function compileCircuit(doc: CircuitDocument, top: string): string {
 export function materializeCircuitProject(project: Project): Project {
   const sources = project.files.filter((file) => file.name.endsWith('.ysch'));
   if (!sources.length) return project;
-  if (sources.length > 1) return fail('в первой версии допустим один документ .ysch на проект.');
+  if (sources.length > 1) return fail(t('в первой версии допустим один документ .ysch на проект.'));
   const source = sources[0],
     generated = source.name.replace(/\.ysch$/, '.v');
   if (project.files.some((file) => file.name.toLowerCase() === generated.toLowerCase()))
-    return fail(`файл ${generated} уже существует и будет перезаписан. Переименуйте его.`);
+    return fail(
+      tn(t('файл {generated} уже существует и будет перезаписан. Переименуйте его.'), {
+        generated,
+      }),
+    );
   const file: SourceFile = {
     name: generated,
     content: compileCircuit(parseCircuit(source.content), project.top),

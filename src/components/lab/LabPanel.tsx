@@ -15,7 +15,7 @@ import { validateProject } from '../../../shared/project-validation';
 import type { Diagnostic, Project } from '../../../shared/types';
 import { request } from '../../lib/api';
 import { applyPinEdit, readCst } from '../../lib/pin-planner';
-import { behaviourKey, partById, partPins, type PartDef } from '../../lib/lab/catalog';
+import { behaviourKey, decimal, partById, partPins, type PartDef } from '../../lib/lab/catalog';
 import { BOARD_CLOCK_HZ } from '../../lib/lab/devices';
 import {
   addPart,
@@ -58,6 +58,7 @@ import { actionFor, liveOf } from './reference/live';
 import { wirePalette } from './reference/src/mcu/scene/layout';
 import '../virtual-board.css';
 import './lab.css';
+import { t } from '../../lib/i18n';
 
 interface Props {
   project: Project;
@@ -76,30 +77,30 @@ interface Props {
   sceneOnly?: boolean;
 }
 const SPEEDS = [
-  ['max', 'как можно быстрее'],
-  ['100000', '100 000 тактов/с'],
-  ['1000', '1000 тактов/с'],
-  ['20', '20 тактов/с'],
-  ['2', '2 такта/с'],
+  ['max', t('как можно быстрее')],
+  ['100000', t('100 000 тактов/с')],
+  ['1000', t('1000 тактов/с')],
+  ['20', t('20 тактов/с')],
+  ['2', t('2 такта/с')],
 ] as const;
 const WIRE_COLOR_NAMES = [
-  'Оранжевый',
-  'Зелёный',
-  'Синий',
-  'Фиолетовый',
-  'Коралловый',
-  'Жёлтый',
-  'Бирюзовый',
-  'Коричневый',
+  t('Оранжевый'),
+  t('Зелёный'),
+  t('Синий'),
+  t('Фиолетовый'),
+  t('Коралловый'),
+  t('Жёлтый'),
+  t('Бирюзовый'),
+  t('Коричневый'),
 ];
 /** About 30 redraws a second; the slack keeps every second 60 Hz frame from being skipped by jitter. */
 const REDRAW_INTERVAL_MS = 1000 / 30 - 4;
 const formatRate = (rate: number) =>
   rate >= 1e6
-    ? `${(rate / 1e6).toFixed(1).replace('.', ',')} млн тактов/с`
+    ? t('{n} млн тактов/с', { n: decimal((rate / 1e6).toFixed(1)) })
     : rate >= 1e3
-      ? `${Math.round(rate / 1e3)} тыс. тактов/с`
-      : `${Math.round(rate)} тактов/с`;
+      ? t('{n} тыс. тактов/с', { n: Math.round(rate / 1e3) })
+      : t('{n} тактов/с', { n: Math.round(rate) });
 const partDef = (part: LabPart): PartDef => partById.get(part.def)!;
 
 export function LabPanel({
@@ -226,14 +227,14 @@ export function LabPanel({
             setProblem(null);
           } else
             setProblem({
-              error: result.error ?? 'Не удалось подготовить схему.',
+              error: result.error ?? t('Не удалось подготовить схему.'),
               diagnostics: result.diagnostics,
             });
         })
         .catch((cause) => {
           if (!controller.signal.aborted)
             setProblem({
-              error: cause instanceof Error ? cause.message : 'Сервис недоступен.',
+              error: cause instanceof Error ? cause.message : t('Сервис недоступен.'),
               diagnostics: [],
             });
         })
@@ -465,7 +466,7 @@ export function LabPanel({
 
   // Context menus.
   function openMenu(target: { type: string; id?: string } | null, x: number, y: number) {
-    let label = 'Стол';
+    let label = t('Стол');
     let items: MenuItem[];
     if (target?.type === 'part') {
       const part = edit()
@@ -480,18 +481,22 @@ export function LabPanel({
           (wire) => terminalOwner(wire.from) === part.uid || terminalOwner(wire.to) === part.uid,
         );
       items = [
-        { label: 'Свойства…', shortcut: 'Enter', onSelect: () => setPropertiesOf(part.uid) },
+        { label: t('Свойства…'), shortcut: 'Enter', onSelect: () => setPropertiesOf(part.uid) },
         { kind: 'separator' },
-        { label: 'Повернуть по часовой', shortcut: 'R', onSelect: () => rotate(true) },
-        { label: 'Повернуть против часовой', shortcut: 'Shift+R', onSelect: () => rotate(false) },
-        { label: 'Дублировать', shortcut: 'Ctrl+D', onSelect: duplicate },
+        { label: t('Повернуть по часовой'), shortcut: 'R', onSelect: () => rotate(true) },
         {
-          label: 'Отключить провода',
+          label: t('Повернуть против часовой'),
+          shortcut: 'Shift+R',
+          onSelect: () => rotate(false),
+        },
+        { label: t('Дублировать'), shortcut: 'Ctrl+D', onSelect: duplicate },
+        {
+          label: t('Отключить провода'),
           disabled: !wired,
           onSelect: () => edit().commit(disconnectParts(edit().get(), [part.uid])),
         },
         { kind: 'separator' },
-        { label: 'Удалить', shortcut: 'Delete', danger: true, onSelect: remove },
+        { label: t('Удалить'), shortcut: 'Delete', danger: true, onSelect: remove },
       ];
     } else if (target?.type === 'wire') {
       const wire = edit()
@@ -499,26 +504,26 @@ export function LabPanel({
         .wires.find((item) => item.id === target.id);
       if (!wire) return;
       setSelectedId(wire.id);
-      label = 'Провод';
+      label = t('Провод');
       items = [
         {
           kind: 'colors',
-          label: 'Цвет провода',
+          label: t('Цвет провода'),
           value: wire.color,
           colors: wirePalette.map((value, index) => ({ value, label: WIRE_COLOR_NAMES[index] })),
           onSelect: (color) => edit().commit(setWireColor(edit().get(), wire.id, color)),
         },
         { kind: 'separator' },
-        { label: 'Удалить', shortcut: 'Delete', danger: true, onSelect: remove },
+        { label: t('Удалить'), shortcut: 'Delete', danger: true, onSelect: remove },
       ];
     } else {
       items = [
         ...(target?.type === 'board'
-          ? ([{ label: 'Открыть в «Выводах»', onSelect: onOpenPins }] as MenuItem[])
+          ? ([{ label: t('Открыть в «Выводах»'), onSelect: onOpenPins }] as MenuItem[])
           : []),
-        { label: 'Показать всё', shortcut: '0', onSelect: () => scene.current?.fit() },
+        { label: t('Показать всё'), shortcut: '0', onSelect: () => scene.current?.fit() },
         {
-          label: 'Убрать всё со стола',
+          label: t('Убрать всё со стола'),
           danger: true,
           disabled: !edit().get().parts.length,
           onSelect: () => setConfirmClear(true),
@@ -534,7 +539,9 @@ export function LabPanel({
   const terminal = runtime?.devices.get(BOARD_UART);
   const boardTime = runtime ? runtime.sim.cycle / BOARD_CLOCK_HZ : 0;
   const pendingText = pending
-    ? `Выбран вывод ${pending.replace('board:', 'платы ').replace(/^(\w+):/, '$1, ')}. Теперь нажмите второй вывод.`
+    ? t('Выбран вывод {pin}. Теперь нажмите второй вывод.', {
+        pin: pending.replace('board:', `${t('платы')} `).replace(/^(\w+):/, '$1, '),
+      })
     : '';
 
   const selectedFpga = selectedWire ? wireFpga(connections, selectedWire) : undefined;
@@ -570,7 +577,7 @@ export function LabPanel({
     if (!design || !signal || fpga === undefined) return;
     const file = project.files.find((item) => item.name.endsWith('.cst'))?.name;
     if (!file) {
-      setAssignError('В проекте нет файла .cst. Создайте его во вкладке «Выводы».');
+      setAssignError(t('В проекте нет файла .cst. Создайте его во вкладке «Выводы».'));
       return;
     }
     try {
@@ -627,9 +634,9 @@ export function LabPanel({
   }, []);
 
   return (
-    <section className="lab-workspace" aria-label="Лаборатория">
+    <section className="lab-workspace" aria-label={t('Лаборатория')}>
       <header className="lab-toolbar">
-        <div className="lab-run" role="group" aria-label="Ход времени">
+        <div className="lab-run" role="group" aria-label={t('Ход времени')}>
           <button
             type="button"
             className="button primary"
@@ -637,34 +644,34 @@ export function LabPanel({
             onClick={() => setRunning((value) => !value)}
           >
             {running ? <Pause size={15} /> : <Play size={15} />}
-            {running ? 'Пауза' : 'Пуск'}
+            {running ? t('Пауза') : t('Пуск')}
           </button>
           <button
             type="button"
             className="button subtle"
             disabled={!runtime || running}
-            title="Один такт"
+            title={t('Один такт')}
             onClick={() => {
               runtime?.advance(1, Infinity);
               setTick((value) => value + 1);
             }}
           >
             <StepForward size={15} />
-            Такт
+            {t('Такт')}
           </button>
           <button
             type="button"
             className="button subtle"
             disabled={!runtime}
-            title="Начать сначала, как после включения питания"
+            title={t('Начать сначала, как после включения питания')}
             onClick={() => setRestart((value) => value + 1)}
           >
             <RotateCcw size={15} />
-            Сброс
+            {t('Сброс')}
           </button>
         </div>
         <label className="lab-speed">
-          Скорость
+          {t('Скорость')}
           <select value={speed} onChange={(event) => setSpeed(event.target.value)}>
             {SPEEDS.map(([value, label]) => (
               <option key={value} value={value}>
@@ -673,14 +680,14 @@ export function LabPanel({
             ))}
           </select>
         </label>
-        <div className="lab-tools lab-keys" role="group" aria-label="Кнопки платы">
+        <div className="lab-tools lab-keys" role="group" aria-label={t('Кнопки платы')}>
           {['S1', 'S2'].map((name, pin) => (
             <button
               key={name}
               type="button"
               className="button subtle"
               disabled={!runtime}
-              title={`Кнопка ${name} на плате: держите нажатой`}
+              title={t('Кнопка {name} на плате: держите нажатой', { name })}
               onPointerDown={(event) => {
                 event.currentTarget.setPointerCapture(event.pointerId);
                 act(BOARD_BUTTONS, 'set', { pin, on: true });
@@ -692,12 +699,12 @@ export function LabPanel({
             </button>
           ))}
         </div>
-        <div className="lab-tools" role="group" aria-label="Правка стола">
+        <div className="lab-tools" role="group" aria-label={t('Правка стола')}>
           <button
             type="button"
             className="icon-button"
-            aria-label="Отменить"
-            title="Отменить (Ctrl+Z)"
+            aria-label={t('Отменить')}
+            title={t('Отменить (Ctrl+Z)')}
             disabled={!history.canUndo}
             onClick={history.undo}
           >
@@ -706,8 +713,8 @@ export function LabPanel({
           <button
             type="button"
             className="icon-button"
-            aria-label="Повторить"
-            title="Повторить (Ctrl+Shift+Z)"
+            aria-label={t('Повторить')}
+            title={t('Повторить (Ctrl+Shift+Z)')}
             disabled={!history.canRedo}
             onClick={history.redo}
           >
@@ -716,11 +723,11 @@ export function LabPanel({
           <button
             type="button"
             className="button subtle"
-            title="Показать весь стол (клавиша 0)"
+            title={t('Показать весь стол (клавиша 0)')}
             onClick={() => scene.current?.fit()}
           >
             <Maximize2 size={15} />
-            Показать всё
+            {t('Показать всё')}
           </button>
         </div>
         <div className="lab-clock">
@@ -729,21 +736,24 @@ export function LabPanel({
             role="status"
             title={
               runtime && running
-                ? `Схема считается на ${formatRate(rate)}. Настоящая плата делает ${Math.round(BOARD_CLOCK_HZ / 1e6)} млн тактов в секунду: браузер столько не успевает, поэтому время на плате идёт медленнее часов.`
+                ? t(
+                    'Схема считается на {rate}. Настоящая плата делает {real} млн тактов в секунду: браузер столько не успевает, поэтому время на плате идёт медленнее часов.',
+                    { rate: formatRate(rate), real: Math.round(BOARD_CLOCK_HZ / 1e6) },
+                  )
                 : undefined
             }
           >
             {loading && !runtime ? (
-              'Готовим схему…'
+              t('Готовим схему…')
             ) : runtime ? (
               <>
-                {!runtime.hasClock && 'Такта на выводе 4 нет · '}
-                {!running && 'Пауза · '}
-                Время на плате:{' '}
+                {!runtime.hasClock && t('Такта на выводе 4 нет · ')}
+                {!running && t('Пауза · ')}
+                {t('Время на плате:')}{' '}
                 <b>
                   {boardTime >= 1
-                    ? `${boardTime.toFixed(2).replace('.', ',')} с`
-                    : `${(boardTime * 1000).toFixed(0)} мс`}
+                    ? t('{n} с', { n: decimal(boardTime.toFixed(2)) })
+                    : t('{n} мс', { n: (boardTime * 1000).toFixed(0) })}
                 </b>
               </>
             ) : null}
@@ -751,8 +761,8 @@ export function LabPanel({
           <button
             type="button"
             className="icon-button"
-            aria-label={muted ? 'Включить звук' : 'Выключить звук'}
-            title={muted ? 'Включить звук' : 'Выключить звук'}
+            aria-label={muted ? t('Включить звук') : t('Выключить звук')}
+            title={muted ? t('Включить звук') : t('Выключить звук')}
             onClick={() => setMuted((value) => !value)}
           >
             {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
@@ -761,7 +771,7 @@ export function LabPanel({
       </header>
       {(problem || runtimeError) && (
         <div className="lab-problem" role="alert">
-          <strong>Схема не запущена.</strong> {problem?.error ?? runtimeError}
+          <strong>{t('Схема не запущена.')}</strong> {problem?.error ?? runtimeError}
           {problem?.diagnostics
             .filter((item) => item.severity === 'error' && item.message !== problem.error)
             .slice(0, 3)
@@ -781,7 +791,7 @@ export function LabPanel({
             className="lab-mini"
             onClick={() => (pending ? setPending('') : setNotice(''))}
           >
-            {pending ? 'Отмена' : 'Закрыть'}
+            {pending ? t('Отмена') : t('Закрыть')}
           </button>
         </div>
       )}
@@ -827,8 +837,10 @@ export function LabPanel({
             <AssignPopover
               fpga={selectedFpga}
               signals={freeSignals}
-              label="Сигнал для контакта"
-              empty="В схеме нет подходящих свободных сигналов. Добавьте порт в верхний модуль."
+              label={t('Сигнал для контакта')}
+              empty={t(
+                'В схеме нет подходящих свободных сигналов. Добавьте порт в верхний модуль.',
+              )}
               error={assignError}
               onAssign={(signal) => assign(signal, selectedWire)}
               onClose={() => setPopover('')}
@@ -880,17 +892,19 @@ export function LabPanel({
       )}
       {confirmClear && (
         <Dialog
-          title="Убрать всё со стола?"
+          title={t('Убрать всё со стола?')}
           className="dialog lab-confirm"
           onClose={() => setConfirmClear(false)}
         >
           <p>
-            Со стола исчезнут все детали и провода ({layout.parts.length} деталей,{' '}
-            {layout.wires.length} проводов). Это можно отменить кнопкой «Отменить».
+            {t(
+              'Со стола исчезнут все детали и провода ({parts} деталей, {wires} проводов). Это можно отменить кнопкой «Отменить».',
+              { parts: layout.parts.length, wires: layout.wires.length },
+            )}
           </p>
           <div className="dialog-actions">
             <button type="button" className="button subtle" onClick={() => setConfirmClear(false)}>
-              Отмена
+              {t('Отмена')}
             </button>
             <button
               type="button"
@@ -901,7 +915,7 @@ export function LabPanel({
                 setConfirmClear(false);
               }}
             >
-              Убрать всё
+              {t('Убрать всё')}
             </button>
           </div>
         </Dialog>

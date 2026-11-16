@@ -65,6 +65,7 @@ import { canMount } from '../../../shared/physical';
 import { breadboardStrip } from '../../../shared/breadboard';
 import { buildWire, previewWire, type WireModel } from './wires';
 import { buildTool, type ToolModel } from './tools';
+import { t } from '../../../../../../../shared/i18n';
 import { HAND_HEIGHT, toolAngle, toolHeight, toolInfo, type BenchTool } from '../environment';
 
 const ELEVATION = (43 * Math.PI) / 180;
@@ -197,12 +198,12 @@ const FLASH_MS = 1400;
 /** What a header hole without a terminal does, for its tooltip. */
 function inertPinNote(label: string) {
   if (/^GND/.test(label))
-    return 'дополнительный контакт земли · провод ставится на другой GND платы';
-  if (label === 'SDA') return 'I²C · тот же контакт, что A4';
-  if (label === 'SCL') return 'I²C · тот же контакт, что A5';
-  if (label === 'VIN') return 'вход питания платы · в модели не используется';
-  if (label === 'RESET') return 'сброс платы · в модели не используется';
-  return 'в модели не используется';
+    return t('дополнительный контакт земли · провод ставится на другой GND платы');
+  if (label === 'SDA') return t('I²C · тот же контакт, что A4');
+  if (label === 'SCL') return t('I²C · тот же контакт, что A5');
+  if (label === 'VIN') return t('вход питания платы · в модели не используется');
+  if (label === 'RESET') return t('сброс платы · в модели не используется');
+  return t('в модели не используется');
 }
 /** Grows an instanced overlay mesh to at least `count` instances. */
 function instanced(
@@ -1410,7 +1411,8 @@ export class Stage {
         const warning = mountWarning(selected, mount, board.value);
         const names = partPinNames(selected);
         this.events.placement?.({
-          title: warning || (mode.kind === 'part' ? 'Можно установить' : 'Установлено в макетку'),
+          title:
+            warning || (mode.kind === 'part' ? t('Можно установить') : t('Установлено в макетку')),
           detail: names
             .map(
               (name, i) =>
@@ -1434,7 +1436,7 @@ export class Stage {
       this.overBreadboard(input.project, selected, mode.center)
     ) {
       this.events.placement?.({
-        title: 'Нельзя установить',
+        title: t('Нельзя установить'),
         detail: this.placementReason(selected, mode.center),
         tone: 'invalid',
       });
@@ -1802,19 +1804,21 @@ export class Stage {
   private placementReason(part: CircuitPart, center: Vec3) {
     const project = this.input!.project;
     if (!canMount(part.kind))
-      return 'У этой детали кабель или собственный корпус: подключите её проводами';
+      return t('У этой детали кабель или собственный корпус: подключите её проводами');
     if (this.mountRefusal) return this.mountRefusal;
     const occupied = occupiedHoles(project, part.id);
     for (const id of this.holesUnderLegs(project, part, center)) {
       const split = id.indexOf(':');
       if (occupied.get(id.slice(0, split))?.has(id.slice(split + 1)))
-        return `Отверстие ${id.slice(split + 1)} занято ножкой другой детали`;
+        return t('Отверстие {hole} занято ножкой другой детали', { hole: id.slice(split + 1) });
       if (project.wires.some((wire) => wire.from === id || wire.to === id))
-        return `В отверстии ${id.slice(split + 1)} уже стоит штекер провода`;
+        return t('В отверстии {hole} уже стоит штекер провода', { hole: id.slice(split + 1) });
     }
     if (['chip595', 'chip165', 'dip', 'seg7'].includes(part.kind))
-      return 'Разместите ряды ножек по обе стороны центральной канавки';
-    return 'Совместите все ножки со свободными отверстиями; край детали выходит за поле или корпус перекрывает другую деталь';
+      return t('Разместите ряды ножек по обе стороны центральной канавки');
+    return t(
+      'Совместите все ножки со свободными отверстиями; край детали выходит за поле или корпус перекрывает другую деталь',
+    );
   }
   private mountAt(project: McuProject, part: CircuitPart, center: Vec3): Mount | null {
     this.mountRefusal = '';
@@ -1843,7 +1847,7 @@ export class Stage {
       if (!contacts) return null;
       for (const { hole } of contacts) {
         if (taken.get(board.id)?.has(hole)) {
-          this.mountRefusal = `Отверстие ${hole} занято ножкой другой детали`;
+          this.mountRefusal = t('Отверстие {hole} занято ножкой другой детали', { hole });
           return null;
         }
         if (
@@ -1851,7 +1855,7 @@ export class Stage {
             (wire) => wire.from === `${board.id}:${hole}` || wire.to === `${board.id}:${hole}`,
           )
         ) {
-          this.mountRefusal = `В отверстии ${hole} уже стоит штекер провода`;
+          this.mountRefusal = t('В отверстии {hole} уже стоит штекер провода', { hole });
           return null;
         }
       }
@@ -1879,7 +1883,10 @@ export class Stage {
             continue;
           const mesh = this.parts.get(other.id)?.model.group;
           if (mesh && body.intersectsBox(solidBox(mesh))) {
-            this.mountRefusal = `Корпус пересекается с деталью «${other.label}»; сдвиньте её или выберите другие отверстия`;
+            this.mountRefusal = t(
+              'Корпус пересекается с деталью «{name}»; сдвиньте её или выберите другие отверстия',
+              { name: other.label },
+            );
             return null;
           }
         }
@@ -2374,7 +2381,7 @@ export class Stage {
         x: screen.x,
         y: screen.y,
         title: `${spec.label} · ${spec.dial.format(dialValue(knob.part, spec.dial))}`,
-        detail: 'Клик справа или слева — шаг, тяните вверх и вниз или крутите колёсиком',
+        detail: t('Клик справа или слева — шаг, тяните вверх и вниз или крутите колёсиком'),
       });
       return '';
     }
@@ -2402,7 +2409,7 @@ export class Stage {
       this.events.hover({
         x: screen.x,
         y: screen.y,
-        title: `Плата · ${inert.label}`,
+        title: t('Плата · {label}', { label: inert.label }),
         detail: inertPinNote(inert.label),
       });
       return `pin:${inert.label}`;
@@ -2432,7 +2439,7 @@ export class Stage {
           x: screen.x,
           y: screen.y,
           title: `${knob.label} · ${knob.dial.format(dialValue(part, knob.dial))}`,
-          detail: 'Тяните вверх и вниз или крутите колёсиком',
+          detail: t('Тяните вверх и вниз или крутите колёсиком'),
         });
         return '';
       }
@@ -2482,8 +2489,8 @@ export class Stage {
       part = input.project.parts.find((item) => terminal.startsWith(`${item.id}:`)),
       state =
         value?.voltage == null
-          ? 'не подключено'
-          : `${value.voltage.toFixed(2)} В${value.level === null ? '' : value.level ? ' · HIGH' : ' · LOW'}`;
+          ? t('не подключено')
+          : `${t('{n} В', { n: value.voltage.toFixed(2) })}${value.level === null ? '' : value.level ? ' · HIGH' : ' · LOW'}`;
     // A hole of the breadboard in the strip of a pin of the docked board is that pin.
     const pad = padOfHole(input.project, terminal);
     if (pad) {
@@ -2492,14 +2499,14 @@ export class Stage {
       return {
         x: screen.x,
         y: screen.y,
-        title: `Контакт платы · ${note.title}`,
+        title: t('Контакт платы · {title}', { title: note.title }),
         detail: [
           ...note.facts,
           level === undefined || level === null
             ? ''
             : level
-              ? 'Сейчас: 1 (HIGH)'
-              : 'Сейчас: 0 (LOW)',
+              ? t('Сейчас: 1 (HIGH)')
+              : t('Сейчас: 0 (LOW)'),
         ]
           .filter(Boolean)
           .join('\n'),
@@ -2510,16 +2517,16 @@ export class Stage {
       return {
         x: screen.x,
         y: screen.y,
-        title: `Плата · ${note.title}`,
+        title: t('Плата · {label}', { label: note.title }),
         detail: [...note.facts, state].join('\n'),
       };
     }
     const emit = part && partCatalog[part.kind].emit,
       role = emit
         ? emit.anodes.includes(spot.label)
-          ? ' · анод (+), длинная ножка'
+          ? t(' · анод (+), длинная ножка')
           : spot.label === emit.cathode
-            ? ' · катод (−), короткая ножка'
+            ? t(' · катод (−), короткая ножка')
             : ''
         : '';
     return {

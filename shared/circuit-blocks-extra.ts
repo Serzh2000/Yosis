@@ -10,23 +10,25 @@ import {
   num,
   output,
   toSigned,
+  tn,
 } from './circuit-util';
+import { t } from './i18n';
 
 /**
  * Блоки, которых не хватало по сравнению с библиотеками Quartus (примитивы, LPM, серия 74):
  * JK- и RS-триггеры, защёлка, ОЗУ, делитель, модуль и смена знака, код Грея, семисегментный дешифратор.
  */
-const widthSpec = (key = 'width', label = 'Ширина, бит', min = 1, max = 64) =>
-  ({ key, label, type: 'int', min, max, unit: 'бит' }) as const;
+const widthSpec = (key = 'width', label = t('Ширина, бит'), min = 1, max = 64) =>
+  ({ key, label, type: 'int', min, max, unit: t('бит') }) as const;
 const initSpec = {
   key: 'init',
-  label: 'Начальное значение при включении платы',
+  label: t('Начальное значение при включении платы'),
   type: 'bool',
-  hint: 'Если выключено, до первого действия значение неизвестно (X, в предпросмотре «?»).',
+  hint: t('Если выключено, до первого действия значение неизвестно (X, в предпросмотре «?»).'),
 } as const;
-const aclrSpec = { key: 'aclr', label: 'Асинхронный сброс ACLR (в 0)', type: 'bool' } as const;
+const aclrSpec = { key: 'aclr', label: t('Асинхронный сброс ACLR (в 0)'), type: 'bool' } as const;
 const asyncPins = (p: Params) =>
-  flag(p, 'aclr') ? [input('ACLR', 1, { hint: 'Асинхронный сброс в 0' })] : [];
+  flag(p, 'aclr') ? [input('ACLR', 1, { hint: t('Асинхронный сброс в 0') })] : [];
 const aclrActive = (ctx: EvalContext) => flag(ctx.p, 'aclr') && need(ctx, 'ACLR') === 1n;
 
 /** Переписывает всё состояние в «неизвестно». */
@@ -34,13 +36,15 @@ const unknownState = (keys: string[]): State => Object.fromEntries(keys.map((key
 
 const jkff: BlockDef = {
   kind: 'jkff',
-  title: 'JK-триггер',
-  help: 'По фронту такта: J = 1, K = 0 — установить 1; J = 0, K = 1 — сбросить в 0; J = K = 1 — переключить; J = K = 0 — хранить.',
+  title: t('JK-триггер'),
+  help: t(
+    'По фронту такта: J = 1, K = 0 — установить 1; J = 0, K = 1 — сбросить в 0; J = K = 1 — переключить; J = K = 0 — хранить.',
+  ),
   defaults: { aclr: false, init: true },
   params: [aclrSpec, initSpec],
   pins: (p) => [
-    input('J', 1, { hint: 'Установить' }),
-    input('K', 1, { hint: 'Сбросить' }),
+    input('J', 1, { hint: t('Установить') }),
+    input('K', 1, { hint: t('Сбросить') }),
     clockPin(),
     ...asyncPins(p),
     output('Q', 1),
@@ -48,7 +52,7 @@ const jkff: BlockDef = {
   comb: () => [],
   regs: (p) => [{ key: 'Q', width: 1, init: flag(p, 'init') ? 0n : undefined }],
   symbol: () => ({ shape: 'ff', label: 'JK' }),
-  describe: () => 'JK-триггер: J — установить, K — сбросить, J = K = 1 — переключить',
+  describe: () => t('JK-триггер: J — установить, K — сбросить, J = K = 1 — переключить'),
   emit: (c) => {
     const q = c.out('Q'),
       events = [
@@ -93,13 +97,15 @@ const jkff: BlockDef = {
 
 const srff: BlockDef = {
   kind: 'srff',
-  title: 'RS-триггер (по такту)',
-  help: 'По фронту такта: S = 1 — установить 1, R = 1 — сбросить в 0, S = R = 0 — хранить. Если S = R = 1, побеждает сброс R.',
+  title: t('RS-триггер (по такту)'),
+  help: t(
+    'По фронту такта: S = 1 — установить 1, R = 1 — сбросить в 0, S = R = 0 — хранить. Если S = R = 1, побеждает сброс R.',
+  ),
   defaults: { aclr: false, init: true },
   params: [aclrSpec, initSpec],
   pins: (p) => [
-    input('S', 1, { hint: 'Установить' }),
-    input('R', 1, { hint: 'Сбросить' }),
+    input('S', 1, { hint: t('Установить') }),
+    input('R', 1, { hint: t('Сбросить') }),
     clockPin(),
     ...asyncPins(p),
     output('Q', 1),
@@ -107,7 +113,7 @@ const srff: BlockDef = {
   comb: () => [],
   regs: (p) => [{ key: 'Q', width: 1, init: flag(p, 'init') ? 0n : undefined }],
   symbol: () => ({ shape: 'ff', label: 'RS' }),
-  describe: () => 'RS-триггер: S — установить, R — сбросить (R сильнее)',
+  describe: () => t('RS-триггер: S — установить, R — сбросить (R сильнее)'),
   emit: (c) => {
     const q = c.out('Q'),
       events = [
@@ -139,13 +145,15 @@ const srff: BlockDef = {
 
 const latch: BlockDef = {
   kind: 'latch',
-  title: 'D-защёлка',
-  help: 'Пока G = 1, выход Q повторяет вход D (защёлка «прозрачна»). Когда G = 0, Q хранит последнее значение. Работает по уровню, а не по фронту.',
+  title: t('D-защёлка'),
+  help: t(
+    'Пока G = 1, выход Q повторяет вход D (защёлка «прозрачна»). Когда G = 0, Q хранит последнее значение. Работает по уровню, а не по фронту.',
+  ),
   defaults: { width: 1 },
   params: [widthSpec()],
   pins: (p) => [
     input('D', num(p, 'width')),
-    input('G', 1, { hint: '1 — прозрачна, 0 — хранит' }),
+    input('G', 1, { hint: t('1 — прозрачна, 0 — хранит') }),
     output('Q', num(p, 'width')),
   ],
   comb: () => ['D', 'G'],
@@ -153,9 +161,9 @@ const latch: BlockDef = {
   symbol: (p) => ({
     shape: 'ff',
     label: 'LAT',
-    detail: num(p, 'width') > 1 ? `${p.width} бит` : undefined,
+    detail: num(p, 'width') > 1 ? tn(t('{width} бит'), { width: p.width }) : undefined,
   }),
-  describe: (p) => `D-защёлка, ${p.width} бит, прозрачна при G = 1`,
+  describe: (p) => tn(t('D-защёлка, {width} бит, прозрачна при G = 1'), { width: p.width }),
   emit: (c) => ['always @* begin', `    if (${c.in('G')}) ${c.out('Q')} = ${c.in('D')};`, 'end'],
   init: () => ({ q: null }),
   outputs: (c) => ({ Q: c.state.q ?? null }),
@@ -168,19 +176,21 @@ const latch: BlockDef = {
 const memKeys = (words: number) => Array.from({ length: words }, (_, i) => `m${i}`);
 const ram: BlockDef = {
   kind: 'ram',
-  title: 'ОЗУ (RAM)',
-  help: 'Память для чтения и записи. Запись в слово по адресу A — по фронту CLK, когда WE = 1. Чтение по адресу A выдаётся на Q сразу. После включения все слова равны 0.',
+  title: t('ОЗУ (RAM)'),
+  help: t(
+    'Память для чтения и записи. Запись в слово по адресу A — по фронту CLK, когда WE = 1. Чтение по адресу A выдаётся на Q сразу. После включения все слова равны 0.',
+  ),
   defaults: { addrBits: 3, width: 8 },
   params: [
-    { key: 'addrBits', label: 'Разрядов адреса', type: 'int', min: 1, max: 6, unit: 'бит' },
-    widthSpec('width', 'Ширина слова, бит'),
+    { key: 'addrBits', label: t('Разрядов адреса'), type: 'int', min: 1, max: 6, unit: t('бит') },
+    widthSpec('width', t('Ширина слова, бит')),
   ],
   pins: (p) => [
-    input('A', num(p, 'addrBits'), { hint: 'Адрес' }),
-    input('D', num(p, 'width'), { hint: 'Данные для записи' }),
-    input('WE', 1, { hint: 'Разрешение записи' }),
+    input('A', num(p, 'addrBits'), { hint: t('Адрес') }),
+    input('D', num(p, 'width'), { hint: t('Данные для записи') }),
+    input('WE', 1, { hint: t('Разрешение записи') }),
     clockPin(),
-    output('Q', num(p, 'width'), { hint: 'Слово по адресу A' }),
+    output('Q', num(p, 'width'), { hint: t('Слово по адресу A') }),
   ],
   comb: () => ['A'],
   wires: () => [],
@@ -189,7 +199,8 @@ const ram: BlockDef = {
     label: 'RAM',
     detail: `${2 ** num(p, 'addrBits')}×${p.width}`,
   }),
-  describe: (p) => `ОЗУ из ${2 ** num(p, 'addrBits')} слов по ${p.width} бит`,
+  describe: (p) =>
+    tn(t('ОЗУ из {v1} слов по {width} бит'), { v1: 2 ** num(p, 'addrBits'), width: p.width }),
   emit: (c) => {
     const w = num(c.p, 'width'),
       words = 2 ** num(c.p, 'addrBits'),
@@ -221,27 +232,33 @@ const ram: BlockDef = {
 
 const div: BlockDef = {
   kind: 'div',
-  title: 'Делитель',
-  help: 'Делит A на B нацело: на выходе частное Q и, если нужно, остаток R. Деление на ноль даёт неизвестный результат.',
+  title: t('Делитель'),
+  help: t(
+    'Делит A на B нацело: на выходе частное Q и, если нужно, остаток R. Деление на ноль даёт неизвестный результат.',
+  ),
   defaults: { width: 8, signed: false, rem: true },
   params: [
-    widthSpec('width', 'Ширина, бит', 1, 32),
-    { key: 'signed', label: 'Числа со знаком', type: 'bool' },
-    { key: 'rem', label: 'Выход остатка R', type: 'bool' },
+    widthSpec('width', t('Ширина, бит'), 1, 32),
+    { key: 'signed', label: t('Числа со знаком'), type: 'bool' },
+    { key: 'rem', label: t('Выход остатка R'), type: 'bool' },
   ],
   pins: (p) => [
-    input('A', num(p, 'width'), { hint: 'Делимое' }),
-    input('B', num(p, 'width'), { hint: 'Делитель' }),
-    output('Q', num(p, 'width'), { hint: 'Частное' }),
-    ...(flag(p, 'rem') ? [output('R', num(p, 'width'), { hint: 'Остаток' })] : []),
+    input('A', num(p, 'width'), { hint: t('Делимое') }),
+    input('B', num(p, 'width'), { hint: t('Делитель') }),
+    output('Q', num(p, 'width'), { hint: t('Частное') }),
+    ...(flag(p, 'rem') ? [output('R', num(p, 'width'), { hint: t('Остаток') })] : []),
   ],
   comb: () => ['A', 'B'],
   symbol: (p) => ({
     shape: 'box',
     label: '÷',
-    detail: flag(p, 'signed') ? 'со знаком' : 'без знака',
+    detail: flag(p, 'signed') ? t('со знаком') : t('без знака'),
   }),
-  describe: (p) => `Делитель ${p.width} бит${flag(p, 'signed') ? ' со знаком' : ''}`,
+  describe: (p) =>
+    tn(t('Делитель {width} бит{v2}'), {
+      width: p.width,
+      v2: flag(p, 'signed') ? t(' со знаком') : '',
+    }),
   emit: (c) => {
     const a = flag(c.p, 'signed') ? `$signed(${c.in('A')})` : c.in('A'),
       b = flag(c.p, 'signed') ? `$signed(${c.in('B')})` : c.in('B');
@@ -266,18 +283,20 @@ const div: BlockDef = {
 
 const negabs: BlockDef = {
   kind: 'negabs',
-  title: 'Модуль / смена знака',
-  help: 'Модуль числа со знаком (отбрасывает минус) или число с противоположным знаком. У самого маленького числа (например, −8 для 4 бит) результат совпадает с исходным: положительного −(−8) не существует.',
+  title: t('Модуль / смена знака'),
+  help: t(
+    'Модуль числа со знаком (отбрасывает минус) или число с противоположным знаком. У самого маленького числа (например, −8 для 4 бит) результат совпадает с исходным: положительного −(−8) не существует.',
+  ),
   defaults: { width: 8, mode: 'abs' },
   params: [
-    widthSpec('width', 'Ширина, бит', 2, 64),
+    widthSpec('width', t('Ширина, бит'), 2, 64),
     {
       key: 'mode',
-      label: 'Операция',
+      label: t('Операция'),
       type: 'select',
       options: [
-        ['abs', 'Модуль |A|'],
-        ['neg', 'Смена знака −A'],
+        ['abs', t('Модуль |A|')],
+        ['neg', t('Смена знака −A')],
       ],
     },
   ],
@@ -286,9 +305,9 @@ const negabs: BlockDef = {
   symbol: (p) => ({
     shape: 'box',
     label: p.mode === 'abs' ? '|A|' : '−A',
-    detail: `${p.width} бит`,
+    detail: tn(t('{width} бит'), { width: p.width }),
   }),
-  describe: (p) => (p.mode === 'abs' ? 'Модуль числа со знаком' : 'Смена знака числа'),
+  describe: (p) => (p.mode === 'abs' ? t('Модуль числа со знаком') : t('Смена знака числа')),
   emit: (c) => {
     const w = num(c.p, 'width'),
       a = c.in('A'),
@@ -310,18 +329,20 @@ const negabs: BlockDef = {
 
 const gray: BlockDef = {
   kind: 'gray',
-  title: 'Код Грея',
-  help: 'Переводит двоичное число в код Грея (соседние числа отличаются одним битом) или обратно.',
+  title: t('Код Грея'),
+  help: t(
+    'Переводит двоичное число в код Грея (соседние числа отличаются одним битом) или обратно.',
+  ),
   defaults: { width: 4, mode: 'enc' },
   params: [
-    widthSpec('width', 'Ширина, бит', 2, 64),
+    widthSpec('width', t('Ширина, бит'), 2, 64),
     {
       key: 'mode',
-      label: 'Направление',
+      label: t('Направление'),
       type: 'select',
       options: [
-        ['enc', 'Двоичный → Грея'],
-        ['dec', 'Грея → двоичный'],
+        ['enc', t('Двоичный → Грея')],
+        ['dec', t('Грея → двоичный')],
       ],
     },
   ],
@@ -330,9 +351,9 @@ const gray: BlockDef = {
   symbol: (p) => ({
     shape: 'box',
     label: p.mode === 'enc' ? 'BIN→G' : 'G→BIN',
-    detail: `${p.width} бит`,
+    detail: tn(t('{width} бит'), { width: p.width }),
   }),
-  describe: (p) => (p.mode === 'enc' ? 'Двоичный код → код Грея' : 'Код Грея → двоичный код'),
+  describe: (p) => (p.mode === 'enc' ? t('Двоичный код → код Грея') : t('Код Грея → двоичный код')),
   emit: (c) => {
     const w = num(c.p, 'width'),
       a = c.in('A');
@@ -360,21 +381,25 @@ const segmentValue = (p: Params, digit: number): bigint => {
 };
 const sevenseg: BlockDef = {
   kind: 'sevenseg',
-  title: 'Дешифратор для семисегментного индикатора',
-  help: 'Превращает цифру 0…9 (4 бита) в семь сегментов a…g (бит 0 — сегмент a). Как микросхема 7447. Можно показывать и буквы A…F, и инвертировать выходы для индикатора с общим анодом.',
+  title: t('Дешифратор для семисегментного индикатора'),
+  help: t(
+    'Превращает цифру 0…9 (4 бита) в семь сегментов a…g (бит 0 — сегмент a). Как микросхема 7447. Можно показывать и буквы A…F, и инвертировать выходы для индикатора с общим анодом.',
+  ),
   defaults: { hex: false, activeLow: false },
   params: [
-    { key: 'hex', label: 'Показывать A…F для кодов 10…15', type: 'bool' },
-    { key: 'activeLow', label: 'Сегмент горит при 0 (общий анод)', type: 'bool' },
+    { key: 'hex', label: t('Показывать A…F для кодов 10…15'), type: 'bool' },
+    { key: 'activeLow', label: t('Сегмент горит при 0 (общий анод)'), type: 'bool' },
   ],
   pins: () => [
-    input('A', 4, { hint: 'Цифра' }),
-    output('Y', 7, { hint: 'Сегменты g f e d c b a' }),
+    input('A', 4, { hint: t('Цифра') }),
+    output('Y', 7, { hint: t('Сегменты g f e d c b a') }),
   ],
   comb: () => ['A'],
   symbol: () => ({ shape: 'box', label: '7SEG', detail: 'BCD → a…g' }),
   describe: (p) =>
-    `Дешифратор для семисегментного индикатора${flag(p, 'hex') ? ' (0…F)' : ' (0…9)'}`,
+    tn(t('Дешифратор для семисегментного индикатора{v1}'), {
+      v1: flag(p, 'hex') ? ' (0…F)' : ' (0…9)',
+    }),
   regs: () => [{ key: 'Y', width: 7 }],
   emit: (c) => [
     'always @* begin',

@@ -2,6 +2,7 @@ import type { Example } from './examples';
 import { SPI16_V, TM1637_BUS_V, WS2812_TX_V } from './lab/bus/verilog-cores';
 import { TM1637_SHOW_V } from './lab/bus/verilog-player';
 import { CLK, LEDS, labExample } from './examples-lab-kit';
+import { t } from './i18n';
 
 const matrixSource = () => `// Матрица 8×8 на MAX7219: смайлик, который подмигивает.
 //
@@ -203,8 +204,8 @@ endmodule
 export const displayExamples: Example[] = [
   labExample(
     'max7219-matrix',
-    'Матрица MAX7219: подмигивающий смайлик',
-    'Кадры по 16 бит (регистр и данные) по трём проводам: настройка из сна и восемь строк картинки. На стенде: матрица 8×8 на MAX7219.',
+    t('Матрица MAX7219: подмигивающий смайлик'),
+    t('Кадры по 16 бит (регистр и данные) по трём проводам: настройка из сна и восемь строк картинки. На стенде: матрица 8×8 на MAX7219.'),
     [
       { name: 'top.v', content: matrixSource() },
       { name: 'spi16.v', content: SPI16_V },
@@ -219,8 +220,8 @@ export const displayExamples: Example[] = [
   ),
   labExample(
     'tm1637-stopwatch',
-    'TM1637: секундомер',
-    'Счёт в BCD, двухпроводный протокол TM1637 с подтверждением. Кнопка S2 — старт и стоп, S1 — сброс. На стенде: индикатор TM1637.',
+    t('TM1637: секундомер'),
+    t('Счёт в BCD, двухпроводный протокол TM1637 с подтверждением. Кнопка S2 — старт и стоп, S1 — сброс. На стенде: индикатор TM1637.'),
     [
       { name: 'top.v', content: stopwatchSource() },
       { name: 'tm1637_bus.v', content: TM1637_BUS_V },
@@ -237,8 +238,8 @@ export const displayExamples: Example[] = [
   ),
   labExample(
     'ws2812-rainbow',
-    'Лента WS2812: радуга',
-    'Цвета кодируются длиной импульса на одном проводе, пауза 50 мкс защёлкивает кадр. На стенде: лента из 8 светодиодов WS2812B.',
+    t('Лента WS2812: радуга'),
+    t('Цвета кодируются длиной импульса на одном проводе, пауза 50 мкс защёлкивает кадр. На стенде: лента из 8 светодиодов WS2812B.'),
     [
       { name: 'top.v', content: stripSource() },
       { name: 'ws2812_tx.v', content: WS2812_TX_V },

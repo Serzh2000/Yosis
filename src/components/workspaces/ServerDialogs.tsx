@@ -4,6 +4,7 @@ import type { useServerSession } from '../../hooks/useServerSession';
 import { identifyProject } from '../../lib/projects';
 import { ServerLoginDialog } from '../ServerLoginDialog';
 import { ServerSyncDialog } from './lazy-panels';
+import { t } from '../../lib/i18n';
 
 type Session = ReturnType<typeof useServerSession>;
 
@@ -47,7 +48,7 @@ export function ServerDialogs({
         <Suspense fallback={null}>
           <ServerSyncDialog
             project={project}
-            user={session.guest ? 'Гость этого браузера' : session.user}
+            user={session.guest ? t('Гость этого браузера') : session.user}
             canLogout={!session.local && !session.guest && !busy}
             onClose={onCloseSync}
             onLogout={logout}

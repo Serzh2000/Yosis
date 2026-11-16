@@ -8,6 +8,8 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:3012',
     channel: process.env.YOSIS_E2E_CHANNEL,
+    // Тесты написаны по русскому интерфейсу; без этого язык выбирается по браузеру (en-US).
+    locale: 'ru-RU',
     trace: 'retain-on-failure',
   },
   webServer: {

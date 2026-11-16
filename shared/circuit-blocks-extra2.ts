@@ -1,33 +1,44 @@
 import type { BlockDef } from './circuit-types';
-import { clog2, flag, input, lit, mask, num, output } from './circuit-util';
+import { clog2, flag, input, lit, mask, num, output, tn } from './circuit-util';
+import { t } from './i18n';
 
 /** Шифраторы и преобразователи кодов по образцу микросхем серии 74 из библиотеки Quartus. */
 const widthSpec = (key: string, label: string, min: number, max: number) =>
-  ({ key, label, type: 'int', min, max, unit: 'бит' }) as const;
+  ({ key, label, type: 'int', min, max, unit: t('бит') }) as const;
 
 const encoder: BlockDef = {
   kind: 'encoder',
-  title: 'Приоритетный шифратор с каскадированием',
-  help: 'Выдаёт номер старшего активного входа. Как микросхема 74148: вход разрешения EI, выход EO («здесь пусто, включай следующую микросхему») и GS («есть активный вход»). С активным низким уровнем все сигналы инвертированы, как у настоящей микросхемы.',
+  title: t('Приоритетный шифратор с каскадированием'),
+  help: t(
+    'Выдаёт номер старшего активного входа. Как микросхема 74148: вход разрешения EI, выход EO («здесь пусто, включай следующую микросхему») и GS («есть активный вход»). С активным низким уровнем все сигналы инвертированы, как у настоящей микросхемы.',
+  ),
   defaults: { width: 8, cascade: true, activeLow: true },
   params: [
-    widthSpec('width', 'Число входов', 2, 32),
-    { key: 'cascade', label: 'Выводы EI, EO, GS для каскадирования', type: 'bool' },
-    { key: 'activeLow', label: 'Активный низкий уровень (как у 74148)', type: 'bool' },
+    widthSpec('width', t('Число входов'), 2, 32),
+    { key: 'cascade', label: t('Выводы EI, EO, GS для каскадирования'), type: 'bool' },
+    { key: 'activeLow', label: t('Активный низкий уровень (как у 74148)'), type: 'bool' },
   ],
   pins: (p) => [
-    input('A', num(p, 'width'), { hint: 'Входы' }),
-    ...(flag(p, 'cascade') ? [input('EI', 1, { hint: 'Разрешение' })] : []),
-    output('Y', clog2(num(p, 'width')), { hint: 'Номер' }),
+    input('A', num(p, 'width'), { hint: t('Входы') }),
+    ...(flag(p, 'cascade') ? [input('EI', 1, { hint: t('Разрешение') })] : []),
+    output('Y', clog2(num(p, 'width')), { hint: t('Номер') }),
     ...(flag(p, 'cascade')
-      ? [output('EO', 1, { hint: 'Нет входов' }), output('GS', 1, { hint: 'Есть вход' })]
+      ? [output('EO', 1, { hint: t('Нет входов') }), output('GS', 1, { hint: t('Есть вход') })]
       : []),
   ],
   comb: (p) => ['A', ...(flag(p, 'cascade') ? ['EI'] : [])],
   wires: (p) => [{ key: 'a', width: num(p, 'width') }],
-  symbol: (p) => ({ shape: 'box', label: 'ENC', detail: `приоритет ${p.width}` }),
+  symbol: (p) => ({
+    shape: 'box',
+    label: 'ENC',
+    detail: tn(t('приоритет {width}'), { width: p.width }),
+  }),
   describe: (p) =>
-    `Приоритетный шифратор ${p.width} → ${clog2(num(p, 'width'))}${flag(p, 'cascade') ? ' с EI, EO, GS' : ''}`,
+    tn(t('Приоритетный шифратор {width} → {v2}{v3}'), {
+      width: p.width,
+      v2: clog2(num(p, 'width')),
+      v3: flag(p, 'cascade') ? t(' с EI, EO, GS') : '',
+    }),
   emit: (c) => {
     const w = num(c.p, 'width'),
       yw = clog2(w),
@@ -77,18 +88,20 @@ const encoder: BlockDef = {
 const digitsOf = (bits: number) => String(2 ** bits - 1).length;
 const bcdconv: BlockDef = {
   kind: 'bcdconv',
-  title: 'Двоичный ↔ BCD',
-  help: 'Переводит двоичное число в двоично-десятичный код (каждая десятичная цифра в своих четырёх битах) или обратно. Как микросхемы 74184 и 74185.',
+  title: t('Двоичный ↔ BCD'),
+  help: t(
+    'Переводит двоичное число в двоично-десятичный код (каждая десятичная цифра в своих четырёх битах) или обратно. Как микросхемы 74184 и 74185.',
+  ),
   defaults: { bits: 8, mode: 'bin2bcd' },
   params: [
-    widthSpec('bits', 'Ширина двоичного числа, бит', 1, 16),
+    widthSpec('bits', t('Ширина двоичного числа, бит'), 1, 16),
     {
       key: 'mode',
-      label: 'Направление',
+      label: t('Направление'),
       type: 'select',
       options: [
-        ['bin2bcd', 'Двоичный → BCD'],
-        ['bcd2bin', 'BCD → двоичный'],
+        ['bin2bcd', t('Двоичный → BCD')],
+        ['bcd2bin', t('BCD → двоичный')],
       ],
     },
   ],
@@ -96,8 +109,8 @@ const bcdconv: BlockDef = {
     const bin = num(p, 'bits'),
       bcd = 4 * digitsOf(bin);
     return p.mode === 'bin2bcd'
-      ? [input('A', bin), output('Y', bcd, { hint: 'Цифры BCD' })]
-      : [input('A', bcd, { hint: 'Цифры BCD' }), output('Y', bin)];
+      ? [input('A', bin), output('Y', bcd, { hint: t('Цифры BCD') })]
+      : [input('A', bcd, { hint: t('Цифры BCD') }), output('Y', bin)];
   },
   comb: () => ['A'],
   wires: (p) =>
@@ -107,9 +120,9 @@ const bcdconv: BlockDef = {
   symbol: (p) => ({
     shape: 'box',
     label: p.mode === 'bin2bcd' ? 'BIN→BCD' : 'BCD→BIN',
-    detail: `${p.bits} бит`,
+    detail: tn(t('{bits} бит'), { bits: p.bits }),
   }),
-  describe: (p) => (p.mode === 'bin2bcd' ? 'Двоичный код → BCD' : 'BCD → двоичный код'),
+  describe: (p) => (p.mode === 'bin2bcd' ? t('Двоичный код → BCD') : t('BCD → двоичный код')),
   emit: (c) => {
     const bin = num(c.p, 'bits'),
       digits = digitsOf(bin),
@@ -146,14 +159,19 @@ const bcdconv: BlockDef = {
 
 const bcddec: BlockDef = {
   kind: 'bcddec',
-  title: 'Дешифратор BCD → «один из десяти»',
-  help: 'Цифра 0…9 в BCD превращается в «один из десяти». Для кодов 10…15 все выходы неактивны. Как микросхема 7442.',
+  title: t('Дешифратор BCD → «один из десяти»'),
+  help: t(
+    'Цифра 0…9 в BCD превращается в «один из десяти». Для кодов 10…15 все выходы неактивны. Как микросхема 7442.',
+  ),
   defaults: { activeLow: false },
-  params: [{ key: 'activeLow', label: 'Активный низкий уровень (как у 7442)', type: 'bool' }],
-  pins: () => [input('A', 4, { hint: 'Цифра' }), output('Y', 10, { hint: 'Одна из десяти линий' })],
+  params: [{ key: 'activeLow', label: t('Активный низкий уровень (как у 7442)'), type: 'bool' }],
+  pins: () => [
+    input('A', 4, { hint: t('Цифра') }),
+    output('Y', 10, { hint: t('Одна из десяти линий') }),
+  ],
   comb: () => ['A'],
   symbol: () => ({ shape: 'box', label: 'DEC', detail: 'BCD → 10' }),
-  describe: () => 'Дешифратор BCD → десять линий',
+  describe: () => t('Дешифратор BCD → десять линий'),
   emit: (c) => {
     const one = `(${c.in('A')} < 4'd10 ? (${lit(10, 1n)} << ${c.in('A')}) : ${lit(10, 0n)})`;
     return [`assign ${c.out('Y')} = ${flag(c.p, 'activeLow') ? `~${one}` : one};`];

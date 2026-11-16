@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { t } from '../../lib/i18n';
 
 interface FormProps {
   /** Signals of the design that no pin uses yet and that could go on this contact. */
@@ -22,7 +23,7 @@ export function AssignForm({ signals, label, empty, error, onAssign }: FormProps
           onChange={(event) => setSignal(event.target.value)}
           aria-label={label}
         >
-          <option value="">Выберите сигнал…</option>
+          <option value="">{t('Выберите сигнал…')}</option>
           {signals.map((name) => (
             <option key={name} value={name}>
               {name}
@@ -38,7 +39,7 @@ export function AssignForm({ signals, label, empty, error, onAssign }: FormProps
             setSignal('');
           }}
         >
-          Назначить
+          {t('Назначить')}
         </button>
       </div>
       {error && (
@@ -62,7 +63,7 @@ export function AssignPopover({
     <div
       className="lab-popover lab-popover-fixed"
       role="group"
-      aria-label={`Назначить сигнал контакту ${fpga}`}
+      aria-label={t('Назначить сигнал контакту {fpga}', { fpga })}
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
           event.stopPropagation();
@@ -71,13 +72,13 @@ export function AssignPopover({
       }}
     >
       <p>
-        <b>Контакт {fpga} не назначен.</b> Сигнал:
+        <b>{t('Контакт {fpga} не назначен.', { fpga })}</b> {t('Сигнал:')}
       </p>
       <AssignForm {...form} />
       <button
         type="button"
         className="lab-popover-close"
-        aria-label="Закрыть подсказку"
+        aria-label={t('Закрыть подсказку')}
         onClick={onClose}
       >
         <X size={13} />

@@ -25,6 +25,7 @@ import {
   retainServerBackup,
   verifyServerBackup,
 } from './debugger-backup-recovery';
+import { t } from '../../shared/i18n';
 
 export const debuggerPackage = manifest;
 export async function loadDebuggerPackage(): Promise<FirmwareImage[]> {
@@ -36,23 +37,23 @@ export async function loadDebuggerPackage(): Promise<FirmwareImage[]> {
     manifest.images[1].address !== FIRMWARE_ADDRESS ||
     !manifest.usb.msos20
   )
-    throw new Error('Некорректный комплект прошивки.');
+    throw new Error(t('Некорректный комплект прошивки.'));
   const images: FirmwareImage[] = [];
   for (const image of manifest.images) {
     if (!['bootloader.bin', 'dirtyjtag.bin'].includes(image.name))
-      throw new Error('Неизвестный образ прошивки.');
+      throw new Error(t('Неизвестный образ прошивки.'));
     const bytes = await download(
       `/firmware/dirtyjtag/${image.name}`,
       undefined,
-      (status) => `Пакет прошивки недоступен (${status}).`,
+      (status) => t('Пакет прошивки недоступен ({status}).', { status }),
     );
     if (bytes.length !== image.size || (await firmwareHash(bytes)) !== image.sha256)
-      throw new Error('SHA-256 пакета прошивки не совпал. Установка запрещена.');
+      throw new Error(t('SHA-256 пакета прошивки не совпал. Установка запрещена.'));
     if (
       (image.address === 0 && bytes.length > FIRMWARE_ADDRESS) ||
       (image.address !== 0 && (bytes.length <= FLASH_SECTOR || bytes.length > 0x40000))
     )
-      throw new Error('Неподдерживаемый размер образа.');
+      throw new Error(t('Неподдерживаемый размер образа.'));
     images.push({ address: image.address, bytes });
   }
   return images;
@@ -77,12 +78,12 @@ export async function readBackupFile(name: string, bytes: Uint8Array): Promise<B
   const match = name.toLowerCase().match(/bl616-([a-f0-9]{12})-([a-f0-9]{64})/);
   if (!match)
     throw new Error(
-      'Имя файла должно сохранить вид bl616-<плата>-<SHA-256>.bin: по нему проверяется содержимое.',
+      t('Имя файла должно сохранить вид bl616-<плата>-<SHA-256>.bin: по нему проверяется содержимое.'),
     );
   if (bytes.length < 2 ** 19 || bytes.length > MAX_DEBUGGER_FLASH || bytes.length % FLASH_SECTOR)
-    throw new Error('Размер файла не соответствует flash BL616.');
+    throw new Error(t('Размер файла не соответствует flash BL616.'));
   if ((await firmwareHash(bytes)) !== match[2])
-    throw new Error('SHA-256 файла не совпал с именем. Копия повреждена или переименована.');
+    throw new Error(t('SHA-256 файла не совпал с именем. Копия повреждена или переименована.'));
   return { chipId: match[1], hash: match[2], bytes };
 }
 export async function prepareDebuggerInstall(
@@ -108,9 +109,9 @@ export async function prepareDebuggerInstall(
     if (mode === 'restore' && extra.restoreFile) {
       const file = extra.restoreFile;
       if (file.chipId !== flash.boot.chipId)
-        throw new Error(`Файл относится к плате ${file.chipId}, подключена ${flash.boot.chipId}.`);
+        throw new Error(t('Файл относится к плате {file}, подключена {flash}.', { file: file.chipId, flash: flash.boot.chipId }));
       if (file.bytes.length !== flash.size)
-        throw new Error('Размер файла отличается от flash этой платы.');
+        throw new Error(t('Размер файла отличается от flash этой платы.'));
       // Stored before the current state: in a fresh browser profile the file stays the earliest copy.
       imported = await saveDebuggerBackup(flash, file.bytes);
     }
@@ -121,17 +122,17 @@ export async function prepareDebuggerInstall(
     if (mode === 'restore') {
       if (!original || original.hash === backup.hash)
         throw new Error(
-          'Для этой платы нет отличающейся исходной копии. Восстановление не требуется.',
+          t('Для этой платы нет отличающейся исходной копии. Восстановление не требуется.'),
         );
       if (original.identity.size !== flash.size || original.identity.jedec !== flash.jedec)
-        throw new Error('Резервная копия относится к другой flash.');
+        throw new Error(t('Резервная копия относится к другой flash.'));
       images.push({ address: 0, bytes: new Uint8Array(original.bytes) });
     }
     const sectors = installationSectors(bytes, images).filter((sector) =>
       sector.bytes.some((byte, index) => byte !== bytes[sector.address + index]),
     ).length;
     if (!sectors)
-      throw new Error('Выбранная прошивка уже записана. Переподключи USB обычным способом.');
+      throw new Error(t('Выбранная прошивка уже записана. Переподключи USB обычным способом.'));
     return { mode, backup, original, images, sectors };
   } finally {
     await session.close();
@@ -143,7 +144,7 @@ export async function applyDebuggerInstall(
   onProgress: Progress,
   transcript?: RomTranscript,
 ): Promise<{ chipId: string; sectors: number }> {
-  if (!['install', 'restore'].includes(plan.mode)) throw new Error('Неизвестный режим установки.');
+  if (!['install', 'restore'].includes(plan.mode)) throw new Error(t('Неизвестный режим установки.'));
   const backup = await storedDebuggerBackup((await validateDebuggerBackup(plan.backup)).key);
   const original =
     plan.mode === 'restore'
@@ -157,7 +158,7 @@ export async function applyDebuggerInstall(
       original.identity.jedec !== backup.identity.jedec ||
       original.identity.size !== backup.identity.size)
   )
-    throw new Error('Исходная копия относится к другой плате.');
+    throw new Error(t('Исходная копия относится к другой плате.'));
   // Re-fetch hashes at the final action; a stale or modified plan cannot select arbitrary firmware.
   const images =
     plan.mode === 'install'
@@ -170,7 +171,7 @@ export async function applyDebuggerInstall(
       session.identity.jedec !== backup.identity.jedec ||
       session.identity.size !== backup.identity.size
     )
-      throw new Error('Выбрана другая плата. Подготовь установку заново.');
+      throw new Error(t('Выбрана другая плата. Подготовь установку заново.'));
     // Detect writes from another tab/device session before the first erase.
     await session.verify(0, new Uint8Array(backup.bytes));
     const previous = new Uint8Array(backup.bytes);
@@ -179,7 +180,7 @@ export async function applyDebuggerInstall(
     );
     for (let index = 0; index < sectors.length; index++) {
       onProgress({
-        stage: plan.mode === 'install' ? 'Установка DirtyJTAG' : 'Восстановление исходной прошивки',
+        stage: plan.mode === 'install' ? t('Установка DirtyJTAG') : t('Восстановление исходной прошивки'),
         done: index,
         total: sectors.length,
       });
@@ -189,7 +190,7 @@ export async function applyDebuggerInstall(
     images.forEach((image) => expected.set(image.bytes, image.address));
     await session.verify(0, expected);
     onProgress({
-      stage: 'Вся flash проверена SHA-256. Переподключи USB без UPDATE.',
+      stage: t('Вся flash проверена SHA-256. Переподключи USB без UPDATE.'),
       done: sectors.length,
       total: sectors.length,
     });

@@ -1,4 +1,5 @@
 import type * as Monaco from 'monaco-editor/editor/editor.api.js';
+import { t } from '../../shared/i18n';
 
 export const verilogKeywords =
   `accept_on alias always always_comb always_ff always_latch and assert assign assume automatic before begin bind bins binsof bit break buf bufif0 bufif1 byte case casex casez cell chandle checker class clocking cmos config const constraint context continue cover covergroup coverpoint cross deassign default defparam design disable dist do edge else end endcase endchecker endclass endclocking endconfig endfunction endgenerate endgroup endinterface endmodule endpackage endprimitive endprogram endproperty endsequence endspecify endtable endtask enum event eventually expect export extends extern final first_match for force foreach forever fork forkjoin function generate genvar global highz0 highz1 if iff ifnone ignore_bins illegal_bins implements implies import incdir include initial inout input inside int integer interconnect intersect join join_any join_none large let liblist library local localparam logic longint macromodule matches medium modport module nand negedge nettype new nexttime nmos nor noshowcancelled not notif0 notif1 null or output package packed parameter pmos posedge primitive priority program property protected pull0 pull1 pulldown pullup pulsestyle_ondetect pulsestyle_onevent pure rand randc randcase randsequence rcmos real realtime ref reg reject_on release repeat restrict return rnmos rpmos rtran rtranif0 rtranif1 s_always s_eventually s_nexttime s_until s_until_with scalared sequence shortint shortreal showcancelled signed small solve specify specparam static string strong strong0 strong1 struct super supply0 supply1 sync_accept_on sync_reject_on table tagged task this throughout time timeprecision timeunit tran tranif0 tranif1 tri tri0 tri1 triand trior trireg type typedef union unique unique0 unsigned until until_with untyped use uwire var vectored virtual void wait wait_order wand weak weak0 weak1 while wildcard wire with within wor xnor xor`.split(
@@ -88,23 +89,23 @@ export function registerEditorLanguages(monaco: typeof Monaco) {
   const snippets = [
     [
       'module',
-      'Модуль с входом и выходом',
+      t('Модуль с входом и выходом'),
       'module ${1:top} (\n    input wire ${2:a},\n    output wire ${3:y}\n);\n    ${0}\nendmodule',
     ],
-    ['assign', 'Непрерывное присваивание комбинационной логики', 'assign ${1:y} = ${2:a & b};'],
+    ['assign', t('Непрерывное присваивание комбинационной логики'), 'assign ${1:y} = ${2:a & b};'],
     [
       'always_ff',
-      'Регистр со сбросом по активному нулю',
+      t('Регистр со сбросом по активному нулю'),
       'always @(posedge ${1:clk} or negedge ${2:reset_n}) begin\n    if (!${2:reset_n}) ${3:q} <= ${4:0};\n    else ${3:q} <= ${5:d};\nend',
     ],
     [
       'always_comb',
-      'Комбинационная логика с значением по умолчанию',
+      t('Комбинационная логика с значением по умолчанию'),
       'always @* begin\n    ${1:y} = ${2:0};\n    if (${3:enable}) ${1:y} = ${4:a};\nend',
     ],
     [
       'case',
-      'Выбор одной ветки с default',
+      t('Выбор одной ветки с default'),
       'case (${1:select})\n    ${2:0}: ${3:y} = ${4:a};\n    default: ${3:y} = ${5:0};\nendcase',
     ],
   ];
@@ -131,14 +132,14 @@ export function registerEditorLanguages(monaco: typeof Monaco) {
   monaco.languages.registerCompletionItemProvider('verilog', {
     provideCompletionItems: provide([
       ...snippets,
-      ...verilogKeywords.map((word) => [word, 'Ключевое слово Verilog / SystemVerilog', word]),
+      ...verilogKeywords.map((word) => [word, t('Ключевое слово Verilog / SystemVerilog'), word]),
     ]),
   });
   monaco.languages.registerCompletionItemProvider('gowin-cst', {
     provideCompletionItems: provide([
-      ['IO_LOC', 'Связать сигнал с физическим выводом FPGA', 'IO_LOC "${1:led_n[0]}" ${2:15};'],
-      ['IO_PORT', 'Электрические свойства вывода', 'IO_PORT "${1:led_n[0]}" IO_TYPE=LVCMOS33;'],
-      ['CLOCK_LOC', 'Тактовый буфер', 'CLOCK_LOC "${1:clk}" BUFG;'],
+      ['IO_LOC', t('Связать сигнал с физическим выводом FPGA'), 'IO_LOC "${1:led_n[0]}" ${2:15};'],
+      ['IO_PORT', t('Электрические свойства вывода'), 'IO_PORT "${1:led_n[0]}" IO_TYPE=LVCMOS33;'],
+      ['CLOCK_LOC', t('Тактовый буфер'), 'CLOCK_LOC "${1:clk}" BUFG;'],
     ]),
   });
 }

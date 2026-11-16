@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Project } from '../../shared/types';
 import type { LessonVerdict } from '../lib/lessons';
@@ -54,7 +55,7 @@ export function useExerciseRun(onResult: (result: RunResult) => void) {
     } catch (failure) {
       if (mine === run.current && !controller.signal.aborted) {
         const message =
-          failure instanceof Error ? failure.message : 'Не удалось запустить проверку.';
+          failure instanceof Error ? failure.message : t('Не удалось запустить проверку.');
         setError(message);
         report.current({ total: 0, failed: 0, detail: message, code });
       }

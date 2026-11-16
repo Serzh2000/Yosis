@@ -1,4 +1,5 @@
 import type { LessonCase } from '../../../lib/lessons';
+import { t } from '../../../lib/i18n';
 
 /**
  * The cases of a circuit without a clock: one case per combination of its inputs, in the order of
@@ -13,7 +14,7 @@ export function table(names: string[], expected: string[]): LessonCase[] {
       names.map((name, at) => [name, String((row >> (names.length - 1 - at)) & 1)]),
     );
     return {
-      title: `Строка ${row + 1}`,
+      title: t('Строка {n}', { n: row + 1 }),
       cycle: row,
       inputs,
       expected: value,

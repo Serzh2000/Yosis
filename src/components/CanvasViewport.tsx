@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Maximize, Minus, Plus } from 'lucide-react';
 import { canvasPoint, fitCanvas, zoomCanvas, type CanvasBounds } from '../lib/canvas-view';
+import { attachPinch } from '../lib/pinch';
 import './canvas-viewport.css';
+import { t } from '../lib/i18n';
 
 export function CanvasViewport({
   label,
@@ -56,26 +58,51 @@ export function CanvasViewport({
     surface.addEventListener('wheel', wheel, { passive: false });
     return () => surface.removeEventListener('wheel', wheel);
   }, [height]);
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  useEffect(() => {
+    const surface = svg.current;
+    if (!surface) return;
+    // The pinch works in screen pixels; the view lives in viewBox units, so convert both ways.
+    const unit = () => {
+      const box = surface.getBoundingClientRect();
+      return box.width ? width / box.width : 1;
+    };
+    return attachPinch(surface, {
+      getView: () => {
+        const k = unit(),
+          v = viewRef.current;
+        return { scale: v.scale, x: v.x / k, y: v.y / k };
+      },
+      setView: (next) => {
+        const k = unit();
+        setView({ scale: next.scale, x: next.x * k, y: next.y * k });
+      },
+      onStart: () => {
+        pan.current = null;
+      },
+    });
+  }, [width]);
   return (
     <div className={`canvas-viewport ${className}`}>
-      <div className="canvas-controls" role="group" aria-label={`Масштаб: ${label}`}>
+      <div className="canvas-controls" role="group" aria-label={t('Масштаб: {label}', { label })}>
         <button
-          aria-label="Уменьшить масштаб"
+          aria-label={t('Уменьшить масштаб')}
           onClick={() => zoom(1 / 1.25)}
           disabled={view.scale <= 0.35}
         >
           <Minus size={14} />
         </button>
-        <output aria-label="Текущий масштаб">{Math.round(view.scale * 100)}%</output>
+        <output aria-label={t('Текущий масштаб')}>{Math.round(view.scale * 100)}%</output>
         <button
-          aria-label="Увеличить масштаб"
+          aria-label={t('Увеличить масштаб')}
           onClick={() => zoom(1.25)}
           disabled={view.scale >= 5}
         >
           <Plus size={14} />
         </button>
         <button
-          aria-label="Показать целиком"
+          aria-label={t('Показать целиком')}
           onClick={() => setView(fitCanvas(width, height, bounds))}
         >
           <Maximize size={14} />
@@ -149,7 +176,7 @@ export function CanvasViewport({
       >
         <g transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>{children(point)}</g>
       </svg>
-      <span className="canvas-hint">Колесо — масштаб · фон — перемещение · 0 — целиком</span>
+      <span className="canvas-hint">{t('Колесо — масштаб · фон — перемещение · 0 — целиком')}</span>
     </div>
   );
 }

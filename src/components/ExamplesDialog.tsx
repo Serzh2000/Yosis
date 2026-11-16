@@ -11,12 +11,13 @@ import {
 } from '../lib/example-curriculum';
 import { Dialog } from './Dialog';
 import './examples-dialog.css';
+import { language, t } from '../lib/i18n';
 
 export function ExamplesDialog({
   onChoose,
   onClose,
   embedded = false,
-  chooseLabel = 'Открыть проект',
+  chooseLabel = t('Открыть проект'),
 }: {
   onChoose: (id: string) => void;
   onClose: () => void;
@@ -77,26 +78,27 @@ export function ExamplesDialog({
         <BookOpen size={23} />
         <div>
           <h2 id="examples-heading">
-            Мастерская примеров <span>{examples.length}</span>
+            {t('Мастерская примеров')} <span>{examples.length}</span>
           </h2>
-          <p>От первого вентиля до обработки сигналов и своего процессора</p>
+          <p>{t('От первого вентиля до обработки сигналов и своего процессора')}</p>
         </div>
         <button
           type="button"
           className={embedded ? 'button subtle' : 'icon-button'}
-          aria-label={embedded ? 'К выбору начала' : 'Закрыть примеры'}
+          aria-label={embedded ? t('К выбору начала') : t('Закрыть примеры')}
           onClick={onClose}
         >
           {embedded ? (
             <>
-              <ArrowLeft size={14} />К выбору начала
+              <ArrowLeft size={14} />
+              {t('К выбору начала')}
             </>
           ) : (
             <X size={19} />
           )}
         </button>
       </header>
-      <nav className="example-levels" aria-label="Уровни сложности">
+      <nav className="example-levels" aria-label={t('Уровни сложности')}>
         <button
           type="button"
           aria-pressed={level === 'all'}
@@ -105,7 +107,7 @@ export function ExamplesDialog({
             setTopic('all');
           }}
         >
-          <span>Все уровни</span>
+          <span>{t('Все уровни')}</span>
           <small>{examples.length}</small>
         </button>
         {curriculumLevels.map((item, index) => (
@@ -128,20 +130,20 @@ export function ExamplesDialog({
         <label className="examples-search">
           <Search size={15} />
           <input
-            aria-label="Найти пример"
-            placeholder="Название, тема или чему хотите научиться…"
+            aria-label={t('Найти пример')}
+            placeholder={t('Название, тема или чему хотите научиться…')}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
         <label className="examples-topic">
-          <span>Тема</span>
+          <span>{t('Тема')}</span>
           <select
-            aria-label="Тема примеров"
+            aria-label={t('Тема примеров')}
             value={topic}
             onChange={(event) => setTopic(event.target.value as CurriculumTopic | 'all')}
           >
-            <option value="all">Все темы</option>
+            <option value="all">{t('Все темы')}</option>
             {curriculumTopics.map((item, index) => (
               <option key={item.id} value={item.id} disabled={!topicCounts[index]}>
                 {item.title} · {topicCounts[index]}
@@ -154,12 +156,12 @@ export function ExamplesDialog({
         <span>
           {activeLevel
             ? activeLevel.description
-            : 'Выберите тему или изучайте примеры по учебному порядку.'}
+            : t('Выберите тему или изучайте примеры по учебному порядку.')}
         </span>
-        <strong aria-live="polite">Найдено: {filtered.length}</strong>
+        <strong aria-live="polite">{t('Найдено: {count}', { count: filtered.length })}</strong>
       </div>
       <div className="examples-content">
-        <div className="examples-grid" aria-label="Примеры в учебном порядке">
+        <div className="examples-grid" aria-label={t('Примеры в учебном порядке')}>
           {filtered.map((example) => {
             const metadata = getExampleLesson(example.id)!;
             return (
@@ -171,7 +173,7 @@ export function ExamplesDialog({
                 onClick={() => setSelectedId(example.id)}
               >
                 <div className="example-card-heading">
-                  <span className="example-level-badge">Уровень {metadata.level}</span>
+                  <span className="example-level-badge">{t('Уровень {level}', { level: metadata.level })}</span>
                   <span>{curriculumTopics.find((item) => item.id === metadata.topic)?.title}</span>
                   {selected?.id === example.id && <Check size={13} />}
                 </div>
@@ -179,26 +181,30 @@ export function ExamplesDialog({
                 <p>{example.description}</p>
                 <footer>
                   <code>Verilog + CST</code>
-                  <span>{example.project.files.length} файла</span>
+                  <span>
+                    {example.project.files.length === 1 && language() === 'en'
+                      ? t('1 файл')
+                      : t('{count} файла', { count: example.project.files.length })}
+                  </span>
                 </footer>
               </button>
             );
           })}
           {!filtered.length && (
             <div className="examples-no-results">
-              <strong>В этом сочетании примеров нет</strong>
-              <p>Измените тему, уровень или поисковый запрос.</p>
+              <strong>{t('В этом сочетании примеров нет')}</strong>
+              <p>{t('Измените тему, уровень или поисковый запрос.')}</p>
               <button className="button subtle" onClick={resetFilters}>
-                Показать все примеры
+                {t('Показать все примеры')}
               </button>
             </div>
           )}
         </div>
         {selected && lesson && (
-          <aside className="example-lesson" aria-label="О выбранном примере">
+          <aside className="example-lesson" aria-label={t('О выбранном примере')}>
             <div className="example-lesson-title">
               <span>
-                Уровень {lesson.level} ·{' '}
+                {t('Уровень {level}', { level: lesson.level })} ·{' '}
                 {curriculumTopics.find((item) => item.id === lesson.topic)?.title}
               </span>
               <h3>{selected.title}</h3>
@@ -209,22 +215,22 @@ export function ExamplesDialog({
               >
                 {chooseLabel} <ArrowRight size={14} />
               </button>
-              <small>Своя копия · Verilog и .cst</small>
+              <small>{t('Своя копия · Verilog и .cst')}</small>
             </div>
             <div>
-              <h4>Чему научитесь</h4>
+              <h4>{t('Чему научитесь')}</h4>
               <p>{lesson.objective}</p>
             </div>
             <div>
-              <h4>Посмотрите на диаграммах</h4>
+              <h4>{t('Посмотрите на диаграммах')}</h4>
               <p>{lesson.observe}</p>
             </div>
             <div>
-              <h4>Попробуйте изменить</h4>
+              <h4>{t('Попробуйте изменить')}</h4>
               <p>{lesson.experiment}</p>
             </div>
             <div className="example-prerequisites">
-              <h4>До этого полезно пройти</h4>
+              <h4>{t('До этого полезно пройти')}</h4>
               {lesson.prerequisites.length ? (
                 lesson.prerequisites.map((id) => (
                   <button type="button" key={id} onClick={() => showPrerequisite(id)}>
@@ -233,15 +239,16 @@ export function ExamplesDialog({
                   </button>
                 ))
               ) : (
-                <p>Можно начинать с этого примера.</p>
+                <p>{t('Можно начинать с этого примера.')}</p>
               )}
             </div>
           </aside>
         )}
       </div>
       <footer className="examples-footer">
-        Уровень определяется нужными знаниями. Переходы к предыдущим примерам помогут заполнить
-        пробелы.
+        {t(
+          t('Уровень определяется нужными знаниями. Переходы к предыдущим примерам помогут заполнить пробелы.'),
+        )}
       </footer>
     </Dialog>
   );

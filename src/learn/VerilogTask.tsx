@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Play } from 'lucide-react';
 import type { Project } from '../../shared/types';
@@ -74,7 +75,7 @@ export function VerilogTask({
         : null,
     [exercise, code],
   );
-  if (!exercise || !project) return <p className="learn-note">Для этого задания нет проверки.</p>;
+  if (!exercise || !project) return <p className="learn-note">{t('Для этого задания нет проверки.')}</p>;
 
   const edit = (value: string) => {
     reset();
@@ -84,7 +85,7 @@ export function VerilogTask({
   return (
     <div className="learn-sim">
       <div className="learn-sim-editor">
-        <Suspense fallback={<p className="learn-note">Загружаем редактор…</p>}>
+        <Suspense fallback={<p className="learn-note">{t('Загружаем редактор…')}</p>}>
           <SourceEditor
             source={project.files[0]!}
             project={project}
@@ -107,7 +108,7 @@ export function VerilogTask({
           disabled={run.busy}
           onClick={() => void run.check(project, exercise, code)}
         >
-          <Play size={14} /> {run.busy ? 'Проверяем…' : 'Проверить'}
+          <Play size={14} /> {run.busy ? t('Проверяем…') : t('Проверить')}
         </button>
         <button
           type="button"
@@ -115,9 +116,9 @@ export function VerilogTask({
           disabled={run.busy}
           onClick={() => edit(exercise.project.files[0]?.content ?? '')}
         >
-          Вернуть заготовку
+          {t('Вернуть заготовку')}
         </button>
-        {solved && !run.verdicts ? <span className="learn-ok">Задание уже выполнено</span> : null}
+        {solved && !run.verdicts ? <span className="learn-ok">{t('Задание уже выполнено')}</span> : null}
       </div>
       <Verdicts verdicts={run.verdicts} error={run.error} />
     </div>

@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import type { ReactNode } from 'react';
 import { PanelBoundary } from '../PanelBoundary';
 import type { WorkTab } from '../../lib/studio-tabs';
+import { t } from '../../lib/i18n';
 
 /**
  * Панель, которая остаётся смонтированной после первого открытия и только прячется: состояние
@@ -33,7 +34,7 @@ export function PanelSlot({
         <Suspense
           fallback={
             <div className="editor-loading" role="status">
-              Открываем рабочую область…
+              {t('Открываем рабочую область…')}
             </div>
           }
         >

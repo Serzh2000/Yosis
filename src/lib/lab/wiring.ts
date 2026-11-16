@@ -1,6 +1,7 @@
 import { headerByFpga } from './pads';
 import type { PinDir } from './catalog';
 import type { PinTarget } from './runtime';
+import { t } from '../../../shared/i18n';
 
 export interface LinkStatus {
   ok: boolean;
@@ -19,42 +20,53 @@ export function linkStatus(
 ): LinkStatus {
   const rail = fpga === null ? undefined : headerByFpga.get(fpga)?.rail;
   if (fpga === null || !headerByFpga.has(fpga))
-    return { ok: false, reason: 'Такого контакта нет.' };
+    return { ok: false, reason: t('Такого контакта нет.') };
   if (pin === 'vcc' || pin === 'gnd') {
     if (!rail)
       return {
         ok: false,
         reason:
           pin === 'vcc'
-            ? 'Вывод VCC подключают к питанию: контакт 3V3 или 5V.'
-            : 'Вывод GND подключают к земле: контакт GND.',
+            ? t('Вывод VCC подключают к питанию: контакт 3V3 или 5V.')
+            : t('Вывод GND подключают к земле: контакт GND.'),
       };
     if ((rail === 'GND') !== (pin === 'gnd'))
       return {
         ok: false,
         reason:
           pin === 'vcc'
-            ? 'Это земля. Вывод VCC подключают к 3V3 или 5V.'
-            : `Это питание ${rail}. Вывод GND подключают к земле.`,
+            ? t('Это земля. Вывод VCC подключают к 3V3 или 5V.')
+            : t('Это питание {rail}. Вывод GND подключают к земле.', { rail }),
       };
     return { ok: true };
   }
   if (rail)
     return {
       ok: false,
-      reason: `Это ${rail === 'GND' ? 'земля' : `питание ${rail}`}: сюда подключают только выводы VCC и GND деталей.`,
+      reason: t('Это {what}: сюда подключают только выводы VCC и GND деталей.', {
+        what: rail === 'GND' ? t('земля') : t('питание {rail}', { rail }),
+      }),
     };
   const target = targets?.get(fpga);
   if (!target || target.direction === 'inout') return { ok: true };
   if (pin === 'in' && target.direction === 'input')
     return {
       ok: false,
-      reason: `На контакте ${fpga} — вход схемы (${target.signal}): он ничего не выдаёт, а вывод детали ждёт сигнал.`,
+      reason: t(
+        'На контакте {fpga} — вход схемы ({signal}): он ничего не выдаёт, а вывод детали ждёт сигнал.',
+        {
+          fpga,
+          signal: target.signal,
+        },
+      ),
     };
   if (pin === 'out' && target.direction === 'output')
     return {
       ok: false,
-      reason: `На контакте ${fpga} — выход схемы (${target.signal}): два выхода на одном проводе.`,
+      reason: t('На контакте {fpga} — выход схемы ({signal}): два выхода на одном проводе.', {
+        fpga,
+        signal: target.signal,
+      }),
     };
   return { ok: true };
 }

@@ -5,6 +5,7 @@ import {
   type RomSerialPort,
 } from './bl616-rom';
 import flashParameters from './bl616-flash-parameters.json';
+import { t } from '../../shared/i18n';
 
 /** BL616 native ROM flash path (Bouffalo load_function=2), not an IF/RAM image loader.
  * Packet layouts: openbouffalo/bflb-mcu-tool@9caeb5d7 bflb_eflash_loader.py,
@@ -26,7 +27,7 @@ export async function firmwareHash(bytes: Uint8Array): Promise<string> {
 }
 export function romFrame(command: number, payload = new Uint8Array(), checksum = true) {
   if (!ALLOWED.has(command) || payload.length > CHUNK + 8)
-    throw new Error('Команда не входит в протокол установки BL616.');
+    throw new Error(t('Команда не входит в протокол установки BL616.'));
   const bytes = new Uint8Array(4 + payload.length);
   bytes[0] = command;
   bytes[2] = payload.length & 255;
@@ -86,7 +87,7 @@ export class RomTranscript {
     return (
       [
         ...this.head,
-        ...(this.dropped ? [`# … пропущено строк: ${this.dropped}`] : []),
+        ...(this.dropped ? [t('# … пропущено строк: {dropped}', { dropped: this.dropped })] : []),
         ...this.tail,
       ].join('\n') + '\n'
     );
@@ -116,7 +117,7 @@ export class Bl616FlashSession {
   ) {
     this.timeout = options.timeoutMs ?? 3000;
     if (!Number.isInteger(this.timeout) || this.timeout < 1 || this.timeout > 10000)
-      throw new Error('Некорректный таймаут BL616.');
+      throw new Error(t('Некорректный таймаут BL616.'));
   }
   static async open(port: RomSerialPort, options: Options = {}) {
     const session = new Bl616FlashSession(port, options);
@@ -127,7 +128,7 @@ export class Bl616FlashSession {
           filter.usbVendorId === info.usbVendorId && filter.usbProductId === info.usbProductId,
       )
     )
-      throw new Error('Выбери порт Bouffalo CDC в режиме UPDATE/BOOT.');
+      throw new Error(t('Выбери порт Bouffalo CDC в режиме UPDATE/BOOT.'));
     try {
       await session.timed(
         port.open({ baudRate: 115200 }).then(async () => {
@@ -137,11 +138,11 @@ export class Bl616FlashSession {
         session.timeout,
       );
       if (!port.readable || !port.writable)
-        throw new Error('У ROM-порта нет потоков чтения и записи.');
+        throw new Error(t('У ROM-порта нет потоков чтения и записи.'));
       session.reader = port.readable.getReader();
       session.writer = port.writable.getWriter();
       await session.drain();
-      session.options.onProgress?.({ stage: 'Handshake штатного ROM…', done: 0, total: 0 });
+      session.options.onProgress?.({ stage: t('Handshake штатного ROM…'), done: 0, total: 0 });
       await session.send(new Uint8Array(69).fill(0x55));
       // A ROM that already completed a handshake since power-up parses the 0x55 run as a
       // command and answers FL (observed 0x0102). It stays in command mode: BootInfo below
@@ -150,9 +151,9 @@ export class Bl616FlashSession {
         const hello = bytesHex(await session.exact(2));
         if (hello === '464c')
           options.transcript?.note(
-            `ROM уже в командном режиме (FL 0x${bytesHex((await session.exact(2)).reverse())}); handshake не требуется`,
+            t('ROM уже в командном режиме (FL 0x{bytesHex}); handshake не требуется', { bytesHex: bytesHex((await session.exact(2)).reverse()) }),
           );
-        else if (hello !== '4f4b') throw new Error('BL616 не подтвердил команду.');
+        else if (hello !== '4f4b') throw new Error(t('BL616 не подтвердил команду.'));
       } catch (error) {
         throw new Error(
           `Handshake ROM: ${error instanceof Error ? error.message : String(error)}`,
@@ -168,14 +169,14 @@ export class Bl616FlashSession {
       // Other ROM/protection combinations need their own compatibility check.
       if (boot.version !== '0x06160001' || boot.signing !== 0 || boot.encryption !== 1)
         throw new Error(
-          'Эта ревизия или режим защиты BL616 пока не проверены для данного пакета. Запись не началась.',
+          t('Эта ревизия или режим защиты BL616 пока не проверены для данного пакета. Запись не началась.'),
         );
       // Official native-ROM flash path. CDC ignores the physical UART baud rate.
       await session.command(0x22, words(1, 115200));
       const raw = Uint8Array.from(boot.raw.match(/../g)!.map((byte) => parseInt(byte, 16)));
       const swUsage = new DataView(raw.buffer).getUint32(8, true),
         pin = (swUsage >>> 14) & 63;
-      if (pin > 3) throw new Error('Пакет рассчитан на внутреннюю flash BL616 Tang Nano 20K.');
+      if (pin > 3) throw new Error(t('Пакет рассчитан на внутреннюю flash BL616 Tang Nano 20K.'));
       await session.command(0x3b, words(0x01014100 | pin));
       const jedec = await session.command(0x36, new Uint8Array(), 4);
       let parameterSource = 'ROM';
@@ -192,7 +193,7 @@ export class Bl616FlashSession {
           params[13] !== jedec[0] ||
           (await firmwareHash(params)) !== record.sha256
         )
-          throw new Error('Параметры flash SDK повреждены. Запись запрещена.');
+          throw new Error(t('Параметры flash SDK повреждены. Запись запрещена.'));
         const payload = new Uint8Array(4 + params.length);
         payload.set(words(0x01014100 | pin));
         payload.set(params, 4);
@@ -203,7 +204,7 @@ export class Bl616FlashSession {
           bytesHex(repeated.subarray(0, 3)) !== id ||
           ![0, 0x80].includes(repeated[3])
         )
-          throw new Error('Идентификатор flash изменился после настройки SDK. Запись запрещена.');
+          throw new Error(t('Идентификатор flash изменился после настройки SDK. Запись запрещена.'));
         parameterSource = 'Bouffalo SDK · c86016';
       }
       // ROM's 0x80 flag says that its flash parameter table recognized this JEDEC.
@@ -215,31 +216,31 @@ export class Bl616FlashSession {
         jedec[2] > 24
       )
         throw new Error(
-          `ROM не подтвердил параметры flash (JEDEC: ${bytesHex(jedec)}, pin: ${pin}). Запись не началась.`,
+          t('ROM не подтвердил параметры flash (JEDEC: {bytesHex}, pin: {pin}). Запись не началась.', { bytesHex: bytesHex(jedec), pin }),
         );
       const size = 2 ** jedec[2];
       if (size > MAX_DEBUGGER_FLASH || size <= FIRMWARE_ADDRESS)
-        throw new Error('Неподдерживаемая ёмкость flash BL616.');
+        throw new Error(t('Неподдерживаемая ёмкость flash BL616.'));
       session.flash = { boot, jedec: id, size, parameterSource };
       options.transcript?.note(
-        `ROM ${boot.version} sign=${boot.signing} encrypt=${boot.encryption} chip=${boot.chipId} jedec=${bytesHex(jedec)} pin=${pin} параметры: ${parameterSource}`,
+        t('ROM {boot} sign={boot2} encrypt={boot3} chip={boot4} jedec={bytesHex} pin={pin} параметры: {parameterSource}', { boot: boot.version, boot2: boot.signing, boot3: boot.encryption, boot4: boot.chipId, bytesHex: bytesHex(jedec), pin, parameterSource }),
       );
       return session;
     } catch (error) {
       options.transcript?.note(
-        `Сессия не открыта: ${error instanceof Error ? error.message : String(error)}`,
+        t('Сессия не открыта: {error}', { error: error instanceof Error ? error.message : String(error) }),
       );
       await session.close();
       throw error;
     }
   }
   get identity(): DebuggerFlash {
-    if (!this.flash) throw new Error('BL616 не проверен.');
+    if (!this.flash) throw new Error(t('BL616 не проверен.'));
     return this.flash;
   }
   private ensure() {
     if (this.closed || this.failed)
-      throw new Error('Сессия BL616 закрыта. Переподключи плату в BOOT.');
+      throw new Error(t('Сессия BL616 закрыта. Переподключи плату в BOOT.'));
     this.options.signal?.throwIfAborted();
   }
   private async timed<T>(task: Promise<T>, milliseconds = this.timeout): Promise<T> {
@@ -252,7 +253,7 @@ export class Bl616FlashSession {
             this.failed = true;
             reject(
               new Error(
-                'BL616 не ответил вовремя. Команда не повторяется; для восстановления переподключи плату в BOOT.',
+                t('BL616 не ответил вовремя. Команда не повторяется; для восстановления переподключи плату в BOOT.'),
               ),
             );
           }, milliseconds);
@@ -269,7 +270,7 @@ export class Bl616FlashSession {
     try {
       await this.timed(this.writer!.write(data));
     } catch (error) {
-      this.options.transcript?.note('передача в порт не завершилась');
+      this.options.transcript?.note(t('передача в порт не завершилась'));
       throw error;
     }
   }
@@ -282,11 +283,11 @@ export class Bl616FlashSession {
           this.pendingRead = undefined;
           if (next.done)
             throw new Error(
-              'Плата отключена до окончания операции. Верни её в BOOT для восстановления.',
+              t('Плата отключена до окончания операции. Верни её в BOOT для восстановления.'),
             );
           this.options.transcript?.wire('rx', next.value);
           if (this.pending.length + next.value.length > CHUNK + 128)
-            throw new Error('Некорректный ответ BL616.');
+            throw new Error(t('Некорректный ответ BL616.'));
           const joined = new Uint8Array(this.pending.length + next.value.length);
           joined.set(this.pending);
           joined.set(next.value, this.pending.length);
@@ -307,13 +308,13 @@ export class Bl616FlashSession {
       if (result === '464c') {
         const code = await this.exact(2);
         throw new Error(
-          `BL616 вернул FL 0x${bytesHex(code.slice().reverse())}. Запись остановлена.`,
+          t('BL616 вернул FL 0x{bytesHex}. Запись остановлена.', { bytesHex: bytesHex(code.slice().reverse()) }),
         );
       }
-      if (result !== '5044' || !allowPending) throw new Error('BL616 не подтвердил команду.');
-      this.options.onProgress?.({ stage: 'Стираем выбранный сектор…', done: 0, total: 0 });
+      if (result !== '5044' || !allowPending) throw new Error(t('BL616 не подтвердил команду.'));
+      this.options.onProgress?.({ stage: t('Стираем выбранный сектор…'), done: 0, total: 0 });
     } while (Date.now() < deadline);
-    throw new Error('Истекло время стирания сектора BL616.');
+    throw new Error(t('Истекло время стирания сектора BL616.'));
   }
   private async drain() {
     let count = this.pending.length;
@@ -336,13 +337,13 @@ export class Bl616FlashSession {
       if (!next) return;
       this.pendingRead = undefined;
       if (!next.done) {
-        this.options.transcript?.note('очистка входа');
+        this.options.transcript?.note(t('очистка входа'));
         this.options.transcript?.wire('rx', next.value);
       }
       if (next.done || (count += next.value.length) > 256)
-        throw new Error('ROM не завершил handshake.');
+        throw new Error(t('ROM не завершил handshake.'));
     }
-    throw new Error('ROM продолжает отдавать данные handshake.');
+    throw new Error(t('ROM продолжает отдавать данные handshake.'));
   }
   private async command(
     opcode: number,
@@ -352,7 +353,7 @@ export class Bl616FlashSession {
     responseTimeout = this.timeout,
   ) {
     this.ensure();
-    if (this.busy) throw new Error('Другая команда BL616 ещё выполняется.');
+    if (this.busy) throw new Error(t('Другая команда BL616 ещё выполняется.'));
     this.busy = true;
     try {
       await this.send(romFrame(opcode, payload, checksum));
@@ -360,28 +361,28 @@ export class Bl616FlashSession {
       if (!responseMax) return new Uint8Array();
       let size = await this.exact(2, responseTimeout);
       for (let repeated = 0; size[0] === 79 && size[1] === 75; repeated++) {
-        if (repeated >= 2) throw new Error('Повторные ответы ROM.');
+        if (repeated >= 2) throw new Error(t('Повторные ответы ROM.'));
         size = await this.exact(2, responseTimeout);
       }
       const length = size[0] | (size[1] << 8);
       if (length < 1 || length > responseMax)
-        throw new Error('Неподдерживаемая длина ответа BL616.');
+        throw new Error(t('Неподдерживаемая длина ответа BL616.'));
       return await this.exact(length, responseTimeout);
     } catch (error) {
       this.failed = true;
       const label: Record<number, string> = {
         0x10: 'BootInfo',
-        0x22: 'Тактирование ROM',
-        0x30: 'Стирание сектора',
-        0x31: 'Запись flash',
-        0x32: 'Чтение flash',
+        0x22: t('Тактирование ROM'),
+        0x30: t('Стирание сектора'),
+        0x31: t('Запись flash'),
+        0x32: t('Чтение flash'),
         0x36: 'JEDEC',
-        0x3a: 'Проверка записи',
-        0x3b: 'Настройка flash',
+        0x3a: t('Проверка записи'),
+        0x3b: t('Настройка flash'),
         0x3d: 'SHA-256 flash',
       };
       const message = `${label[opcode]} (0x${opcode.toString(16)}): ${error instanceof Error ? error.message : String(error)}`;
-      this.options.transcript?.note(`ОШИБКА ${message}`);
+      this.options.transcript?.note(t('ОШИБКА {message}', { message }));
       throw new Error(message, { cause: error });
     } finally {
       this.busy = false;
@@ -395,9 +396,9 @@ export class Bl616FlashSession {
       length < 1 ||
       address + length > this.identity.size
     )
-      throw new Error('Диапазон выходит за flash отладчика.');
+      throw new Error(t('Диапазон выходит за flash отладчика.'));
   }
-  async readFlash(address: number, length: number, stage = 'Резервная копия BL616') {
+  async readFlash(address: number, length: number, stage = t('Резервная копия BL616')) {
     this.range(address, length);
     const bytes = new Uint8Array(length);
     for (let offset = 0; offset < length; offset += CHUNK) {
@@ -405,7 +406,7 @@ export class Bl616FlashSession {
         data = await this.command(0x32, words(address + offset, count), count);
       if (data.length !== count) {
         this.failed = true;
-        throw new Error('Неполное чтение flash. Запись запрещена.');
+        throw new Error(t('Неполное чтение flash. Запись запрещена.'));
       }
       bytes.set(data, offset);
       this.options.onProgress?.({ stage, done: offset + count, total: length });
@@ -426,14 +427,14 @@ export class Bl616FlashSession {
     if (bytesHex(remote) !== (await firmwareHash(bytes))) {
       this.failed = true;
       throw new Error(
-        'SHA-256 записанной flash не совпал. Верни BOOT и восстанови резервную копию.',
+        t('SHA-256 записанной flash не совпал. Верни BOOT и восстанови резервную копию.'),
       );
     }
   }
   async writeSector(address: number, bytes: Uint8Array) {
     this.range(address, bytes.length);
     if (address % FLASH_SECTOR || bytes.length !== FLASH_SECTOR)
-      throw new Error('Разрешена запись только полных секторов 4096 байт.');
+      throw new Error(t('Разрешена запись только полных секторов 4096 байт.'));
     await this.command(0x30, words(address, address + FLASH_SECTOR - 1));
     for (let offset = 0; offset < bytes.length; offset += WRITE_CHUNK) {
       const payload = new Uint8Array(4 + WRITE_CHUNK);
@@ -471,7 +472,7 @@ export interface FirmwareImage {
 }
 export function installationSectors(original: Uint8Array, images: FirmwareImage[]) {
   if (!original.length || original.length % FLASH_SECTOR || original.length > MAX_DEBUGGER_FLASH)
-    throw new Error('Некорректная резервная копия.');
+    throw new Error(t('Некорректная резервная копия.'));
   const touched = new Set<number>();
   const ranges: [number, number][] = [];
   const next = original.slice();
@@ -484,7 +485,7 @@ export function installationSectors(original: Uint8Array, images: FirmwareImage[
       end > original.length ||
       ranges.some(([a, b]) => image.address < b && end > a)
     )
-      throw new Error('Недопустимые или пересекающиеся образы.');
+      throw new Error(t('Недопустимые или пересекающиеся образы.'));
     ranges.push([image.address, end]);
     next.set(image.bytes, image.address);
     for (

@@ -1,3 +1,4 @@
+import { translateServerMessage } from './i18n';
 import type { PhysicalResult } from '../../shared/physical';
 import type {
   ProgrammingDevice,
@@ -6,6 +7,7 @@ import type {
   ProgrammingRequest,
 } from '../../shared/programming';
 import { fetchExternal } from './api';
+import { t } from '../../shared/i18n';
 
 export const DEFAULT_HELPER_URL = 'http://127.0.0.1:3211';
 export const MAX_BITSTREAM_BYTES = 16 * 1024 * 1024;
@@ -36,7 +38,7 @@ export function helperOrigin(input: string): string {
   const port = match?.[2] ? Number(match[2]) : 3211;
   if (!match || port < 1 || port > 65535)
     throw new Error(
-      'Помощник должен работать на http://127.0.0.1:3211 или http://localhost с локальным портом.',
+      t('Помощник должен работать на http://127.0.0.1:3211 или http://localhost с локальным портом.'),
     );
   return `http://${match[1].toLowerCase()}:${port}`;
 }
@@ -129,7 +131,7 @@ export function validateBitstreamText(text: string): void {
   // Only printable ASCII, tab and line endings are allowed in the text bitstream.
   // eslint-disable-next-line no-control-regex
   if (!text.length || text.length > MAX_BITSTREAM_BYTES || /[^\x09\x0a\x0d\x20-\x7e]/.test(text)) {
-    throw new Error('Нужен текстовый битстрим Gowin .fs размером до 16 МБ.');
+    throw new Error(t('Нужен текстовый битстрим Gowin .fs размером до 16 МБ.'));
   }
 }
 
@@ -156,12 +158,12 @@ export class ProgrammingClient {
   constructor(url: string, token: string, fetcher: Fetcher = fetchExternal) {
     this.origin = helperOrigin(url);
     if (!token.trim() || token.length > 512 || /[\r\n]/.test(token))
-      throw new Error('Введите код подключения из окна локального помощника.');
+      throw new Error(t('Введите код подключения из окна локального помощника.'));
     this.#token = token.trim();
     this.#fetch = fetcher;
   }
   redact(value: string): string {
-    return value.split(this.#token).join('[код скрыт]');
+    return value.split(this.#token).join(t('[код скрыт]'));
   }
   async #request(path: string, signal?: AbortSignal, body?: unknown): Promise<unknown> {
     let response: Response;
@@ -180,9 +182,9 @@ export class ProgrammingClient {
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       });
     } catch {
-      if (signal?.aborted) throw new DOMException('Запрос отменён.', 'AbortError');
+      if (signal?.aborted) throw new DOMException(t('Запрос отменён.'), 'AbortError');
       throw new Error(
-        'Локальный помощник недоступен. Проверьте его запуск, разрешённый адрес приложения и доступ браузера к локальной сети.',
+        t('Локальный помощник недоступен. Проверьте его запуск, разрешённый адрес приложения и доступ браузера к локальной сети.'),
       );
     }
     let data: unknown;
@@ -190,20 +192,20 @@ export class ProgrammingClient {
       data = await response.json();
     } catch {
       if (!response.ok)
-        throw new ProgrammingHttpError(`Ошибка помощника: ${response.status}`, response.status);
-      throw new Error('Помощник вернул некорректный ответ.');
+        throw new ProgrammingHttpError(t('Ошибка помощника: {response}', { response: response.status }), response.status);
+      throw new Error(t('Помощник вернул некорректный ответ.'));
     }
     if (!response.ok) {
       if (response.status === 401)
         throw new ProgrammingHttpError(
-          'Код подключения не подходит. Возьмите актуальный код из окна помощника.',
+          t('Код подключения не подходит. Возьмите актуальный код из окна помощника.'),
           response.status,
         );
       const message =
         data && typeof data === 'object' && typeof (data as { error?: unknown }).error === 'string'
           ? (data as { error: string }).error
-          : `Ошибка помощника: ${response.status}`;
-      throw new ProgrammingHttpError(this.redact(message), response.status);
+          : t('Ошибка помощника: {response}', { response: response.status });
+      throw new ProgrammingHttpError(translateServerMessage(this.redact(message)), response.status);
     }
     return data;
   }
@@ -215,7 +217,7 @@ export class ProgrammingClient {
       typeof data.available !== 'boolean' ||
       typeof data.detail !== 'string'
     )
-      throw new Error('Версия локального помощника несовместима с Logra.');
+      throw new Error(t('Версия локального помощника несовместима с Logra.'));
     return { ...data, detail: this.redact(data.detail) };
   }
   async devices(signal?: AbortSignal): Promise<ProgrammingDevice[]> {
@@ -234,24 +236,24 @@ export class ProgrammingClient {
           !['gowin', 'openfpgaloader'].includes(device.backend),
       )
     )
-      throw new Error('Помощник вернул некорректный список плат.');
+      throw new Error(t('Помощник вернул некорректный список плат.'));
     return data.devices.map((device) => ({ ...device, label: this.redact(device.label) }));
   }
   async start(input: ProgrammingRequest, signal?: AbortSignal): Promise<ProgrammingJob> {
     validateBitstreamText(input.bitstream);
-    if (!input.deviceId || !input.projectName.trim()) throw new Error('Выберите плату и битстрим.');
+    if (!input.deviceId || !input.projectName.trim()) throw new Error(t('Выберите плату и битстрим.'));
     if (
       !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
         input.requestId,
       )
     )
-      throw new Error('Не удалось создать идентификатор загрузки.');
+      throw new Error(t('Не удалось создать идентификатор загрузки.'));
     if (
       !/^[a-f0-9]{64}$/i.test(input.sha256) ||
       (await sha256Text(input.bitstream)) !== input.sha256.toLowerCase()
     )
-      throw new Error('SHA-256 битстрима не совпадает. Выберите файл ещё раз.');
-    if (signal?.aborted) throw new DOMException('Запрос отменён.', 'AbortError');
+      throw new Error(t('SHA-256 битстрима не совпадает. Выберите файл ещё раз.'));
+    if (signal?.aborted) throw new DOMException(t('Запрос отменён.'), 'AbortError');
     try {
       const data = await this.#request('/api/programs', signal, input);
       const job = this.#job(data);
@@ -261,13 +263,13 @@ export class ProgrammingClient {
         job.deviceId !== input.deviceId ||
         job.projectName !== input.projectName
       )
-        throw new Error('Ответ помощника относится к другой загрузке.');
+        throw new Error(t('Ответ помощника относится к другой загрузке.'));
       return job;
     } catch (cause) {
       const definiteRejection =
         cause instanceof ProgrammingHttpError && cause.status >= 400 && cause.status < 500;
       throw new ProgrammingSubmissionError(
-        cause instanceof Error ? cause.message : 'Ответ на запрос загрузки недоступен.',
+        cause instanceof Error ? cause.message : t('Ответ на запрос загрузки недоступен.'),
         input.requestId,
         !definiteRejection,
       );
@@ -277,12 +279,12 @@ export class ProgrammingClient {
     return this.#job(await this.#request(`/api/programs/${encodeURIComponent(id)}`, signal));
   }
   #job(data: unknown): ProgrammingJob {
-    if (!isJob(data)) throw new Error('Помощник вернул некорректный статус загрузки.');
+    if (!isJob(data)) throw new Error(t('Помощник вернул некорректный статус загрузки.'));
     return {
       ...data,
-      stage: this.redact(data.stage),
-      logs: this.redact(data.logs),
-      error: data.error ? this.redact(data.error) : undefined,
+      stage: translateServerMessage(this.redact(data.stage)),
+      logs: translateServerMessage(this.redact(data.logs)),
+      error: data.error ? translateServerMessage(this.redact(data.error)) : undefined,
     };
   }
 }

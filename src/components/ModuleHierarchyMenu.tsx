@@ -3,6 +3,7 @@ import { Boxes, ChevronDown, GitBranch } from 'lucide-react';
 import type { HierarchyNode } from '../lib/netlist';
 import { HierarchyBranch } from './HierarchyBranch';
 import './module-hierarchy.css';
+import { t } from '../lib/i18n';
 
 /** Compact module picker for the RTL and Gowin views (the tree used to live in the file panel). */
 export function ModuleHierarchyMenu({
@@ -39,11 +40,11 @@ export function ModuleHierarchyMenu({
         className="module-hierarchy-trigger"
         aria-expanded={open}
         aria-controls={popoverId}
-        title="Иерархия модулей: выберите, какую часть устройства показать"
+        title={t('Иерархия модулей: выберите, какую часть устройства показать')}
         onClick={() => setOpen(!open)}
       >
         <Boxes size={14} aria-hidden="true" />
-        <span>Модули</span>
+        <span>{t('Модули')}</span>
         <ChevronDown size={13} aria-hidden="true" />
       </button>
       {open && (
@@ -51,7 +52,7 @@ export function ModuleHierarchyMenu({
           className="module-hierarchy-popover"
           id={popoverId}
           role="region"
-          aria-label="Иерархия модулей"
+          aria-label={t('Иерархия модулей')}
         >
           {hierarchy ? (
             <HierarchyBranch
@@ -65,7 +66,7 @@ export function ModuleHierarchyMenu({
           ) : (
             <p className="module-hierarchy-empty">
               <GitBranch size={16} aria-hidden="true" />
-              Модули появятся после синтеза
+              {t('Модули появятся после синтеза')}
             </p>
           )}
         </div>

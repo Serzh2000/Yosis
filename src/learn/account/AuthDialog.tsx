@@ -1,3 +1,4 @@
+import { t } from '../../lib/i18n';
 import { useId, useState, type FormEvent } from 'react';
 import { ApiError } from './api';
 import { Modal } from './Modal';
@@ -21,7 +22,7 @@ function Field({
 }
 
 export const PRIVACY_LINE =
-  'Учитель видит твой логин, имя и то, какие уроки пройдены и как прошли проверки прошивки. Почта и настоящее ФИО не нужны.';
+  t('Учитель видит твой логин, имя и то, какие уроки пройдены и как прошли проверки прошивки. Почта и настоящее ФИО не нужны.');
 
 /** Sign in or register: one dialog, two tabs. The errors come from the server already in Russian. */
 export function AuthDialog({
@@ -45,7 +46,7 @@ export function AuthDialog({
     event.preventDefault();
     setError('');
     if (mode === 'register' && password !== repeat) {
-      setError('Пароли не совпадают.');
+      setError(t('Пароли не совпадают.'));
       return;
     }
     setBusy(true);
@@ -53,14 +54,14 @@ export function AuthDialog({
       if (mode === 'login') await onSignIn(login.trim(), password);
       else await onSignUp(login.trim(), name, password);
     } catch (problem) {
-      setError(problem instanceof ApiError ? problem.message : 'Не получилось. Попробуй ещё раз.');
+      setError(problem instanceof ApiError ? problem.message : t('Не получилось. Попробуй ещё раз.'));
       setBusy(false);
     }
   };
   const register = mode === 'register';
   return (
-    <Modal title={register ? 'Регистрация' : 'Вход'} onClose={onClose}>
-      <div className="acct-tabs" role="tablist" aria-label="Что сделать">
+    <Modal title={register ? t('Регистрация') : t('Вход')} onClose={onClose}>
+      <div className="acct-tabs" role="tablist" aria-label={t('Что сделать')}>
         {(['login', 'register'] as const).map((item) => (
           <button
             key={item}
@@ -73,16 +74,16 @@ export function AuthDialog({
               setError('');
             }}
           >
-            {item === 'login' ? 'Войти' : 'Создать аккаунт'}
+            {item === 'login' ? t('Войти') : t('Создать аккаунт')}
           </button>
         ))}
       </div>
       <form onSubmit={submit} className="acct-form">
         <Field
-          label="Логин"
+          label={t('Логин')}
           hint={
             register
-              ? 'Латинские буквы, цифры, точка, дефис, подчёркивание. От 3 до 32 знаков.'
+              ? t('Латинские буквы, цифры, точка, дефис, подчёркивание. От 3 до 32 знаков.')
               : undefined
           }
           value={login}
@@ -95,8 +96,8 @@ export function AuthDialog({
         />
         {register ? (
           <Field
-            label="Имя на экране"
-            hint="Так тебя увидит учитель. Подойдёт имя или ник."
+            label={t('Имя на экране')}
+            hint={t('Так тебя увидит учитель. Подойдёт имя или ник.')}
             value={name}
             onChange={(event) => setName(event.target.value)}
             autoComplete="nickname"
@@ -105,8 +106,8 @@ export function AuthDialog({
           />
         ) : null}
         <Field
-          label="Пароль"
-          hint={register ? 'От 6 знаков.' : undefined}
+          label={t('Пароль')}
+          hint={register ? t('От 6 знаков.') : undefined}
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
@@ -116,7 +117,7 @@ export function AuthDialog({
         />
         {register ? (
           <Field
-            label="Пароль ещё раз"
+            label={t('Пароль ещё раз')}
             type="password"
             value={repeat}
             onChange={(event) => setRepeat(event.target.value)}
@@ -129,12 +130,12 @@ export function AuthDialog({
           {error}
         </p>
         <button type="submit" className="acct-primary" disabled={busy}>
-          {busy ? 'Подожди…' : register ? 'Создать аккаунт' : 'Войти'}
+          {busy ? t('Подожди…') : register ? t('Создать аккаунт') : t('Войти')}
         </button>
       </form>
       <p className="acct-privacy">{PRIVACY_LINE}</p>
       <p className="acct-privacy">
-        Без аккаунта учебник работает как раньше: прогресс хранится только в этом браузере.
+        {t('Без аккаунта учебник работает как раньше: прогресс хранится только в этом браузере.')}
       </p>
     </Modal>
   );

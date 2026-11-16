@@ -13,6 +13,7 @@ import { HelpTrigger } from './HelpCard';
 import { formatParameterValue } from '../lib/help';
 import './schematic.css';
 import './inspector.css';
+import { t } from '../lib/i18n';
 
 export interface LutInspectorProps {
   cell: YosysCell | null;
@@ -25,21 +26,21 @@ export interface LutInspectorProps {
 
 function outputLabel(value: TruthValue): string {
   return value === 'x'
-    ? 'X — неопределено'
+    ? t('X — неопределено')
     : value === 'z'
-      ? 'Z — высокое сопротивление'
+      ? t('Z — высокое сопротивление')
       : value === '?'
-        ? '? — значение отсутствует'
+        ? t('? — значение отсутствует')
         : value;
 }
 
 function portDirection(direction?: string): string {
   return direction === 'input'
-    ? 'вход'
+    ? t('вход')
     : direction === 'output'
-      ? 'выход'
+      ? t('выход')
       : direction === 'inout'
-        ? 'вход/выход'
+        ? t('вход/выход')
         : '?';
 }
 
@@ -66,8 +67,8 @@ export function LutInspector({
     return (
       <div className="lut-inspector inspector-empty">
         <Cpu size={28} />
-        <strong>Выберите элемент схемы</strong>
-        <span>Здесь появятся его порты, параметры и таблица истинности LUT.</span>
+        <strong>{t('Выберите элемент схемы')}</strong>
+        <span>{t('Здесь появятся его порты, параметры и таблица истинности LUT.')}</span>
       </div>
     );
 
@@ -99,28 +100,35 @@ export function LutInspector({
           {friendlyCellName(cellName ?? '') || (cellName?.startsWith('$') ? '' : (cellName ?? ''))}
         </h3>
         {cellTitle(cell.type) !== cell.type && (
-          <small className="inspector-technical" title="Так этот элемент называется внутри Yosys">
-            Тип в Yosys: {cell.type}
+          <small
+            className="inspector-technical"
+            title={t('Так этот элемент называется внутри Yosys')}
+          >
+            {t('Тип в Yosys: {type}', { type: cell.type })}
           </small>
         )}
       </div>
       {rows && inputCount !== null && (
         <>
-          <div className="inspector-section-title">Таблица конфигурации</div>
+          <div className="inspector-section-title">{t('Таблица конфигурации')}</div>
           <div className="lut-init">
             <span>{cell.type === '$lut' ? 'LUT' : 'INIT'}</span>
-            <code title={String(cell.parameters.INIT ?? cell.parameters.LUT ?? 'Нет параметра')}>
+            <code title={String(cell.parameters.INIT ?? cell.parameters.LUT ?? t('Нет параметра'))}>
               {initHex ?? binaryInit}
             </code>
             <small>
-              {rows.length} бит · {inputCount} входа
+              {t('{bits} бит · {inputs} входа', { bits: rows.length, inputs: inputCount })}
             </small>
           </div>
           <details className="inspector-details lut-reading-help">
-            <summary>Как читать LUT</summary>
+            <summary>{t('Как читать LUT')}</summary>
             <p className="lut-explanation">
-              Каждая строка хранит один выходной бит. {inputName(0)} — младший бит адреса: его
-              переключение выбирает соседнюю строку.
+              {t(
+                t(
+                  'Каждая строка хранит один выходной бит. {name} — младший бит адреса: его переключение выбирает соседнюю строку.',
+                ),
+                { name: inputName(0) },
+              )}
             </p>
           </details>
           <div className="lut-simulator">
@@ -139,24 +147,24 @@ export function LutInspector({
               ))}
             </div>
             <div className={`lut-live-output output-${output}`}>
-              <span>Выход</span>
+              <span>{t('Выход')}</span>
               <strong>{output.toUpperCase()}</strong>
             </div>
           </div>
           <div className="lut-address">
-            Адрес {address} → <strong>{outputLabel(output)}</strong>
+            {t('Адрес')} {address} → <strong>{outputLabel(output)}</strong>
           </div>
           <details className="inspector-details inspector-lut-table">
-            <summary>Таблица истинности · {rows.length} строк</summary>
+            <summary>{t('Таблица истинности · {count} строк', { count: rows.length })}</summary>
             <div className="lut-table-scroll">
               <table className="lut-truth-table">
                 <thead>
                   <tr>
-                    <th>Адрес</th>
+                    <th>{t('Адрес')}</th>
                     {orderedInputs.map((index) => (
                       <th key={index}>{inputName(index)}</th>
                     ))}
-                    <th>Выход</th>
+                    <th>{t('Выход')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -170,7 +178,7 @@ export function LutInspector({
                         <button
                           type="button"
                           onClick={() => setAddress(row.index)}
-                          aria-label={`Выбрать адрес ${row.index}`}
+                          aria-label={t('Выбрать адрес {index}', { index: row.index })}
                         >
                           {row.index}
                         </button>
@@ -189,7 +197,7 @@ export function LutInspector({
           </details>
         </>
       )}
-      <div className="inspector-section-title">Порты</div>
+      <div className="inspector-section-title">{t('Порты')}</div>
       <div className="inspector-ports">
         {Object.entries(cell.connections).map(([name, bits]) => {
           const labels = connectionLabels(bits);
@@ -199,14 +207,16 @@ export function LutInspector({
               <strong title={name}>{name}</strong>
               <small
                 className="inspector-port-direction"
-                title={direction === '?' ? 'Направление не указано в нетлисте' : direction}
+                title={direction === '?' ? t('Направление не указано в нетлисте') : direction}
               >
                 {direction}
               </small>
-              <small className="inspector-port-width">{bits.length} бит</small>
+              <small className="inspector-port-width">
+                {t('{count} бит', { count: bits.length })}
+              </small>
               <code
                 title={`${describeBits(bits, netnames)}
-Внутренние номера: ${labels.join(', ')}`}
+${t('Внутренние номера: {numbers}', { numbers: labels.join(', ') })}`}
               >
                 {describeBits(bits, netnames)}
               </code>
@@ -215,10 +225,13 @@ export function LutInspector({
         })}
       </div>
       <details className="inspector-details inspector-connections">
-        <summary>Все подключения</summary>
+        <summary>{t('Все подключения')}</summary>
         <p>
-          Сначала имя сигнала из вашего кода, затем внутренние номера цепей Yosys (после #).
-          Константы показаны как «константа 0/1». Разряды перечислены от старшего к младшему.
+          {t(
+            t(
+              'Сначала имя сигнала из вашего кода, затем внутренние номера цепей Yosys (после #). Константы показаны как «константа 0/1». Разряды перечислены от старшего к младшему.',
+            ),
+          )}
         </p>
         <dl>
           {Object.entries(cell.connections).map(([name, bits]) => (
@@ -236,9 +249,9 @@ export function LutInspector({
         <>
           <div
             className="inspector-section-title"
-            title="Нажмите на название параметра, чтобы увидеть объяснение и исходную запись."
+            title={t('Нажмите на название параметра, чтобы увидеть объяснение и исходную запись.')}
           >
-            Параметры
+            {t('Параметры')}
           </div>
           <dl className="inspector-parameters">
             {Object.entries(cell.parameters).map(([name, value]) => {
@@ -250,7 +263,9 @@ export function LutInspector({
                       {parameterLabel(name)}
                     </HelpTrigger>
                   </dt>
-                  <dd title={`${formatted.display}\nИсходная запись: ${formatted.raw}`}>
+                  <dd
+                    title={`${formatted.display}\n${t('Исходная запись: {raw}', { raw: formatted.raw })}`}
+                  >
                     {formatted.display}
                   </dd>
                 </div>
@@ -260,7 +275,7 @@ export function LutInspector({
         </>
       )}
       <div className="inspector-section-title">
-        <Code2 size={13} /> Исходный код
+        <Code2 size={13} /> {t('Исходный код')}
       </div>
       {source.length > 0 ? (
         <>
@@ -285,14 +300,17 @@ export function LutInspector({
           </div>
           {canNavigateSource && source.every((item) => !canNavigateSource(item.file)) && (
             <p className="inspector-no-source">
-              Указан источник в библиотеке Yosys. Ссылка на Verilog проекта для этого элемента не
-              сохранилась.
+              {t(
+                t(
+                  'Указан источник в библиотеке Yosys. Ссылка на Verilog проекта для этого элемента не сохранилась.',
+                ),
+              )}
             </p>
           )}
         </>
       ) : (
         <p className="inspector-no-source">
-          Синтез не сохранил ссылку на исходный код для этого элемента.
+          {t('Синтез не сохранил ссылку на исходный код для этого элемента.')}
         </p>
       )}
     </div>

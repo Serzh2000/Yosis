@@ -1,5 +1,6 @@
 import type { JtagTransport } from './gowin-jtag';
 import type { WebUsbDevice } from './ftdi-webusb';
+import { t } from '../../shared/i18n';
 
 export const DIRTYJTAG_USB_FILTER = { vendorId: 0x1209, productId: 0xc0ca } as const;
 const REVERSE = Uint8Array.from({ length: 256 }, (_, byte) => {
@@ -16,11 +17,11 @@ type Step = { packet: Uint8Array; read: number; decode?: (bytes: Uint8Array) => 
  */
 function translate(source: Uint8Array): Step[] {
   if (!source.length || source.length > 1024 * 1024)
-    throw new Error('Некорректный размер команды JTAG.');
+    throw new Error(t('Некорректный размер команды JTAG.'));
   const steps: Step[] = [];
   let offset = 0;
   const requireBytes = (count: number) => {
-    if (offset + count > source.length) throw new Error('Неполная команда JTAG.');
+    if (offset + count > source.length) throw new Error(t('Неполная команда JTAG.'));
   };
   while (offset < source.length) {
     const opcode = source[offset++];
@@ -45,7 +46,7 @@ function translate(source: Uint8Array): Step[] {
       requireBytes(2);
       const count = source[offset++] + 1,
         value = source[offset++];
-      if (count > 8) throw new Error('Некорректное число битов JTAG.');
+      if (count > 8) throw new Error(t('Некорректное число битов JTAG.'));
       steps.push({ packet: Uint8Array.of(4, 0x10, 0), read: 0 });
       steps.push({
         packet: Uint8Array.of(opcode === 0x3b ? 3 : 0x83, count, REVERSE[value]),
@@ -56,7 +57,7 @@ function translate(source: Uint8Array): Step[] {
       requireBytes(2);
       const count = source[offset++] + 1,
         value = source[offset++];
-      if (count > 7) throw new Error('Некорректное число тактов TMS.');
+      if (count > 7) throw new Error(t('Некорректное число тактов TMS.'));
       // CLK can return only the final sample. Use one pulse per sampled bit.
       for (let bit = 0; bit < count;) {
         const tms = (value >>> bit) & 1;
@@ -76,8 +77,8 @@ function translate(source: Uint8Array): Step[] {
         bit += run;
       }
       if (opcode === 0x6b && count > 1)
-        throw new Error('Многобитное чтение TMS не используется сканером Gowin.');
-    } else throw new Error(`Неподдерживаемая команда JTAG 0x${opcode.toString(16)}.`);
+        throw new Error(t('Многобитное чтение TMS не используется сканером Gowin.'));
+    } else throw new Error(t('Неподдерживаемая команда JTAG 0x{opcode}.', { opcode: opcode.toString(16) }));
   }
   return steps;
 }
@@ -87,7 +88,7 @@ export function discoverDirtyJtag(device: WebUsbDevice) {
     device.vendorId !== DIRTYJTAG_USB_FILTER.vendorId ||
     device.productId !== DIRTYJTAG_USB_FILTER.productId
   )
-    throw new Error('Нужен адаптер DirtyJTAG (1209:c0ca).');
+    throw new Error(t('Нужен адаптер DirtyJTAG (1209:c0ca).'));
   const candidates: { configuration: number; alternate: number; input: number; output: number }[] =
     [];
   for (const config of device.configurations) {
@@ -117,7 +118,7 @@ export function discoverDirtyJtag(device: WebUsbDevice) {
   }
   if (candidates.length !== 1)
     throw new Error(
-      'Не найден однозначный JTAG-интерфейс DirtyJTAG v2. UART-интерфейсы не используются.',
+      t('Не найден однозначный JTAG-интерфейс DirtyJTAG v2. UART-интерфейсы не используются.'),
     );
   return candidates[0];
 }
@@ -140,7 +141,7 @@ export class DirtyJtagWebUsbTransport implements JtagTransport {
     this.endpoints = discoverDirtyJtag(device);
     this.timeoutMs = options.timeoutMs ?? 2000;
     if (!Number.isInteger(this.timeoutMs) || this.timeoutMs < 1 || this.timeoutMs > 60_000)
-      throw new Error('Некорректный таймаут DirtyJTAG.');
+      throw new Error(t('Некорректный таймаут DirtyJTAG.'));
   }
   static async open(device: WebUsbDevice, options: { timeoutMs?: number } = {}) {
     const transport = new DirtyJtagWebUsbTransport(device, options);
@@ -149,18 +150,18 @@ export class DirtyJtagWebUsbTransport implements JtagTransport {
   }
   private async open() {
     if (this.used || this.device.opened)
-      throw new Error('USB-сессия уже открыта. Выберите плату заново.');
+      throw new Error(t('USB-сессия уже открыта. Выберите плату заново.'));
     this.used = true;
     this.busy = true;
     try {
-      await this.timed(this.device.open(), 'открытие');
+      await this.timed(this.device.open(), t('открытие'));
       this.owned = true;
       if (this.device.configuration?.configurationValue !== this.endpoints.configuration)
         await this.timed(
           this.device.selectConfiguration(this.endpoints.configuration),
-          'конфигурация',
+          t('конфигурация'),
         );
-      await this.timed(this.device.claimInterface(0), 'захват DirtyJTAG');
+      await this.timed(this.device.claimInterface(0), t('захват DirtyJTAG'));
       this.claimed = true;
       if (
         this.device.configuration?.interfaces.find((item) => item.interfaceNumber === 0)?.alternate
@@ -173,7 +174,7 @@ export class DirtyJtagWebUsbTransport implements JtagTransport {
       await this.send(Uint8Array.of(1, 0)); // INFO; consume optional trailing debug fields in this USB response.
       const info = await this.receive();
       if (info.length < 7 || new TextDecoder().decode(info.subarray(0, 7)) !== 'DJTAG2\n')
-        throw new Error('Адаптер не подтвердил DirtyJTAG v2.');
+        throw new Error(t('Адаптер не подтвердил DirtyJTAG v2.'));
       await this.send(Uint8Array.of(2, 0x03, 0xe8, 4, 0x16, 0x10, 0)); // 1000 kHz, TMS high, TCK/TDI low.
       this.verified = true;
     } catch (cause) {
@@ -186,8 +187,8 @@ export class DirtyJtagWebUsbTransport implements JtagTransport {
   }
   private begin() {
     if (!this.verified || this.failed || this.closePromise)
-      throw new Error('Сессия DirtyJTAG недоступна. Переподключите плату.');
-    if (this.busy) throw new Error('Операция DirtyJTAG уже выполняется.');
+      throw new Error(t('Сессия DirtyJTAG недоступна. Переподключите плату.'));
+    if (this.busy) throw new Error(t('Операция DirtyJTAG уже выполняется.'));
     this.busy = true;
   }
   async write(source: Uint8Array) {
@@ -203,7 +204,7 @@ export class DirtyJtagWebUsbTransport implements JtagTransport {
         }
       }
       if (this.pending.length + response.length > 1024 * 1024)
-        throw new Error('Слишком большой ответ DirtyJTAG.');
+        throw new Error(t('Слишком большой ответ DirtyJTAG.'));
       const combined = new Uint8Array(this.pending.length + response.length);
       combined.set(this.pending);
       combined.set(response, this.pending.length);
@@ -217,10 +218,10 @@ export class DirtyJtagWebUsbTransport implements JtagTransport {
   }
   async readExact(length: number): Promise<Uint8Array> {
     if (!Number.isInteger(length) || length < 1 || length > 1024 * 1024)
-      throw new Error('Некорректный размер ответа JTAG.');
+      throw new Error(t('Некорректный размер ответа JTAG.'));
     this.begin();
     try {
-      if (this.pending.length < length) throw new Error('Неполный ответ JTAG.');
+      if (this.pending.length < length) throw new Error(t('Неполный ответ JTAG.'));
       const result = this.pending.slice(0, length);
       this.pending = this.pending.slice(length);
       return result;
@@ -233,18 +234,18 @@ export class DirtyJtagWebUsbTransport implements JtagTransport {
   }
   private async send(packet: Uint8Array) {
     if (!packet.length || packet.length > 64)
-      throw new Error('Пакет DirtyJTAG превышает 64 байта.');
+      throw new Error(t('Пакет DirtyJTAG превышает 64 байта.'));
     const result = await this.timed(
       this.device.transferOut(this.endpoints.output, new Uint8Array(packet)),
-      'передача',
+      t('передача'),
     );
     if (result.status !== 'ok' || result.bytesWritten !== packet.length)
-      throw new Error('Неполная передача DirtyJTAG. Повтор команды запрещён.');
+      throw new Error(t('Неполная передача DirtyJTAG. Повтор команды запрещён.'));
   }
   private async receive() {
-    const result = await this.timed(this.device.transferIn(this.endpoints.input, 64), 'чтение');
+    const result = await this.timed(this.device.transferIn(this.endpoints.input, 64), t('чтение'));
     if (result.status !== 'ok' || !result.data || result.data.byteLength > 64)
-      throw new Error('Повреждённый ответ DirtyJTAG.');
+      throw new Error(t('Повреждённый ответ DirtyJTAG.'));
     return new Uint8Array(result.data.buffer, result.data.byteOffset, result.data.byteLength);
   }
   private async receiveExact(length: number) {
@@ -252,10 +253,10 @@ export class DirtyJtagWebUsbTransport implements JtagTransport {
     let count = 0;
     const deadline = Date.now() + this.timeoutMs;
     while (count < length) {
-      if (Date.now() >= deadline) throw new Error('Истекло время чтения DirtyJTAG.');
+      if (Date.now() >= deadline) throw new Error(t('Истекло время чтения DirtyJTAG.'));
       const bytes = await this.receive();
       if (!bytes.length || bytes.length > length - count)
-        throw new Error('Неожиданная длина ответа DirtyJTAG.');
+        throw new Error(t('Неожиданная длина ответа DirtyJTAG.'));
       output.set(bytes, count);
       count += bytes.length;
     }
@@ -277,7 +278,7 @@ export class DirtyJtagWebUsbTransport implements JtagTransport {
             void this.closeUsb().catch(() => {});
             reject(
               new Error(
-                `Нет ответа DirtyJTAG: ${label}. Переподключите USB; повтор команды запрещён.`,
+                t('Нет ответа DirtyJTAG: {label}. Переподключите USB; повтор команды запрещён.', { label }),
               ),
             );
           }, this.timeoutMs);
@@ -290,7 +291,7 @@ export class DirtyJtagWebUsbTransport implements JtagTransport {
   private closeUsb() {
     return (this.closePromise ??= new Promise<void>((resolve, reject) => {
       const timer = setTimeout(
-        () => reject(new Error('DirtyJTAG не закрыл USB. Переподключите плату.')),
+        () => reject(new Error(t('DirtyJTAG не закрыл USB. Переподключите плату.'))),
         this.timeoutMs,
       );
       this.device.close().then(
@@ -309,7 +310,7 @@ export class DirtyJtagWebUsbTransport implements JtagTransport {
     const warnings: string[] = [];
     if (this.claimed && !this.closePromise) {
       try {
-        await this.timed(this.device.releaseInterface(0), 'освобождение');
+        await this.timed(this.device.releaseInterface(0), t('освобождение'));
       } catch (cause) {
         warnings.push(String(cause));
       }
@@ -328,7 +329,7 @@ export class DirtyJtagWebUsbTransport implements JtagTransport {
     return warnings;
   }
   async close() {
-    if (this.busy) throw new Error('Дождитесь окончания операции DirtyJTAG.');
+    if (this.busy) throw new Error(t('Дождитесь окончания операции DirtyJTAG.'));
     this.verified = false;
     return this.cleanup();
   }

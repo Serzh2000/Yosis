@@ -10,6 +10,7 @@ import { CircleHelp, ExternalLink, X } from 'lucide-react';
 import { getHelpArticle, type HelpArticle, type HelpSymbol, type HelpTopic } from '../lib/help';
 import { Dialog } from './Dialog';
 import './help.css';
+import { t } from '../lib/i18n';
 
 /** A small, self-contained button: no App-level modal state is necessary. */
 export interface HelpTriggerProps extends Omit<
@@ -33,14 +34,14 @@ export function HelpTrigger({
   const [open, setOpen] = useState(false);
   const article = useMemo(() => getHelpArticle(topic), [topic]);
   const close = useCallback(() => setOpen(false), []);
-  const label = ariaLabel ?? props['aria-label'] ?? `Справка: ${article.subtitle}`;
+  const label = ariaLabel ?? props['aria-label'] ?? t('Справка: {subtitle}', { subtitle: article.subtitle });
   return (
     <>
       <button
         {...props}
         type="button"
         className={`help-trigger ${className}`}
-        title={props.title ?? `Что означает ${article.subtitle}?`}
+        title={props.title ?? t('Что означает {subtitle}?', { subtitle: article.subtitle })}
         aria-label={label}
         aria-haspopup="dialog"
         onClick={(event) => {
@@ -77,7 +78,7 @@ export function HelpIllustration({ article }: { article: HelpArticle }) {
       className={`help-illustration help-symbol-${symbol}`}
       viewBox="0 0 320 150"
       role="img"
-      aria-label={`Схемное обозначение: ${article.title}`}
+      aria-label={t('Схемное обозначение: {title}', { title: article.title })}
     >
       {gate && (
         <>
@@ -265,7 +266,7 @@ export function HelpIllustration({ article }: { article: HelpArticle }) {
             = 5
           </text>
           <text x="160" y="136" textAnchor="middle">
-            пример: число из 3 битов
+            {t('пример: число из 3 битов')}
           </text>
         </>
       )}
@@ -303,11 +304,11 @@ export function HelpCard({ article, onClose }: { article: HelpArticle; onClose: 
     >
       <header className="help-card-header">
         <div>
-          <span className="help-card-eyebrow">Справка по схеме</span>
+          <span className="help-card-eyebrow">{t('Справка по схеме')}</span>
           <code className="help-card-subtitle">{article.subtitle}</code>
           <h2 id={titleId}>{article.title}</h2>
         </div>
-        <button className="help-close" type="button" onClick={onClose} aria-label="Закрыть справку">
+        <button className="help-close" type="button" onClick={onClose} aria-label={t('Закрыть справку')}>
           <X size={18} />
         </button>
       </header>
@@ -316,18 +317,18 @@ export function HelpCard({ article, onClose }: { article: HelpArticle; onClose: 
           <HelpIllustration article={article} />
           <figcaption>
             {article.symbol === 'parameter'
-              ? 'Параметр задаёт постоянную настройку'
+              ? t('Параметр задаёт постоянную настройку')
               : article.symbol === 'lut'
-                ? 'Пример таблицы для двух входов: AND'
-                : 'Условное обозначение · схема работы'}
+                ? t('Пример таблицы для двух входов: AND')
+                : t('Условное обозначение · схема работы')}
           </figcaption>
         </figure>
         {article.decodedValue !== undefined && (
           <div className="help-decoded">
-            <span>Текущее значение</span>
+            <span>{t('Текущее значение')}</span>
             <strong>{article.decodedValue}</strong>
             <details>
-              <summary>Исходная запись Yosys</summary>
+              <summary>{t('Исходная запись Yosys')}</summary>
               <code>{article.rawValue}</code>
             </details>
           </div>
@@ -339,16 +340,16 @@ export function HelpCard({ article, onClose }: { article: HelpArticle; onClose: 
         </div>
         {article.example && (
           <div className="help-example">
-            <h3>Пример</h3>
+            <h3>{t('Пример')}</h3>
             <pre>
               <code>{article.example}</code>
             </pre>
-            <p>Код поясняет операцию. Форма нетлиста после синтеза зависит от всей схемы.</p>
+            <p>{t('Код поясняет операцию. Форма нетлиста после синтеза зависит от всей схемы.')}</p>
           </div>
         )}
         {!!article.notes?.length && (
           <div className="help-notes">
-            <h3>Как читать схему</h3>
+            <h3>{t('Как читать схему')}</h3>
             <ul>
               {article.notes.map((note, index) => (
                 <li key={index}>{note}</li>
@@ -365,7 +366,7 @@ export function HelpCard({ article, onClose }: { article: HelpArticle; onClose: 
           </a>
         ))}
         <button className="button subtle" type="button" onClick={onClose}>
-          Понятно
+          {t('Понятно')}
         </button>
       </footer>
     </Dialog>

@@ -12,16 +12,18 @@ import {
   num,
   output,
   text,
+  tn,
 } from './circuit-util';
+import { t } from './i18n';
 
-const widthSpec = (key = 'width', label = 'Ширина, бит') =>
-  ({ key, label, type: 'int', min: 1, max: 64, unit: 'бит' }) as const;
+const widthSpec = (key = 'width', label = t('Ширина, бит')) =>
+  ({ key, label, type: 'int', min: 1, max: 64, unit: t('бит') }) as const;
 const nameOf = (index: number) => letters[index];
 
 const portInput: BlockDef = {
   kind: 'input',
-  title: 'Вход',
-  help: 'Сигнал, который приходит в устройство снаружи: кнопка, переключатель, такт.',
+  title: t('Вход'),
+  help: t('Сигнал, который приходит в устройство снаружи: кнопка, переключатель, такт.'),
   defaults: { width: 1 },
   params: [widthSpec()],
   pins: (p) => [output('Y', num(p, 'width'))],
@@ -30,7 +32,7 @@ const portInput: BlockDef = {
     label: name,
     detail: num(p, 'width') > 1 ? `[${num(p, 'width') - 1}..0]` : undefined,
   }),
-  describe: (p) => `Вход устройства, ${num(p, 'width')} бит`,
+  describe: (p) => tn(t('Вход устройства, {width} бит'), { width: num(p, 'width') }),
   emit: () => [],
   init: () => ({ v: 0n }),
   outputs: (c) => ({ Y: c.state.v ?? 0n }),
@@ -38,8 +40,8 @@ const portInput: BlockDef = {
 };
 const portOutput: BlockDef = {
   kind: 'output',
-  title: 'Выход',
-  help: 'Сигнал, который устройство отдаёт наружу, например на светодиод.',
+  title: t('Выход'),
+  help: t('Сигнал, который устройство отдаёт наружу, например на светодиод.'),
   defaults: { width: 1 },
   params: [widthSpec()],
   pins: (p) => [input('A', num(p, 'width'))],
@@ -48,36 +50,37 @@ const portOutput: BlockDef = {
     label: name,
     detail: num(p, 'width') > 1 ? `[${num(p, 'width') - 1}..0]` : undefined,
   }),
-  describe: (p) => `Выход устройства, ${num(p, 'width')} бит`,
+  describe: (p) => tn(t('Выход устройства, {width} бит'), { width: num(p, 'width') }),
   emit: () => [],
   outputs: () => ({}),
   port: { direction: 'output' },
 };
 const constant: BlockDef = {
   kind: 'const',
-  title: 'Константа',
-  help: 'Постоянное число. Логическая 1 и логический 0 — это однобитные константы.',
+  title: t('Константа'),
+  help: t('Постоянное число. Логическая 1 и логический 0 — это однобитные константы.'),
   defaults: { width: 1, value: '0' },
-  params: [widthSpec(), { key: 'value', label: 'Значение', type: 'big', widthKey: 'width' }],
+  params: [widthSpec(), { key: 'value', label: t('Значение'), type: 'big', widthKey: 'width' }],
   pins: (p) => [output('Y', num(p, 'width'))],
   check: (p) =>
     big(p, 'value') > mask(num(p, 'width'))
-      ? [`число ${p.value} не помещается в ${p.width} бит`]
+      ? [tn(t('число {value} не помещается в {width} бит'), { value: p.value, width: p.width })]
       : [],
   symbol: (p) => ({ shape: 'const', label: String(p.value) }),
-  describe: (p) => `Константа ${p.value}, ${num(p, 'width')} бит`,
+  describe: (p) =>
+    tn(t('Константа {value}, {width} бит'), { value: p.value, width: num(p, 'width') }),
   emit: (c) => [`assign ${c.out('Y')} = ${lit(num(c.p, 'width'), big(c.p, 'value'))};`],
   outputs: (c) => ({ Y: big(c.p, 'value') }),
 };
 const buffer: BlockDef = {
   kind: 'buf',
-  title: 'Буфер / NOT',
-  help: 'NOT меняет каждый бит на противоположный. Буфер просто передаёт сигнал дальше.',
+  title: t('Буфер / NOT'),
+  help: t('NOT меняет каждый бит на противоположный. Буфер просто передаёт сигнал дальше.'),
   defaults: { width: 1, invert: true },
-  params: [widthSpec(), { key: 'invert', label: 'Инвертировать (NOT)', type: 'bool' }],
+  params: [widthSpec(), { key: 'invert', label: t('Инвертировать (NOT)'), type: 'bool' }],
   pins: (p) => [input('A', num(p, 'width')), output('Y', num(p, 'width'))],
   symbol: (p) => ({ shape: 'buf', label: '', invertOut: flag(p, 'invert') }),
-  describe: (p) => (flag(p, 'invert') ? 'NOT: инверсия' : 'Буфер: передача сигнала'),
+  describe: (p) => (flag(p, 'invert') ? t('NOT: инверсия') : t('Буфер: передача сигнала')),
   emit: (c) => [`assign ${c.out('Y')} = ${flag(c.p, 'invert') ? '~' : ''}${c.in('A')};`],
   outputs: (c) =>
     combine(c, ['A'], ['Y'], (v) => ({
@@ -86,24 +89,30 @@ const buffer: BlockDef = {
 };
 const gate: BlockDef = {
   kind: 'gate',
-  title: 'Логический элемент',
-  help: 'И, ИЛИ, исключающее ИЛИ с 2–8 входами. Кружок на выходе или входе означает инверсию.',
+  title: t('Логический элемент'),
+  help: t('И, ИЛИ, исключающее ИЛИ с 2–8 входами. Кружок на выходе или входе означает инверсию.'),
   defaults: { op: 'and', invert: false, inputs: 2, width: 1, inverted: 0 },
   params: [
     {
       key: 'op',
-      label: 'Функция',
+      label: t('Функция'),
       type: 'select',
       options: [
-        ['and', 'И (AND)'],
-        ['or', 'ИЛИ (OR)'],
-        ['xor', 'Исключающее ИЛИ (XOR)'],
+        ['and', t('И (AND)')],
+        ['or', t('ИЛИ (OR)')],
+        ['xor', t('Исключающее ИЛИ (XOR)')],
       ],
     },
-    { key: 'invert', label: 'Инвертировать результат (NAND, NOR, XNOR)', type: 'bool' },
-    { key: 'inputs', label: 'Число входов', type: 'int', min: 2, max: 8 },
-    widthSpec('width', 'Ширина шины, бит'),
-    { key: 'inverted', label: 'Инверсия входов', type: 'mask', countKey: 'inputs', names: letters },
+    { key: 'invert', label: t('Инвертировать результат (NAND, NOR, XNOR)'), type: 'bool' },
+    { key: 'inputs', label: t('Число входов'), type: 'int', min: 2, max: 8 },
+    widthSpec('width', t('Ширина шины, бит')),
+    {
+      key: 'inverted',
+      label: t('Инверсия входов'),
+      type: 'mask',
+      countKey: 'inputs',
+      names: letters,
+    },
   ],
   pins: (p) => [
     ...Array.from({ length: num(p, 'inputs') }, (_, i) => input(nameOf(i), num(p, 'width'))),
@@ -120,7 +129,11 @@ const gate: BlockDef = {
     ),
   }),
   describe: (p) =>
-    `${{ and: 'И', or: 'ИЛИ', xor: 'Исключающее ИЛИ' }[p.op as string]}${flag(p, 'invert') ? ' с инверсией' : ''}, ${p.inputs} входа(ов)`,
+    tn(t('{op}{inverted}, {inputs} входа(ов)'), {
+      op: { and: t('И'), or: t('ИЛИ'), xor: t('Исключающее ИЛИ') }[p.op as string],
+      inverted: flag(p, 'invert') ? t(' с инверсией') : '',
+      inputs: String(p.inputs),
+    }),
   emit: (c) => {
     const count = num(c.p, 'inputs'),
       operator = { and: '&', or: '|', xor: '^' }[c.p.op as string]!;
@@ -153,32 +166,37 @@ const gate: BlockDef = {
 };
 const reduce: BlockDef = {
   kind: 'reduce',
-  title: 'Свёртка шины в бит',
-  help: 'Объединяет все биты шины в один: И — все единицы, ИЛИ — есть хотя бы одна единица, XOR — нечётное число единиц.',
+  title: t('Свёртка шины в бит'),
+  help: t(
+    'Объединяет все биты шины в один: И — все единицы, ИЛИ — есть хотя бы одна единица, XOR — нечётное число единиц.',
+  ),
   defaults: { op: 'or', invert: false, width: 8 },
   params: [
     {
       key: 'op',
-      label: 'Функция',
+      label: t('Функция'),
       type: 'select',
       options: [
-        ['and', 'И — все биты равны 1'],
-        ['or', 'ИЛИ — хотя бы один бит равен 1'],
-        ['xor', 'XOR — нечётное число единиц'],
+        ['and', t('И — все биты равны 1')],
+        ['or', t('ИЛИ — хотя бы один бит равен 1')],
+        ['xor', t('XOR — нечётное число единиц')],
       ],
     },
-    { key: 'invert', label: 'Инвертировать результат', type: 'bool' },
-    widthSpec('width', 'Ширина входной шины, бит'),
+    { key: 'invert', label: t('Инвертировать результат'), type: 'bool' },
+    widthSpec('width', t('Ширина входной шины, бит')),
   ],
   pins: (p) => [input('A', num(p, 'width')), output('Y', 1)],
   symbol: (p) => ({
     shape: p.op as 'and' | 'or' | 'xor',
     label: '',
-    detail: `свёртка ${num(p, 'width')} бит`,
+    detail: tn(t('свёртка {width} бит'), { width: num(p, 'width') }),
     invertOut: flag(p, 'invert'),
   }),
   describe: (p) =>
-    `Свёртка ${p.op === 'and' ? 'И' : p.op === 'or' ? 'ИЛИ' : 'XOR'} шины ${p.width} бит в один бит`,
+    tn(t('Свёртка {op} шины {width} бит в один бит'), {
+      op: p.op === 'and' ? t('И') : p.op === 'or' ? t('ИЛИ') : 'XOR',
+      width: String(p.width),
+    }),
   emit: (c) => {
     const op = { and: '&', or: '|', xor: '^' }[c.p.op as string];
     const body = `${op}${c.in('A')}`;
@@ -198,13 +216,13 @@ const reduce: BlockDef = {
 const dataPins = (count: number) => Array.from({ length: count }, (_, i) => `D${i}`);
 const mux: BlockDef = {
   kind: 'mux',
-  title: 'Мультиплексор',
-  help: 'Переключатель: код на входе S выбирает, какой из входов D0, D1… попадёт на выход Y.',
+  title: t('Мультиплексор'),
+  help: t('Переключатель: код на входе S выбирает, какой из входов D0, D1… попадёт на выход Y.'),
   defaults: { inputs: 2, width: 1 },
   params: [
     {
       key: 'inputs',
-      label: 'Число входов',
+      label: t('Число входов'),
       type: 'select',
       options: [
         ['2', '2:1'],
@@ -212,16 +230,16 @@ const mux: BlockDef = {
         ['8', '8:1'],
       ],
     },
-    widthSpec('width', 'Ширина данных, бит'),
+    widthSpec('width', t('Ширина данных, бит')),
   ],
   pins: (p) => [
     ...dataPins(num(p, 'inputs')).map((name) => input(name, num(p, 'width'))),
-    input('S', clog2(num(p, 'inputs')), { hint: 'Выбор' }),
+    input('S', clog2(num(p, 'inputs')), { hint: t('Выбор') }),
     output('Y', num(p, 'width')),
   ],
   comb: (p) => [...dataPins(num(p, 'inputs')), 'S'],
   symbol: (p) => ({ shape: 'mux', label: `${p.inputs}:1` }),
-  describe: (p) => `Мультиплексор ${p.inputs}:1`,
+  describe: (p) => tn(t('Мультиплексор {inputs}:1'), { inputs: p.inputs }),
   emit: (c) => {
     const count = num(c.p, 'inputs'),
       selectWidth = clog2(count),
@@ -243,13 +261,13 @@ const mux: BlockDef = {
 };
 const demux: BlockDef = {
   kind: 'demux',
-  title: 'Демультиплексор',
-  help: 'Направляет вход A на один из выходов Y0, Y1… по коду S. Остальные выходы равны 0.',
+  title: t('Демультиплексор'),
+  help: t('Направляет вход A на один из выходов Y0, Y1… по коду S. Остальные выходы равны 0.'),
   defaults: { outputs: 4, width: 1 },
   params: [
     {
       key: 'outputs',
-      label: 'Число выходов',
+      label: t('Число выходов'),
       type: 'select',
       options: [
         ['2', '1:2'],
@@ -257,16 +275,16 @@ const demux: BlockDef = {
         ['8', '1:8'],
       ],
     },
-    widthSpec('width', 'Ширина данных, бит'),
+    widthSpec('width', t('Ширина данных, бит')),
   ],
   pins: (p) => [
     input('A', num(p, 'width')),
-    input('S', clog2(num(p, 'outputs')), { hint: 'Выбор' }),
+    input('S', clog2(num(p, 'outputs')), { hint: t('Выбор') }),
     ...Array.from({ length: num(p, 'outputs') }, (_, i) => output(`Y${i}`, num(p, 'width'))),
   ],
   comb: () => ['A', 'S'],
   symbol: (p) => ({ shape: 'demux', label: `1:${p.outputs}` }),
-  describe: (p) => `Демультиплексор 1:${p.outputs}`,
+  describe: (p) => tn(t('Демультиплексор 1:{outputs}'), { outputs: p.outputs }),
   emit: (c) =>
     Array.from(
       { length: num(c.p, 'outputs') },
@@ -289,21 +307,23 @@ const demux: BlockDef = {
 };
 const decoder: BlockDef = {
   kind: 'decoder',
-  title: 'Дешифратор',
-  help: 'Из двоичного числа на входе делает «один из N»: на выходе единица стоит в разряде с номером этого числа.',
+  title: t('Дешифратор'),
+  help: t(
+    'Из двоичного числа на входе делает «один из N»: на выходе единица стоит в разряде с номером этого числа.',
+  ),
   defaults: { bits: 2, enable: false },
   params: [
-    { key: 'bits', label: 'Разрядов на входе', type: 'int', min: 1, max: 6, unit: 'бит' },
-    { key: 'enable', label: 'Вход разрешения EN', type: 'bool' },
+    { key: 'bits', label: t('Разрядов на входе'), type: 'int', min: 1, max: 6, unit: t('бит') },
+    { key: 'enable', label: t('Вход разрешения EN'), type: 'bool' },
   ],
   pins: (p) => [
     input('A', num(p, 'bits')),
-    ...(flag(p, 'enable') ? [input('EN', 1, { hint: 'Разрешение' })] : []),
+    ...(flag(p, 'enable') ? [input('EN', 1, { hint: t('Разрешение') })] : []),
     output('Y', 2 ** num(p, 'bits')),
   ],
   comb: (p) => ['A', ...(flag(p, 'enable') ? ['EN'] : [])],
   symbol: (p) => ({ shape: 'box', label: 'DEC', detail: `${p.bits} → ${2 ** num(p, 'bits')}` }),
-  describe: (p) => `Дешифратор ${p.bits} → ${2 ** num(p, 'bits')}`,
+  describe: (p) => tn(t('Дешифратор {bits} → {v2}'), { bits: p.bits, v2: 2 ** num(p, 'bits') }),
   emit: (c) => {
     const size = 2 ** num(c.p, 'bits'),
       shifted = `${lit(size, 1n)} << ${c.in('A')}`;
@@ -318,18 +338,27 @@ const decoder: BlockDef = {
 };
 const priority: BlockDef = {
   kind: 'priority',
-  title: 'Приоритетный шифратор',
-  help: 'Находит номер самой старшей единицы на входе. Выход V = 1, если на входе есть хотя бы одна единица.',
+  title: t('Приоритетный шифратор'),
+  help: t(
+    'Находит номер самой старшей единицы на входе. Выход V = 1, если на входе есть хотя бы одна единица.',
+  ),
   defaults: { width: 4 },
-  params: [{ key: 'width', label: 'Число входных бит', type: 'int', min: 2, max: 32, unit: 'бит' }],
+  params: [
+    { key: 'width', label: t('Число входных бит'), type: 'int', min: 2, max: 32, unit: t('бит') },
+  ],
   pins: (p) => [
     input('A', num(p, 'width')),
-    output('Y', clog2(num(p, 'width')), { hint: 'Номер' }),
-    output('V', 1, { hint: 'Есть единица' }),
+    output('Y', clog2(num(p, 'width')), { hint: t('Номер') }),
+    output('V', 1, { hint: t('Есть единица') }),
   ],
   comb: () => ['A'],
-  symbol: (p) => ({ shape: 'box', label: 'ENC', detail: `приоритет ${p.width}` }),
-  describe: (p) => `Приоритетный шифратор ${p.width} → ${clog2(num(p, 'width'))}`,
+  symbol: (p) => ({
+    shape: 'box',
+    label: 'ENC',
+    detail: tn(t('приоритет {width}'), { width: p.width }),
+  }),
+  describe: (p) =>
+    tn(t('Приоритетный шифратор {width} → {v2}'), { width: p.width, v2: clog2(num(p, 'width')) }),
   emit: (c) => {
     const w = num(c.p, 'width'),
       yw = clog2(w),
@@ -350,25 +379,41 @@ const priority: BlockDef = {
 };
 const rom: BlockDef = {
   kind: 'rom',
-  title: 'Таблица (ПЗУ)',
-  help: 'Небольшая таблица: по адресу на входе выдаёт записанное число. Таблицу редактируют в свойствах.',
+  title: t('Таблица (ПЗУ)'),
+  help: t(
+    'Небольшая таблица: по адресу на входе выдаёт записанное число. Таблицу редактируют в свойствах.',
+  ),
   defaults: { addrBits: 2, width: 4, words: ['0', '1', '2', '3'] },
   params: [
-    { key: 'addrBits', label: 'Разрядов адреса', type: 'int', min: 1, max: 6, unit: 'бит' },
-    widthSpec('width', 'Ширина слова, бит'),
-    { key: 'words', label: 'Содержимое', type: 'table', widthKey: 'width', lengthKey: 'addrBits' },
+    { key: 'addrBits', label: t('Разрядов адреса'), type: 'int', min: 1, max: 6, unit: t('бит') },
+    widthSpec('width', t('Ширина слова, бит')),
+    {
+      key: 'words',
+      label: t('Содержимое'),
+      type: 'table',
+      widthKey: 'width',
+      lengthKey: 'addrBits',
+    },
   ],
-  pins: (p) => [input('A', num(p, 'addrBits'), { hint: 'Адрес' }), output('Y', num(p, 'width'))],
+  pins: (p) => [input('A', num(p, 'addrBits'), { hint: t('Адрес') }), output('Y', num(p, 'width'))],
   comb: () => ['A'],
   check: (p) => {
     const words = list(p, 'words'),
       errors: string[] = [];
     if (words.length !== 2 ** num(p, 'addrBits'))
-      errors.push(`в таблице должно быть ${2 ** num(p, 'addrBits')} слов, сейчас ${words.length}`);
+      errors.push(
+        tn(t('в таблице должно быть {v1} слов, сейчас {length}'), {
+          v1: 2 ** num(p, 'addrBits'),
+          length: words.length,
+        }),
+      );
     words.forEach((word, i) => {
-      if (!/^[0-9]{1,20}$/.test(word)) errors.push(`слово ${i}: нужно целое неотрицательное число`);
+      if (!/^[0-9]{1,20}$/.test(word))
+        errors.push(tn(t('слово {i}: нужно целое неотрицательное число'), { i }));
       else if (BigInt(word) > mask(num(p, 'width')))
-        errors.push(`слово ${i}: число ${word} не помещается в ${p.width} бит`);
+        errors.push(
+          tn(t('слово {i}: число {word} не помещается в {width} бит'), { i, word, width: p.width }),
+        );
     });
     return errors;
   },
@@ -377,7 +422,8 @@ const rom: BlockDef = {
     label: 'ROM',
     detail: `${2 ** num(p, 'addrBits')}×${p.width}`,
   }),
-  describe: (p) => `Таблица из ${2 ** num(p, 'addrBits')} слов по ${p.width} бит`,
+  describe: (p) =>
+    tn(t('Таблица из {v1} слов по {width} бит'), { v1: 2 ** num(p, 'addrBits'), width: p.width }),
   regs: (p) => [{ key: 'Y', width: num(p, 'width') }],
   emit: (c) => {
     const words = list(c.p, 'words'),
@@ -402,16 +448,19 @@ const rom: BlockDef = {
 
 const extend: BlockDef = {
   kind: 'extend',
-  title: 'Расширение шины',
-  help: 'Делает шину шире. Нулевое расширение добавляет нули, знаковое — копию старшего бита (для чисел со знаком).',
+  title: t('Расширение шины'),
+  help: t(
+    'Делает шину шире. Нулевое расширение добавляет нули, знаковое — копию старшего бита (для чисел со знаком).',
+  ),
   defaults: { inWidth: 4, outWidth: 8, signed: false },
   params: [
-    widthSpec('inWidth', 'Ширина входа, бит'),
-    widthSpec('outWidth', 'Ширина выхода, бит'),
-    { key: 'signed', label: 'Знаковое расширение', type: 'bool' },
+    widthSpec('inWidth', t('Ширина входа, бит')),
+    widthSpec('outWidth', t('Ширина выхода, бит')),
+    { key: 'signed', label: t('Знаковое расширение'), type: 'bool' },
   ],
   pins: (p) => [input('A', num(p, 'inWidth')), output('Y', num(p, 'outWidth'))],
-  check: (p) => (num(p, 'outWidth') <= num(p, 'inWidth') ? ['выход должен быть шире входа'] : []),
+  check: (p) =>
+    num(p, 'outWidth') <= num(p, 'inWidth') ? [t('выход должен быть шире входа')] : [],
   comb: () => ['A'],
   symbol: (p) => ({
     shape: 'box',
@@ -419,7 +468,11 @@ const extend: BlockDef = {
     detail: `${p.inWidth} → ${p.outWidth}`,
   }),
   describe: (p) =>
-    `${flag(p, 'signed') ? 'Знаковое' : 'Нулевое'} расширение ${p.inWidth} → ${p.outWidth} бит`,
+    tn(t('{kind} расширение {inWidth} → {outWidth} бит'), {
+      kind: flag(p, 'signed') ? t('Знаковое') : t('Нулевое'),
+      inWidth: String(p.inWidth),
+      outWidth: String(p.outWidth),
+    }),
   emit: (c) => {
     const k = num(c.p, 'outWidth') - num(c.p, 'inWidth'),
       a = c.in('A');
@@ -441,13 +494,13 @@ const extend: BlockDef = {
 };
 const slice: BlockDef = {
   kind: 'slice',
-  title: 'Срез шины',
-  help: 'Выделяет часть шины: биты от младшего до старшего включительно.',
+  title: t('Срез шины'),
+  help: t('Выделяет часть шины: биты от младшего до старшего включительно.'),
   defaults: { inWidth: 8, lo: 0, hi: 3 },
   params: [
-    widthSpec('inWidth', 'Ширина входа, бит'),
-    { key: 'lo', label: 'Младший бит', type: 'int', min: 0, max: 63 },
-    { key: 'hi', label: 'Старший бит', type: 'int', min: 0, max: 63 },
+    widthSpec('inWidth', t('Ширина входа, бит')),
+    { key: 'lo', label: t('Младший бит'), type: 'int', min: 0, max: 63 },
+    { key: 'hi', label: t('Старший бит'), type: 'int', min: 0, max: 63 },
   ],
   pins: (p) => [
     input('A', num(p, 'inWidth')),
@@ -455,15 +508,15 @@ const slice: BlockDef = {
   ],
   check: (p) =>
     num(p, 'lo') > num(p, 'hi') || num(p, 'hi') >= num(p, 'inWidth')
-      ? ['срез выходит за входную шину']
+      ? [t('срез выходит за входную шину')]
       : [],
   comb: () => ['A'],
   symbol: (p) => ({
     shape: 'box',
-    label: 'срез',
+    label: t('срез'),
     detail: p.hi === p.lo ? `[${p.lo}]` : `[${p.hi}..${p.lo}]`,
   }),
-  describe: (p) => `Срез: биты ${p.hi}..${p.lo}`,
+  describe: (p) => tn(t('Срез: биты {hi}..{lo}'), { hi: p.hi, lo: p.lo }),
   emit: (c) => [
     `assign ${c.out('Y')} = ${num(c.p, 'inWidth') === 1 ? c.in('A') : `${c.in('A')}[${c.p.hi}:${c.p.lo}]`};`,
   ],
@@ -476,14 +529,14 @@ const concatWidths = (p: Params) =>
   Array.from({ length: num(p, 'parts') }, (_, i) => num(p, `w${i}`));
 const concat: BlockDef = {
   kind: 'concat',
-  title: 'Объединение шин',
-  help: 'Склеивает несколько шин в одну. A — самые старшие биты, последний вход — младшие.',
+  title: t('Объединение шин'),
+  help: t('Склеивает несколько шин в одну. A — самые старшие биты, последний вход — младшие.'),
   defaults: { parts: 2, w0: 1, w1: 1, w2: 1, w3: 1, w4: 1, w5: 1, w6: 1, w7: 1 },
   params: [
-    { key: 'parts', label: 'Число частей', type: 'int', min: 2, max: 8 },
+    { key: 'parts', label: t('Число частей'), type: 'int', min: 2, max: 8 },
     ...Array.from({ length: 8 }, (_, i) => ({
       key: `w${i}`,
-      label: `Ширина ${letters[i]}, бит`,
+      label: tn(t('Ширина {v1}, бит'), { v1: letters[i] }),
       type: 'int' as const,
       min: 1,
       max: 64,
@@ -498,10 +551,10 @@ const concat: BlockDef = {
     ),
   ],
   check: (p) =>
-    concatWidths(p).reduce((a, b) => a + b, 0) > 64 ? ['объединённая шина шире 64 бит'] : [],
+    concatWidths(p).reduce((a, b) => a + b, 0) > 64 ? [t('объединённая шина шире 64 бит')] : [],
   comb: (p) => concatWidths(p).map((_, i) => nameOf(i)),
-  symbol: (p) => ({ shape: 'box', label: 'склейка', detail: concatWidths(p).join(' + ') }),
-  describe: (p) => `Склейка шин: ${concatWidths(p).join(' + ')} бит`,
+  symbol: (p) => ({ shape: 'box', label: t('склейка'), detail: concatWidths(p).join(' + ') }),
+  describe: (p) => tn(t('Склейка шин: {v1} бит'), { v1: concatWidths(p).join(' + ') }),
   emit: (c) => [
     `assign ${c.out('Y')} = {${concatWidths(c.p)
       .map((_, i) => c.in(nameOf(i)))
@@ -524,17 +577,19 @@ const concat: BlockDef = {
 const bitName = (i: number) => `B${i}`;
 const split: BlockDef = {
   kind: 'split',
-  title: 'Разделитель шины на биты',
-  help: 'Выдаёт каждый бит шины на отдельный контакт B0 (младший), B1…',
+  title: t('Разделитель шины на биты'),
+  help: t('Выдаёт каждый бит шины на отдельный контакт B0 (младший), B1…'),
   defaults: { width: 4 },
-  params: [{ key: 'width', label: 'Ширина шины, бит', type: 'int', min: 2, max: 16, unit: 'бит' }],
+  params: [
+    { key: 'width', label: t('Ширина шины, бит'), type: 'int', min: 2, max: 16, unit: t('бит') },
+  ],
   pins: (p) => [
     input('A', num(p, 'width')),
     ...Array.from({ length: num(p, 'width') }, (_, i) => output(bitName(i), 1)),
   ],
   comb: () => ['A'],
-  symbol: (p) => ({ shape: 'box', label: 'биты', detail: `${p.width} → ${p.width}×1` }),
-  describe: (p) => `Разделение шины ${p.width} бит на отдельные биты`,
+  symbol: (p) => ({ shape: 'box', label: t('биты'), detail: `${p.width} → ${p.width}×1` }),
+  describe: (p) => tn(t('Разделение шины {width} бит на отдельные биты'), { width: p.width }),
   emit: (c) =>
     Array.from(
       { length: num(c.p, 'width') },
@@ -556,17 +611,19 @@ const split: BlockDef = {
 };
 const merge: BlockDef = {
   kind: 'merge',
-  title: 'Сборка шины из битов',
-  help: 'Собирает шину из отдельных битов: B0 — младший.',
+  title: t('Сборка шины из битов'),
+  help: t('Собирает шину из отдельных битов: B0 — младший.'),
   defaults: { width: 4 },
-  params: [{ key: 'width', label: 'Ширина шины, бит', type: 'int', min: 2, max: 16, unit: 'бит' }],
+  params: [
+    { key: 'width', label: t('Ширина шины, бит'), type: 'int', min: 2, max: 16, unit: t('бит') },
+  ],
   pins: (p) => [
     ...Array.from({ length: num(p, 'width') }, (_, i) => input(bitName(i), 1)),
     output('Y', num(p, 'width')),
   ],
   comb: (p) => Array.from({ length: num(p, 'width') }, (_, i) => bitName(i)),
-  symbol: (p) => ({ shape: 'box', label: 'шина', detail: `${p.width}×1 → ${p.width}` }),
-  describe: (p) => `Сборка шины ${p.width} бит из отдельных битов`,
+  symbol: (p) => ({ shape: 'box', label: t('шина'), detail: `${p.width}×1 → ${p.width}` }),
+  describe: (p) => tn(t('Сборка шины {width} бит из отдельных битов'), { width: p.width }),
   emit: (c) => [
     `assign ${c.out('Y')} = {${Array.from({ length: num(c.p, 'width') }, (_, i) => c.in(bitName(num(c.p, 'width') - 1 - i))).join(', ')}};`,
   ],
@@ -586,39 +643,41 @@ const merge: BlockDef = {
 
 const tagOut: BlockDef = {
   kind: 'tag_out',
-  title: 'Метка цепи: передать',
-  help: 'Даёт имя сигналу. Метка «принять» с таким же именем получит этот сигнал без проведённого провода.',
+  title: t('Метка цепи: передать'),
+  help: t(
+    'Даёт имя сигналу. Метка «принять» с таким же именем получит этот сигнал без проведённого провода.',
+  ),
   defaults: { width: 1 },
   params: [widthSpec()],
   pins: (p) => [input('A', num(p, 'width'))],
   symbol: (_, name) => ({ shape: 'label', label: name, detail: '→' }),
-  describe: (p) => `Метка цепи (${p.width} бит)`,
+  describe: (p) => tn(t('Метка цепи ({width} бит)'), { width: p.width }),
   wires: (p) => [{ key: '', width: num(p, 'width') }],
   emit: (c) => [`assign ${c.net('')} = ${c.in('A')};`],
   outputs: () => ({}),
 };
 const tagIn: BlockDef = {
   kind: 'tag_in',
-  title: 'Метка цепи: принять',
-  help: 'Берёт сигнал с одноимённой метки «передать». Имя должно совпадать.',
+  title: t('Метка цепи: принять'),
+  help: t('Берёт сигнал с одноимённой метки «передать». Имя должно совпадать.'),
   defaults: { width: 1 },
   params: [widthSpec()],
   pins: (p) => [output('Y', num(p, 'width'))],
   symbol: (_, name) => ({ shape: 'label', label: name, detail: '←' }),
-  describe: (p) => `Метка цепи (${p.width} бит)`,
+  describe: (p) => tn(t('Метка цепи ({width} бит)'), { width: p.width }),
   emit: () => [],
   outputs: () => ({}),
   virtual: true,
 };
 const note: BlockDef = {
   kind: 'note',
-  title: 'Текстовая заметка',
-  help: 'Подпись на схеме для себя и других. В устройство не попадает.',
-  defaults: { text: 'Заметка' },
-  params: [{ key: 'text', label: 'Текст', type: 'text', maxLength: 300 }],
+  title: t('Текстовая заметка'),
+  help: t('Подпись на схеме для себя и других. В устройство не попадает.'),
+  defaults: { text: t('Заметка') },
+  params: [{ key: 'text', label: t('Текст'), type: 'text', maxLength: 300 }],
   pins: () => [],
   symbol: (p) => ({ shape: 'note', label: text(p, 'text') }),
-  describe: () => 'Заметка',
+  describe: () => t('Заметка'),
   emit: () => [],
   outputs: () => ({}),
   virtual: true,

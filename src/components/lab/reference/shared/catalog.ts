@@ -1,4 +1,5 @@
 import { breadboardJoins, breadboardPins, breadboardSizes } from './breadboard';
+import { t } from '../../../../../shared/i18n';
 export type PartCategory =
   | 'indicators'
   | 'inputs'
@@ -9,14 +10,14 @@ export type PartCategory =
   | 'passive'
   | 'instruments';
 export const partCategories: { id: PartCategory; name: string }[] = [
-  { id: 'indicators', name: 'Индикаторы' },
+  { id: 'indicators', name: t('Индикаторы') },
   { id: 'inputs', name: 'Ввод' },
-  { id: 'sensors', name: 'Датчики' },
+  { id: 'sensors', name: t('Датчики') },
   { id: 'actuators', name: 'Исполнители' },
   { id: 'displays', name: 'Дисплеи' },
   { id: 'bus', name: 'Шины I²C / SPI' },
   { id: 'passive', name: 'Пассивные' },
-  { id: 'instruments', name: 'Приборы' },
+  { id: 'instruments', name: t('Приборы') },
 ];
 export const iconKeys = [
   'lightbulb',
@@ -238,7 +239,7 @@ const ledModule = (name: string, color: string, help: string) => ({
 });
 const rawCatalog = {
   led: {
-    name: 'Светодиод',
+    name: t('Светодиод'),
     category: 'indicators',
     icon: 'lightbulb',
     pins: ['A', 'K'],
@@ -258,7 +259,7 @@ const rawCatalog = {
     emit: { anodes: ['R', 'G', 'B'], cathode: 'K', resistor: true },
   },
   seg7: {
-    name: '7-сегментный индикатор',
+    name: t('7-сегментный индикатор'),
     category: 'indicators',
     icon: 'monitor',
     pins: [...seg, 'COM'],
@@ -266,7 +267,7 @@ const rawCatalog = {
     color: '#ff6f61',
     control: {
       kind: 'select',
-      label: 'Тип',
+      label: t('Тип'),
       options: [
         { value: 0, label: 'Общий катод' },
         { value: 1, label: 'Общий анод' },
@@ -277,7 +278,7 @@ const rawCatalog = {
     help: 'Один разряд: сегменты A–G и DP. Общий катод: COM на GND, сегмент горит при HIGH. Общий анод: COM на питание, сегмент горит при LOW. Резисторы ставятся на сегменты.',
   },
   ledbar: {
-    name: 'Шкала 10 светодиодов',
+    name: t('Шкала 10 светодиодов'),
     category: 'indicators',
     icon: 'sliders',
     pins: [...bar, 'K'],
@@ -289,7 +290,7 @@ const rawCatalog = {
     help: 'Десять светодиодов с общим катодом K. Каждый анод L1–L10 нужно подключить к выходу через резистор.',
   },
   traffic: {
-    name: 'Светофор-модуль',
+    name: t('Светофор-модуль'),
     category: 'indicators',
     icon: 'lightbulb',
     pins: ['R', 'Y', 'G', 'GND'],
@@ -300,7 +301,7 @@ const rawCatalog = {
     help: 'Модуль со встроенными резисторами: каждый цвет загорается при HIGH на своём входе, GND — общий.',
   },
   button: {
-    name: 'Кнопка',
+    name: t('Кнопка'),
     category: 'inputs',
     icon: 'gauge',
     pins: ['1', '2'],
@@ -316,7 +317,7 @@ const rawCatalog = {
     joins: (p) => (p.value === 1 ? [['1', '2']] : []),
   },
   switch: {
-    name: 'Переключатель',
+    name: t('Переключатель'),
     category: 'inputs',
     icon: 'zap',
     pins: ['1', '2'],
@@ -332,7 +333,7 @@ const rawCatalog = {
     joins: (p) => (p.value === 1 ? [['1', '2']] : []),
   },
   toggleswitch: {
-    name: 'Тумблер',
+    name: t('Тумблер'),
     category: 'inputs',
     icon: 'zap',
     pins: ['1', '2'],
@@ -348,7 +349,7 @@ const rawCatalog = {
     joins: (p) => (p.value === 1 ? [['1', '2']] : []),
   },
   rockerswitch: {
-    name: 'Клавишный выключатель',
+    name: t('Клавишный выключатель'),
     category: 'inputs',
     icon: 'zap',
     pins: ['1', '2'],
@@ -364,7 +365,7 @@ const rawCatalog = {
     joins: (p) => (p.value === 1 ? [['1', '2']] : []),
   },
   dip: {
-    name: 'DIP-переключатель ×4',
+    name: t('DIP-переключатель ×4'),
     category: 'inputs',
     icon: 'toggle',
     pins: ['1A', '1B', '2A', '2B', '3A', '3B', '4A', '4B'],
@@ -387,7 +388,7 @@ const rawCatalog = {
     help: 'Четыре независимых переключателя. Бит i значения замыкает контакты iA и iB.',
   },
   tilt: digitalSensor(
-    'Датчик наклона',
+    t('Датчик наклона'),
     'move',
     '#70dfba',
     ['ПРЯМО', 'НАКЛОН'],
@@ -395,7 +396,7 @@ const rawCatalog = {
     'OUT = HIGH при наклоне, LOW в покое. Нужны VCC и GND.',
   ),
   reed: digitalSensor(
-    'Геркон-модуль',
+    t('Геркон-модуль'),
     'magnet',
     '#74aef9',
     ['НЕТ МАГНИТА', 'МАГНИТ'],
@@ -403,7 +404,7 @@ const rawCatalog = {
     'OUT = HIGH, когда рядом магнит. Нужны VCC и GND.',
   ),
   touch: digitalSensor(
-    'Сенсор касания TTP223',
+    t('Сенсор касания TTP223'),
     'hand',
     '#af92ee',
     ['СВОБОДНО', 'КАСАНИЕ'],
@@ -411,7 +412,7 @@ const rawCatalog = {
     'OUT = HIGH при касании (режим по умолчанию). Нужны VCC и GND.',
   ),
   hall: digitalSensor(
-    'Датчик Холла',
+    t('Датчик Холла'),
     'magnet',
     '#e8bd83',
     ['НЕТ ПОЛЯ', 'МАГНИТ'],
@@ -419,7 +420,7 @@ const rawCatalog = {
     'Цифровой модуль A3144: OUT = LOW, когда рядом магнит. Нужны VCC и GND.',
   ),
   flame: digitalSensor(
-    'Датчик пламени',
+    t('Датчик пламени'),
     'flame',
     '#ff6f61',
     ['НЕТ ОГНЯ', 'ПЛАМЯ'],
@@ -427,7 +428,7 @@ const rawCatalog = {
     'Цифровой выход DO: LOW при пламени, HIGH без него. Нужны VCC и GND.',
   ),
   irobstacle: digitalSensor(
-    'ИК-датчик препятствия',
+    t('ИК-датчик препятствия'),
     'eye',
     '#ff6f61',
     ['СВОБОДНО', 'ПРЕПЯТСТВИЕ'],
@@ -435,7 +436,7 @@ const rawCatalog = {
     'Модуль FC-51: OUT = LOW при препятствии, HIGH без него. Нужны VCC и GND.',
   ),
   pir: digitalSensor(
-    'PIR-датчик движения',
+    t('PIR-датчик движения'),
     'eye',
     '#70dfba',
     ['ТИШИНА', 'ДВИЖЕНИЕ'],
@@ -444,7 +445,7 @@ const rawCatalog = {
     ['VCC', 'OUT', 'GND'],
   ),
   limit: {
-    name: 'Концевой выключатель',
+    name: t('Концевой выключатель'),
     category: 'inputs',
     icon: 'power',
     pins: ['COM', 'NO', 'NC'],
@@ -461,7 +462,7 @@ const rawCatalog = {
     help: 'Переключающий контакт: в покое COM соединён с NC, при нажатии — с NO.',
   },
   joystick: {
-    name: 'Джойстик',
+    name: t('Джойстик'),
     category: 'inputs',
     icon: 'gamepad',
     pins: ['VCC', 'GND', 'VRX', 'VRY', 'SW'],
@@ -490,7 +491,7 @@ const rawCatalog = {
     help: 'VRX/VRY = GND + (VCC − GND) × положение. SW замыкается на GND при нажатии, поэтому используйте INPUT_PULLUP.',
   },
   keypad: {
-    name: 'Клавиатура 4×4',
+    name: t('Клавиатура 4×4'),
     category: 'inputs',
     icon: 'keyboard',
     pins: ['R1', 'R2', 'R3', 'R4', 'C1', 'C2', 'C3', 'C4'],
@@ -514,7 +515,7 @@ const rawCatalog = {
     help: 'Нажатая клавиша соединяет свою строку R и столбец C. Одновременно удерживается одна клавиша. Клавиши нумеруются построчно 1–16.',
   },
   potentiometer: {
-    name: 'Потенциометр',
+    name: t('Потенциометр'),
     category: 'sensors',
     icon: 'gauge',
     pins: ['VCC', 'SIG', 'GND'],
@@ -535,7 +536,7 @@ const rawCatalog = {
     drive: { SIG: (p, h, l) => l + ((h - l) * p.value) / 100 },
   },
   slidepot: {
-    name: 'Линейный потенциометр',
+    name: t('Линейный потенциометр'),
     category: 'sensors',
     icon: 'sliders',
     pins: ['VCC', 'SIG', 'GND'],
@@ -555,7 +556,7 @@ const rawCatalog = {
     color: '#70dfba',
     control: {
       kind: 'range',
-      label: 'Температура',
+      label: t('Температура'),
       min: -40,
       max: 125,
       step: 1,
@@ -573,16 +574,16 @@ const rawCatalog = {
     pins: ['VCC', 'OUT', 'GND'],
     defaultValue: 25,
     color: '#70dfba',
-    control: range('Температура', 0, 150, ' °C', 1, { canvas: true }),
+    control: range(t('Температура'), 0, 150, ' °C', 1, { canvas: true }),
     supply: { vcc: 'VCC', gnd: 'GND', min: 2.7 },
     drive: { OUT: (p, h, l) => Math.min(h, l + p.value * 0.01) },
     help: 'OUT = GND + 10 мВ × °C (ограничено питанием).',
   },
   ntc: analogSensor(
-    'NTC-термистор (модуль)',
+    t('NTC-термистор (модуль)'),
     'thermometer',
     '#e8bd83',
-    'Температура',
+    t('Температура'),
     -20,
     100,
     ' °C',
@@ -594,7 +595,7 @@ const rawCatalog = {
     'NTC 10 кОм, B = 3950, делитель с резистором 10 кОм: AO = VCC × Rntc / (Rntc + 10 кОм); при нагреве напряжение падает.',
   ),
   ldr: analogSensor(
-    'Фоторезистор (модуль)',
+    t('Фоторезистор (модуль)'),
     'sun',
     '#ffb347',
     'Освещённость',
@@ -606,10 +607,10 @@ const rawCatalog = {
     'AO = GND + (VCC − GND) × освещённость; чем светлее, тем выше напряжение.',
   ),
   soil: analogSensor(
-    'Датчик влажности почвы',
+    t('Датчик влажности почвы'),
     'droplets',
     '#70dfba',
-    'Влажность',
+    t('Влажность'),
     0,
     100,
     '%',
@@ -618,7 +619,7 @@ const rawCatalog = {
     'Ёмкостный модуль: AO = VCC × (0.9 − 0.6 × влажность); сухая почва — 90 % VCC, мокрая — 30 % VCC.',
   ),
   gas: analogSensor(
-    'Датчик газа MQ-2 (AO)',
+    t('Датчик газа MQ-2 (AO)'),
     'wind',
     '#ff6f61',
     'Концентрация',
@@ -630,10 +631,10 @@ const rawCatalog = {
     'AO = VCC × (0.1 + 0.8 × ppm / 10000). Линейная учебная модель, не калибровка MQ-2; нагреватель не моделируется.',
   ),
   water: analogSensor(
-    'Датчик уровня воды',
+    t('Датчик уровня воды'),
     'droplets',
     '#74aef9',
-    'Уровень',
+    t('Уровень'),
     0,
     100,
     '%',
@@ -642,7 +643,7 @@ const rawCatalog = {
     'AO = VCC × 0.7 × уровень.',
   ),
   sound: analogSensor(
-    'Датчик звука (AO)',
+    t('Датчик звука (AO)'),
     'volume',
     '#af92ee',
     'Громкость',
@@ -654,7 +655,7 @@ const rawCatalog = {
     'AO = VCC × (0.1 + 0.8 × уровень). Это огибающая уровня, а не звуковая волна.',
   ),
   force: {
-    name: 'Датчик силы / изгиба',
+    name: t('Датчик силы / изгиба'),
     category: 'sensors',
     icon: 'hand',
     pins: ['VCC', 'SIG', 'GND'],
@@ -666,7 +667,7 @@ const rawCatalog = {
     help: 'Делитель с FSR/flex: SIG = GND + (VCC − GND) × (0.05 + 0.9 × нагрузка).',
   },
   breadboard: {
-    name: 'Макетная плата',
+    name: t('Макетная плата'),
     category: 'passive',
     icon: 'circuit',
     pins: breadboardPins(2),
@@ -675,7 +676,7 @@ const rawCatalog = {
     color: '#e9e4d6',
     control: {
       kind: 'select',
-      label: 'Размер',
+      label: t('Размер'),
       options: breadboardSizes.map(({ value, label }) => ({ value, label })),
     },
     width: 440,
@@ -684,7 +685,7 @@ const rawCatalog = {
     joins: (part) => breadboardJoins(part.value),
   },
   resistor: {
-    name: 'Резистор',
+    name: t('Резистор'),
     category: 'passive',
     icon: 'activity',
     pins: ['1', '2'],
@@ -707,7 +708,7 @@ const rawCatalog = {
     help: 'Модель цифровая: до 2 кОм резистор соединяет свои выводы (последовательный резистор светодиода), от 2 кОм — подтягивает свободную линию к уровню на другом конце; любой выход её перебивает. Токи и падения напряжения не рассчитываются.',
   },
   buzzer: {
-    name: 'Зуммер',
+    name: t('Зуммер'),
     category: 'actuators',
     icon: 'activity',
     pins: ['SIG', 'GND'],
@@ -718,7 +719,7 @@ const rawCatalog = {
     family: 'tone',
   },
   servo: {
-    name: 'Сервопривод',
+    name: t('Сервопривод'),
     category: 'actuators',
     icon: 'gauge',
     pins: ['VCC', 'SIG', 'GND'],
@@ -729,7 +730,7 @@ const rawCatalog = {
     family: 'servo',
   },
   activebuzzer: {
-    name: 'Активный зуммер',
+    name: t('Активный зуммер'),
     category: 'actuators',
     icon: 'volume',
     pins: ['VCC', 'GND', 'SIG'],
@@ -741,7 +742,7 @@ const rawCatalog = {
     help: 'Генератор внутри модуля звучит на фиксированной частоте около 2.7 кГц, пока вход активен.',
   },
   relay: {
-    name: 'Реле-модуль',
+    name: t('Реле-модуль'),
     category: 'actuators',
     icon: 'power',
     pins: ['VCC', 'GND', 'IN'],
@@ -753,7 +754,7 @@ const rawCatalog = {
     help: 'Показывает состояние катушки. Силовые контакты COM/NO/NC не моделируются.',
   },
   motor: {
-    name: 'Мотор DC (модуль)',
+    name: t('Мотор DC (модуль)'),
     category: 'actuators',
     icon: 'wind',
     pins: ['VCC', 'GND', 'SIG'],
@@ -765,7 +766,7 @@ const rawCatalog = {
     help: 'Модуль с ключом: скорость в процентах равна доле HIGH (PWM) на SIG.',
   },
   vibration: {
-    name: 'Вибромотор',
+    name: t('Вибромотор'),
     category: 'actuators',
     icon: 'activity',
     pins: ['VCC', 'GND', 'SIG'],
@@ -777,7 +778,7 @@ const rawCatalog = {
     help: 'Сила вибрации равна доле HIGH (PWM) на SIG.',
   },
   laser: {
-    name: 'Лазер / лампа (модуль)',
+    name: t('Лазер / лампа (модуль)'),
     category: 'actuators',
     icon: 'lightbulb',
     pins: ['VCC', 'GND', 'SIG'],
@@ -837,7 +838,7 @@ const rawCatalog = {
     help: 'HD44780 20×4 через PCF8574-рюкзак: строки начинаются с адресов 0x00, 0x40, 0x14, 0x54.',
   },
   max7219: {
-    name: 'Матрица MAX7219 8×8',
+    name: t('Матрица MAX7219 8×8'),
     category: 'displays',
     icon: 'monitor',
     pins: ['VCC', 'GND', 'DIN', 'CS', 'CLK'],
@@ -851,7 +852,7 @@ const rawCatalog = {
     help: 'Аппаратный SPI: 16-битные кадры [регистр, данные] при CS = LOW. DIG0 — верхняя строка, бит D7 — левый столбец. Режим декодирования BCD не используется (матрица).',
   },
   pcf8574: {
-    name: 'Расширитель PCF8574',
+    name: t('Расширитель PCF8574'),
     category: 'bus',
     icon: 'cpu',
     pins: ['VCC', 'GND', 'SDA', 'SCL', 'P0', 'P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7'],
@@ -865,7 +866,7 @@ const rawCatalog = {
     help: 'Квазидвунаправленные выводы: записанный 0 тянет линию к GND, 1 — слабая подтяжка к VCC (внешний источник может перебить). Чтение возвращает реальные уровни.',
   },
   rtc: {
-    name: 'Часы DS3231',
+    name: t('Часы DS3231'),
     category: 'bus',
     icon: 'clock',
     pins: busSensorPins,
@@ -880,14 +881,14 @@ const rawCatalog = {
       unit: ' с',
       scenario: true,
     },
-    extras: [range('Температура', -40, 85, ' °C', 1)],
+    extras: [range(t('Температура'), -40, 85, ' °C', 1)],
     defaultValues: [25],
     supply: { vcc: 'VCC', gnd: 'GND', min: 2.7 },
     i2c: 0x68,
     help: 'Адрес 0x68. Начальное время — секунды от 00:00 1 января 2025; далее идёт виртуальное время симуляции. Запись регистров 0x00–0x06 переустанавливает часы.',
   },
   bh1750: {
-    name: 'Освещённость BH1750',
+    name: t('Освещённость BH1750'),
     category: 'bus',
     icon: 'sun',
     pins: busSensorPins,
@@ -901,14 +902,14 @@ const rawCatalog = {
     help: 'Команды питания, сброса, MTreg и режимов измерения; результат = лк × 1.2 × MTreg/69 (в режиме H2 — вдвое точнее). Готовность через 120 мс (H) или 16 мс (L).',
   },
   lm75: {
-    name: 'Температура LM75',
+    name: t('Температура LM75'),
     category: 'bus',
     icon: 'thermometer',
     pins: busSensorPins,
     defaultValue: 0x48,
     color: '#70dfba',
     control: addresses([0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f]),
-    extras: [range('Температура', -55, 125, ' °C', 0.5)],
+    extras: [range(t('Температура'), -55, 125, ' °C', 0.5)],
     defaultValues: [25],
     supply: { vcc: 'VCC', gnd: 'GND', min: 2.7 },
     i2c: true,
@@ -927,7 +928,7 @@ const rawCatalog = {
     help: '4 КБ, 2-байтовый адрес, страницы по 32 байта, последовательное чтение. Содержимое живёт до остановки симуляции; время записи не моделируется.',
   },
   mpu6050: {
-    name: 'Акселерометр MPU6050',
+    name: t('Акселерометр MPU6050'),
     category: 'bus',
     icon: 'move',
     pins: busSensorPins,
@@ -941,7 +942,7 @@ const rawCatalog = {
       range('Вращение X', -2000, 2000, ' °/с', 1),
       range('Вращение Y', -2000, 2000, ' °/с', 1),
       range('Вращение Z', -2000, 2000, ' °/с', 1),
-      range('Температура', -40, 85, ' °C', 1),
+      range(t('Температура'), -40, 85, ' °C', 1),
     ],
     defaultValues: [0, 0, 1, 0, 0, 0, 25],
     supply: { vcc: 'VCC', gnd: 'GND', min: 2.7 },
@@ -949,7 +950,7 @@ const rawCatalog = {
     help: 'WHO_AM_I = 0x68; после сброса датчик спит (PWR_MGMT_1 = 0x40) — запишите 0 в 0x6B. Регистры 0x3B–0x48 масштабируются по ACCEL_CONFIG/GYRO_CONFIG, температура = raw/340 + 36.53.',
   },
   shift595: {
-    name: 'Регистр 74HC595 (SPI)',
+    name: t('Регистр 74HC595 (SPI)'),
     category: 'bus',
     icon: 'cpu',
     pins: ['VCC', 'GND', 'SER', 'SRCLK', 'RCLK', 'QA', 'QB', 'QC', 'QD', 'QE', 'QF', 'QG', 'QH'],
@@ -976,7 +977,7 @@ const rawCatalog = {
 
   // ---------------------------------------------------------------- popular kit modules
   bicolor: {
-    name: 'Двухцветный LED (KY-011)',
+    name: t('Двухцветный LED (KY-011)'),
     category: 'indicators',
     icon: 'lightbulb',
     pins: ['R', 'G', 'K'],
@@ -987,12 +988,12 @@ const rawCatalog = {
     help: 'Красный и зелёный кристаллы с общим катодом K. Вместе дают жёлтый. Нужны резисторы на R и G.',
   },
   ledmod: ledModule(
-    'LED-модуль (Keyestudio)',
+    t('LED-модуль (Keyestudio)'),
     '#e8392e',
     'Светодиод с резистором на плате: горит при HIGH на SIG, яркость повторяет PWM.',
   ),
   led3w: ledModule(
-    'Мощный LED 3 Вт (модуль)',
+    t('Мощный LED 3 Вт (модуль)'),
     '#f2efe6',
     'Белый светодиод на алюминиевой подложке с ключом: SIG = HIGH включает, PWM меняет яркость.',
   ),
@@ -1008,31 +1009,31 @@ const rawCatalog = {
     help: 'Светодиод 5050 без резисторов на плате: на каждый цвет нужен свой резистор.',
   },
   btnmod: momentaryModule(
-    'Модуль кнопки (KY-004)',
+    t('Модуль кнопки (KY-004)'),
     'hand',
     '#3d6fc4',
     'Кнопка с подтяжкой 10 кОм на плате: OUT = HIGH в покое и LOW при нажатии.',
   ),
   collision: momentaryModule(
-    'Датчик столкновения',
+    t('Датчик столкновения'),
     'hand',
     '#3d6fc4',
     'Микропереключатель с рычагом: OUT = LOW, когда рычаг прижат.',
   ),
   knock: momentaryModule(
-    'Датчик удара (KY-031)',
+    t('Датчик удара (KY-031)'),
     'activity',
     '#3d6fc4',
     'Пружинный контакт: при ударе OUT кратко уходит в LOW.',
   ),
   shock: momentaryModule(
-    'Датчик встряски (KY-002)',
+    t('Датчик встряски (KY-002)'),
     'activity',
     '#3d6fc4',
     'Пружина в трубке замыкает контакт при встряске: OUT = LOW.',
   ),
   tact12: {
-    name: 'Кнопка 12×12 с колпачком',
+    name: t('Кнопка 12×12 с колпачком'),
     category: 'inputs',
     icon: 'gauge',
     pins: ['1', '2'],
@@ -1049,7 +1050,7 @@ const rawCatalog = {
     help: 'Большая тактовая кнопка: пока нажата, соединяет выводы 1 и 2.',
   },
   latchbtn: {
-    name: 'Кнопка с фиксацией',
+    name: t('Кнопка с фиксацией'),
     category: 'inputs',
     icon: 'toggle',
     pins: ['1', '2'],
@@ -1060,7 +1061,7 @@ const rawCatalog = {
     help: 'Первое нажатие фиксирует контакт замкнутым, второе отпускает.',
   },
   slideswitch: {
-    name: 'Ползунковый переключатель SS12D00',
+    name: t('Ползунковый переключатель SS12D00'),
     category: 'inputs',
     icon: 'toggle',
     pins: ['1', 'COM', '3'],
@@ -1071,7 +1072,7 @@ const rawCatalog = {
     help: 'Перекидной контакт: средний вывод COM соединён с 1 или с 3.',
   },
   doorsensor: {
-    name: 'Магнитный датчик двери MC-38',
+    name: t('Магнитный датчик двери MC-38'),
     category: 'inputs',
     icon: 'magnet',
     pins: ['1', '2'],
@@ -1082,7 +1083,7 @@ const rawCatalog = {
     help: 'Геркон в корпусе: пока магнит рядом (дверь закрыта), выводы 1 и 2 замкнуты.',
   },
   trimpot: {
-    name: 'Подстроечный резистор 3296',
+    name: t('Подстроечный резистор 3296'),
     category: 'inputs',
     icon: 'sliders',
     pins: ['VCC', 'SIG', 'GND'],
@@ -1094,7 +1095,7 @@ const rawCatalog = {
     help: 'Многооборотный делитель напряжения: SIG = GND + (VCC − GND) × положение.',
   },
   potmod: {
-    name: 'Модуль потенциометра',
+    name: t('Модуль потенциометра'),
     category: 'inputs',
     icon: 'gauge',
     pins: ['SIG', 'VCC', 'GND'],
@@ -1106,7 +1107,7 @@ const rawCatalog = {
     help: 'Потенциометр на плате с подписанными выводами S, V, G.',
   },
   keypad3x4: {
-    name: 'Клавиатура 3×4',
+    name: t('Клавиатура 3×4'),
     category: 'inputs',
     icon: 'keyboard',
     pins: ['R1', 'R2', 'R3', 'R4', 'C1', 'C2', 'C3'],
@@ -1130,7 +1131,7 @@ const rawCatalog = {
     help: 'Телефонная клавиатура 1–9, *, 0, #: клавиша соединяет свою строку R и столбец C.',
   },
   ttp224: {
-    name: 'Сенсорная панель TTP224 ×4',
+    name: t('Сенсорная панель TTP224 ×4'),
     category: 'inputs',
     icon: 'hand',
     pins: ['VCC', 'GND', 'OUT1', 'OUT2', 'OUT3', 'OUT4'],
@@ -1155,7 +1156,7 @@ const rawCatalog = {
     help: 'Четыре ёмкостные площадки: OUTi = HIGH, пока площадку касаются.',
   },
   rcwl0516: digitalSensor(
-    'Радар движения RCWL-0516',
+    t('Радар движения RCWL-0516'),
     'eye',
     '#3d6fc4',
     ['ТИШИНА', 'ДВИЖЕНИЕ'],
@@ -1163,7 +1164,7 @@ const rawCatalog = {
     'Микроволновый датчик: OUT = HIGH около двух секунд после движения рядом.',
   ),
   linetrack: digitalSensor(
-    'Датчик линии TCRT5000',
+    t('Датчик линии TCRT5000'),
     'eye',
     '#2c3041',
     ['БЕЛОЕ', 'ЧЁРНОЕ'],
@@ -1171,7 +1172,7 @@ const rawCatalog = {
     'ИК-отражение: над чёрной линией OUT = HIGH, над светлой поверхностью LOW.',
   ),
   linetrack3: {
-    name: 'Датчик линии ×3',
+    name: t('Датчик линии ×3'),
     category: 'sensors',
     icon: 'eye',
     pins: ['VCC', 'GND', 'L', 'C', 'R'],
@@ -1196,7 +1197,7 @@ const rawCatalog = {
     help: 'Три TCRT5000 для робота: выход HIGH над чёрной линией.',
   },
   photogate: digitalSensor(
-    'Оптопрерыватель (KY-010)',
+    t('Оптопрерыватель (KY-010)'),
     'eye',
     '#3d6fc4',
     ['СВОБОДНО', 'ПЕРЕКРЫТО'],
@@ -1204,7 +1205,7 @@ const rawCatalog = {
     'Щелевой датчик: OUT = HIGH, когда предмет перекрывает луч в щели.',
   ),
   vibrsensor: digitalSensor(
-    'Датчик вибрации SW-420',
+    t('Датчик вибрации SW-420'),
     'activity',
     '#3d6fc4',
     ['ТИХО', 'ВИБРАЦИЯ'],
@@ -1212,7 +1213,7 @@ const rawCatalog = {
     'Пружинный контакт с компаратором: OUT = HIGH при вибрации.',
   ),
   mercury: digitalSensor(
-    'Ртутный датчик наклона (KY-017)',
+    t('Ртутный датчик наклона (KY-017)'),
     'move',
     '#3d6fc4',
     ['ПРЯМО', 'НАКЛОН'],
@@ -1220,7 +1221,7 @@ const rawCatalog = {
     'Капля ртути замыкает контакт при наклоне: OUT = HIGH.',
   ),
   metaltouch: digitalSensor(
-    'Сенсор касания металла (KY-036)',
+    t('Сенсор касания металла (KY-036)'),
     'hand',
     '#3d6fc4',
     ['СВОБОДНО', 'КАСАНИЕ'],
@@ -1228,7 +1229,7 @@ const rawCatalog = {
     'Касание металлического вывода переключает компаратор: OUT = HIGH.',
   ),
   rain: comboSensor(
-    'Датчик дождя YL-83',
+    t('Датчик дождя YL-83'),
     'droplets',
     '#3d6fc4',
     'Намокание',
@@ -1240,10 +1241,10 @@ const rawCatalog = {
     'Гребёнка на пластине: AO падает, когда вода замыкает дорожки; DO = LOW при сильном намокании.',
   ),
   soilcap: analogSensor(
-    'Емкостный датчик почвы v1.2',
+    t('Емкостный датчик почвы v1.2'),
     'droplets',
     '#2c3041',
-    'Влажность',
+    t('Влажность'),
     0,
     100,
     '%',
@@ -1252,7 +1253,7 @@ const rawCatalog = {
     'Без открытых электродов: AO ≈ 2.4 В в сухой почве и ≈ 1.2 В во влажной при 5 В.',
   ),
   steam: analogSensor(
-    'Датчик пара/влаги',
+    t('Датчик пара/влаги'),
     'droplets',
     '#3d6fc4',
     'Влага',
@@ -1264,7 +1265,7 @@ const rawCatalog = {
     'Капли на гребёнке поднимают напряжение AO.',
   ),
   mq2: comboSensor(
-    'Газоанализатор MQ-2',
+    t('Газоанализатор MQ-2'),
     'wind',
     '#3d6fc4',
     'Дым / LPG',
@@ -1276,7 +1277,7 @@ const rawCatalog = {
     'Нагреваемый датчик дыма и горючих газов: AO растёт с концентрацией, DO = LOW выше порога.',
   ),
   mq3: comboSensor(
-    'Датчик алкоголя MQ-3',
+    t('Датчик алкоголя MQ-3'),
     'wind',
     '#3d6fc4',
     'Алкоголь',
@@ -1288,7 +1289,7 @@ const rawCatalog = {
     'Пары спирта: AO растёт с концентрацией, DO = LOW выше порога.',
   ),
   mq7: comboSensor(
-    'Датчик угарного газа MQ-7',
+    t('Датчик угарного газа MQ-7'),
     'wind',
     '#3d6fc4',
     'CO',
@@ -1300,7 +1301,7 @@ const rawCatalog = {
     'Угарный газ: AO растёт с концентрацией, DO = LOW выше порога.',
   ),
   mq135: comboSensor(
-    'Качество воздуха MQ-135',
+    t('Качество воздуха MQ-135'),
     'wind',
     '#3d6fc4',
     'CO₂-экв.',
@@ -1312,7 +1313,7 @@ const rawCatalog = {
     'NH₃, CO₂, бензол: AO растёт с загрязнением, DO = LOW выше порога.',
   ),
   hall49e: comboSensor(
-    'Линейный датчик Холла 49E',
+    t('Линейный датчик Холла 49E'),
     'magnet',
     '#3d6fc4',
     'Поле',
@@ -1324,10 +1325,10 @@ const rawCatalog = {
     'AO = половина питания без поля и смещается с силой и полюсом магнита.',
   ),
   digtemp: comboSensor(
-    'Цифровой термодатчик (KY-028)',
+    t('Цифровой термодатчик (KY-028)'),
     'thermometer',
     '#3d6fc4',
-    'Температура',
+    t('Температура'),
     -20,
     100,
     ' °C',
@@ -1336,7 +1337,7 @@ const rawCatalog = {
     'Термистор с компаратором: DO = LOW выше заданного порога.',
   ),
   uvsensor: analogSensor(
-    'УФ-датчик GUVA-S12SD',
+    t('УФ-датчик GUVA-S12SD'),
     'sun',
     '#2c3041',
     'УФ-индекс',
@@ -1348,7 +1349,7 @@ const rawCatalog = {
     'Около 0.1 В на единицу УФ-индекса при питании 5 В.',
   ),
   voltagesens: analogSensor(
-    'Датчик напряжения 0–25 В',
+    t('Датчик напряжения 0–25 В'),
     'zap',
     '#e8392e',
     'Входное напряжение',
@@ -1360,7 +1361,7 @@ const rawCatalog = {
     'Делитель 1:5: AO = измеряемое / 5. Подключайте к АЦП с опорой 5 В.',
   ),
   acs712: analogSensor(
-    'Датчик тока ACS712-5A',
+    t('Датчик тока ACS712-5A'),
     'zap',
     '#e8392e',
     'Ток',
@@ -1372,10 +1373,10 @@ const rawCatalog = {
     'AO = 2.5 В без тока и смещается на 185 мВ на ампер.',
   ),
   sharpir: analogSensor(
-    'ИК-дальномер Sharp GP2Y0A21',
+    t('ИК-дальномер Sharp GP2Y0A21'),
     'eye',
     '#2c3041',
-    'Расстояние',
+    t('Расстояние'),
     10,
     80,
     ' см',
@@ -1384,10 +1385,10 @@ const rawCatalog = {
     'Нелинейный выход: около 2.3 В на 10 см и 0.4 В на 80 см.',
   ),
   thermky013: analogSensor(
-    'Аналоговый термистор (KY-013)',
+    t('Аналоговый термистор (KY-013)'),
     'thermometer',
     '#3d6fc4',
-    'Температура',
+    t('Температура'),
     -20,
     100,
     ' °C',
@@ -1396,7 +1397,7 @@ const rawCatalog = {
     'Делитель с NTC 10 кОм: напряжение растёт с температурой.',
   ),
   mg996r: {
-    name: 'Сервопривод MG996R',
+    name: t('Сервопривод MG996R'),
     category: 'actuators',
     icon: 'gauge',
     pins: ['VCC', 'SIG', 'GND'],
@@ -1408,7 +1409,7 @@ const rawCatalog = {
     help: 'Мощный сервопривод с металлическим редуктором: угол задаётся импульсом 1–2 мс с частотой 50 Гц.',
   },
   speaker: {
-    name: 'Динамик 8 Ом',
+    name: t('Динамик 8 Ом'),
     category: 'actuators',
     icon: 'volume',
     pins: ['SIG', 'GND'],
@@ -1420,7 +1421,7 @@ const rawCatalog = {
     help: 'Звучит частотой сигнала tone(). Через ключ или усилитель громче.',
   },
   piezo: {
-    name: 'Пьезодиск',
+    name: t('Пьезодиск'),
     category: 'actuators',
     icon: 'volume',
     pins: ['SIG', 'GND'],
@@ -1432,7 +1433,7 @@ const rawCatalog = {
     help: 'Латунный диск с керамикой: щёлкает на каждом фронте и пищит от tone().',
   },
   ssr: {
-    name: 'Твердотельное реле G3MB',
+    name: t('Твердотельное реле G3MB'),
     category: 'actuators',
     icon: 'power',
     pins: ['VCC', 'GND', 'IN'],
@@ -1444,7 +1445,7 @@ const rawCatalog = {
     help: 'Беззвучное реле для переменного тока. Силовая часть не моделируется.',
   },
   mosfet: {
-    name: 'MOSFET-ключ IRF520',
+    name: t('MOSFET-ключ IRF520'),
     category: 'actuators',
     icon: 'zap',
     pins: ['SIG', 'VCC', 'GND'],
@@ -1456,7 +1457,7 @@ const rawCatalog = {
     help: 'Ключ для мощной нагрузки: доля HIGH на SIG — мощность на выходе V+/V−.',
   },
   magnet: {
-    name: 'Электромагнит (модуль)',
+    name: t('Электромагнит (модуль)'),
     category: 'actuators',
     icon: 'magnet',
     pins: ['SIG', 'VCC', 'GND'],
@@ -1468,7 +1469,7 @@ const rawCatalog = {
     help: 'Притягивает железо, пока SIG = HIGH.',
   },
   levelshift: {
-    name: 'Преобразователь уровней ×4',
+    name: t('Преобразователь уровней ×4'),
     category: 'bus',
     icon: 'cpu',
     pins: ['HV', 'LV', 'GND', 'HV1', 'HV2', 'HV3', 'HV4', 'LV1', 'LV2', 'LV3', 'LV4'],
@@ -1482,7 +1483,7 @@ const rawCatalog = {
 
   // ---------------------------------------------------------------- I²C modules from kits
   bmp280: {
-    name: 'Барометр BMP280',
+    name: t('Барометр BMP280'),
     category: 'bus',
     icon: 'gauge',
     pins: busSensorPins,
@@ -1490,7 +1491,7 @@ const rawCatalog = {
     color: '#7d4fc4',
     control: addresses([0x76, 0x77]),
     extras: [
-      range('Температура', -40, 85, ' °C', 0.1, { canvas: true }),
+      range(t('Температура'), -40, 85, ' °C', 0.1, { canvas: true }),
       range('Давление', 300, 1100, ' гПа', 0.1, { canvas: true }),
     ],
     defaultValues: [25, 1013.25],
@@ -1499,7 +1500,7 @@ const rawCatalog = {
     help: 'CHIP_ID 0x58 в 0xD0. Калибровка 0x88–0x9F, данные давления 0xF7–0xF9 и температуры 0xFA–0xFC (20 бит). В спящем режиме (0xF4 = 0) данные не обновляются.',
   },
   bme280: {
-    name: 'Метеодатчик BME280',
+    name: t('Метеодатчик BME280'),
     category: 'bus',
     icon: 'thermometer',
     pins: busSensorPins,
@@ -1507,9 +1508,9 @@ const rawCatalog = {
     color: '#7d4fc4',
     control: addresses([0x76, 0x77]),
     extras: [
-      range('Температура', -40, 85, ' °C', 0.1, { canvas: true }),
+      range(t('Температура'), -40, 85, ' °C', 0.1, { canvas: true }),
       range('Давление', 300, 1100, ' гПа', 0.1, { canvas: true }),
-      range('Влажность', 0, 100, ' %', 0.5, { canvas: true }),
+      range(t('Влажность'), 0, 100, ' %', 0.5, { canvas: true }),
     ],
     defaultValues: [25, 1013.25, 50],
     supply: { vcc: 'VCC', gnd: 'GND', min: 1.7 },
@@ -1517,7 +1518,7 @@ const rawCatalog = {
     help: 'Как BMP280 (CHIP_ID 0x60) плюс влажность: калибровка 0xA1 и 0xE1–0xE7, данные 0xFD–0xFE. Перед измерением запишите 0xF2, затем 0xF4.',
   },
   bmp180: {
-    name: 'Барометр BMP180',
+    name: t('Барометр BMP180'),
     category: 'bus',
     icon: 'gauge',
     pins: busSensorPins,
@@ -1525,7 +1526,7 @@ const rawCatalog = {
     color: '#3d6fc4',
     control: none,
     extras: [
-      range('Температура', -40, 85, ' °C', 0.1, { canvas: true }),
+      range(t('Температура'), -40, 85, ' °C', 0.1, { canvas: true }),
       range('Давление', 300, 1100, ' гПа', 0.1, { canvas: true }),
     ],
     defaultValues: [25, 1013.25],
@@ -1534,7 +1535,7 @@ const rawCatalog = {
     help: 'ID 0x55. Калибровка 0xAA–0xBF (11 слов). Запись 0x2E в 0xF4 меряет температуру, 0x34 + (oss << 6) — давление; результат в 0xF6–0xF8.',
   },
   aht20: {
-    name: 'Термогигрометр AHT20',
+    name: t('Термогигрометр AHT20'),
     category: 'bus',
     icon: 'droplets',
     pins: busSensorPins,
@@ -1542,8 +1543,8 @@ const rawCatalog = {
     color: '#2c3041',
     control: none,
     extras: [
-      range('Температура', -40, 85, ' °C', 0.1, { canvas: true }),
-      range('Влажность', 0, 100, ' %', 0.5, { canvas: true }),
+      range(t('Температура'), -40, 85, ' °C', 0.1, { canvas: true }),
+      range(t('Влажность'), 0, 100, ' %', 0.5, { canvas: true }),
     ],
     defaultValues: [25, 50],
     supply: { vcc: 'VCC', gnd: 'GND', min: 2 },
@@ -1551,7 +1552,7 @@ const rawCatalog = {
     help: 'Команда 0xAC 0x33 0x00 запускает измерение на 80 мс; ответ — статус, 20 бит влажности, 20 бит температуры и CRC.',
   },
   sht31: {
-    name: 'Термогигрометр SHT31',
+    name: t('Термогигрометр SHT31'),
     category: 'bus',
     icon: 'droplets',
     pins: busSensorPins,
@@ -1559,8 +1560,8 @@ const rawCatalog = {
     color: '#3d6fc4',
     control: addresses([0x44, 0x45]),
     extras: [
-      range('Температура', -40, 125, ' °C', 0.1, { canvas: true }),
-      range('Влажность', 0, 100, ' %', 0.5, { canvas: true }),
+      range(t('Температура'), -40, 125, ' °C', 0.1, { canvas: true }),
+      range(t('Влажность'), 0, 100, ' %', 0.5, { canvas: true }),
     ],
     defaultValues: [25, 50],
     supply: { vcc: 'VCC', gnd: 'GND', min: 2.4 },
@@ -1568,7 +1569,7 @@ const rawCatalog = {
     help: 'Команда 0x24 0x00 — однократное измерение; 6 байт ответа: температура, CRC, влажность, CRC (CRC-8, полином 0x31).',
   },
   adxl345: {
-    name: 'Акселерометр ADXL345',
+    name: t('Акселерометр ADXL345'),
     category: 'bus',
     icon: 'move',
     pins: busSensorPins,
@@ -1586,7 +1587,7 @@ const rawCatalog = {
     help: 'DEVID 0xE5. Измерение включает бит 3 в POWER_CTL (0x2D); диапазон в DATA_FORMAT (0x31). Данные 0x32–0x37, младший байт первым.',
   },
   hmc5883l: {
-    name: 'Компас HMC5883L',
+    name: t('Компас HMC5883L'),
     category: 'bus',
     icon: 'magnet',
     pins: busSensorPins,
@@ -1604,7 +1605,7 @@ const rawCatalog = {
     help: 'Идентификатор «H43» в 0x0A–0x0C. Данные с 0x03 в порядке X, Z, Y (старший байт первым), чувствительность по регистру B (по умолчанию 1090 ед./Гс).',
   },
   qmc5883l: {
-    name: 'Компас QMC5883L',
+    name: t('Компас QMC5883L'),
     category: 'bus',
     icon: 'magnet',
     pins: busSensorPins,
@@ -1622,7 +1623,7 @@ const rawCatalog = {
     help: 'Частая замена HMC5883L на дешёвых модулях GY-271. Режим в 0x09, данные 0x00–0x05 в порядке X, Y, Z младшим байтом вперёд.',
   },
   ina219: {
-    name: 'Ваттметр INA219',
+    name: t('Ваттметр INA219'),
     category: 'bus',
     icon: 'zap',
     pins: busSensorPins,
@@ -1639,7 +1640,7 @@ const rawCatalog = {
     help: 'Шунт 0,1 Ом. Регистры по 16 бит: 1 — напряжение шунта (10 мкВ), 2 — напряжение шины (4 мВ, сдвиг на 3), 4 — ток и 3 — мощность после записи калибровки в регистр 5.',
   },
   mlx90614: {
-    name: 'ИК-термометр MLX90614',
+    name: t('ИК-термометр MLX90614'),
     category: 'bus',
     icon: 'thermometer',
     pins: busSensorPins,
@@ -1656,7 +1657,7 @@ const rawCatalog = {
     help: 'SMBus: команда 0x06 — температура корпуса, 0x07 — объекта; ответ из трёх байт (младший, старший, PEC). T = raw × 0,02 − 273,15.',
   },
   pcf8591: {
-    name: 'АЦП/ЦАП PCF8591',
+    name: t('АЦП/ЦАП PCF8591'),
     category: 'bus',
     icon: 'cpu',
     pins: [...busSensorPins, 'AIN0', 'AIN1', 'AIN2', 'AIN3', 'AOUT'],
@@ -1669,7 +1670,7 @@ const rawCatalog = {
     help: 'Четыре 8-битных входа измеряют напряжение подключённых цепей относительно VCC. Каждое чтение возвращает результат предыдущего преобразования. Бит 6 управляющего байта включает выход AOUT.',
   },
   ads1115: {
-    name: 'АЦП ADS1115 (16 бит)',
+    name: t('АЦП ADS1115 (16 бит)'),
     category: 'bus',
     icon: 'cpu',
     pins: [...busSensorPins, 'A0', 'A1', 'A2', 'A3'],
@@ -1682,7 +1683,7 @@ const rawCatalog = {
     help: 'Регистр 1 — конфигурация (мультиплексор, диапазон, запуск), регистр 0 — результат со знаком. Однократное преобразование готово примерно через 8 мс.',
   },
   mcp4725: {
-    name: 'ЦАП MCP4725',
+    name: t('ЦАП MCP4725'),
     category: 'bus',
     icon: 'activity',
     pins: [...busSensorPins, 'VOUT'],
@@ -1694,7 +1695,7 @@ const rawCatalog = {
     help: '12-битный ЦАП: VOUT = код / 4095 × VCC. Быстрая запись — два байта, запись регистра — 0x40 и 12 бит.',
   },
   mcp23017: {
-    name: 'Расширитель MCP23017',
+    name: t('Расширитель MCP23017'),
     category: 'bus',
     icon: 'cpu',
     pins: [
@@ -1741,7 +1742,7 @@ const rawCatalog = {
 
   // ------------------------------------------------- GPIO protocols (clocked by the MCU or timed)
   tm1637: {
-    name: 'Индикатор TM1637 (4 цифры)',
+    name: t('Индикатор TM1637 (4 цифры)'),
     category: 'displays',
     icon: 'monitor',
     pins: ['CLK', 'DIO', 'VCC', 'GND'],
@@ -1755,7 +1756,7 @@ const rawCatalog = {
     help: 'Двухпроводный протокол с открытым стоком: START/STOP как у I²C, байты младшим битом вперёд, ACK на девятом такте. Команды 0x40 (запись с автоинкрементом), 0xC0+адрес, 0x88+яркость. На модуле подтяжки 10 кОм к VCC. Двоеточие — бит 7 второй цифры.',
   },
   hx711: {
-    name: 'Весы: тензодатчик + HX711',
+    name: t('Весы: тензодатчик + HX711'),
     category: 'sensors',
     icon: 'gauge',
     pins: ['GND', 'DT', 'SCK', 'VCC'],
@@ -1769,7 +1770,7 @@ const rawCatalog = {
     help: '24-битный АЦП, 10 измерений в секунду. DT = LOW — отсчёт готов; 24 импульса SCK выдают его старшим битом вперёд, ещё 1/2/3 импульса задают усиление следующего (A·128, B·32, A·64). Канал A: 52340 + 420 отсчётов на грамм. SCK HIGH дольше 60 мкс усыпляет чип.',
   },
   shift165: {
-    name: 'Регистр 74HC165 (8 входов)',
+    name: t('Регистр 74HC165 (8 входов)'),
     category: 'inputs',
     icon: 'cpu',
     pins: ['VCC', 'GND', 'LD', 'CLK', 'QH', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
@@ -1782,7 +1783,7 @@ const rawCatalog = {
     help: 'LD = LOW защёлкивает входы A–H, каждый фронт CLK сдвигает регистр к QH; первым выходит H. Входы подтянуты к VCC на модуле, CLK INH и SER соединены с GND (каскад не моделируется). shiftIn() читает после фронта — держите CLK в HIGH перед защёлкой или читайте первый бит до такта.',
   },
   scope: {
-    name: 'Осциллограф',
+    name: t('Осциллограф'),
     category: 'instruments',
     icon: 'activity',
     pins: ['CH1', 'CH2', 'GND'],
@@ -1821,13 +1822,13 @@ const rawCatalog = {
     help: 'Рисует напряжение на CH1 (жёлтый) и CH2 (голубой) относительно земли. Прибор стоит на столе сам по себе: протяните провода от его щупов (ВХОД 1, ВХОД 2 и ЗЕМЛЯ) к схеме. Землю соедините с GND платы. Ручками крутят мышью: тянуть вверх или вниз либо колёсиком. Развёртка запускается по фронту выбранного канала, когда он пересекает уровень синхронизации.',
   },
   hcsr04: {
-    name: 'Дальномер HC-SR04',
+    name: t('Дальномер HC-SR04'),
     category: 'sensors',
     icon: 'activity',
     pins: ['VCC', 'TRIG', 'ECHO', 'GND'],
     defaultValue: 50,
     color: '#3d6fc4',
-    control: range('Расстояние', 2, 450, ' см', 1, { canvas: true }),
+    control: range(t('Расстояние'), 2, 450, ' см', 1, { canvas: true }),
     width: 290,
     height: 110,
     supply: { vcc: 'VCC', gnd: 'GND', min: 4.5 },
@@ -1835,7 +1836,7 @@ const rawCatalog = {
     help: 'Импульс TRIG ≥ 10 мкс → через 460 мкс ECHO = HIGH на время пути звука туда и обратно (58 мкс на сантиметр при 343 м/с). Дальше 400 см эха нет: ECHO держится 38 мс. Измеряйте pulseIn().',
   },
   dht11: {
-    name: 'Термогигрометр DHT11',
+    name: t('Термогигрометр DHT11'),
     category: 'sensors',
     icon: 'droplets',
     pins: ['DATA', 'VCC', 'GND'],
@@ -1843,8 +1844,8 @@ const rawCatalog = {
     color: '#3d8fd6',
     control: none,
     extras: [
-      range('Температура', 0, 50, ' °C', 0.1, { canvas: true }),
-      range('Влажность', 20, 90, ' %', 1, { canvas: true }),
+      range(t('Температура'), 0, 50, ' °C', 0.1, { canvas: true }),
+      range(t('Влажность'), 20, 90, ' %', 1, { canvas: true }),
     ],
     defaultValues: [24, 45],
     supply: { vcc: 'VCC', gnd: 'GND', min: 3 },
@@ -1852,7 +1853,7 @@ const rawCatalog = {
     help: 'Одна линия с подтяжкой: МК держит LOW ≥ 18 мс и отпускает; датчик отвечает 80 мкс LOW + 80 мкс HIGH и 40 битами (50 мкс LOW, затем HIGH 26 мкс = 0 или 70 мкс = 1): влажность, температура, контрольная сумма.',
   },
   dht22: {
-    name: 'Термогигрометр DHT22 (AM2302)',
+    name: t('Термогигрометр DHT22 (AM2302)'),
     category: 'sensors',
     icon: 'droplets',
     pins: ['VCC', 'DATA', 'GND'],
@@ -1860,8 +1861,8 @@ const rawCatalog = {
     color: '#f2efe6',
     control: none,
     extras: [
-      range('Температура', -40, 80, ' °C', 0.1, { canvas: true }),
-      range('Влажность', 0, 100, ' %', 0.1, { canvas: true }),
+      range(t('Температура'), -40, 80, ' °C', 0.1, { canvas: true }),
+      range(t('Влажность'), 0, 100, ' %', 0.1, { canvas: true }),
     ],
     defaultValues: [22.5, 55],
     supply: { vcc: 'VCC', gnd: 'GND', min: 3.3 },
@@ -1869,19 +1870,19 @@ const rawCatalog = {
     help: 'Протокол DHT11, но старт достаточен от 1 мс, а данные — 16-битные десятые доли: влажность и температура (старший бит — знак).',
   },
   ds18b20: {
-    name: 'Термометр DS18B20 (1-Wire)',
+    name: t('Термометр DS18B20 (1-Wire)'),
     category: 'sensors',
     icon: 'thermometer',
     pins: ['GND', 'VCC', 'DQ'],
     defaultValue: 25,
     color: '#24272f',
-    control: range('Температура', -55, 125, ' °C', 0.5, { canvas: true }),
+    control: range(t('Температура'), -55, 125, ' °C', 0.5, { canvas: true }),
     supply: { vcc: 'VCC', gnd: 'GND', min: 3 },
     outputs: { pins: ['DQ'], weakHigh: false },
     help: '1-Wire с подтяжкой 4,7 кОм на модуле: сброс ≥ 480 мкс и импульс присутствия, ROM-команды Search/Read/Match/Skip, Convert T (750 мс при 12 битах), чтение и запись scratchpad с CRC Dallas. После включения регистр хранит 85 °C до первого измерения. Питание только внешнее.',
   },
   ws2812stick: {
-    name: 'Линейка WS2812B (8 LED)',
+    name: t('Линейка WS2812B (8 LED)'),
     category: 'indicators',
     icon: 'lightbulb',
     pins: ['VCC', 'DIN', 'GND'],
@@ -1894,7 +1895,7 @@ const rawCatalog = {
     help: 'Адресные светодиоды: каждый бит — импульс HIGH 0,4 мкс (0) или 0,8 мкс (1), 24 бита на светодиод в порядке G, R, B; пауза LOW ≥ 50 мкс показывает кадр. Выход DOUT для продолжения ленты не моделируется.',
   },
   ws2812ring: {
-    name: 'Кольцо WS2812B (16 LED)',
+    name: t('Кольцо WS2812B (16 LED)'),
     category: 'indicators',
     icon: 'lightbulb',
     pins: ['VCC', 'DIN', 'GND'],
@@ -1909,7 +1910,7 @@ const rawCatalog = {
 
   // ------------------------------------------------- kit modules: parallel LCD, encoder, IR, motors
   lcd1602p: {
-    name: 'LCD 1602 (параллельный)',
+    name: t('LCD 1602 (параллельный)'),
     category: 'displays',
     icon: 'monitor',
     pins: ['VSS', 'VDD', 'V0', 'RS', 'RW', 'E', 'D4', 'D5', 'D6', 'D7', 'A', 'K'],
@@ -1923,7 +1924,7 @@ const rawCatalog = {
     help: 'Контроллер HD44780 без I²C-переходника, 4-битный режим библиотеки LiquidCrystal: RS выбирает команду или данные, полубайт D4–D7 защёлкивается спадом E. RW соедините с GND (чтение не моделируется). Подсветка горит при A = HIGH и K = LOW. Контраст V0 не моделируется; выводы D0–D3 не выведены.',
   },
   encoder: {
-    name: 'Энкодер KY-040',
+    name: t('Энкодер KY-040'),
     category: 'inputs',
     icon: 'sliders',
     pins: ['CLK', 'DT', 'SW', 'VCC', 'GND'],
@@ -1933,7 +1934,7 @@ const rawCatalog = {
     extras: [
       {
         kind: 'select',
-        label: 'Кнопка',
+        label: t('Кнопка'),
         options: [
           { value: 0, label: 'Отпущена' },
           { value: 1, label: 'Нажата' },
@@ -1947,7 +1948,7 @@ const rawCatalog = {
     help: 'Каждый щелчок ручки — полный квадратурный цикл на CLK/DT, по 1 мс на четверть; по часовой стрелке CLK падает раньше DT. Подтяжки 10 кОм на CLK и DT стоят на модуле, у SW подтяжки нет — используйте INPUT_PULLUP.',
   },
   irremote: {
-    name: 'ИК-приёмник + пульт (NEC)',
+    name: t('ИК-приёмник + пульт (NEC)'),
     category: 'inputs',
     icon: 'gamepad',
     pins: ['OUT', 'GND', 'VCC'],
@@ -1991,7 +1992,7 @@ const rawCatalog = {
     help: 'Приёмник VS1838B демодулирует 38 кГц: OUT = LOW, пока идёт вспышка. Выбор кнопки на пульте отправляет один кадр NEC: 9 мс + 4,5 мс, затем адрес 0x00, его инверсия, код и инверсия кода (562,5 мкс импульс, пауза 562,5/1687,5 мкс). Повторное нажатие той же кнопки — выберите «—» и снова кнопку. Повтор при удержании не моделируется.',
   },
   stepper: {
-    name: 'Шаговый 28BYJ-48 + ULN2003',
+    name: t('Шаговый 28BYJ-48 + ULN2003'),
     category: 'actuators',
     icon: 'move',
     pins: ['IN1', 'IN2', 'IN3', 'IN4', 'VCC', 'GND'],
@@ -2004,7 +2005,7 @@ const rawCatalog = {
     help: 'Плата ULN2003 включает обмотки по уровням IN1–IN4 (светодиоды показывают какие). Ротор идёт к ближайшей включённой фазе: полушаг, полный шаг и волна. 4096 полушагов на оборот вала (редуктор 64:1). В библиотеке Stepper — Stepper(2048, IN1, IN3, IN2, IN4).',
   },
   l298n: {
-    name: 'Драйвер L298N + 2 мотора',
+    name: t('Драйвер L298N + 2 мотора'),
     category: 'actuators',
     icon: 'wind',
     pins: ['ENA', 'IN1', 'IN2', 'IN3', 'IN4', 'ENB', 'VCC', 'GND'],
@@ -2018,7 +2019,7 @@ const rawCatalog = {
     help: 'Два H-моста: IN1/IN2 (IN3/IN4) задают направление мотора A (B), доля HIGH на ENA (ENB) — скорость. Одинаковые уровни на IN — тормоз. Без провода на ENA/ENB стоит перемычка на 5 В — полная скорость. Ток, нагрев и падение напряжения не моделируются.',
   },
   servo360: {
-    name: 'Сервопривод 360° (FS90R)',
+    name: t('Сервопривод 360° (FS90R)'),
     category: 'actuators',
     icon: 'gauge',
     pins: ['GND', 'VCC', 'SIG'],
@@ -2030,7 +2031,7 @@ const rawCatalog = {
     help: 'Вместо угла импульс 50 Гц задаёт скорость: 1,5 мс — стоп, 1 мс — полный ход в одну сторону, 2 мс — в другую. Servo.write(90) — стоп, 0 и 180 — максимум.',
   },
   flowmeter: {
-    name: 'Расходомер воды YF-S201',
+    name: t('Расходомер воды YF-S201'),
     category: 'sensors',
     icon: 'droplets',
     pins: ['VCC', 'GND', 'OUT'],
@@ -2044,7 +2045,7 @@ const rawCatalog = {
     help: 'Датчик Холла на крыльчатке: меандр с частотой 7,5 Гц на каждый литр в минуту (450 импульсов на литр). Считайте импульсы прерыванием attachInterrupt().',
   },
   speedsensor: {
-    name: 'Датчик скорости (щелевой, LM393)',
+    name: t('Датчик скорости (щелевой, LM393)'),
     category: 'sensors',
     icon: 'activity',
     pins: ['VCC', 'GND', 'DO'],
@@ -2058,20 +2059,20 @@ const rawCatalog = {
     help: 'Оптопара в щели и диск с 20 прорезями: 20 импульсов на оборот, частота = об/мин ÷ 3.',
   },
   max6675: {
-    name: 'Термопара K + MAX6675',
+    name: t('Термопара K + MAX6675'),
     category: 'sensors',
     icon: 'thermometer',
     pins: ['GND', 'VCC', 'SCK', 'CS', 'SO'],
     defaultValue: 25,
     color: '#a33a3a',
-    control: range('Температура', 0, 1000, ' °C', 0.25, { canvas: true }),
+    control: range(t('Температура'), 0, 1000, ' °C', 0.25, { canvas: true }),
     width: 240,
     supply: { vcc: 'VCC', gnd: 'GND', min: 3 },
     outputs: { pins: ['SO'], weakHigh: false },
     help: 'Только чтение: спад CS выставляет на SO бит D15, каждый спад SCK — следующий. 16 бит: 0, температура в 0,25 °C (12 бит), флаг обрыва (0), два служебных. Время преобразования 220 мс не моделируется.',
   },
   tcs34725: {
-    name: 'Датчик цвета TCS34725',
+    name: t('Датчик цвета TCS34725'),
     category: 'bus',
     icon: 'eye',
     pins: busSensorPins,
@@ -2079,9 +2080,9 @@ const rawCatalog = {
     color: '#2c3041',
     control: none,
     extras: [
-      range('Красный', 0, 255, '', 1, { canvas: true }),
-      range('Зелёный', 0, 255, '', 1, { canvas: true }),
-      range('Синий', 0, 255, '', 1, { canvas: true }),
+      range(t('Красный'), 0, 255, '', 1, { canvas: true }),
+      range(t('Зелёный'), 0, 255, '', 1, { canvas: true }),
+      range(t('Синий'), 0, 255, '', 1, { canvas: true }),
       range('Освещённость', 0, 100, ' %', 1, { canvas: true }),
     ],
     defaultValues: [200, 40, 40, 60],
@@ -2090,7 +2091,7 @@ const rawCatalog = {
     help: 'ID 0x44 в регистре 0x12; команда с битом 0x80. ENABLE = PON | AEN запускает измерение, через (256 − ATIME) × 2,4 мс выставляется AVALID и появляются каналы C, R, G, B. Отсчёты растут с усилением 1/4/16/60× и временем накопления.',
   },
   mpr121: {
-    name: 'Сенсорная клавиатура MPR121',
+    name: t('Сенсорная клавиатура MPR121'),
     category: 'inputs',
     icon: 'hand',
     pins: busSensorPins,
@@ -2138,7 +2139,7 @@ const rawCatalog = {
     help: 'I²C 0x52 через переходник. После F0 ← 55 и FB ← 00 запись 0x00 и чтение 6 байт дают X, Y джойстика, старшие биты акселерометра и байт кнопок (0 — нажата). Акселерометр показывает горизонтальное положение.',
   },
   ps2keyboard: {
-    name: 'Клавиатура PS/2',
+    name: t('Клавиатура PS/2'),
     category: 'inputs',
     icon: 'keyboard',
     pins: ['CLK', 'DATA', 'VCC', 'GND'],
@@ -2181,7 +2182,7 @@ const rawCatalog = {
     help: 'Тот же SSD1306, видны четыре верхние страницы (32 строки). В U8g2 — U8G2_SSD1306_128X32_UNIVISION.',
   },
   tm1638: {
-    name: 'Плата TM1638 LED&KEY',
+    name: t('Плата TM1638 LED&KEY'),
     category: 'displays',
     icon: 'keyboard',
     pins: ['VCC', 'GND', 'STB', 'CLK', 'DIO'],
@@ -2203,7 +2204,7 @@ const rawCatalog = {
     help: 'Восемь цифр, восемь светодиодов и восемь кнопок на трёх проводах. STB = LOW открывает обмен, байты младшим битом вперёд по фронту CLK. 0x40/0x44 — запись с автоинкрементом или по адресу, 0xC0+адрес, 0x88+яркость. Чётные адреса — сегменты цифр, нечётные — светодиоды. 0x42 — чтение 4 байт кнопок.',
   },
   lanalyzer: {
-    name: 'Логический анализатор',
+    name: t('Логический анализатор'),
     category: 'instruments',
     icon: 'activity',
     pins: ['1', '2', '3', '4', 'VCC', 'GND'],
@@ -2329,7 +2330,7 @@ const rawCatalog = {
     help: 'UART 9600 бод, 8N1: раз в секунду предложения NMEA $GPRMC и $GPGGA с контрольной суммой. Меньше четырёх спутников — нет решения (статус V). Часы начинаются с 21.10.2026 12:00:00 UTC. Команды на RX (UBX) игнорируются.',
   },
   dfplayer: {
-    name: 'MP3-плеер DFPlayer Mini',
+    name: t('MP3-плеер DFPlayer Mini'),
     category: 'actuators',
     icon: 'volume',
     pins: ['VCC', 'GND', 'RX', 'TX', 'BUSY'],
@@ -2346,7 +2347,7 @@ const rawCatalog = {
     help: 'UART 9600 бод, кадры 7E FF 06 CMD ACK PH PL CH CL EF. Воспроизведение, следующий/предыдущий, громкость 0–30, пауза, стоп, сброс (карта объявляется через 0,6 с), запросы состояния, громкости, числа файлов и номера трека. BUSY = LOW во время трека; по окончании приходит 0x3D. Звук в браузер не выводится.',
   },
   mhz19: {
-    name: 'Датчик CO₂ MH-Z19B',
+    name: t('Датчик CO₂ MH-Z19B'),
     category: 'sensors',
     icon: 'wind',
     pins: ['VCC', 'GND', 'TX', 'RX'],
@@ -2360,7 +2361,7 @@ const rawCatalog = {
     help: 'UART 9600 бод: запрос FF 01 86 00 00 00 00 00 79, ответ FF 86 HH LL — концентрация в ppm, затем температура + 40 и контрольная сумма. Кадры с неверной суммой игнорируются; прогрев и автокалибровка не моделируются.',
   },
   relay2: {
-    name: 'Реле-модуль, 2 канала',
+    name: t('Реле-модуль, 2 канала'),
     category: 'actuators',
     icon: 'power',
     pins: ['VCC', 'GND', 'IN1', 'IN2'],
@@ -2374,7 +2375,7 @@ const rawCatalog = {
     help: 'Каналы на оптронах: у большинства модулей реле включается уровнем LOW на INx (по умолчанию так и настроено), неподключённый вход держится подтяжкой — реле выключено. Показывает состояние катушек; силовые контакты COM/NO/NC не моделируются.',
   },
   relay4: {
-    name: 'Реле-модуль, 4 канала',
+    name: t('Реле-модуль, 4 канала'),
     category: 'actuators',
     icon: 'power',
     pins: ['VCC', 'GND', 'IN1', 'IN2', 'IN3', 'IN4'],
@@ -2388,7 +2389,7 @@ const rawCatalog = {
     help: 'Четыре канала на оптронах, активный уровень по умолчанию LOW. Показывает состояние катушек; силовые контакты не моделируются.',
   },
   max7219seg: {
-    name: 'Индикатор MAX7219 (8 цифр)',
+    name: t('Индикатор MAX7219 (8 цифр)'),
     category: 'displays',
     icon: 'monitor',
     pins: ['VCC', 'GND', 'DIN', 'CS', 'CLK'],
@@ -2401,7 +2402,7 @@ const rawCatalog = {
     help: 'Протокол на GPIO, как в библиотеке LedControl: DIN читается по фронту CLK, 16 бит [адрес, данные] защёлкиваются по фронту CS (LOAD). Регистры цифр 1–8 (цифра 0 — крайняя справа), режим декодирования Code B (0x09), яркость (0x0A), число цифр (0x0B), выключение (0x0C), тест (0x0F).',
   },
   ds1302: {
-    name: 'Часы DS1302',
+    name: t('Часы DS1302'),
     category: 'bus',
     icon: 'clock',
     pins: ['VCC', 'GND', 'CLK', 'DAT', 'RST'],
@@ -2422,7 +2423,7 @@ const rawCatalog = {
     help: 'Трёхпроводный интерфейс: при RST (CE) = HIGH команда идёт младшим битом вперёд по фронтам CLK (бит 7 = 1, бит 6 — ОЗУ, биты 5…1 — адрес, бит 0 — чтение). Ответ выдаётся на DAT по спадам CLK. Адрес 31 — пакетный режим (все регистры часов или 31 байт ОЗУ). Бит WP запрещает запись, бит CH останавливает часы. Отсчёт с 2025-01-01.',
   },
   pca9685: {
-    name: 'ШИМ-драйвер PCA9685 (16 каналов)',
+    name: t('ШИМ-драйвер PCA9685 (16 каналов)'),
     category: 'bus',
     icon: 'sliders',
     pins: ['VCC', 'GND', 'SDA', 'SCL', ...Array.from({ length: 16 }, (_, i) => `PWM${i}`)],
@@ -2465,7 +2466,7 @@ const rawCatalog = {
     help: 'Bluetooth SPP на UART: в режиме данных (EN = LOW) байты идут между скетчем (9600 бод по умолчанию) и сопряжённым телефоном, STATE = HIGH, пока телефон подключён. Телефон отправляет выбранную строку с переводом строки при каждой смене выбора и показывает строки от скетча. При EN = HIGH — командный режим на 38400 бод: AT, AT+NAME, AT+PSWD, AT+ROLE, AT+UART, AT+VERSION?, AT+ADDR?. Радиоканал не моделируется.',
   },
   rc522: {
-    name: 'RFID RC522 (13,56 МГц)',
+    name: t('RFID RC522 (13,56 МГц)'),
     category: 'bus',
     icon: 'cpu',
     pins: ['SDA', 'SCK', 'MOSI', 'MISO', 'IRQ', 'GND', 'RST', '3V3'],
@@ -2517,7 +2518,7 @@ const rawCatalog = {
     help: 'SSD1306 по 4-проводному SPI: D0 — SCK, D1 — MOSI, DC = LOW — команда, HIGH — данные; RES = LOW сбрасывает контроллер. Команды и память те же, что у OLED по I²C. В U8g2 — U8G2_SSD1306_128X64_NONAME_1_4W_HW_SPI(U8G2_R0, CS, DC, RES).',
   },
   nrf24: {
-    name: 'Радиомодуль nRF24L01+',
+    name: t('Радиомодуль nRF24L01+'),
     category: 'bus',
     icon: 'activity',
     pins: ['GND', 'VCC', 'CE', 'CSN', 'SCK', 'MOSI', 'MISO', 'IRQ'],
@@ -2542,7 +2543,7 @@ const rawCatalog = {
     help: 'Регистры и команды nRF24L01+ по SPI: STATUS — первый байт каждого обмена, FIFO передачи и приёма по 3 пакета, автоподтверждение с повторами (SETUP_RETR), статическая и динамическая длина пакета, CE и IRQ (активный LOW). Радиоканал не моделируется: пакет скетча подтверждается, когда второй модуль включён, иначе после всех повторов взводится MAX_RT; в режиме передачи второй модуль каждые 200 мс шлёт «Hello N» или 4-байтный счётчик на адрес канала 1 (или 0). Питание 3,3 В.',
   },
   sdcard: {
-    name: 'Модуль microSD',
+    name: t('Модуль microSD'),
     category: 'bus',
     icon: 'drive',
     pins: ['GND', 'VCC', 'MISO', 'MOSI', 'SCK', 'CS'],

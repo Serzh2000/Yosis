@@ -1,4 +1,5 @@
 import { parseGowinBitstream } from '../../shared/gowin-bitstream';
+import { t } from '../../shared/i18n';
 
 export interface JtagTransport {
   write(data: Uint8Array): Promise<void>;
@@ -26,7 +27,7 @@ const bytes = (...chunks: (number[] | Uint8Array)[]) =>
 // FTDI AN_108: six TMS clocks per command avoids the seven-bit firmware quirk.
 export function tmsCommands(bits: readonly number[], tdi = 0): Uint8Array {
   if (!bits.length || bits.some((bit) => bit !== 0 && bit !== 1) || (tdi !== 0 && tdi !== 1))
-    throw new Error('Некорректные уровни JTAG.');
+    throw new Error(t('Некорректные уровни JTAG.'));
   const result: number[] = [];
   for (let offset = 0; offset < bits.length; offset += 6) {
     const chunk = bits.slice(offset, offset + 6);
@@ -40,7 +41,7 @@ export function tmsCommands(bits: readonly number[], tdi = 0): Uint8Array {
   return Uint8Array.from(result);
 }
 export function instructionCommand(opcode: number): Uint8Array {
-  if (!ALLOWED.has(opcode)) throw new Error('Эта команда FPGA не разрешена.');
+  if (!ALLOWED.has(opcode)) throw new Error(t('Эта команда FPGA не разрешена.'));
   return bytes(
     tmsCommands([1, 1, 0, 0]),
     [0x1b, 6, opcode & 0x7f, 0x4b, 0, 3 | (opcode & 0x80)],
@@ -60,13 +61,13 @@ export function registerReadCommand(width: 32 | 64): Uint8Array {
   );
 }
 export function decodeRegister(raw: Uint8Array, width: 32 | 64): Uint8Array {
-  if (raw.length !== width / 8 + 1) throw new Error('Неполный ответ регистра JTAG.');
+  if (raw.length !== width / 8 + 1) throw new Error(t('Неполный ответ регистра JTAG.'));
   const result = raw.slice(0, -1);
   result[result.length - 1] = (raw[raw.length - 2] >>> 1) | (raw[raw.length - 1] & 0x80);
   return result;
 }
 export function* dataWriteCommands(data: Uint8Array): Generator<Uint8Array> {
-  if (!data.length) throw new Error('Поток конфигурации пуст.');
+  if (!data.length) throw new Error(t('Поток конфигурации пуст.'));
   yield tmsCommands([1, 0, 0]);
   // Every FTDI command fits within 512 bytes. All intermediate chunks stay Shift-DR.
   for (let offset = 0; offset < data.length - 1; offset += 509) {
@@ -93,7 +94,7 @@ export class GowinJtag {
   ) {}
   private async instruction(opcode: number) {
     if (!this.confirmed && ![0x11, 0x13, 0x41].includes(opcode))
-      throw new Error('Сначала требуется проверить модель FPGA.');
+      throw new Error(t('Сначала требуется проверить модель FPGA.'));
     await this.transport.write(instructionCommand(opcode));
   }
   private async register(opcode: number): Promise<number> {
@@ -102,7 +103,7 @@ export class GowinJtag {
     return uint32(decodeRegister(await this.transport.readExact(5), 32));
   }
   async probe(): Promise<JtagIdentity> {
-    if (this.busy) throw new Error('Операция JTAG уже выполняется.');
+    if (this.busy) throw new Error(t('Операция JTAG уже выполняется.'));
     this.busy = true;
     try {
       return await this.identify();
@@ -117,10 +118,10 @@ export class GowinJtag {
     await this.transport.write(registerReadCommand(64));
     const id = decodeRegister(await this.transport.readExact(9), 64);
     if (uint32(id) !== EXPECTED_ID || uint32(id, 4) !== 0xffffffff)
-      throw new Error('Ожидается одна Tang Nano 20K с JTAG ID 0x0000081B. Запись не начата.');
+      throw new Error(t('Ожидается одна Tang Nano 20K с JTAG ID 0x0000081B. Запись не начата.'));
     this.confirmed = true;
     if ((await this.register(0x11)) !== EXPECTED_ID)
-      throw new Error('JTAG ID изменился после проверки цепочки.');
+      throw new Error(t('JTAG ID изменился после проверки цепочки.'));
     return {
       idCode: uint32(id),
       userCode: await this.register(0x13),
@@ -131,41 +132,41 @@ export class GowinJtag {
     const deadline = Date.now() + 3000;
     do {
       const status = await this.register(0x41);
-      if (status & 15) throw new Error(`Ошибка FPGA: 0x${status.toString(16)} (${label}).`);
+      if (status & 15) throw new Error(t('Ошибка FPGA: 0x{status} ({label}).', { status: status.toString(16), label }));
       if ((status & mask) === expected) return status;
       await this.transport.write(tmsCommands(new Array(60).fill(0)));
       await this.pause(10);
     } while (Date.now() < deadline);
-    throw new Error(`FPGA не завершила этап «${label}».`);
+    throw new Error(t('FPGA не завершила этап «{label}».', { label }));
   }
   private async disable() {
     await this.instruction(0x3a);
     await this.instruction(0x02);
-    await this.poll(0x80, 0, 'выход из конфигурации');
+    await this.poll(0x80, 0, t('выход из конфигурации'));
   }
   async program(text: string): Promise<JtagIdentity> {
-    if (this.busy) throw new Error('Операция JTAG уже выполняется.');
+    if (this.busy) throw new Error(t('Операция JTAG уже выполняется.'));
     // Validate all commands and CRCs before any USB/JTAG traffic.
     const fs = parseGowinBitstream(text);
     this.busy = true;
     let touched = false;
     try {
-      this.progress({ stage: 'Проверка FPGA', percent: 0 });
+      this.progress({ stage: t('Проверка FPGA'), percent: 0 });
       const identity = await this.identify();
       if (identity.status & 15)
-        throw new Error('FPGA сообщает ошибку конфигурации. Переподключите питание платы.');
-      this.progress({ stage: 'Подготовка SRAM', percent: 2 });
+        throw new Error(t('FPGA сообщает ошибку конфигурации. Переподключите питание платы.'));
+      this.progress({ stage: t('Подготовка SRAM'), percent: 2 });
       touched = true;
       await this.instruction(0x15);
-      await this.poll(0x80, 0x80, 'включение конфигурации');
+      await this.poll(0x80, 0x80, t('включение конфигурации'));
       await this.instruction(0x05);
       await this.instruction(0x02);
-      await this.poll(0x20, 0x20, 'очистка SRAM');
+      await this.poll(0x20, 0x20, t('очистка SRAM'));
       await this.instruction(0x09);
       await this.instruction(0x02);
       await this.disable();
       await this.instruction(0x15);
-      await this.poll(0x80, 0x80, 'включение конфигурации');
+      await this.poll(0x80, 0x80, t('включение конфигурации'));
       await this.instruction(0x12);
       await this.instruction(0x17);
       const wire = Uint8Array.from(fs.wireBytes, (byte) => reverse[byte]);
@@ -174,13 +175,13 @@ export class GowinJtag {
         reported = -1;
       for (const command of dataWriteCommands(wire)) {
         if (Date.now() >= deadline)
-          throw new Error('Передача битстрима превысила три минуты. Переподключите плату.');
+          throw new Error(t('Передача битстрима превысила три минуты. Переподключите плату.'));
         await this.transport.write(command);
         if (command[0] === 0x19) sent += command.length - 3;
         const percent = Math.min(97, 3 + Math.floor((sent / wire.length) * 94));
         if (percent !== reported) {
           reported = percent;
-          this.progress({ stage: 'Передача битстрима', percent });
+          this.progress({ stage: t('Передача битстрима'), percent });
         }
       }
       // Set UserCode to the file value. GW2A checksum recomputation is unsupported upstream.
@@ -191,12 +192,12 @@ export class GowinJtag {
       await this.instruction(0x08);
       await this.disable();
       touched = false;
-      this.progress({ stage: 'Проверка результата', percent: 98 });
-      const status = await this.poll(0x2000, 0x2000, 'завершение конфигурации');
+      this.progress({ stage: t('Проверка результата'), percent: 98 });
+      const status = await this.poll(0x2000, 0x2000, t('завершение конфигурации'));
       const userCode = await this.register(0x13);
       if (userCode !== Number.parseInt(fs.userCode, 16))
-        throw new Error('UserCode FPGA отличается от выбранного битстрима.');
-      this.progress({ stage: 'Загрузка завершена', percent: 100 });
+        throw new Error(t('UserCode FPGA отличается от выбранного битстрима.'));
+      this.progress({ stage: t('Загрузка завершена'), percent: 100 });
       return { idCode: EXPECTED_ID, status, userCode };
     } finally {
       if (touched) {

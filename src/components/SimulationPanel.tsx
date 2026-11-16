@@ -17,12 +17,13 @@ import { builtinTruthTableScenario } from '../lib/builtin-scenarios';
 import { WaveformViewer } from './WaveformViewer';
 import { SimulationChecks } from './SimulationChecks';
 import { simulationScenarioSnapshot } from '../../shared/simulation-scenario';
+import { language, t } from '../lib/i18n';
 import './simulation.css';
 
-const pluralRules = new Intl.PluralRules('ru');
+const pluralRules = new Intl.PluralRules(language());
 function countLabel(value: number, words: [string, string, string]) {
   const form = pluralRules.select(value);
-  return `${value} ${words[form === 'one' ? 0 : form === 'few' ? 1 : 2]}`;
+  return `${value} ${t(words[form === 'one' ? 0 : form === 'few' ? 1 : 2])}`;
 }
 
 export function SimulationPanel({
@@ -235,7 +236,7 @@ export function SimulationPanel({
       if (failed) setSettingsTab('checks');
     } catch (cause) {
       if (run === generation.current && !controller.signal.aborted)
-        setError(cause instanceof Error ? cause.message : 'Не удалось запустить симуляцию.');
+        setError(cause instanceof Error ? cause.message : t('Не удалось запустить симуляцию.'));
     } finally {
       if (run === generation.current) {
         inFlight.current = false;
@@ -250,9 +251,9 @@ export function SimulationPanel({
     inFlight.current = false;
     setSubmitting(false);
     setResult((current) =>
-      current ? { ...current, status: 'cancelled', stage: 'Симуляция отменена' } : current,
+      current ? { ...current, status: 'cancelled', stage: t('Симуляция отменена') } : current,
     );
-    setError('Симуляция отменена.');
+    setError(t('Симуляция отменена.'));
   }
 
   async function importVcd(file?: File) {
@@ -261,7 +262,7 @@ export function SimulationPanel({
     runController.current?.abort();
     if (importRef.current) importRef.current.value = '';
     try {
-      if (file.size > 16 * 1024 * 1024) throw new Error('Размер VCD превышает 16 МБ.');
+      if (file.size > 16 * 1024 * 1024) throw new Error(t('Размер VCD превышает 16 МБ.'));
       const text = await file.text();
       if (run !== generation.current) return;
       const parsed = parseVcd(text);
@@ -274,7 +275,7 @@ export function SimulationPanel({
       setShowSettings(false);
     } catch (cause) {
       if (run === generation.current)
-        setError(cause instanceof Error ? cause.message : 'Не удалось открыть VCD.');
+        setError(cause instanceof Error ? cause.message : t('Не удалось открыть VCD.'));
     }
   }
 
@@ -325,22 +326,22 @@ export function SimulationPanel({
     reset ? resetCycles : 0,
   );
   const combinationsLabel = countLabel(stimuli.length + 1, [
-    'комбинация',
-    'комбинации',
-    'комбинаций',
+    t('комбинация'),
+    t('комбинации'),
+    t('комбинаций'),
   ]);
-  const periodsLabel = countLabel(cycles, ['период', 'периода', 'периодов']);
+  const periodsLabel = countLabel(cycles, [t('период'), t('периода'), t('периодов')]);
   const scenarioLabel =
     scenario === 'prepared' || scenario === 'truth-table'
-      ? `Перебор · ${combinationsLabel}`
+      ? t('Перебор · {count}', { count: combinationsLabel })
       : scenario === 'constant'
-        ? 'Постоянные входы'
-        : `Свои шаги · ${stimuli.length}`;
+        ? t('Постоянные входы')
+        : t('Свои шаги · {count}', { count: stimuli.length });
   const settingsTabs = [
-    ['run', 'Запуск'],
-    ['inputs', 'Входы'],
-    ['sequence', `События ${stimuli.length}`],
-    ['checks', `Проверки ${expectations.length}`],
+    ['run', t('Запуск')],
+    ['inputs', t('Входы')],
+    ['sequence', t('События {count}', { count: stimuli.length })],
+    ['checks', t('Проверки {count}', { count: expectations.length })],
   ] as const;
   return (
     <div className="simulation-panel">
@@ -349,14 +350,14 @@ export function SimulationPanel({
           <strong>{traceName || `${project.top} · RTL`}</strong>
           <span>
             {busy
-              ? 'Симуляция выполняется…'
+              ? t('Симуляция выполняется…')
               : result?.status === 'error'
-                ? 'Ошибка симуляции'
+                ? t('Ошибка симуляции')
                 : result?.status === 'cancelled'
-                  ? 'Симуляция отменена'
+                  ? t('Симуляция отменена')
                   : trace
-                    ? `${trace.signals.length} сигналов`
-                    : 'Готов к запуску'}
+                    ? t('{count} сигналов', { count: trace.signals.length })
+                    : t('Готов к запуску')}
           </span>
         </div>
         <div className="simulation-actions">
@@ -364,13 +365,13 @@ export function SimulationPanel({
             type="button"
             className={`button subtle simulation-scenario-button${showSettings ? ' is-active' : ''}`}
             onClick={() => setShowSettings(!showSettings)}
-            aria-label="Параметры симуляции"
+            aria-label={t('Параметры симуляции')}
             aria-expanded={showSettings}
             aria-controls={settingsId}
-            title="Настроить запуск, начальные входы и последовательность"
+            title={t('Настроить запуск, начальные входы и последовательность')}
           >
             <SlidersHorizontal size={13} />
-            <span>{inputPorts.length ? scenarioLabel : 'Параметры'}</span>
+            <span>{inputPorts.length ? scenarioLabel : t('Параметры')}</span>
           </button>
           <button
             type="button"
@@ -379,7 +380,7 @@ export function SimulationPanel({
             onClick={() => importRef.current?.click()}
           >
             <Upload size={13} />
-            Открыть VCD
+            {t('Открыть VCD')}
           </button>
           <input
             ref={importRef}
@@ -392,7 +393,7 @@ export function SimulationPanel({
             type="button"
             className="icon-button"
             disabled={!vcd}
-            aria-label="Скачать VCD"
+            aria-label={t('Скачать VCD')}
             onClick={() => downloadText('wave.vcd', vcd, 'text/plain')}
           >
             <ArrowDownToLine size={15} />
@@ -400,7 +401,7 @@ export function SimulationPanel({
           {busy ? (
             <button type="button" className="button stop" onClick={cancel}>
               <Square size={12} />
-              Остановить симуляцию
+              {t('Остановить симуляцию')}
             </button>
           ) : (
             <button
@@ -409,13 +410,13 @@ export function SimulationPanel({
               disabled={!rtl || !available}
               title={
                 available
-                  ? 'Запустить функциональную симуляцию'
-                  : 'Для запуска нужен Icarus Verilog на сервере'
+                  ? t('Запустить функциональную симуляцию')
+                  : t('Для запуска нужен Icarus Verilog на сервере')
               }
               onClick={() => void start()}
             >
               <Play size={13} fill="currentColor" />
-              Симулировать
+              {t('Симулировать')}
             </button>
           )}
         </div>
@@ -427,12 +428,12 @@ export function SimulationPanel({
       )}
       {result?.status === 'error' && (
         <div className="simulation-error" role="alert">
-          {result.error || 'Подробности ошибки доступны в журнале симуляции.'}
+          {result.error || t('Подробности ошибки доступны в журнале симуляции.')}
         </div>
       )}
       {stale && trace && (
         <div className="simulation-stale">
-          Исходники изменены. Диаграмма относится к предыдущему запуску.
+          {t('Исходники изменены. Диаграмма относится к предыдущему запуску.')}
         </div>
       )}
       {!!result?.checks?.length && (
@@ -443,10 +444,12 @@ export function SimulationPanel({
             setSettingsTab('checks');
           }}
         >
-          Проверки запуска: {result.checks.filter((check) => check.passed).length}/
-          {result.checks.length} совпало
-          {stale ? ' · предыдущие исходники' : ''}
-          {scenarioStale ? ' · предыдущий сценарий' : ''}
+          {t('Проверки запуска: {passed}/{total} совпало', {
+            passed: result.checks.filter((check) => check.passed).length,
+            total: result.checks.length,
+          })}
+          {stale ? t(' · предыдущие исходники') : ''}
+          {scenarioStale ? t(' · предыдущий сценарий') : ''}
         </button>
       )}
       <div className="simulation-workspace">
@@ -462,18 +465,22 @@ export function SimulationPanel({
               {busy ? (
                 <>
                   <LoaderCircle size={20} className="spin" />
-                  <strong>Моделируем RTL…</strong>
-                  <span>{result?.stage || 'Подготовка проекта'}</span>
+                  <strong>{t('Моделируем RTL…')}</strong>
+                  <span>{result?.stage || t('Подготовка проекта')}</span>
                 </>
               ) : (
                 <>
-                  <strong>Посмотрите, как меняются сигналы</strong>
+                  <strong>{t('Посмотрите, как меняются сигналы')}</strong>
                   <span>
                     {available
                       ? inputPorts.length
-                        ? `${scenarioLabel}. ${periodsLabel} по ${periodNs} нс. Запустите симуляцию или настройте входы.`
-                        : 'Синтезируйте проект, чтобы получить его входы. Можно также открыть готовый VCD.'
-                      : 'Для запуска нужен Icarus Verilog. Готовый VCD можно открыть сразу.'}
+                        ? t('{scenario}. {periods} по {period} нс. Запустите симуляцию или настройте входы.', {
+                            scenario: scenarioLabel,
+                            periods: periodsLabel,
+                            period: periodNs,
+                          })
+                        : t('Синтезируйте проект, чтобы получить его входы. Можно также открыть готовый VCD.')
+                      : t('Для запуска нужен Icarus Verilog. Готовый VCD можно открыть сразу.')}
                   </span>
                   {!rtl ? (
                     <button
@@ -482,7 +489,7 @@ export function SimulationPanel({
                       disabled={synthesisBusy}
                       onClick={onSynthesize}
                     >
-                      Сначала синтезировать проект
+                      {t('Сначала синтезировать проект')}
                     </button>
                   ) : (
                     <button
@@ -490,7 +497,7 @@ export function SimulationPanel({
                       className="button subtle"
                       onClick={() => setShowSettings(true)}
                     >
-                      Настроить сценарий
+                      {t('Настроить сценарий')}
                     </button>
                   )}
                 </>
@@ -502,7 +509,7 @@ export function SimulationPanel({
           <aside
             className="simulation-configuration"
             id={settingsId}
-            aria-label="Сценарий симуляции"
+            aria-label={t('Сценарий симуляции')}
             onKeyDown={(event) => {
               if (event.key === 'Escape') {
                 setShowSettings(false);
@@ -513,14 +520,14 @@ export function SimulationPanel({
             }}
           >
             <div className="simulation-configuration-heading">
-              <strong>Сценарий</strong>
+              <strong>{t('Сценарий')}</strong>
               <span>
-                {periodsLabel} · {periodNs} нс
+                {t('{periods} · {period} нс', { periods: periodsLabel, period: periodNs })}
               </span>
               <button
                 type="button"
                 className="icon-button"
-                aria-label="Закрыть параметры симуляции"
+                aria-label={t('Закрыть параметры симуляции')}
                 onClick={() => setShowSettings(false)}
               >
                 <X size={15} />
@@ -529,7 +536,7 @@ export function SimulationPanel({
             <div
               className="simulation-settings-tabs"
               role="tablist"
-              aria-label="Разделы настроек симуляции"
+              aria-label={t('Разделы настроек симуляции')}
             >
               {settingsTabs.map(([id, label], index) => (
                 <button
@@ -576,9 +583,9 @@ export function SimulationPanel({
               {settingsTab === 'run' && (
                 <div className="simulation-settings">
                   <label>
-                    Тактовый вход
+                    {t('Тактовый вход')}
                     <select
-                      aria-label="Тактовый вход"
+                      aria-label={t('Тактовый вход')}
                       value={clock}
                       disabled={busy}
                       onChange={(event) => {
@@ -587,7 +594,7 @@ export function SimulationPanel({
                         if (event.target.value === reset) setReset('');
                       }}
                     >
-                      <option value="">Без тактового входа</option>
+                      <option value="">{t('Без тактового входа')}</option>
                       {singlePorts.map(([name]) => (
                         <option key={name} value={name}>
                           {name}
@@ -596,9 +603,9 @@ export function SimulationPanel({
                     </select>
                   </label>
                   <label>
-                    Сброс
+                    {t('Сброс')}
                     <select
-                      aria-label="Сигнал сброса"
+                      aria-label={t('Сигнал сброса')}
                       value={reset}
                       disabled={busy}
                       onChange={(event) => {
@@ -607,7 +614,7 @@ export function SimulationPanel({
                         setResetActiveLow(/(?:_n|rstn|resetn)$/i.test(event.target.value));
                       }}
                     >
-                      <option value="">Без сброса</option>
+                      <option value="">{t('Без сброса')}</option>
                       {singlePorts
                         .filter(([name]) => name !== clock)
                         .map(([name]) => (
@@ -618,9 +625,9 @@ export function SimulationPanel({
                     </select>
                   </label>
                   <label>
-                    Период, нс
+                    {t('Период, нс')}
                     <input
-                      aria-label="Период тактового сигнала, нс"
+                      aria-label={t('Период тактового сигнала, нс')}
                       type="number"
                       min="1"
                       max="1000000"
@@ -633,9 +640,9 @@ export function SimulationPanel({
                     />
                   </label>
                   <label>
-                    Циклов
+                    {t('Циклов')}
                     <input
-                      aria-label="Число циклов"
+                      aria-label={t('Число циклов')}
                       type="number"
                       min="1"
                       max="10000"
@@ -650,9 +657,9 @@ export function SimulationPanel({
                   {reset && (
                     <>
                       <label>
-                        Циклов сброса
+                        {t('Циклов сброса')}
                         <input
-                          aria-label="Циклов сброса"
+                          aria-label={t('Циклов сброса')}
                           type="number"
                           min="0"
                           max="10000"
@@ -668,14 +675,14 @@ export function SimulationPanel({
                           disabled={busy}
                           onChange={(event) => setResetActiveLow(event.target.checked)}
                         />
-                        Активный 0
+                        {t('Активный 0')}
                       </label>
                     </>
                   )}
                   <p className="simulation-settings-note">
                     {clock
-                      ? 'Период задаёт полный цикл тактового сигнала. Входы меняются в начале периода.'
-                      : 'Без тактового входа период задаёт интервал между изменениями входов.'}
+                      ? t('Период задаёт полный цикл тактового сигнала. Входы меняются в начале периода.')
+                      : t('Без тактового входа период задаёт интервал между изменениями входов.')}
                   </p>
                 </div>
               )}
@@ -684,7 +691,7 @@ export function SimulationPanel({
                   <div
                     className="simulation-input-modes"
                     role="group"
-                    aria-label="Режим входных воздействий"
+                    aria-label={t('Режим входных воздействий')}
                   >
                     <button
                       type="button"
@@ -693,12 +700,12 @@ export function SimulationPanel({
                       disabled={busy || !canEnumerate}
                       title={
                         canEnumerate
-                          ? 'Все комбинации, по одной за период. Заменяет текущую последовательность.'
-                          : 'Перебор доступен для 1–8 битов входных данных.'
+                          ? t('Все комбинации, по одной за период. Заменяет текущую последовательность.')
+                          : t('Перебор доступен для 1–8 битов входных данных.')
                       }
                       onClick={enumerateInputs}
                     >
-                      Перебрать входы
+                      {t('Перебрать входы')}
                     </button>
                     <button
                       type="button"
@@ -710,25 +717,31 @@ export function SimulationPanel({
                         setScenario('constant');
                       }}
                     >
-                      Постоянные входы
+                      {t('Постоянные входы')}
                     </button>
                   </div>
                   <p className="simulation-settings-note">
                     {scenario === 'prepared' || scenario === 'truth-table'
-                      ? `Все сочетания от нулей до единиц: ${combinationsLabel}.${reset && resetCycles ? ' После периодов сброса.' : ''} Каждый шаг можно изменить в «Последовательности».`
+                      ? t(
+                          'Все сочетания от нулей до единиц: {combinations}.{reset} Каждый шаг можно изменить в «Последовательности».',
+                          {
+                            combinations: combinationsLabel,
+                            reset: reset && resetCycles ? t(' После периодов сброса.') : '',
+                          },
+                        )
                       : !stimuli.length
-                        ? 'Эти уровни сохраняются весь запуск. Для изменений добавьте шаги в «Последовательности».'
-                        : 'Начальные уровни действуют до первого изменения в «Последовательности».'}
+                        ? t('Эти уровни сохраняются весь запуск. Для изменений добавьте шаги в «Последовательности».')
+                        : t('Начальные уровни действуют до первого изменения в «Последовательности».')}
                   </p>
                   <div className="simulation-input-values">
                     {controlledPorts.map(([name, port]) => (
                       <label key={name}>
                         <span>
                           <strong>{name}</strong>
-                          <small>{port.bits.length} бит</small>
+                          <small>{t('{count} бит', { count: port.bits.length })}</small>
                         </span>
                         <input
-                          aria-label={`Значение входа ${name}`}
+                          aria-label={t('Значение входа {name}', { name })}
                           value={inputs[name] ?? '0'}
                           placeholder="0, 0xFF, 0b10"
                           disabled={busy}
@@ -742,7 +755,7 @@ export function SimulationPanel({
                   </div>
                   {!controlledPorts.length && (
                     <p className="simulation-settings-note">
-                      Свободных входов нет. Такт и сброс задаются в «Запуске».
+                      {t('Свободных входов нет. Такт и сброс задаются в «Запуске».')}
                     </p>
                   )}
                 </>
@@ -751,14 +764,14 @@ export function SimulationPanel({
                 <>
                   <p className="simulation-settings-note">
                     {timeMode === 'cycles'
-                      ? 'Первый период — 0. Изменение через 0,001 нс после начала периода.'
-                      : 'Время от начала запуска, точность 0,001 нс. На совпавшем фронте регистр прочитает прежний вход.'}{' '}
-                    Пустое поле сохраняет прежний уровень; начальные уровни заданы во «Входах».
+                      ? t('Первый период — 0. Изменение через 0,001 нс после начала периода.')
+                      : t('Время от начала запуска, точность 0,001 нс. На совпавшем фронте регистр прочитает прежний вход.')}{' '}
+                    {t('Пустое поле сохраняет прежний уровень; начальные уровни заданы во «Входах».')}
                   </p>
                   <label className="simulation-time-mode">
-                    Шкала событий
+                    {t('Шкала событий')}
                     <select
-                      aria-label="Шкала событий"
+                      aria-label={t('Шкала событий')}
                       value={timeMode}
                       disabled={busy}
                       onChange={(e) => {
@@ -789,16 +802,16 @@ export function SimulationPanel({
                           )
                         }
                       >
-                        По периодам
+                        {t('По периодам')}
                       </option>
-                      <option value="ns">В наносекундах</option>
+                      <option value="ns">{t('В наносекундах')}</option>
                     </select>
                   </label>
                   <div className="simulation-stimuli-scroll">
                     <table>
                       <thead>
                         <tr>
-                          <th>{timeMode === 'cycles' ? 'Период' : 'Время, нс'}</th>
+                          <th>{timeMode === 'cycles' ? t('Период') : t('Время, нс')}</th>
                           {controlledPorts.map(([name]) => (
                             <th key={name}>{name}</th>
                           ))}
@@ -812,8 +825,8 @@ export function SimulationPanel({
                               <input
                                 aria-label={
                                   timeMode === 'cycles'
-                                    ? `Период шага ${index + 1}`
-                                    : `Время события ${index + 1}, нс`
+                                    ? t('Период шага {n}', { n: index + 1 })
+                                    : t('Время события {n}, нс', { n: index + 1 })
                                 }
                                 type="number"
                                 min="0"
@@ -834,7 +847,7 @@ export function SimulationPanel({
                             {controlledPorts.map(([name]) => (
                               <td key={name}>
                                 <input
-                                  aria-label={`${name}, шаг ${index + 1}`}
+                                  aria-label={t('{name}, шаг {n}', { name, n: index + 1 })}
                                   value={event.inputs[name] ?? ''}
                                   placeholder={stimuli
                                     .slice(0, index)
@@ -864,7 +877,7 @@ export function SimulationPanel({
                                 type="button"
                                 className="icon-button"
                                 disabled={busy}
-                                aria-label={`Удалить шаг ${index + 1}`}
+                                aria-label={t('Удалить шаг {n}', { n: index + 1 })}
                                 onClick={() => {
                                   editScenario();
                                   setStimuli((previous) => previous.filter((_, i) => i !== index));
@@ -879,7 +892,7 @@ export function SimulationPanel({
                     </table>
                   </div>
                   {!stimuli.length && (
-                    <p className="simulation-settings-note">Изменений пока нет.</p>
+                    <p className="simulation-settings-note">{t('Изменений пока нет.')}</p>
                   )}
                   <button
                     type="button"
@@ -902,7 +915,7 @@ export function SimulationPanel({
                       setStimuli((previous) => [...previous, { cycle, inputs: {} }]);
                     }}
                   >
-                    Добавить шаг
+                    {t('Добавить шаг')}
                   </button>
                 </>
               )}
@@ -925,11 +938,11 @@ export function SimulationPanel({
       </div>
       <div className="simulation-footer">
         <span>
-          Функциональная RTL симуляция · изменения входов по периодам · без задержек распространения
+          {t('Функциональная RTL симуляция · изменения входов по периодам · без задержек распространения')}
         </span>
         {result && (
           <button type="button" onClick={() => setShowLogs(!showLogs)}>
-            {showLogs ? 'Скрыть' : 'Показать'} журнал симуляции
+            {showLogs ? t('Скрыть журнал симуляции') : t('Показать журнал симуляции')}
           </button>
         )}
       </div>

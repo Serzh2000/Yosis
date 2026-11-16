@@ -6,6 +6,7 @@ import { deviceFactories } from './registry';
 import { Dht11, HcSr04, IrReceiver, Ps2Keyboard } from './sensors';
 import { Max7219, Mcp3008, Tm1637, Ws2812 } from './serial-devices';
 import { Ssd1306 } from './ssd1306';
+import { t } from '../../../../shared/i18n';
 
 /** Models of the bus parts; a part definition names its model in `params.model`. */
 const MODELS = {
@@ -30,7 +31,7 @@ export type BusModel = keyof typeof MODELS;
 export function createBusDevice(def: PartDef, opts: Options, host: DeviceHost): Device {
   const model = def.params?.model as BusModel | undefined;
   const Model = model && MODELS[model];
-  if (!Model) throw new Error(`Нет модели для детали ${def.id}`);
+  if (!Model) throw new Error(t('Нет модели для детали {id}', { id: def.id }));
   return new Model(def, opts, host);
 }
 

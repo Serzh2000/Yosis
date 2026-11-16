@@ -10,6 +10,7 @@ import {
 import { headerByFpga } from '../../lib/lab/pads';
 import type { LabPart, PinTarget, ResolvedWire } from '../../lib/lab/runtime';
 import { Dialog } from '../Dialog';
+import { t } from '../../lib/i18n';
 
 interface Props {
   part: LabPart;
@@ -137,12 +138,12 @@ export const PartProperties = memo(function PartProperties({
   const nameId = useId();
   const pins = partPins(def, part.opts);
   return (
-    <Dialog title="Свойства детали" className="dialog lab-props" onClose={onClose}>
+    <Dialog title={t('Свойства детали')} className="dialog lab-props" onClose={onClose}>
       <p className="lab-props-note">
         <strong>{def.title}.</strong> {def.note}
       </p>
       <div className="lab-field">
-        <label htmlFor={nameId}>Подпись</label>
+        <label htmlFor={nameId}>{t('Подпись')}</label>
         <input
           id={nameId}
           value={part.label ?? ''}
@@ -150,7 +151,7 @@ export const PartProperties = memo(function PartProperties({
           placeholder={def.title}
           onChange={(event) => onChange({ label: event.target.value }, 'label')}
         />
-        <small>Она заменит название детали на столе.</small>
+        <small>{t('Она заменит название детали на столе.')}</small>
       </div>
       {def.props?.map((prop) => (
         <Field
@@ -161,13 +162,13 @@ export const PartProperties = memo(function PartProperties({
         />
       ))}
       <table className="lab-props-pins">
-        <caption>Выводы</caption>
+        <caption>{t('Выводы')}</caption>
         <thead>
           <tr>
-            <th scope="col">Вывод</th>
-            <th scope="col">Направление</th>
-            <th scope="col">Контакт платы</th>
-            <th scope="col">Сигнал</th>
+            <th scope="col">{t('Вывод')}</th>
+            <th scope="col">{t('Направление')}</th>
+            <th scope="col">{t('Контакт платы')}</th>
+            <th scope="col">{t('Сигнал')}</th>
           </tr>
         </thead>
         <tbody>
@@ -178,9 +179,11 @@ export const PartProperties = memo(function PartProperties({
             return (
               <tr key={pin[0]}>
                 <th scope="row">{pin[1]}</th>
-                <td>{pin[2] === 'in' ? 'вход' : pin[2] === 'io' ? 'двунаправл.' : 'выход'}</td>
-                <td>{wire ? (rail ?? wire.fpga) : 'не подключён'}</td>
-                <td>{wire && !rail ? (target?.signal ?? 'не назначен') : '—'}</td>
+                <td>
+                  {pin[2] === 'in' ? t('вход') : pin[2] === 'io' ? t('двунаправл.') : t('выход')}
+                </td>
+                <td>{wire ? (rail ?? wire.fpga) : t('не подключён')}</td>
+                <td>{wire && !rail ? (target?.signal ?? t('не назначен')) : '—'}</td>
               </tr>
             );
           })}
@@ -188,10 +191,10 @@ export const PartProperties = memo(function PartProperties({
       </table>
       <div className="dialog-actions lab-props-actions">
         <button type="button" className="button stop" onClick={onRemove}>
-          <Trash2 size={14} /> Удалить деталь
+          <Trash2 size={14} /> {t('Удалить деталь')}
         </button>
         <button type="button" className="button primary" onClick={onClose}>
-          Готово
+          {t('Готово')}
         </button>
       </div>
     </Dialog>

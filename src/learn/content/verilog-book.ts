@@ -10,6 +10,7 @@ import {
 } from '../../lib/learning-course';
 import { authoredVerilogChapters } from './authored';
 import type { Block, BookDef, LessonDef, PageDef } from './schema';
+import { t } from '../../lib/i18n';
 
 /** Ids of pages are letters, digits, hyphens; a step id from the course already is. */
 const pageId = (lesson: GuidedLesson, step: CourseStep) =>
@@ -35,7 +36,7 @@ function pageOf(lesson: GuidedLesson, step: CourseStep): PageDef {
       answer,
       explain: step.quiz.options[answer]?.feedback ?? '',
     });
-    page.task = { kind: 'quiz', text: 'Выбери верный ответ.' };
+    page.task = { kind: 'quiz', text: t('Выбери верный ответ.') };
   } else if (step.kind === 'practice' && lesson.exercise)
     page.task = { kind: 'sim', text: step.text, lessonId: lesson.id };
   return page;
@@ -50,10 +51,10 @@ const lessonOf = (lesson: GuidedLesson): LessonDef => ({
 
 export const verilogBook: BookDef = {
   id: 'verilog',
-  title: 'Verilog и плата',
+  title: t('Verilog и плата'),
   mode: 'verilog',
   summary:
-    'От бита и логического элемента до автоматов и счётчиков: пишешь модуль и проверяешь его.',
+    t('От бита и логического элемента до автоматов и счётчиков: пишешь модуль и проверяешь его.'),
   available: true,
   spine: { color: '#e0a82e' },
   chapters: [

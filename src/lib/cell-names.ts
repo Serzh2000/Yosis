@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import type { Bit } from '../../shared/types';
 
 /**
@@ -5,72 +6,72 @@ import type { Bit } from '../../shared/types';
  * inspector leads with a plain name and keeps the Yosys one as a small technical note.
  */
 const titles: Record<string, string> = {
-  $add: 'Сумматор',
-  $sub: 'Вычитатель',
-  $mul: 'Умножитель',
-  $div: 'Деление',
-  $mod: 'Остаток от деления',
-  $neg: 'Смена знака',
-  $pos: 'Повторитель',
-  $and: 'Побитовое И',
-  $or: 'Побитовое ИЛИ',
-  $xor: 'Побитовое исключающее ИЛИ',
-  $xnor: 'Побитовое равенство (XNOR)',
-  $not: 'Побитовое НЕ',
-  $logic_and: 'Логическое И',
-  $logic_or: 'Логическое ИЛИ',
-  $logic_not: 'Логическое НЕ',
-  $reduce_and: 'Все биты равны 1',
-  $reduce_or: 'Хотя бы один бит равен 1',
-  $reduce_bool: 'Хотя бы один бит равен 1',
-  $reduce_xor: 'Число единиц нечётно',
-  $reduce_xnor: 'Число единиц чётно',
-  $eq: 'Сравнение «равно»',
-  $ne: 'Сравнение «не равно»',
-  $lt: 'Сравнение «меньше»',
-  $le: 'Сравнение «меньше или равно»',
-  $gt: 'Сравнение «больше»',
-  $ge: 'Сравнение «больше или равно»',
-  $shl: 'Сдвиг влево',
-  $shr: 'Сдвиг вправо',
-  $sshl: 'Арифметический сдвиг влево',
-  $sshr: 'Арифметический сдвиг вправо',
-  $mux: 'Мультиплексор (выбор из двух)',
-  $pmux: 'Мультиплексор (выбор из нескольких)',
-  $dff: 'Триггер (запоминает бит по такту)',
-  $dffe: 'Триггер с разрешением записи',
-  $adff: 'Триггер с асинхронным сбросом',
-  $adffe: 'Триггер с асинхронным сбросом и разрешением',
-  $sdff: 'Триггер с синхронным сбросом',
-  $sdffe: 'Триггер с синхронным сбросом и разрешением',
-  $dlatch: 'Защёлка (запоминает, пока EN = 1)',
-  $mem: 'Память',
-  $mem_v2: 'Память',
-  $memrd: 'Чтение из памяти',
-  $memrd_v2: 'Чтение из памяти',
-  $memwr: 'Запись в память',
-  $memwr_v2: 'Запись в память',
-  $meminit: 'Начальное содержимое памяти',
-  $meminit_v2: 'Начальное содержимое памяти',
-  $lut: 'Таблица LUT',
-  $_NOT_: 'Вентиль НЕ',
-  $_AND_: 'Вентиль И',
-  $_NAND_: 'Вентиль И-НЕ',
-  $_OR_: 'Вентиль ИЛИ',
-  $_NOR_: 'Вентиль ИЛИ-НЕ',
-  $_XOR_: 'Вентиль исключающее ИЛИ',
-  $_XNOR_: 'Вентиль равенства (XNOR)',
-  $_MUX_: 'Мультиплексор на 1 бит',
-  $_BUF_: 'Повторитель',
-  ALU: 'Арифметический блок ALU',
-  GND: 'Постоянный 0',
-  VCC: 'Постоянная 1',
-  IBUF: 'Входной буфер вывода',
-  OBUF: 'Выходной буфер вывода',
-  IOBUF: 'Двунаправленный буфер вывода',
-  TBUF: 'Буфер с третьим состоянием',
-  BUFG: 'Буфер глобального такта',
-  rPLL: 'Умножитель частоты (PLL)',
+  $add: t('Сумматор'),
+  $sub: t('Вычитатель'),
+  $mul: t('Умножитель'),
+  $div: t('Деление'),
+  $mod: t('Остаток от деления'),
+  $neg: t('Смена знака'),
+  $pos: t('Повторитель'),
+  $and: t('Побитовое И'),
+  $or: t('Побитовое ИЛИ'),
+  $xor: t('Побитовое исключающее ИЛИ'),
+  $xnor: t('Побитовое равенство (XNOR)'),
+  $not: t('Побитовое НЕ'),
+  $logic_and: t('Логическое И'),
+  $logic_or: t('Логическое ИЛИ'),
+  $logic_not: t('Логическое НЕ'),
+  $reduce_and: t('Все биты равны 1'),
+  $reduce_or: t('Хотя бы один бит равен 1'),
+  $reduce_bool: t('Хотя бы один бит равен 1'),
+  $reduce_xor: t('Число единиц нечётно'),
+  $reduce_xnor: t('Число единиц чётно'),
+  $eq: t('Сравнение «равно»'),
+  $ne: t('Сравнение «не равно»'),
+  $lt: t('Сравнение «меньше»'),
+  $le: t('Сравнение «меньше или равно»'),
+  $gt: t('Сравнение «больше»'),
+  $ge: t('Сравнение «больше или равно»'),
+  $shl: t('Сдвиг влево'),
+  $shr: t('Сдвиг вправо'),
+  $sshl: t('Арифметический сдвиг влево'),
+  $sshr: t('Арифметический сдвиг вправо'),
+  $mux: t('Мультиплексор (выбор из двух)'),
+  $pmux: t('Мультиплексор (выбор из нескольких)'),
+  $dff: t('Триггер (запоминает бит по такту)'),
+  $dffe: t('Триггер с разрешением записи'),
+  $adff: t('Триггер с асинхронным сбросом'),
+  $adffe: t('Триггер с асинхронным сбросом и разрешением'),
+  $sdff: t('Триггер с синхронным сбросом'),
+  $sdffe: t('Триггер с синхронным сбросом и разрешением'),
+  $dlatch: t('Защёлка (запоминает, пока EN = 1)'),
+  $mem: t('Память'),
+  $mem_v2: t('Память'),
+  $memrd: t('Чтение из памяти'),
+  $memrd_v2: t('Чтение из памяти'),
+  $memwr: t('Запись в память'),
+  $memwr_v2: t('Запись в память'),
+  $meminit: t('Начальное содержимое памяти'),
+  $meminit_v2: t('Начальное содержимое памяти'),
+  $lut: t('Таблица LUT'),
+  $_NOT_: t('Вентиль НЕ'),
+  $_AND_: t('Вентиль И'),
+  $_NAND_: t('Вентиль И-НЕ'),
+  $_OR_: t('Вентиль ИЛИ'),
+  $_NOR_: t('Вентиль ИЛИ-НЕ'),
+  $_XOR_: t('Вентиль исключающее ИЛИ'),
+  $_XNOR_: t('Вентиль равенства (XNOR)'),
+  $_MUX_: t('Мультиплексор на 1 бит'),
+  $_BUF_: t('Повторитель'),
+  ALU: t('Арифметический блок ALU'),
+  GND: t('Постоянный 0'),
+  VCC: t('Постоянная 1'),
+  IBUF: t('Входной буфер вывода'),
+  OBUF: t('Выходной буфер вывода'),
+  IOBUF: t('Двунаправленный буфер вывода'),
+  TBUF: t('Буфер с третьим состоянием'),
+  BUFG: t('Буфер глобального такта'),
+  rPLL: t('Умножитель частоты (PLL)'),
 };
 
 export function cellTitle(type: string): string {
@@ -79,34 +80,37 @@ export function cellTitle(type: string): string {
   const lut = /^LUT([1-8])$/.exec(type);
   if (lut) {
     const count = Number(lut[1]);
-    return `Таблица LUT на ${count} ${count === 1 ? 'вход' : count < 5 ? 'входа' : 'входов'}`;
+    return t('Таблица LUT на {count} {unit}', {
+      count,
+      unit: count === 1 ? t('вход') : count < 5 ? t('входа') : t('входов'),
+    });
   }
-  if (/^MUX2_LUT[5-8]$/.test(type)) return `Мультиплексор ${type.slice(5)}`;
-  if (/^DFF/.test(type)) return `Триггер ${type}`;
+  if (/^MUX2_LUT[5-8]$/.test(type)) return t('Мультиплексор {type}', { type: type.slice(5) });
+  if (/^DFF/.test(type)) return t('Триггер {type}', { type });
   if (/^(?:SP|SPX9|SDP|SDPX9|DP|DPX9|DPB|DPX9B|SDPB|SDPX9B|pROM|pROMX9|ROM|ROMX9)$/.test(type))
-    return `Блочная память ${type}`;
-  if (/^MULT/.test(type)) return `Умножитель ${type}`;
+    return t('Блочная память {type}', { type });
+  if (/^MULT/.test(type)) return t('Умножитель {type}', { type });
   return type;
 }
 
 const parameterLabels: Record<string, string> = {
-  A_SIGNED: 'Вход A со знаком',
-  B_SIGNED: 'Вход B со знаком',
-  A_WIDTH: 'Ширина входа A',
-  B_WIDTH: 'Ширина входа B',
-  Y_WIDTH: 'Ширина выхода',
-  S_WIDTH: 'Число вариантов выбора',
-  WIDTH: 'Ширина',
-  CLK_POLARITY: 'Рабочий фронт такта',
-  EN_POLARITY: 'Уровень разрешения',
-  ARST_POLARITY: 'Уровень асинхронного сброса',
-  SRST_POLARITY: 'Уровень синхронного сброса',
-  ARST_VALUE: 'Значение после сброса',
-  SRST_VALUE: 'Значение после сброса',
-  INIT: 'Таблица истинности (INIT)',
-  ABITS: 'Число адресных бит',
-  SIZE: 'Число слов',
-  OFFSET: 'Смещение',
+  A_SIGNED: t('Вход A со знаком'),
+  B_SIGNED: t('Вход B со знаком'),
+  A_WIDTH: t('Ширина входа A'),
+  B_WIDTH: t('Ширина входа B'),
+  Y_WIDTH: t('Ширина выхода'),
+  S_WIDTH: t('Число вариантов выбора'),
+  WIDTH: t('Ширина'),
+  CLK_POLARITY: t('Рабочий фронт такта'),
+  EN_POLARITY: t('Уровень разрешения'),
+  ARST_POLARITY: t('Уровень асинхронного сброса'),
+  SRST_POLARITY: t('Уровень синхронного сброса'),
+  ARST_VALUE: t('Значение после сброса'),
+  SRST_VALUE: t('Значение после сброса'),
+  INIT: t('Таблица истинности (INIT)'),
+  ABITS: t('Число адресных бит'),
+  SIZE: t('Число слов'),
+  OFFSET: t('Смещение'),
 };
 
 /** Plain-language parameter name; the Yosys name stays available as a tooltip. */
@@ -128,7 +132,7 @@ interface NamedNet {
  * or a constant, instead of Yosys' internal numbers (`#80, #81 …`).
  */
 export function describeBits(bits: Bit[], netnames: Record<string, NamedNet> = {}): string {
-  if (!bits.length) return 'не подключено';
+  if (!bits.length) return t('не подключено');
   const named = Object.entries(netnames).filter(([, net]) => !net.hide_name && net.bits.length);
   const parts: string[] = [];
   let index = 0;
@@ -141,9 +145,9 @@ export function describeBits(bits: Bit[], netnames: Record<string, NamedNet> = {
       parts.push(
         run.every((value) => value === run[0])
           ? run[0] === '0' || run[0] === '1'
-            ? `константа ${run[0]}${run.length > 1 ? ` (×${run.length})` : ''}`
+            ? `${t('константа')} ${run[0]}${run.length > 1 ? ` (×${run.length})` : ''}`
             : `${run[0].toUpperCase()}${run.length > 1 ? ` (×${run.length})` : ''}`
-          : `константа ${run.slice().reverse().join('')}`,
+          : `${t('константа')} ${run.slice().reverse().join('')}`,
       );
       index = end + 1;
       continue;
@@ -168,7 +172,9 @@ export function describeBits(bits: Bit[], netnames: Record<string, NamedNet> = {
         if (named.some(([, net]) => net.bits.includes(next))) break;
         end++;
       }
-      parts.push(`внутренний сигнал${end > index ? ` (${end - index + 1} бит)` : ''}`);
+      parts.push(
+        `${t('внутренний сигнал')}${end > index ? ` (${t('{count} бит', { count: end - index + 1 })})` : ''}`,
+      );
       index = end + 1;
       continue;
     }

@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { BookOpen, Check, ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
 import {
   useEffect,
@@ -119,8 +120,8 @@ export function LessonCard({
   const done = learning.progress.done.includes(page.id);
   const chapterLessons = flat.chapter?.lessons ?? [];
   const where = lesson
-    ? `${flat.chapter?.title ?? 'Урок'} · урок ${chapterLessons.indexOf(lesson) + 1} из ${chapterLessons.length}`
-    : 'Справочник';
+    ? t('{chapter} · урок {n} из {total}', { chapter: flat.chapter?.title ?? t('Урок'), n: chapterLessons.indexOf(lesson) + 1, total: chapterLessons.length })
+    : t('Справочник');
   const stageIds = stagesOfLesson(steps);
   const route = routeOf(stageIds);
   const here = stageIds[at] ?? 'idea';
@@ -129,10 +130,10 @@ export function LessonCard({
   const nextStage = stageIds[at + 1];
   const nextLabel =
     lesson && at === steps.length - 1
-      ? 'К следующему уроку'
+      ? t('К следующему уроку')
       : nextStage && nextStage !== here
         ? stageInfo(nextStage).to
-        : 'Дальше';
+        : t('Дальше');
   const { status } = learning;
   const task = page.task;
   // Hints come one at a time, from a nudge to almost the answer; a new page starts again.
@@ -143,7 +144,7 @@ export function LessonCard({
     <section
       ref={win}
       className={'lc' + (folded ? ' is-folded' : '')}
-      aria-label={`Книга «${book.title}»`}
+      aria-label={t('Книга «{title}»', { title: book.title })}
       style={place ? { left: place.x, top: place.y } : undefined}
     >
       <header className="lc-head">
@@ -152,8 +153,8 @@ export function LessonCard({
           <span className="lc-tool-buttons">
             <button
               type="button"
-              aria-label={folded ? 'Развернуть урок' : 'Свернуть урок'}
-              title={folded ? 'Развернуть' : 'Свернуть'}
+              aria-label={folded ? t('Развернуть урок') : t('Свернуть урок')}
+              title={folded ? t('Развернуть') : t('Свернуть')}
               aria-expanded={!folded}
               onClick={() => setFolded((value) => !value)}
             >
@@ -161,8 +162,8 @@ export function LessonCard({
             </button>
             <button
               type="button"
-              aria-label="Оглавление"
-              title="Оглавление · Home"
+              aria-label={t('Оглавление')}
+              title={t('Оглавление · Home')}
               onClick={() => onContents(!contentsOpen)}
             >
               <BookOpen size={17} />
@@ -170,11 +171,11 @@ export function LessonCard({
             {learning.accountButton}
           </span>
         </div>
-        <h2>{lesson?.title ?? 'Справочник'}</h2>
+        <h2>{lesson?.title ?? t('Справочник')}</h2>
         {route.length > 1 ? (
           <nav
             className="lc-route"
-            aria-label="Этапы урока"
+            aria-label={t('Этапы урока')}
             style={{ '--stops': route.length } as CSSProperties}
           >
             {route.map((stop, k) => {
@@ -215,17 +216,17 @@ export function LessonCard({
           ))}
         </div>
         {task ? (
-          <section className={'lc-task' + (done ? ' done' : '')} aria-label="Задание">
+          <section className={'lc-task' + (done ? ' done' : '')} aria-label={t('Задание')}>
             <span className="lc-task-mark" aria-hidden="true">
               {done ? <Check size={14} strokeWidth={3} /> : null}
             </span>
             <div className="lc-task-body">
               <p>
-                <strong>{done ? 'Задание выполнено' : 'Задание'}</strong>
+                <strong>{done ? t('Задание выполнено') : t('Задание')}</strong>
                 {task.kind !== 'quiz' ? <> · {task.text}</> : null}
               </p>
               {status.items.length ? (
-                <ul className="lc-checklist" aria-label="Что нужно сделать">
+                <ul className="lc-checklist" aria-label={t('Что нужно сделать')}>
                   {status.items.map((item) => (
                     <li key={item.text} className={item.ok ? 'on' : ''}>
                       <span className="lc-check-mark" aria-hidden="true">
@@ -251,19 +252,19 @@ export function LessonCard({
                   {status.result.total === 0
                     ? status.result.detail
                     : status.result.failed === 0
-                      ? `Все проверки прошли: ${status.result.total} из ${status.result.total}.`
-                      : `Прошло ${status.result.total - status.result.failed} из ${status.result.total}. ${status.result.detail}`}
+                      ? t('Все проверки прошли: {n} из {total}.', { n: status.result.total, total: status.result.total })
+                      : t('Прошло {n} из {total}. {detail}', { n: status.result.total - status.result.failed, total: status.result.total, detail: status.result.detail })}
                 </p>
               ) : null}
               {task.kind === 'sim' || task.kind === 'circuit' ? (
                 <p className="lc-task-note">
-                  Кнопка «Проверить» — на столе справа
-                  {task.kind === 'circuit' ? ' под схемой' : ' под кодом'}.
+                  {t('Кнопка «Проверить» — на столе справа')}
+                  {task.kind === 'circuit' ? t(' под схемой') : t(' под кодом')}.
                 </p>
               ) : null}
               {hints.slice(0, shown).map((hint, at) => (
                 <p key={at} className="lc-hint">
-                  <b>Подсказка {at + 1}.</b> {hint}
+                  <b>{t('Подсказка {n}.', { n: at + 1 })}</b> {hint}
                 </p>
               ))}
               {!done && shown < hints.length ? (
@@ -272,7 +273,7 @@ export function LessonCard({
                   className="lc-hint-button"
                   onClick={() => setAsked({ page: page.id, shown: shown + 1 })}
                 >
-                  {shown === 0 ? 'Нужна подсказка' : 'Ещё подсказку'}
+                  {shown === 0 ? t('Нужна подсказка') : t('Ещё подсказку')}
                 </button>
               ) : null}
             </div>
@@ -280,18 +281,18 @@ export function LessonCard({
         ) : null}
       </article>
       <footer className="lc-foot">
-        <button type="button" aria-label="Назад" disabled={index === 0} onClick={() => onTurn(-1)}>
-          <ChevronLeft size={18} /> Назад
+        <button type="button" aria-label={t('Назад')} disabled={index === 0} onClick={() => onTurn(-1)}>
+          <ChevronLeft size={18} /> {t('Назад')}
         </button>
         {inStage && inStage.count > 1 ? (
-          <span className="lc-count" aria-label="Страница этапа">
+          <span className="lc-count" aria-label={t('Страница этапа')}>
             {at - inStage.first + 1} / {inStage.count}
           </span>
         ) : null}
         <button
           type="button"
           className="lc-next"
-          aria-label="Вперёд"
+          aria-label={t('Вперёд')}
           disabled={index === pages.length - 1}
           onClick={() => onTurn(1)}
         >
@@ -299,16 +300,16 @@ export function LessonCard({
         </button>
       </footer>
       {learning.confirmSkip ? (
-        <div className="lc-confirm" role="alertdialog" aria-label="Задание не выполнено">
+        <div className="lc-confirm" role="alertdialog" aria-label={t('Задание не выполнено')}>
           <p>
-            <strong>Задание не выполнено.</strong> Всё равно дальше?
+            <strong>{t('Задание не выполнено.')}</strong>{t(' Всё равно дальше?')}
           </p>
           <div className="lc-confirm-row">
             <button type="button" autoFocus onClick={() => learning.onSkipAnswer(false)}>
-              Остаться
+              {t('Остаться')}
             </button>
             <button type="button" onClick={() => learning.onSkipAnswer(true)}>
-              Дальше
+              {t('Дальше')}
             </button>
           </div>
         </div>

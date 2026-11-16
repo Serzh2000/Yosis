@@ -1,6 +1,7 @@
 import { firmwareHash, type DebuggerFlash } from './bl616-flash';
 import { saveDebuggerBackup, type DebuggerBackup } from './debugger-backups';
 import { download, requestRaw, requestVoid } from './api';
+import { t } from '../../shared/i18n';
 
 export type BackupStorage = 'persistent' | 'temporary' | 'unavailable';
 export async function requestBackupStorage(): Promise<BackupStorage> {
@@ -19,10 +20,10 @@ async function readServerCopy(chipId: string, hash: string, size: number): Promi
   const bytes = await download(
     url(chipId, hash),
     undefined,
-    'Серверная резервная копия недоступна. Подготовь установку заново.',
+    t('Серверная резервная копия недоступна. Подготовь установку заново.'),
   );
   if (bytes.length !== size || (await firmwareHash(bytes)) !== hash)
-    throw new Error('SHA-256 серверной резервной копии не совпал. Запись запрещена.');
+    throw new Error(t('SHA-256 серверной резервной копии не совпал. Запись запрещена.'));
   return bytes;
 }
 
@@ -35,7 +36,7 @@ export async function retainServerBackup(backup: DebuggerBackup): Promise<void> 
       headers: { 'Content-Type': 'application/octet-stream' },
       body: backup.bytes,
     },
-    'Не удалось сохранить резервную копию на сервере. Запись запрещена.',
+    t('Не удалось сохранить резервную копию на сервере. Запись запрещена.'),
   );
   await verifyServerBackup(backup);
 }
@@ -49,9 +50,9 @@ export async function earliestServerBackup(
   identity: DebuggerFlash,
 ): Promise<DebuggerBackup | null> {
   const response = await requestRaw(url(identity.boot.chipId));
-  if (!response.ok) throw new Error('Не удалось проверить копии этой платы на сервере.');
+  if (!response.ok) throw new Error(t('Не удалось проверить копии этой платы на сервере.'));
   const values: unknown = await response.json();
-  if (!Array.isArray(values)) throw new Error('Некорректный список резервных копий.');
+  if (!Array.isArray(values)) throw new Error(t('Некорректный список резервных копий.'));
   const first = values[0] as { hash?: unknown; size?: unknown } | undefined;
   if (!first) return null;
   if (
@@ -59,7 +60,7 @@ export async function earliestServerBackup(
     !/^[a-f0-9]{64}$/.test(first.hash) ||
     first.size !== identity.size
   )
-    throw new Error('Серверная копия относится к другой flash.');
+    throw new Error(t('Серверная копия относится к другой flash.'));
   return saveDebuggerBackup(
     identity,
     await readServerCopy(identity.boot.chipId, first.hash, identity.size),

@@ -13,6 +13,7 @@ import type { Mount } from './reference/shared/mount';
 import { circuitPart } from './reference/bridge';
 import { PART_DRAG_TYPE } from './Library';
 import './lab-scene.css';
+import { t } from '../../lib/i18n';
 
 export interface SceneEvents {
   select: (id: string) => void;
@@ -140,7 +141,7 @@ export function LabScene({
       style={{ flex: 1 }}
       tabIndex={0}
       role="application"
-      aria-label="Монтажный стол: плата, детали и провода"
+      aria-label={t('Монтажный стол: плата, детали и провода')}
       onKeyDown={keyDown}
       onKeyUp={(event) => stage.current?.key(event.code, false)}
       onDragOver={(event) => {
@@ -158,15 +159,15 @@ export function LabScene({
     >
       {failed && (
         <p className="bench-error" role="alert">
-          Не удалось запустить 3D-сцену (WebGL): {failed}
+          {t('Не удалось запустить 3D-сцену (WebGL): {failed}', { failed })}
         </p>
       )}
       <p className="bench-hint">
         <Cable size={14} />
-        <span>Тяните от контакта к контакту</span>
+        <span>{t('Тяните от контакта к контакту')}</span>
         <kbd>Q</kbd>
         <kbd>E</kbd>
-        <span>поворот</span>
+        <span>{t('поворот')}</span>
       </p>
       {placement && (
         <div
@@ -185,12 +186,12 @@ export function LabScene({
         </div>
       )}
       {children}
-      <div className="bench-viewbar" role="toolbar" aria-label="Вид">
+      <div className="bench-viewbar" role="toolbar" aria-label={t('Вид')}>
         <button
           type="button"
-          aria-label="Подписи выводов"
+          aria-label={t('Подписи выводов')}
           aria-pressed={labels}
-          title="Подписи выводов"
+          title={t('Подписи выводов')}
           onClick={() => {
             setLabels(!labels);
             stage.current?.setPinLabels(!labels);
@@ -200,30 +201,38 @@ export function LabScene({
         </button>
         <button
           type="button"
-          aria-label="Повернуть влево"
-          title="Повернуть влево · Q"
+          aria-label={t('Повернуть влево')}
+          title={t('Повернуть влево · Q')}
           onClick={() => stage.current?.rotate(1)}
         >
           <RotateCcw size={15} />
         </button>
         <button
           type="button"
-          aria-label="Повернуть вправо"
-          title="Повернуть вправо · E"
+          aria-label={t('Повернуть вправо')}
+          title={t('Повернуть вправо · E')}
           onClick={() => stage.current?.rotate(-1)}
         >
           <RotateCw size={15} />
         </button>
-        <button type="button" aria-label="Уменьшить" onClick={() => stage.current?.zoomBy(1 / 1.3)}>
+        <button
+          type="button"
+          aria-label={t('Уменьшить')}
+          onClick={() => stage.current?.zoomBy(1 / 1.3)}
+        >
           <Minus size={15} />
         </button>
-        <button type="button" aria-label="Увеличить" onClick={() => stage.current?.zoomBy(1.3)}>
+        <button
+          type="button"
+          aria-label={t('Увеличить')}
+          onClick={() => stage.current?.zoomBy(1.3)}
+        >
           <Plus size={15} />
         </button>
         <button
           type="button"
-          aria-label="Показать весь стол"
-          title="Показать всё · 0"
+          aria-label={t('Показать весь стол')}
+          title={t('Показать всё · 0')}
           onClick={() => stage.current?.fit()}
         >
           <Maximize2 size={15} />

@@ -1,5 +1,6 @@
 import type { useProjectImport } from '../../hooks/useProjectImport';
 import { Dialog } from '../Dialog';
+import { t } from '../../lib/i18n';
 
 /** Скрытые поля выбора файла и папки проекта и окно выбора, если в папке несколько проектов. */
 export function ProjectImportControls({
@@ -30,11 +31,11 @@ export function ProjectImportControls({
       />
       {folderChoice && (
         <Dialog
-          title="В папке несколько проектов"
+          title={t('В папке несколько проектов')}
           className="dialog folder-choice"
           onClose={imports.closeFolderChoice}
         >
-          <p>Выберите, какой открыть. Каждый проект — это отдельный файл .gprj.</p>
+          <p>{t('Выберите, какой открыть. Каждый проект — это отдельный файл .gprj.')}</p>
           <ul>
             {folderChoice.projects.map((item) => (
               <li key={item.path}>

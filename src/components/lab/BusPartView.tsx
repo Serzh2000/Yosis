@@ -3,6 +3,7 @@ import type { Hd44780 } from '../../lib/lab/bus/hd44780';
 import { PS2_KEYS, REMOTE_KEYS } from '../../lib/lab/bus/sensors';
 import type { Device } from '../../lib/lab/devices';
 import './bus-parts.css';
+import { language, t } from '../../lib/i18n';
 
 type Act = (name: string, value?: unknown) => void;
 type View = Record<string, never>;
@@ -72,7 +73,8 @@ function Digit({ mask, color, glow = 1 }: { mask: number; color: string; glow?: 
 }
 
 const hex = (value: number, digits = 2) => value.toString(16).toUpperCase().padStart(digits, '0');
-const russian = (value: number, digits = 1) => value.toFixed(digits).replace('.', ',');
+const russian = (value: number, digits = 1) =>
+  language() === 'en' ? value.toFixed(digits) : value.toFixed(digits).replace('.', ',');
 
 function Slider({
   label,
@@ -123,7 +125,7 @@ function Oled({ view }: { view: View }) {
         className="bus-oled-glass"
         width={128}
         height={64}
-        label="Экран OLED 128 на 64"
+        label={t('Экран OLED 128 на 64')}
         stamp={stamp}
         draw={(context) => {
           const image = context.createImageData(128, 64);
@@ -147,10 +149,10 @@ function Oled({ view }: { view: View }) {
       />
       <small>
         {!view.awake
-          ? 'Выключен: нужна команда AF'
+          ? t('Выключен: нужна команда AF')
           : !view.pump
-            ? 'Нет питания матрицы: команда 8D 14'
-            : `Идёт запись, байт: ${view.writes}`}
+            ? t('Нет питания матрицы: команда 8D 14')
+            : t('Идёт запись, байт: {n}', { n: view.writes as number })}
       </small>
     </div>
   );
@@ -172,7 +174,7 @@ function Lcd({ view }: { view: View }) {
         className={`bus-lcd-glass ${view.backlight ? '' : 'dark'}`}
         width={columns * CELL_W * DOT}
         height={rows * CELL_H * DOT}
-        label={`Символьный экран ${columns} на ${rows}`}
+        label={t('Символьный экран {columns} на {rows}', { columns, rows })}
         stamp={stamp}
         draw={(context) => {
           const on = '#14230a';
@@ -201,10 +203,12 @@ function Lcd({ view }: { view: View }) {
       />
       {view.tooFast ? (
         <small className="bus-warn">
-          Команды идут слишком часто: настоящий экран пропустил бы {view.tooFast}. Добавьте паузы.
+          {t('Команды идут слишком часто: настоящий экран пропустил бы {n}. Добавьте паузы.', {
+            n: view.tooFast as number,
+          })}
         </small>
       ) : !view.displayOn ? (
-        <small>Экран выключен: нужна команда 0x0C</small>
+        <small>{t('Экран выключен: нужна команда 0x0C')}</small>
       ) : null}
     </div>
   );
@@ -214,7 +218,7 @@ function Eeprom({ view, act }: { view: View; act: Act }) {
   const data = view.data as unknown as number[];
   return (
     <div className="bus-eeprom">
-      <pre aria-label="Первые 64 байта памяти">
+      <pre aria-label={t('Первые 64 байта памяти')}>
         {Array.from({ length: 4 }, (_, row) => (
           <span key={row}>
             <b>{hex(row * 16)}</b>{' '}
@@ -232,10 +236,10 @@ function Eeprom({ view, act }: { view: View; act: Act }) {
       </pre>
       <div className="bus-row">
         <small className={view.busy ? 'bus-warn' : ''}>
-          {view.busy ? 'Идёт запись: микросхема не отвечает' : 'Готова'}
+          {view.busy ? t('Идёт запись: микросхема не отвечает') : t('Готова')}
         </small>
         <button type="button" className="bus-button" onClick={() => act('erase')}>
-          Стереть
+          {t('Стереть')}
         </button>
       </div>
     </div>
@@ -254,7 +258,7 @@ function Expander({ view, act }: { view: View; act: Act }) {
             type="button"
             role="switch"
             aria-checked={((switches >> bit) & 1) === 1}
-            aria-label={`Переключатель P${bit}`}
+            aria-label={t('Переключатель P{bit}', { bit })}
             className={`bus-toggle ${((switches >> bit) & 1) === 1 ? 'on' : ''}`}
             onClick={() => act('toggle', bit)}
           >
@@ -276,7 +280,7 @@ function Matrix({ view }: { view: View }) {
       <Picture
         width={136}
         height={136}
-        label="Матрица 8 на 8"
+        label={t('Матрица 8 на 8')}
         stamp={stamp}
         draw={(context) => {
           context.clearRect(0, 0, 136, 136);
@@ -295,7 +299,7 @@ function Matrix({ view }: { view: View }) {
           context.shadowBlur = 0;
         }}
       />
-      {view.shutdown ? <small>Спит: регистр 0x0C = 0</small> : null}
+      {view.shutdown ? <small>{t('Спит: регистр 0x0C = 0')}</small> : null}
     </div>
   );
 }
@@ -308,7 +312,7 @@ function MaxDigits({ view }: { view: View }) {
       {Array.from({ length: 8 }, (_, index) => (
         <Digit key={index} mask={segments[7 - index]} color="#ff4a3d" glow={glow} />
       ))}
-      {view.shutdown ? <small>Спит: регистр 0x0C = 0</small> : null}
+      {view.shutdown ? <small>{t('Спит: регистр 0x0C = 0')}</small> : null}
     </div>
   );
 }
@@ -329,7 +333,11 @@ function Tm1637({ view }: { view: View }) {
           </span>
         ))}
       </div>
-      <small>{view.on ? `Яркость ${view.brightness} из 7` : 'Индикатор выключен'}</small>
+      <small>
+        {view.on
+          ? t('Яркость {n} из 7', { n: view.brightness as number })
+          : t('Индикатор выключен')}
+      </small>
     </div>
   );
 }
@@ -338,7 +346,7 @@ function Strip({ view }: { view: View }) {
   const colors = view.colors as unknown as Uint8Array;
   const count = view.count as number;
   return (
-    <div className="bus-strip" role="img" aria-label={`Лента из ${count} светодиодов`}>
+    <div className="bus-strip" role="img" aria-label={t('Лента из {count} светодиодов', { count })}>
       {Array.from({ length: count }, (_, index) => {
         const [r, g, b] = [colors[index * 3], colors[index * 3 + 1], colors[index * 3 + 2]];
         const lit = r + g + b > 0;
@@ -366,7 +374,7 @@ function Remote({ view, act }: { view: View; act: Act }) {
             key={key.id}
             type="button"
             className="bus-key"
-            aria-label={`Кнопка пульта ${key.label}`}
+            aria-label={t('Кнопка пульта {key}', { key: key.label })}
             onClick={() => act('press', key.id)}
           >
             {key.label}
@@ -375,8 +383,11 @@ function Remote({ view, act }: { view: View; act: Act }) {
       </div>
       <small>
         {view.last >= 0
-          ? `Последний код: 0x${hex(view.last as number)}, отправлено кадров: ${view.presses}`
-          : 'Нажмите кнопку: приёмник выдаст кадр NEC'}
+          ? t('Последний код: 0x{code}, отправлено кадров: {n}', {
+              code: hex(view.last as number),
+              n: view.presses as number,
+            })
+          : t('Нажмите кнопку: приёмник выдаст кадр NEC')}
       </small>
     </div>
   );
@@ -400,7 +411,7 @@ function Keyboard({ view, act }: { view: View; act: Act }) {
             key={item.id}
             type="button"
             className={`bus-key ${item.id.length > 1 && item.label.length > 1 ? 'wide' : ''}`}
-            aria-label={`Клавиша ${item.label}`}
+            aria-label={t('Клавиша {key}', { key: item.label })}
             {...key(item.id)}
           >
             {item.label}
@@ -409,8 +420,8 @@ function Keyboard({ view, act }: { view: View; act: Act }) {
       </div>
       <small>
         {sent.length
-          ? `Отправлено: ${sent.map((byte) => hex(byte)).join(' ')}`
-          : 'Нажмите клавишу: уйдёт скан-код набора 2'}
+          ? t('Отправлено: {bytes}', { bytes: sent.map((byte) => hex(byte)).join(' ') })
+          : t('Нажмите клавишу: уйдёт скан-код набора 2')}
       </small>
     </div>
   );
@@ -436,7 +447,7 @@ function BusPartBodyView({ device, act }: { device: Device; version: number; act
         <div className="bus-card">
           <strong className="bus-big">{russian(view.temp as number)} °C</strong>
           <Slider
-            label="Температура"
+            label={t('Температура')}
             value={view.temp as number}
             min={-25}
             max={100}
@@ -455,10 +466,10 @@ function BusPartBodyView({ device, act }: { device: Device; version: number; act
           <span>{view.date as string}</span>
           <small>
             {view.halted
-              ? 'Часы стоят: бит CH в регистре 0 равен 1'
+              ? t('Часы стоят: бит CH в регистре 0 равен 1')
               : (view.warp as number) > 1
-                ? `Идут в ${view.warp} раз быстрее`
-                : 'Идут в реальном масштабе'}
+                ? t('Идут в {n} раз быстрее', { n: view.warp as number })
+                : t('Идут в реальном масштабе')}
           </small>
         </div>
       );
@@ -474,11 +485,11 @@ function BusPartBodyView({ device, act }: { device: Device; version: number; act
       return (
         <div className="bus-card">
           <Slider
-            label="Потенциометр, канал 0"
+            label={t('Потенциометр, канал 0')}
             value={view.value as number}
             min={0}
             max={1023}
-            shown={`${view.value} (${russian(((view.value as number) / 1023) * 3.3, 2)} В)`}
+            shown={`${view.value} (${t('{n} В', { n: russian(((view.value as number) / 1023) * 3.3, 2) })})`}
             onChange={(value) => act('value', value)}
           />
         </div>
@@ -487,15 +498,17 @@ function BusPartBodyView({ device, act }: { device: Device; version: number; act
       return (
         <div className="bus-card">
           <Slider
-            label="Расстояние"
+            label={t('Расстояние')}
             value={view.distance as number}
             min={2}
             max={400}
-            unit="см"
+            unit={t('см')}
             onChange={(value) => act('distance', value)}
           />
           <small className={view.echoing ? 'bus-hot' : ''}>
-            {view.echoing ? 'ECHO: идёт импульс' : `Измерений: ${view.measurements}`}
+            {view.echoing
+              ? t('ECHO: идёт импульс')
+              : t('Измерений: {n}', { n: view.measurements as number })}
           </small>
         </div>
       );
@@ -503,7 +516,7 @@ function BusPartBodyView({ device, act }: { device: Device; version: number; act
       return (
         <div className="bus-card">
           <Slider
-            label="Температура"
+            label={t('Температура')}
             value={view.temp as number}
             min={0}
             max={50}
@@ -511,14 +524,14 @@ function BusPartBodyView({ device, act }: { device: Device; version: number; act
             onChange={(value) => act('temp', value)}
           />
           <Slider
-            label="Влажность"
+            label={t('Влажность')}
             value={view.humidity as number}
             min={20}
             max={90}
             unit="%"
             onChange={(value) => act('humidity', value)}
           />
-          <small>Ответов датчика: {view.responses}</small>
+          <small>{t('Ответов датчика: {n}', { n: view.responses as number })}</small>
         </div>
       );
     case 'ir':

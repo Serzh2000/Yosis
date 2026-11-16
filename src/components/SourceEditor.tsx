@@ -14,6 +14,7 @@ import { FileCode2, LoaderCircle } from 'lucide-react';
 import type { Diagnostic, Project, SourceFile } from '../../shared/types';
 import { registerEditorLanguages } from '../lib/editor-languages';
 import { useSyntaxCheck } from '../hooks/useSyntaxCheck';
+import { t } from '../lib/i18n';
 
 self.MonacoEnvironment = { getWorker: () => new EditorWorker() };
 loader.config({ monaco });
@@ -186,7 +187,7 @@ export function SourceEditor({
           loading={
             <div className="editor-loading">
               <LoaderCircle size={18} className="spin" />
-              Загрузка редактора…
+              {t('Загрузка редактора…')}
             </div>
           }
           onMount={(editor) => {
@@ -226,26 +227,29 @@ export function SourceEditor({
         <span>
           <span className={`status-dot ${saveState === 'saved' ? 'online' : 'pending'}`} />
           {saveState === 'saved'
-            ? 'Автосохранено'
+            ? t('Автосохранено')
             : saveState === 'saving'
-              ? 'Сохраняем…'
-              : 'Ошибка сохранения'}
+              ? t('Сохраняем…')
+              : t('Ошибка сохранения')}
         </span>
         {!source.name.endsWith('.cst') && (
           <span role="status">
             {syntax.state === 'checking'
-              ? 'Проверяем синтаксис…'
+              ? t('Проверяем синтаксис…')
               : syntax.state === 'checked'
                 ? syntax.diagnostics.some((item) => item.severity === 'error')
-                  ? 'Проверьте ошибки в коде'
-                  : 'Синтаксис проверен'
+                  ? t('Проверьте ошибки в коде')
+                  : t('Синтаксис проверен')
                 : syntax.state === 'unavailable'
-                  ? 'Проверка синтаксиса недоступна'
+                  ? t('Проверка синтаксиса недоступна')
                   : ''}
           </span>
         )}
         <span>
-          Строка {position.line} · столбец {position.column} · UTF-8
+          {t('Строка {line} · столбец {column} · UTF-8', {
+            line: position.line,
+            column: position.column,
+          })}
         </span>
       </div>
     </section>

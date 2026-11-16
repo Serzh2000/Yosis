@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import type { LessonVerdict } from '../lib/lessons';
 
 /** The result of a check, case by case, and a word about what to do next. */
@@ -11,7 +12,7 @@ export function Verdicts({ verdicts, error }: { verdicts: LessonVerdict[] | null
         </p>
       ) : null}
       {verdicts ? (
-        <ul className="learn-verdicts" aria-label="Результаты проверки">
+        <ul className="learn-verdicts" aria-label={t('Результаты проверки')}>
           {verdicts.map((item) => (
             <li key={item.title} className={item.passed ? 'right' : 'wrong'}>
               <strong>
@@ -20,15 +21,15 @@ export function Verdicts({ verdicts, error }: { verdicts: LessonVerdict[] | null
               <span>
                 {Object.entries(item.inputs)
                   .map(([name, value]) => `${name}=${value}`)
-                  .join(', ') || 'без входов'}
+                  .join(', ') || t('без входов')}
                 {' → '}
-                ждали {item.expected}
-                {item.passed ? '' : `, получили ${item.actual}`}
+                {t('ждали {expected}', { expected: item.expected })}
+                {item.passed ? '' : t(', получили {actual}', { actual: item.actual })}
               </span>
             </li>
           ))}
           <li className={passed ? 'summary right' : 'summary wrong'}>
-            {passed ? 'Все проверки прошли.' : 'Найди место, которое отвечает за первый сбой.'}
+            {passed ? t('Все проверки прошли.') : t('Найди место, которое отвечает за первый сбой.')}
           </li>
         </ul>
       ) : null}

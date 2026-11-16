@@ -1,5 +1,6 @@
 import type { Project } from '../../shared/types';
 import { constraints, type Pin } from './example-constraints';
+import { t } from '../../shared/i18n';
 
 /**
  * Проект, с которого открывается студия, пока в браузере ничего не сохранено. Он живёт отдельно
@@ -7,8 +8,8 @@ import { constraints, type Pin } from './example-constraints';
  * Первый пример библиотеки строится из тех же данных, поэтому расхождения быть не может.
  */
 export const STARTER_ID = 'logic';
-export const STARTER_TITLE = 'Логическое выражение';
-export const STARTER_DESCRIPTION = 'AND + OR: от выражения к таблице LUT.';
+export const STARTER_TITLE = t('Логическое выражение');
+export const STARTER_DESCRIPTION = t('AND + OR: от выражения к таблице LUT.');
 export const STARTER_SOURCE = `// Комбинационная логика: y = (a И b) ИЛИ c.
 // assign описывает постоянно действующую связь, а не программу по шагам.
 // На диаграммах переберите a, b, c = 0/1 и посмотрите таблицу LUT в Gowin.

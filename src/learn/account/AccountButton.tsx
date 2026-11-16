@@ -1,3 +1,4 @@
+import { t } from '../../lib/i18n';
 import { UserRound } from 'lucide-react';
 import { useAccount } from './AccountProvider';
 
@@ -7,8 +8,8 @@ export function AccountButton() {
   if (account.status === 'off') return null;
   const label =
     account.status === 'user' && account.user
-      ? `Кабинет: ${account.user.displayName}`
-      : 'Войти в аккаунт';
+      ? t('Кабинет: {name}', { name: account.user.displayName })
+      : t('Войти в аккаунт');
   return (
     <button
       type="button"

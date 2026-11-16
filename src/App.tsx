@@ -205,7 +205,10 @@ export default function App() {
     setSelectedCell(null);
     clearHighlight();
     setWorkTab('rtl');
-    setInfo(`Сигнал ${link.name}: подсвечены связи и элементы модуля ${link.module}.`);
+    setInfo(t('Сигнал {name}: подсвечены связи и элементы модуля {module}.', {
+        name: link.name,
+        module: link.module,
+      }));
   };
   const openServer = () => (server.session ? setSyncOpen(true) : setLoginOpen(true));
   const synthesize = () => void startBuild();
@@ -227,7 +230,7 @@ export default function App() {
     return (
       <div className="empty-workspace" role="status">
         <LoaderCircle className="spin" size={24} />
-        Открываем проекты…
+        {t('Открываем проекты…')}
       </div>
     );
   return (

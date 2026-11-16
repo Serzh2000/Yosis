@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { t } from '../../shared/i18n';
 import type { RefObject } from 'react';
 import type * as monaco from 'monaco-editor/editor/editor.api.js';
 import type { Project } from '../../shared/types';
@@ -55,7 +56,7 @@ export function useSourceNavigation({
     (file: string, line: number) => {
       const sourceName = resolveSourceName(projectRef.current.files, file);
       if (!sourceName) {
-        onError(`Исходник ${file} отсутствует в текущем проекте.`);
+        onError(t('Исходник {file} отсутствует в текущем проекте.', { file }));
         return;
       }
       pendingNavigation.current = { file: sourceName, line };

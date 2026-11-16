@@ -12,6 +12,7 @@ import { LutInspector, Schematic } from './lazy-panels';
 // Стили инспектора нужны и без выбранного элемента (подсказка и счётчики ресурсов),
 // а LutInspector подгружается лениво только после выбора.
 import '../inspector.css';
+import { t } from '../../lib/i18n';
 
 /** Разобранный нетлист вкладки: то, что считает `useNetlistView`. */
 export interface NetlistModel {
@@ -84,7 +85,7 @@ export function LogicWorkspace({
       <section className="schematic-pane">
         <div className="pane-title">
           <GitBranch size={16} />
-          <span>{view === 'rtl' ? 'RTL-схема' : 'Примитивы Gowin'}</span>
+          <span>{view === 'rtl' ? t('RTL-схема') : t('Примитивы Gowin')}</span>
           <ModuleHierarchyMenu
             hierarchy={hierarchy}
             selected={moduleName}
@@ -95,16 +96,16 @@ export function LogicWorkspace({
         {stale && (
           <div className="stale-banner">
             <RotateCcw size={14} />
-            <span>Исходники изменены. Схема относится к предыдущей сборке.</span>
+            <span>{t('Исходники изменены. Схема относится к предыдущей сборке.')}</span>
             <button onClick={onSynthesize} disabled={busy}>
-              Обновить
+              {t('Обновить')}
             </button>
           </div>
         )}
         <div className="schematic-content">
           {netlist && moduleName ? (
-            <PanelBoundary name="схема" resetKey={project.id}>
-              <Suspense fallback={<div className="editor-loading">Строим схему…</div>}>
+            <PanelBoundary name={t('схема')} resetKey={project.id}>
+              <Suspense fallback={<div className="editor-loading">{t('Строим схему…')}</div>}>
                 <Schematic
                   netlist={netlist}
                   moduleName={moduleName}
@@ -127,22 +128,26 @@ export function LogicWorkspace({
               <span className="empty-chip">
                 <Cpu size={46} />
               </span>
-              <span className="workspace-eyebrow">ОТ VERILOG К ЛОГИКЕ</span>
+              <span className="workspace-eyebrow">{t('ОТ VERILOG К ЛОГИКЕ')}</span>
               <h2>
                 {busy
-                  ? 'Yosys строит схему…'
+                  ? t('Yosys строит схему…')
                   : build?.status === 'error'
-                    ? 'Проверьте исходный код'
-                    : 'Схема вашего устройства'}
+                    ? t('Проверьте исходный код')
+                    : t('Схема вашего устройства')}
               </h2>
               <p>
                 {busy
-                  ? 'Готовое представление появится здесь. Ход работы доступен в журнале.'
+                  ? t('Готовое представление появится здесь. Ход работы доступен в журнале.')
                   : build?.status === 'error'
-                    ? build.error || 'Откройте диагностику сборки.'
+                    ? build.error || t('Откройте диагностику сборки.')
                     : view === 'rtl'
-                      ? 'Вентили, сумматоры, мультиплексоры и регистры — с привычными схемными обозначениями.'
-                      : 'Реальные LUT, триггеры и другие примитивы Gowin. Выберите LUT, чтобы увидеть её таблицу истинности.'}
+                      ? t(
+                          'Вентили, сумматоры, мультиплексоры и регистры — с привычными схемными обозначениями.',
+                        )
+                      : t(
+                          'Реальные LUT, триггеры и другие примитивы Gowin. Выберите LUT, чтобы увидеть её таблицу истинности.',
+                        )}
               </p>
               <button
                 className="button primary"
@@ -150,7 +155,7 @@ export function LogicWorkspace({
                 onClick={onSynthesize}
               >
                 {busy ? <LoaderCircle size={15} className="spin" /> : <Play size={15} />}
-                Синтезировать проект
+                {t('Синтезировать проект')}
               </button>
             </div>
           )}
@@ -158,20 +163,24 @@ export function LogicWorkspace({
         <div className="schematic-footer">
           <span>
             {netlist
-              ? `${Object.keys(netlist.modules[moduleName]?.cells || {}).length} элементов в модуле`
-              : 'Ожидаем результат синтеза'}
+              ? t('{count} элементов в модуле', {
+                  count: Object.keys(netlist.modules[moduleName]?.cells || {}).length,
+                })
+              : t('Ожидаем результат синтеза')}
           </span>
-          <span>{view === 'rtl' ? 'До отображения на FPGA' : 'До упаковки и размещения'}</span>
+          <span>
+            {view === 'rtl' ? t('До отображения на FPGA') : t('До упаковки и размещения')}
+          </span>
         </div>
       </section>
       <aside className="inspector-pane">
         <div className="pane-title">
           <Search size={15} />
-          <span>Инспектор</span>
+          <span>{t('Инспектор')}</span>
         </div>
         <div className="inspector-scroll">
           {currentCell ? (
-            <PanelBoundary name="инспектор" resetKey={project.id}>
+            <PanelBoundary name={t('инспектор')} resetKey={project.id}>
               <Suspense fallback={null}>
                 <LutInspector
                   cell={currentCell}
@@ -225,8 +234,8 @@ export function LogicWorkspace({
                   strokeWidth="1.5"
                 />
               </svg>
-              <h3>Нажмите на элемент схемы</h3>
-              <p>Справа появятся его входы и выходы, параметры и таблица истинности LUT.</p>
+              <h3>{t('Нажмите на элемент схемы')}</h3>
+              <p>{t('Справа появятся его входы и выходы, параметры и таблица истинности LUT.')}</p>
             </div>
           )}
           <div className="resource-section resource-groups">
@@ -234,9 +243,9 @@ export function LogicWorkspace({
               <>
                 {!preMapping && (
                   <>
-                    <section className="resource-group" aria-label="Логика">
+                    <section className="resource-group" aria-label={t('Логика')}>
                       <h4 className="resource-group-title">
-                        Логика
+                        {t('Логика')}
                         <small>{resourceRows.slice(0, 3).reduce((sum, [, v]) => sum + v, 0)}</small>
                       </h4>
                       <div className="resource-tiles">
@@ -256,9 +265,9 @@ export function LogicWorkspace({
                         ))}
                       </div>
                     </section>
-                    <section className="resource-group" aria-label="Память и ввод-вывод">
+                    <section className="resource-group" aria-label={t('Память и ввод-вывод')}>
                       <h4 className="resource-group-title">
-                        Память и ввод-вывод
+                        {t('Память и ввод-вывод')}
                         <small>{resourceRows.slice(3).reduce((sum, [, v]) => sum + v, 0)}</small>
                       </h4>
                       <div className="resource-tiles">
@@ -285,20 +294,22 @@ export function LogicWorkspace({
                     topic={{ kind: 'resource', resource: 'other', view }}
                     className="other-resources"
                   >
-                    <span>{preMapping ? 'Элементов в схеме' : 'Другие элементы'}</span>
+                    <span>{preMapping ? t('Элементов в схеме') : t('Другие элементы')}</span>
                     <strong>{resources!.other}</strong>
                   </HelpTrigger>
                 )}
                 <p className="resource-note">
                   {view === 'rtl'
                     ? preMapping
-                      ? 'Это элементы схемы до отображения на FPGA. LUT и триггеры появятся на вкладке Gowin.'
-                      : 'RTL-операции до технологического синтеза.'
-                    : 'После synth_gowin; до упаковки и размещения.'}
+                      ? t(
+                          'Это элементы схемы до отображения на FPGA. LUT и триггеры появятся на вкладке Gowin.',
+                        )
+                      : t('RTL-операции до технологического синтеза.')
+                    : t('После synth_gowin; до упаковки и размещения.')}
                 </p>
               </>
             ) : (
-              <p className="resource-note">Подсчёт ресурсов появится после синтеза.</p>
+              <p className="resource-note">{t('Подсчёт ресурсов появится после синтеза.')}</p>
             )}
           </div>
         </div>

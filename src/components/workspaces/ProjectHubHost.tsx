@@ -5,6 +5,7 @@ import type { useProjectStore } from '../../hooks/useProjectStore';
 import { identifyProject, loadProject, validateProject } from '../../lib/projects';
 import { starterProject } from '../../lib/starter-project';
 import { ProjectHub } from './lazy-panels';
+import { t } from '../../lib/i18n';
 
 type Store = ReturnType<typeof useProjectStore>;
 
@@ -52,7 +53,7 @@ export function ProjectHubHost({
         onServer={onServer}
         onClose={onClose}
         onCreate={async (next) => {
-          if (busyRef.current) throw new Error('Дождитесь окончания синтеза.');
+          if (busyRef.current) throw new Error(t('Дождитесь окончания синтеза.'));
           await flushSave();
           const identified = identifyProject(next, true);
           await flushSave(identified);

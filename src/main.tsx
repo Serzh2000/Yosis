@@ -8,6 +8,7 @@ import '@fontsource-variable/golos-text/index.css';
 import '@fontsource-variable/jetbrains-mono/index.css';
 import './styles.css';
 import './design.css';
+import './mobile.css';
 
 const LearnApp = React.lazy(() => import('./learn/LearnApp'));
 

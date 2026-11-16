@@ -8,6 +8,7 @@ import type { WorkTab } from '../../lib/studio-tabs';
 import type { VcdSignal } from '../../lib/vcd';
 import { PanelSlot } from './PanelSlot';
 import { BoardPanel, ChipPanel, LabPanel, LearningPanel, SimulationPanel } from './lazy-panels';
+import { t } from '../../lib/i18n';
 
 /** Курс «Обучение»: что нужно панели от студии. */
 export interface LearningBindings {
@@ -70,7 +71,7 @@ export function PersistentPanels({
         <PanelSlot
           tab="simulation"
           active={workTab === 'simulation'}
-          label="Рабочая область временных диаграмм"
+          label={t('Рабочая область временных диаграмм')}
           resetKey={project.id}
         >
           <SimulationPanel
@@ -92,7 +93,7 @@ export function PersistentPanels({
         <PanelSlot
           tab="virtual"
           active={workTab === 'virtual'}
-          label="Лаборатория"
+          label={t('Лаборатория')}
           resetKey={project.id}
         >
           <LabPanel
@@ -107,7 +108,7 @@ export function PersistentPanels({
         <PanelSlot
           tab="chip"
           active={workTab === 'chip'}
-          label="Рабочая область кристалла"
+          label={t('Рабочая область кристалла')}
           resetKey={project.id}
         >
           <ChipPanel
@@ -124,7 +125,7 @@ export function PersistentPanels({
         <PanelSlot
           tab="lessons"
           active={workTab === 'lessons'}
-          label="Интерактивное обучение"
+          label={t('Интерактивное обучение')}
           resetKey={project.id}
         >
           <LearningPanel
@@ -144,7 +145,7 @@ export function PersistentPanels({
         <PanelSlot
           tab="board"
           active={workTab === 'board'}
-          label="Подключение платы"
+          label={t('Подключение платы')}
           resetKey={project.id}
         >
           <BoardPanel

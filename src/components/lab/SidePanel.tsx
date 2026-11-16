@@ -8,6 +8,7 @@ import type { LabLayout, LabPart, LabRuntime, LabWire } from '../../lib/lab/runt
 import { AssignForm } from './AssignForm';
 import { PartBody } from './PartView';
 import type { Selection } from './selection';
+import { t } from '../../lib/i18n';
 
 interface Props {
   layout: LabLayout;
@@ -34,8 +35,8 @@ function summary(def: PartDef, part: LabPart): string[] {
     const shown =
       prop.type === 'bool'
         ? value
-          ? 'да'
-          : 'нет'
+          ? t('да')
+          : t('нет')
         : (prop.options?.find((option) => option.value === value)?.label ?? String(value));
     return `${prop.label}: ${shown}`;
   });
@@ -46,11 +47,14 @@ function terminalText(terminal: string, layout: LabLayout, partDef: (part: LabPa
   const at = terminal.indexOf(':');
   const owner = terminal.slice(0, at);
   const name = terminal.slice(at + 1);
-  if (owner === 'board') return `плата, ${/^\d+$/.test(name) ? `контакт ${name}` : name}`;
+  if (owner === 'board')
+    return /^\d+$/.test(name) ? t('плата, контакт {name}', { name }) : t('плата, {name}', { name });
   const part = layout.parts.find((item) => item.uid === owner);
   if (!part) return terminal;
   const def = partDef(part);
-  return def.kind === 'breadboard' ? `макетка, ${name}` : `${part.label || def.title}, ${name}`;
+  return def.kind === 'breadboard'
+    ? t('макетка, {name}', { name })
+    : `${part.label || def.title}, ${name}`;
 }
 
 /** What is selected on the bench: the wire or part, its pins, and what to do with it. */
@@ -77,7 +81,7 @@ export function SidePanel({
   const def = part && partDef(part);
   return (
     <aside className="lab-side">
-      <section className="lab-card" aria-label="Выбранное">
+      <section className="lab-card" aria-label={t('Выбранное')}>
         {wire ? (
           (() => {
             const state = runtime?.wireState(wire.id) ?? 'ok';
@@ -92,57 +96,74 @@ export function SidePanel({
             const rail = joined && headerByFpga.get(joined.fpga)?.rail;
             return (
               <>
-                <h3>Провод</h3>
+                <h3>{t('Провод')}</h3>
                 <p>
                   {terminalText(wire.from, layout, partDef)} ↔{' '}
                   {terminalText(wire.to, layout, partDef)}
                 </p>
                 {!joined && (
                   <p className="lab-warn">
-                    Провод пока не доходит до вывода детали: подключите второй конец.
+                    {t('Провод пока не доходит до вывода детали: подключите второй конец.')}
                   </p>
                 )}
                 {joined && rail && (
                   <p className="lab-ok">
-                    Питание {rail}: вывод {joined.pin} детали «{owner?.label || ownerDef?.title}».
+                    {t('Питание {rail}: вывод {pin} детали «{part}».', {
+                      rail,
+                      pin: joined.pin,
+                      part: owner?.label || ownerDef?.title || '',
+                    })}
                   </p>
                 )}
                 {joined && !rail && state === 'ok' && (
                   <p className="lab-ok">
                     {target ? (
                       <>
-                        Сигнал <code>{target.signal}</code>{' '}
+                        {t('Сигнал')} <code>{target.signal}</code>{' '}
                       </>
                     ) : (
-                      'Сигнал '
+                      `${t('Сигнал')} `
                     )}
-                    {input ? 'идёт из схемы в деталь.' : 'идёт от детали в схему.'}
+                    {input ? t('идёт из схемы в деталь.') : t('идёт от детали в схему.')}
                   </p>
                 )}
                 {joined && state === 'direction' && (
                   <p className="lab-warn">
-                    На контакте {fpga} — {target?.direction === 'output' ? 'выход' : 'вход'} схемы{' '}
-                    <code>{target?.signal}</code>, а этот вывод детали —{' '}
-                    {input ? 'тоже вход' : 'тоже выход'}. Провод ничего не передаёт.
+                    {t('На контакте {fpga} — {kind} схемы', {
+                      fpga: fpga ?? '',
+                      kind: target?.direction === 'output' ? t('выход') : t('вход'),
+                    })}{' '}
+                    <code>{target?.signal}</code>
+                    {t(', а этот вывод детали — {kind}. Провод ничего не передаёт.', {
+                      kind: input ? t('тоже вход') : t('тоже выход'),
+                    })}
                   </p>
                 )}
                 {joined && !rail && state === 'unassigned' && runtime && (
                   <>
-                    <p className="lab-warn">Контакт {fpga} не назначен ни одному сигналу схемы.</p>
+                    <p className="lab-warn">
+                      {t('Контакт {fpga} не назначен ни одному сигналу схемы.', {
+                        fpga: fpga ?? '',
+                      })}
+                    </p>
                     <AssignForm
                       signals={freeSignals}
-                      label="Сигнал схемы"
-                      empty={`В схеме нет свободных ${input ? 'выходов' : 'входов'}: добавьте порт в верхний модуль.`}
+                      label={t('Сигнал схемы')}
+                      empty={
+                        input
+                          ? t('В схеме нет свободных выходов: добавьте порт в верхний модуль.')
+                          : t('В схеме нет свободных входов: добавьте порт в верхний модуль.')
+                      }
                       error={assignError}
                       onAssign={(signal) => onAssign(signal, wire)}
                     />
                     <button type="button" className="lab-link" onClick={onOpenPins}>
-                      Открыть «Выводы»
+                      {t('Открыть «Выводы»')}
                     </button>
                   </>
                 )}
                 <button type="button" className="button subtle" onClick={onRemove}>
-                  <Trash2 size={14} /> Убрать провод
+                  <Trash2 size={14} /> {t('Убрать провод')}
                 </button>
               </>
             );
@@ -169,19 +190,19 @@ export function SidePanel({
                     <b>{pin[1]}</b>
                     <span>
                       {pin[0] === 'VCC' || pin[0] === 'GND'
-                        ? 'питание'
+                        ? t('питание')
                         : pin[2] === 'in'
-                          ? 'вход'
+                          ? t('вход')
                           : pin[2] === 'out'
-                            ? 'выход'
-                            : 'двунаправл.'}
+                            ? t('выход')
+                            : t('двунаправл.')}
                     </span>
                     <em>
                       {wired
                         ? rail
-                          ? `питание ${rail}`
-                          : `контакт ${wired.fpga}${signal ? ` · ${signal}` : ''}`
-                        : 'не подключён'}
+                          ? t('питание {rail}', { rail })
+                          : `${t('контакт {fpga}', { fpga: wired.fpga })}${signal ? ` · ${signal}` : ''}`
+                        : t('не подключён')}
                     </em>
                   </li>
                 );
@@ -193,65 +214,70 @@ export function SidePanel({
                 className="button primary"
                 onClick={() => onOpenProperties(part.uid)}
               >
-                <SlidersHorizontal size={14} /> Свойства…
+                <SlidersHorizontal size={14} /> {t('Свойства…')}
               </button>
               <button type="button" className="button subtle" onClick={onRotate}>
-                <RotateCw size={14} /> Повернуть
+                <RotateCw size={14} /> {t('Повернуть')}
               </button>
               <button type="button" className="button subtle" onClick={onRemove}>
-                <Trash2 size={14} /> Убрать деталь
+                <Trash2 size={14} /> {t('Убрать деталь')}
               </button>
             </div>
           </>
         ) : parts.length > 1 ? (
           <>
-            <h3>Выбрано деталей: {parts.length}</h3>
-            <p>R поворачивает, Delete убирает.</p>
+            <h3>{t('Выбрано деталей: {n}', { n: parts.length })}</h3>
+            <p>{t('R поворачивает, Delete убирает.')}</p>
             <div className="lab-card-actions">
               <button type="button" className="button subtle" onClick={onRotate}>
-                <RotateCw size={14} /> Повернуть
+                <RotateCw size={14} /> {t('Повернуть')}
               </button>
               <button type="button" className="button subtle" onClick={onRemove}>
-                <Trash2 size={14} /> Убрать выбранные
+                <Trash2 size={14} /> {t('Убрать выбранные')}
               </button>
             </div>
           </>
         ) : (
           <>
-            <h3>Как пользоваться</h3>
+            <h3>{t('Как пользоваться')}</h3>
             <ol className="lab-howto">
               <li>
-                Нажмите деталь в списке слева — она встанет на макетную плату, или перетащите её на
-                стол.
+                {t(
+                  'Нажмите деталь в списке слева — она встанет на макетную плату, или перетащите её на стол.',
+                )}
               </li>
               <li>
-                У каждой детали есть плюс и минус: соедините VCC с 3V3 (или 5V), а GND — с GND платы
-                проводами. Без питания деталь не работает.
+                {t(
+                  'У каждой детали есть плюс и минус: соедините VCC с 3V3 (или 5V), а GND — с GND платы проводами. Без питания деталь не работает.',
+                )}
               </li>
               <li>
-                Потяните от вывода детали, отверстия макетки или контакта платы к другому контакту —
-                появится провод.
+                {t(
+                  'Потяните от вывода детали, отверстия макетки или контакта платы к другому контакту — появится провод.',
+                )}
               </li>
               <li>
-                Если контакт ещё не назначен сигналу, выберите сигнал: в этой панели или у места,
-                куда упал провод.
+                {t(
+                  'Если контакт ещё не назначен сигналу, выберите сигнал: в этой панели или у места, куда упал провод.',
+                )}
               </li>
             </ol>
             <p>
-              Q и E поворачивают стол, колесо меняет масштаб, 0 показывает весь стол. Правая кнопка
-              мыши открывает меню.
+              {t(
+                'Q и E поворачивают стол, колесо меняет масштаб, 0 показывает весь стол. Правая кнопка мыши открывает меню.',
+              )}
             </p>
           </>
         )}
       </section>
       <details className="lab-card lab-board-uart">
-        <summary>USB-терминал платы</summary>
-        <p>Выводы 69 (TX схемы) и 70 (RX схемы), как у настоящего USB-разъёма.</p>
+        <summary>{t('USB-терминал платы')}</summary>
+        <p>{t('Выводы 69 (TX схемы) и 70 (RX схемы), как у настоящего USB-разъёма.')}</p>
         {terminal && (
           <PartBody
             device={terminal}
             version={terminal.viewVersion}
-            title="USB-терминал платы"
+            title={t('USB-терминал платы')}
             muted
             act={actTerminal}
           />
@@ -259,7 +285,7 @@ export function SidePanel({
       </details>
       {!!layout.parts.length && (
         <button type="button" className="lab-link" onClick={onClear}>
-          <X size={13} /> Убрать всё со стола
+          <X size={13} /> {t('Убрать всё со стола')}
         </button>
       )}
     </aside>

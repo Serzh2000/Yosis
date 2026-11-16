@@ -11,38 +11,44 @@ import {
   num,
   output,
   toSigned,
+  tn,
 } from './circuit-util';
+import { t } from './i18n';
 
-const widthSpec = (key = 'width', label = 'Ширина, бит') =>
-  ({ key, label, type: 'int', min: 1, max: 64, unit: 'бит' }) as const;
+const widthSpec = (key = 'width', label = t('Ширина, бит')) =>
+  ({ key, label, type: 'int', min: 1, max: 64, unit: t('бит') }) as const;
 
 const addsub: BlockDef = {
   kind: 'addsub',
-  title: 'Сумматор / вычитатель',
-  help: 'Складывает или вычитает два числа без знака. Перенос (заём) за пределами ширины можно вывести отдельно.',
+  title: t('Сумматор / вычитатель'),
+  help: t(
+    'Складывает или вычитает два числа без знака. Перенос (заём) за пределами ширины можно вывести отдельно.',
+  ),
   defaults: { width: 4, mode: 'add', cin: false, cout: false },
   params: [
     widthSpec(),
     {
       key: 'mode',
-      label: 'Операция',
+      label: t('Операция'),
       type: 'select',
       options: [
-        ['add', 'Сложение A + B'],
-        ['sub', 'Вычитание A − B'],
-        ['select', 'Выбирается входом SUB'],
+        ['add', t('Сложение A + B')],
+        ['sub', t('Вычитание A − B')],
+        ['select', t('Выбирается входом SUB')],
       ],
     },
-    { key: 'cin', label: 'Вход переноса CIN', type: 'bool' },
-    { key: 'cout', label: 'Выход переноса COUT', type: 'bool' },
+    { key: 'cin', label: t('Вход переноса CIN'), type: 'bool' },
+    { key: 'cout', label: t('Выход переноса COUT'), type: 'bool' },
   ],
   pins: (p) => [
     input('A', num(p, 'width')),
     input('B', num(p, 'width')),
-    ...(flag(p, 'cin') ? [input('CIN', 1, { hint: p.mode === 'sub' ? 'Заём' : 'Перенос' })] : []),
-    ...(p.mode === 'select' ? [input('SUB', 1, { hint: '1 — вычитать' })] : []),
+    ...(flag(p, 'cin')
+      ? [input('CIN', 1, { hint: p.mode === 'sub' ? t('Заём') : t('Перенос') })]
+      : []),
+    ...(p.mode === 'select' ? [input('SUB', 1, { hint: t('1 — вычитать') })] : []),
     output('Y', num(p, 'width')),
-    ...(flag(p, 'cout') ? [output('COUT', 1, { hint: 'Перенос / заём' })] : []),
+    ...(flag(p, 'cout') ? [output('COUT', 1, { hint: t('Перенос / заём') })] : []),
   ],
   comb: (p) => [
     'A',
@@ -54,10 +60,18 @@ const addsub: BlockDef = {
   symbol: (p) => ({
     shape: 'box',
     label: p.mode === 'add' ? '+' : p.mode === 'sub' ? '−' : '±',
-    detail: `${p.width} бит`,
+    detail: tn(t('{width} бит'), { width: p.width }),
   }),
   describe: (p) =>
-    `${p.mode === 'add' ? 'Сумматор' : p.mode === 'sub' ? 'Вычитатель' : 'Сумматор/вычитатель'}, ${p.width} бит`,
+    tn(t('{v1}, {width} бит'), {
+      v1:
+        p.mode === 'add'
+          ? t('Сумматор')
+          : p.mode === 'sub'
+            ? t('Вычитатель')
+            : t('Сумматор/вычитатель'),
+      width: p.width,
+    }),
   emit: (c) => {
     const w = num(c.p, 'width'),
       cin = flag(c.p, 'cin') ? c.in('CIN') : null,
@@ -95,18 +109,20 @@ const addsub: BlockDef = {
 };
 const incdec: BlockDef = {
   kind: 'incdec',
-  title: 'Инкремент / декремент',
-  help: 'Прибавляет или вычитает единицу. После максимума инкремент даёт 0, после 0 декремент даёт максимум.',
+  title: t('Инкремент / декремент'),
+  help: t(
+    'Прибавляет или вычитает единицу. После максимума инкремент даёт 0, после 0 декремент даёт максимум.',
+  ),
   defaults: { width: 4, mode: 'inc' },
   params: [
     widthSpec(),
     {
       key: 'mode',
-      label: 'Операция',
+      label: t('Операция'),
       type: 'select',
       options: [
-        ['inc', 'Прибавить 1'],
-        ['dec', 'Вычесть 1'],
+        ['inc', t('Прибавить 1')],
+        ['dec', t('Вычесть 1')],
       ],
     },
   ],
@@ -115,9 +131,9 @@ const incdec: BlockDef = {
   symbol: (p) => ({
     shape: 'box',
     label: p.mode === 'inc' ? '+1' : '−1',
-    detail: `${p.width} бит`,
+    detail: tn(t('{width} бит'), { width: p.width }),
   }),
-  describe: (p) => (p.mode === 'inc' ? 'Прибавить 1' : 'Вычесть 1'),
+  describe: (p) => (p.mode === 'inc' ? t('Прибавить 1') : t('Вычесть 1')),
   emit: (c) => [
     `assign ${c.out('Y')} = ${c.in('A')} ${c.p.mode === 'inc' ? '+' : '-'} ${lit(num(c.p, 'width'), 1n)};`,
   ],
@@ -128,27 +144,34 @@ const incdec: BlockDef = {
 };
 const mult: BlockDef = {
   kind: 'mult',
-  title: 'Умножитель',
-  help: 'Умножает два числа. Результат шире: его ширина равна сумме ширин A и B, поэтому ничего не теряется.',
+  title: t('Умножитель'),
+  help: t(
+    'Умножает два числа. Результат шире: его ширина равна сумме ширин A и B, поэтому ничего не теряется.',
+  ),
   defaults: { widthA: 4, widthB: 4, signed: false },
   params: [
-    widthSpec('widthA', 'Ширина A, бит'),
-    widthSpec('widthB', 'Ширина B, бит'),
-    { key: 'signed', label: 'Числа со знаком', type: 'bool' },
+    widthSpec('widthA', t('Ширина A, бит')),
+    widthSpec('widthB', t('Ширина B, бит')),
+    { key: 'signed', label: t('Числа со знаком'), type: 'bool' },
   ],
   pins: (p) => [
     input('A', num(p, 'widthA')),
     input('B', num(p, 'widthB')),
     output('Y', num(p, 'widthA') + num(p, 'widthB')),
   ],
-  check: (p) => (num(p, 'widthA') + num(p, 'widthB') > 64 ? ['произведение шире 64 бит'] : []),
+  check: (p) => (num(p, 'widthA') + num(p, 'widthB') > 64 ? [t('произведение шире 64 бит')] : []),
   comb: () => ['A', 'B'],
   symbol: (p) => ({
     shape: 'box',
     label: '×',
-    detail: flag(p, 'signed') ? 'со знаком' : 'без знака',
+    detail: flag(p, 'signed') ? t('со знаком') : t('без знака'),
   }),
-  describe: (p) => `Умножитель ${p.widthA}×${p.widthB} бит${flag(p, 'signed') ? ' со знаком' : ''}`,
+  describe: (p) =>
+    tn(t('Умножитель {widthA}×{widthB} бит{v3}'), {
+      widthA: p.widthA,
+      widthB: p.widthB,
+      v3: flag(p, 'signed') ? t(' со знаком') : '',
+    }),
   emit: (c) => [
     flag(c.p, 'signed')
       ? `assign ${c.out('Y')} = $signed(${c.in('A')}) * $signed(${c.in('B')});`
@@ -178,28 +201,34 @@ const outs = (p: Params) =>
   cmpOptions.map(([key]) => key).filter((key) => list(p, 'outs').includes(key));
 const cmp: BlockDef = {
   kind: 'cmp',
-  title: 'Компаратор',
-  help: 'Сравнивает A и B. Выберите, какие результаты нужны: равно, не равно, меньше, больше… Каждый — отдельный выход в 1 бит.',
+  title: t('Компаратор'),
+  help: t(
+    'Сравнивает A и B. Выберите, какие результаты нужны: равно, не равно, меньше, больше… Каждый — отдельный выход в 1 бит.',
+  ),
   defaults: { width: 4, signed: false, outs: ['eq'] },
   params: [
     widthSpec(),
-    { key: 'signed', label: 'Числа со знаком', type: 'bool' },
-    { key: 'outs', label: 'Выходы', type: 'multi', options: cmpOptions },
+    { key: 'signed', label: t('Числа со знаком'), type: 'bool' },
+    { key: 'outs', label: t('Выходы'), type: 'multi', options: cmpOptions },
   ],
   pins: (p) => [
     input('A', num(p, 'width')),
     input('B', num(p, 'width')),
     ...outs(p).map((key) => output(key.toUpperCase(), 1)),
   ],
-  check: (p) => (outs(p).length ? [] : ['выберите хотя бы один результат сравнения']),
+  check: (p) => (outs(p).length ? [] : [t('выберите хотя бы один результат сравнения')]),
   comb: () => ['A', 'B'],
   symbol: (p) => ({
     shape: 'box',
     label: 'CMP',
-    detail: flag(p, 'signed') ? 'со знаком' : 'без знака',
+    detail: flag(p, 'signed') ? t('со знаком') : t('без знака'),
   }),
   describe: (p) =>
-    `Компаратор ${p.width} бит (${outs(p).join(', ')})${flag(p, 'signed') ? ', со знаком' : ''}`,
+    tn(t('Компаратор {width} бит ({v2}){v3}'), {
+      width: p.width,
+      v2: outs(p).join(', '),
+      v3: flag(p, 'signed') ? t(', со знаком') : '',
+    }),
   emit: (c) =>
     outs(c.p).map((key) => {
       const a = flag(c.p, 'signed') ? `$signed(${c.in('A')})` : c.in('A'),
@@ -224,33 +253,35 @@ const cmp: BlockDef = {
 };
 const shift: BlockDef = {
   kind: 'shift',
-  title: 'Сдвиг',
-  help: 'Сдвигает биты числа влево или вправо. Количество шагов задано числом или приходит на вход N (бочечный сдвигатель).',
+  title: t('Сдвиг'),
+  help: t(
+    'Сдвигает биты числа влево или вправо. Количество шагов задано числом или приходит на вход N (бочечный сдвигатель).',
+  ),
   defaults: { width: 8, op: 'shl', source: 'const', amount: 1 },
   params: [
     widthSpec(),
     {
       key: 'op',
-      label: 'Направление',
+      label: t('Направление'),
       type: 'select',
       options: [
-        ['shl', 'Влево (умножение на 2)'],
-        ['shr', 'Вправо, сверху нули'],
-        ['sar', 'Вправо с сохранением знака'],
+        ['shl', t('Влево (умножение на 2)')],
+        ['shr', t('Вправо, сверху нули')],
+        ['sar', t('Вправо с сохранением знака')],
       ],
     },
     {
       key: 'source',
-      label: 'Откуда величина сдвига',
+      label: t('Откуда величина сдвига'),
       type: 'select',
       options: [
-        ['const', 'Задана числом'],
-        ['input', 'Приходит на вход N'],
+        ['const', t('Задана числом')],
+        ['input', t('Приходит на вход N')],
       ],
     },
     {
       key: 'amount',
-      label: 'Сдвиг на, бит',
+      label: t('Сдвиг на, бит'),
       type: 'int',
       min: 0,
       max: (p) => num(p, 'width') - 1,
@@ -260,22 +291,25 @@ const shift: BlockDef = {
   pins: (p) => [
     input('A', num(p, 'width')),
     ...(p.source === 'input'
-      ? [input('N', clog2(num(p, 'width')), { hint: 'Сколько шагов' })]
+      ? [input('N', clog2(num(p, 'width')), { hint: t('Сколько шагов') })]
       : []),
     output('Y', num(p, 'width')),
   ],
   comb: (p) => ['A', ...(p.source === 'input' ? ['N'] : [])],
   check: (p) =>
     p.source === 'const' && num(p, 'amount') >= num(p, 'width')
-      ? ['сдвиг не меньше ширины шины']
+      ? [t('сдвиг не меньше ширины шины')]
       : [],
   symbol: (p) => ({
     shape: 'box',
     label: p.op === 'shl' ? '<<' : p.op === 'shr' ? '>>' : '>>>',
-    detail: p.source === 'const' ? `на ${p.amount}` : 'по входу N',
+    detail: p.source === 'const' ? tn(t('на {amount}'), { amount: p.amount }) : t('по входу N'),
   }),
   describe: (p) =>
-    `Сдвиг ${p.op === 'shl' ? 'влево' : p.op === 'shr' ? 'вправо' : 'вправо со знаком'} ${p.source === 'const' ? `на ${p.amount}` : 'на N'}`,
+    tn(t('Сдвиг {dir} {amount}'), {
+      dir: p.op === 'shl' ? t('влево') : p.op === 'shr' ? t('вправо') : t('вправо со знаком'),
+      amount: p.source === 'const' ? tn(t('на {amount}'), { amount: String(p.amount) }) : t('на N'),
+    }),
   emit: (c) => {
     const amount = c.p.source === 'const' ? String(c.p.amount) : c.in('N'),
       a = c.in('A');

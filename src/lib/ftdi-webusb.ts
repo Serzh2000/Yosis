@@ -1,3 +1,4 @@
+import { t } from '../../shared/i18n';
 /** Minimal structural WebUSB types keep the transport testable without browser globals. */
 export interface UsbEndpointDescriptor {
   endpointNumber: number;
@@ -83,13 +84,13 @@ export function discoverFtdiInterfaceA(device: WebUsbDevice): FtdiEndpoints {
     device.vendorId !== TANG_NANO_USB_FILTER.vendorId ||
     device.productId !== TANG_NANO_USB_FILTER.productId
   )
-    throw new Error('Нужен USB-программатор Tang Nano 20K (0403:6010).');
+    throw new Error(t('Нужен USB-программатор Tang Nano 20K (0403:6010).'));
   const candidates: FtdiEndpoints[] = [];
   for (const configuration of device.configurations) {
     const interfaces = configuration.interfaces.filter(
       (item) => item.interfaceNumber === INTERFACE_A,
     );
-    if (interfaces.length > 1) throw new Error('USB interface A имеет неоднозначное описание.');
+    if (interfaces.length > 1) throw new Error(t('USB interface A имеет неоднозначное описание.'));
     for (const alternate of interfaces[0]?.alternates ?? []) {
       if (
         alternate.interfaceClass !== 0xff ||
@@ -122,7 +123,7 @@ export function discoverFtdiInterfaceA(device: WebUsbDevice): FtdiEndpoints {
   }
   if (candidates.length !== 1)
     throw new Error(
-      'Не найден единственный vendor bulk interface A для JTAG. Интерфейс UART не используется.',
+      t('Не найден единственный vendor bulk interface A для JTAG. Интерфейс UART не используется.'),
     );
   return candidates[0];
 }
@@ -133,12 +134,12 @@ export function stripFtdiStatusBytes(
   packetSize: number,
 ): Uint8Array<ArrayBuffer> {
   if (!Number.isInteger(packetSize) || packetSize < 3 || packetSize > 1024)
-    throw new Error('Некорректный размер пакета FTDI.');
+    throw new Error(t('Некорректный размер пакета FTDI.'));
   const bytes =
     data instanceof DataView ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : data;
   const remainder = bytes.length % packetSize;
   if (bytes.length === 1 || remainder === 1)
-    throw new Error('Неполный пакет FTDI: отсутствуют два байта статуса.');
+    throw new Error(t('Неполный пакет FTDI: отсутствуют два байта статуса.'));
   const payloadLength =
     Math.floor(bytes.length / packetSize) * (packetSize - 2) + Math.max(0, remainder - 2);
   const payload = new Uint8Array(payloadLength);
@@ -182,13 +183,13 @@ export class FtdiWebUsbTransport {
     options: FtdiWebUsbOptions = {},
   ) {
     this.endpoints = discoverFtdiInterfaceA(device);
-    this.timeoutMs = boundedOption(options.timeoutMs ?? 2000, 1, 60_000, 'таймаут USB');
-    this.readTimeoutMs = boundedOption(options.readTimeoutMs ?? 2000, 1, 60_000, 'таймаут чтения');
+    this.timeoutMs = boundedOption(options.timeoutMs ?? 2000, 1, 60_000, t('таймаут USB'));
+    this.readTimeoutMs = boundedOption(options.readTimeoutMs ?? 2000, 1, 60_000, t('таймаут чтения'));
     this.maxReadBytes = boundedOption(
       options.maxReadBytes ?? MAX_READ_BYTES,
       1,
       MAX_READ_BYTES,
-      'размер чтения',
+      t('размер чтения'),
     );
   }
 
@@ -207,18 +208,18 @@ export class FtdiWebUsbTransport {
 
   async open(): Promise<void> {
     if (this.used || this.device.opened)
-      throw new Error('USB-сессия уже открыта или использована. Подключите плату заново.');
+      throw new Error(t('USB-сессия уже открыта или использована. Подключите плату заново.'));
     this.used = true;
     this.busy = true;
     try {
-      await this.timed(this.device.open(), 'открытие USB');
+      await this.timed(this.device.open(), t('открытие USB'));
       this.owned = true;
       if (this.device.configuration?.configurationValue !== this.endpoints.configurationValue)
         await this.timed(
           this.device.selectConfiguration(this.endpoints.configurationValue),
-          'выбор USB-конфигурации',
+          t('выбор USB-конфигурации'),
         );
-      await this.timed(this.device.claimInterface(INTERFACE_A), 'захват JTAG interface A');
+      await this.timed(this.device.claimInterface(INTERFACE_A), t('захват JTAG interface A'));
       this.claimed = true;
       const alternate = this.device.configuration?.interfaces.find(
         (item) => item.interfaceNumber === INTERFACE_A,
@@ -226,7 +227,7 @@ export class FtdiWebUsbTransport {
       if (alternate !== this.endpoints.alternateSetting)
         await this.timed(
           this.device.selectAlternateInterface(INTERFACE_A, this.endpoints.alternateSetting),
-          'выбор JTAG alternate',
+          t('выбор JTAG alternate'),
         );
       this.originalLatency = await this.getLatency();
       await this.control(FTDI_RESET, 0);
@@ -239,7 +240,7 @@ export class FtdiWebUsbTransport {
       await this.writeInternal(Uint8Array.of(0xaa, 0x87));
       const sync = await this.readInternal(2);
       if (sync[0] !== 0xfa || sync[1] !== 0xaa || this.pending.length)
-        throw new Error('Программатор не подтвердил режим MPSSE. Переподключите USB платы.');
+        throw new Error(t('Программатор не подтвердил режим MPSSE. Переподключите USB платы.'));
       // Divide by five, disable loopback, set divisor, TMS high/TCK low, ADBUS direction 0x0b.
       // Avoid clock-only 0x8e/0x8f, unsupported by some Sipeed debugger firmware.
       await this.writeInternal(Uint8Array.of(0x8b, 0x85, 0x86, 2, 0, 0x80, 0x08, 0x0b, 0x87));
@@ -266,7 +267,7 @@ export class FtdiWebUsbTransport {
   }
 
   async readExact(length: number): Promise<Uint8Array<ArrayBuffer>> {
-    boundedOption(length, 1, this.maxReadBytes, 'размер чтения');
+    boundedOption(length, 1, this.maxReadBytes, t('размер чтения'));
     this.startOperation();
     try {
       return await this.readInternal(length);
@@ -279,30 +280,30 @@ export class FtdiWebUsbTransport {
   }
 
   async close(): Promise<string[]> {
-    if (this.busy) throw new Error('Дождитесь завершения USB-операции перед отключением.');
+    if (this.busy) throw new Error(t('Дождитесь завершения USB-операции перед отключением.'));
     this.closing = true;
     return this.cleanup();
   }
 
   private startOperation(): void {
-    if (!this.ready) throw new Error('USB-сессия недоступна. Подключите плату заново.');
-    if (this.busy) throw new Error('Другая USB-операция уже выполняется.');
+    if (!this.ready) throw new Error(t('USB-сессия недоступна. Подключите плату заново.'));
+    if (this.busy) throw new Error(t('Другая USB-операция уже выполняется.'));
     this.busy = true;
   }
 
   private async writeInternal(source: Uint8Array): Promise<void> {
     if (!source.length || source.length > 1024 * 1024)
-      throw new Error('Неподдерживаемый размер MPSSE-команды.');
+      throw new Error(t('Неподдерживаемый размер MPSSE-команды.'));
     for (let offset = 0; offset < source.length; offset += MAX_TRANSFER) {
       // Copy each chunk into an ArrayBuffer accepted by browser WebUSB implementations.
       const bytes = new Uint8Array(source.subarray(offset, offset + MAX_TRANSFER));
       const result = await this.timed(
         this.device.transferOut(this.endpoints.output, bytes),
-        'запись USB',
+        t('запись USB'),
       );
       if (result.status !== 'ok' || result.bytesWritten !== bytes.length)
         throw new Error(
-          `Неполная запись USB (${result.bytesWritten}/${bytes.length}); повтор команды запрещён.`,
+          t('Неполная запись USB ({result}/{bytes}); повтор команды запрещён.', { result: result.bytesWritten, bytes: bytes.length }),
         );
     }
   }
@@ -317,7 +318,7 @@ export class FtdiWebUsbTransport {
     while (copied < length) {
       const remaining = deadline - Date.now();
       if (remaining <= 0 || ++transfers > 4096)
-        throw new Error(`Истекло время чтения USB (${copied}/${length} байт).`);
+        throw new Error(t('Истекло время чтения USB ({copied}/{length} байт).', { copied, length }));
       const packetSize = this.endpoints.packetSize;
       const requested = Math.min(
         MAX_TRANSFER,
@@ -325,11 +326,11 @@ export class FtdiWebUsbTransport {
       );
       const result = await this.timed(
         this.device.transferIn(this.endpoints.input, requested),
-        'чтение USB',
+        t('чтение USB'),
         Math.min(this.timeoutMs, remaining),
       );
       if (result.status !== 'ok' || !result.data || result.data.byteLength > requested)
-        throw new Error('USB вернул повреждённый пакет или ошибку чтения.');
+        throw new Error(t('USB вернул повреждённый пакет или ошибку чтения.'));
       const bytes = stripFtdiStatusBytes(result.data, packetSize);
       const count = Math.min(bytes.length, length - copied);
       output.set(bytes.subarray(0, count), copied);
@@ -346,18 +347,18 @@ export class FtdiWebUsbTransport {
   private async control(request: number, value: number): Promise<void> {
     const result = await this.timed(
       this.device.controlTransferOut(this.setup(request, value)),
-      'настройка FTDI',
+      t('настройка FTDI'),
     );
     if (result.status !== 'ok' || result.bytesWritten !== 0)
-      throw new Error('FTDI не принял управляющий запрос.');
+      throw new Error(t('FTDI не принял управляющий запрос.'));
   }
   private async getLatency(): Promise<number> {
     const result = await this.timed(
       this.device.controlTransferIn(this.setup(FTDI_GET_LATENCY, 0), 1),
-      'чтение задержки FTDI',
+      t('чтение задержки FTDI'),
     );
     if (result.status !== 'ok' || result.data?.byteLength !== 1 || result.data.getUint8(0) < 1)
-      throw new Error('Не удалось прочитать исходную задержку FTDI.');
+      throw new Error(t('Не удалось прочитать исходную задержку FTDI.'));
     return result.data.getUint8(0);
   }
   private async purge(): Promise<void> {
@@ -383,7 +384,7 @@ export class FtdiWebUsbTransport {
         }
         reject(
           new Error(
-            `Истекло время операции «${label}». Переподключите плату; повтор USB-команды запрещён.`,
+            t('Истекло время операции «{label}». Переподключите плату; повтор USB-команды запрещён.', { label }),
           ),
         );
       }, timeout);
@@ -405,7 +406,7 @@ export class FtdiWebUsbTransport {
 
   private closeUsb(): Promise<void> {
     if (!this.closePromise)
-      this.closePromise = this.timed(this.device.close(), 'закрытие USB', this.timeoutMs, false);
+      this.closePromise = this.timed(this.device.close(), t('закрытие USB'), this.timeoutMs, false);
     return this.closePromise;
   }
 
@@ -415,7 +416,7 @@ export class FtdiWebUsbTransport {
       try {
         await action();
       } catch (error) {
-        warnings.push(error instanceof Error ? error.message : 'Ошибка отключения USB.');
+        warnings.push(error instanceof Error ? error.message : t('Ошибка отключения USB.'));
       }
     };
     // Never send FTDI commands unless interface A was successfully claimed.
@@ -428,7 +429,7 @@ export class FtdiWebUsbTransport {
         await attempt(() => this.control(FTDI_SET_LATENCY, this.originalLatency!));
       if (!this.hung)
         await attempt(() =>
-          this.timed(this.device.releaseInterface(INTERFACE_A), 'освобождение JTAG interface A'),
+          this.timed(this.device.releaseInterface(INTERFACE_A), t('освобождение JTAG interface A')),
         );
     }
     this.claimed = false;
@@ -442,7 +443,7 @@ export class FtdiWebUsbTransport {
 
 function boundedOption(value: number, min: number, max: number, label: string): number {
   if (!Number.isInteger(value) || value < min || value > max)
-    throw new Error(`Некорректный ${label}.`);
+    throw new Error(t('Некорректный {label}.', { label }));
   return value;
 }
 function delay(milliseconds: number): Promise<void> {

@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { Fragment, type ReactNode } from 'react';
 import { partById } from '../lib/lab/catalog';
 import type { Block } from './content/schema';
@@ -69,7 +70,7 @@ export function BlockView({
           </pre>
           {block.insertable && onInsert ? (
             <button type="button" className="button subtle" onClick={() => onInsert(block.code)}>
-              В редактор
+              {t('В редактор')}
             </button>
           ) : null}
         </figure>
@@ -104,7 +105,7 @@ export function BlockView({
           </div>
           {answered ? (
             <p className={`learn-quiz-note ${chosen === block.answer ? 'right' : 'wrong'}`}>
-              {chosen === block.answer ? 'Верно. ' : 'Пока не то. '}
+              {chosen === block.answer ? t('Верно. ') : t('Пока не то. ')}
               {block.explain}
             </p>
           ) : null}
@@ -114,13 +115,13 @@ export function BlockView({
     case 'parts':
       return (
         <p className="learn-parts">
-          Понадобятся:{' '}
+          {t('Понадобятся:')}{' '}
           <strong>
             {block.items
               .map((item) => `${partById.get(item.def)?.title ?? item.def} × ${item.count}`)
               .join(', ')}
           </strong>
-          . Они есть в списке слева на столе.
+          {t('. Они есть в списке слева на столе.')}
         </p>
       );
   }

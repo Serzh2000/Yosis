@@ -3,8 +3,9 @@ import { addMissing, withSupply } from './supply';
 import { LED_COLORS, partById, partPins } from './catalog';
 import type { Options } from './devices';
 import type { LabLayout, LabPart, LabWire, Turn } from './runtime';
+import { t } from '../../../shared/i18n';
 
-const color = (name: string) => LED_COLORS.find((item) => item.label === name)!.value;
+const color = (name: string) => LED_COLORS.find((item) => item.label === t(name))!.value;
 const CAPS = { red: '#e5484d', green: '#30a46c', blue: '#3e63dd', yellow: '#f5c518' };
 
 interface Legacy {

@@ -1,5 +1,6 @@
 import type { Example } from './examples';
 import { learningExample, clockPin, resetPin, ledPins } from './example-kit';
+import { t } from './i18n';
 
 interface ApplicationOptions {
   parameters?: string;
@@ -71,8 +72,8 @@ const buttonSynchronizer = `    // Два триггера синхронизи�
 export const applicationExamples: Example[] = [
   application(
     'moving-average',
-    'Скользящее среднее: четыре отсчёта',
-    'Короткий импульс превращается в четыре меньших отсчёта.',
+    t('Скользящее среднее: четыре отсчёта'),
+    t('Короткий импульс превращается в четыре меньших отсчёта.'),
     `    reg [25:0] ticks;
     reg [2:0] sample_phase;
     reg [5:0] delay1, delay2, delay3;
@@ -103,8 +104,8 @@ export const applicationExamples: Example[] = [
 
   application(
     'fir-filter',
-    'FIR: настраиваемые коэффициенты',
-    'Три задержанных отсчёта, signed-умножения и импульсная характеристика.',
+    t('FIR: настраиваемые коэффициенты'),
+    t('Три задержанных отсчёта, signed-умножения и импульсная характеристика.'),
     `    reg [25:0] ticks;
     reg [2:0] sample_phase;
     reg signed [6:0] delay1, delay2;
@@ -137,8 +138,8 @@ export const applicationExamples: Example[] = [
 
   application(
     'raster-scan',
-    'Мини-растр: строки и кадры',
-    'Активная область, интервалы гашения и два сигнала синхронизации.',
+    t('Мини-растр: строки и кадры'),
+    t('Активная область, интервалы гашения и два сигнала синхронизации.'),
     `    reg [3:0] horizontal;
     reg [2:0] vertical;
     wire active_video = (horizontal < 8) && (vertical < 4);
@@ -165,8 +166,8 @@ export const applicationExamples: Example[] = [
 
   application(
     'dds-tone',
-    'DDS: цифровой генератор частоты',
-    'Слово настройки управляет скоростью накопления фазы.',
+    t('DDS: цифровой генератор частоты'),
+    t('Слово настройки управляет скоростью накопления фазы.'),
     `    reg [15:0] phase;
     wire [16:0] phase_sum = {1'b0, phase} + {1'b0, FREQUENCY_WORD};
     wire digital_tone = phase[15];
@@ -184,8 +185,8 @@ export const applicationExamples: Example[] = [
 
   application(
     'sigma-delta',
-    'Сигма-дельта: плотность импульсов',
-    'Шестибитный уровень превращается в однобитный цифровой поток.',
+    t('Сигма-дельта: плотность импульсов'),
+    t('Шестибитный уровень превращается в однобитный цифровой поток.'),
     `${buttonSynchronizer}
     reg [5:0] remainder;
     reg pulse;
@@ -207,8 +208,8 @@ export const applicationExamples: Example[] = [
 
   application(
     'tiny-cpu',
-    'Маленький процессор: fetch и execute',
-    'ROM-программа считает 3→2→1→0, делает условный переход и останавливается.',
+    t('Маленький процессор: fetch и execute'),
+    t('ROM-программа считает 3→2→1→0, делает условный переход и останавливается.'),
     `    localparam FETCH = 1'b0, EXECUTE = 1'b1;
     reg state, halted;
     reg [2:0] pc;
@@ -257,8 +258,8 @@ export const applicationExamples: Example[] = [
 
   application(
     'stream-skid',
-    'Эластичный буфер valid/ready',
-    'Одно слово хранения, обратное давление и замена прочитанного слова в тот же такт.',
+    t('Эластичный буфер valid/ready'),
+    t('Одно слово хранения, обратное давление и замена прочитанного слова в тот же такт.'),
     `${buttonSynchronizer}
     reg full;
     reg [5:0] payload, source_data, last_received;
@@ -291,8 +292,8 @@ export const applicationExamples: Example[] = [
 
   application(
     'protocol-checker',
-    'Проверка протокола: ошибка остаётся',
-    'Отладочный монитор ловит изменение valid/data во время ожидания.',
+    t('Проверка протокола: ошибка остаётся'),
+    t('Отладочный монитор ловит изменение valid/data во время ожидания.'),
     `${buttonSynchronizer}
     reg [1:0] phase;
     reg [5:0] source_data, held_data;

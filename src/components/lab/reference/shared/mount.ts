@@ -1,5 +1,6 @@
 // Parts plugged straight into breadboard holes. A mounted part's leads join the hole nets, so
 // it needs no jumpers; its position on the bench follows the breadboard.
+import { t } from '../../../../../shared/i18n';
 import {
   breadboardRows,
   breadboardSize,
@@ -215,7 +216,7 @@ export function mountWarning(part: CircuitPart, mount: Mount, boardValue: number
   for (let i = 0; i < holes.length; i++)
     for (let j = i + 1; j < holes.length; j++)
       if (strip(holes[i]!) === strip(holes[j]!))
-        return `${names[i]} и ${names[j]} попадают в один электрический узел`;
+        return t('{a} и {b} попадают в один электрический узел', { a: names[i]!, b: names[j]! });
   return '';
 }
 

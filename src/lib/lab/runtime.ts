@@ -15,6 +15,7 @@ import { registerBusDevices } from './bus';
 import { PadWiring } from './bus/pads';
 import { boardPreset, examplePreset } from './presets';
 import { localStore, STORAGE_KEYS } from '../storage';
+import { t } from '../../../shared/i18n';
 
 registerBusDevices();
 
@@ -73,7 +74,7 @@ export const BOARD_UART = '@uart';
 const builtinDefs: Record<string, PartDef> = {
   [BOARD_LEDS]: {
     id: BOARD_LEDS,
-    title: 'Светодиоды платы',
+    title: t('Светодиоды платы'),
     group: 'Светодиоды',
     kind: 'light',
     shape: 'board',
@@ -83,7 +84,7 @@ const builtinDefs: Record<string, PartDef> = {
   },
   [BOARD_BUTTONS]: {
     id: BOARD_BUTTONS,
-    title: 'Кнопки платы',
+    title: t('Кнопки платы'),
     group: 'Кнопки и переключатели',
     kind: 'switch',
     shape: 'board',
@@ -96,7 +97,7 @@ const builtinDefs: Record<string, PartDef> = {
   },
   [BOARD_UART]: {
     id: BOARD_UART,
-    title: 'USB-терминал платы',
+    title: t('USB-терминал платы'),
     group: 'Приборы',
     kind: 'uart',
     shape: 'uart',

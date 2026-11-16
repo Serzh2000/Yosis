@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import { t } from '../lib/i18n';
 
 export class PanelBoundary extends Component<
   { children: ReactNode; name: string; resetKey?: string },
@@ -20,10 +21,10 @@ export class PanelBoundary extends Component<
     if (this.state.failed)
       return (
         <div className="empty-workspace" role="alert">
-          <h2>Не удалось открыть {this.props.name}</h2>
-          <p>Исходники проекта сохранены отдельно. Можно повторить открытие рабочей области.</p>
+          <h2>{t('Не удалось открыть {name}', { name: this.props.name })}</h2>
+          <p>{t('Исходники проекта сохранены отдельно. Можно повторить открытие рабочей области.')}</p>
           <button className="button primary" onClick={() => this.setState({ failed: false })}>
-            Попробовать ещё раз
+            {t('Попробовать ещё раз')}
           </button>
         </div>
       );

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Dialog } from './Dialog';
+import { t } from '../lib/i18n';
 
 export function ServerLoginDialog({
   onLogin,
@@ -12,10 +13,11 @@ export function ServerLoginDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   return (
-    <Dialog title="Подключиться к мастерской" onClose={onClose} closeDisabled={busy} busy={busy}>
+    <Dialog title={t('Подключиться к мастерской')} onClose={onClose} closeDisabled={busy} busy={busy}>
       <p>
-        Введите код доступа, который выдал преподаватель. На сервере будут доступны ваши сборки,
-        проекты и прогресс курса.
+        {t(
+          t('Введите код доступа, который выдал преподаватель. На сервере будут доступны ваши сборки, проекты и прогресс курса.'),
+        )}
       </p>
       <form
         onSubmit={(event) => {
@@ -26,7 +28,7 @@ export function ServerLoginDialog({
           void onLogin(token.trim())
             .then(onClose)
             .catch((cause) =>
-              setError(cause instanceof Error ? cause.message : 'Не удалось войти.'),
+              setError(cause instanceof Error ? cause.message : t('Не удалось войти.')),
             )
             .finally(() => {
               setBusy(false);
@@ -35,7 +37,7 @@ export function ServerLoginDialog({
         }}
       >
         <label>
-          Код доступа
+          {t('Код доступа')}
           <input
             autoFocus
             type="password"
@@ -54,10 +56,10 @@ export function ServerLoginDialog({
         )}
         <div className="dialog-actions">
           <button type="button" className="button subtle" disabled={busy} onClick={onClose}>
-            Продолжить с локальным кодом
+            {t('Продолжить с локальным кодом')}
           </button>
           <button className="button primary" disabled={busy || !token.trim()} type="submit">
-            Подключиться
+            {t('Подключиться')}
           </button>
         </div>
       </form>

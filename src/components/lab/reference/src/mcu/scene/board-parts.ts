@@ -4,6 +4,7 @@ import { radioPackage } from './board-packages';
 // Rectangles are in the board's own frame (millimetres, x along the long edge, z across it,
 // origin at the centre) and mirror the geometry that buildBoard draws.
 import { type McuBoardId } from '../../../shared/mcu';
+import { t } from '../../../../../../../shared/i18n';
 
 export interface BoardPart {
   id: string;
@@ -75,7 +76,7 @@ export function boardParts(
   if (board === 'tangnano20k')
     return [
       at(
-        led('led-pwr', 'Светодиод питания', 'Горит, когда на плату подано питание.'),
+        led('led-pwr', t('Светодиод питания'), t('Горит, когда на плату подано питание.')),
         left + 8,
         -8.4,
         2,
@@ -86,7 +87,9 @@ export function boardParts(
           led(
             `led${i}`,
             `LED${i}`,
-            'Светодиод платы. Подключён к выводу ПЛИС и горит, когда на нём 0: светодиод включён между питанием и выводом.',
+            t(
+              'Светодиод платы. Подключён к выводу ПЛИС и горит, когда на нём 0: светодиод включён между питанием и выводом.',
+            ),
           ),
           left + 16.6 + i * 2.7,
           -8,
@@ -97,8 +100,8 @@ export function boardParts(
       at(
         {
           id: 's1',
-          title: 'Кнопка S1',
-          detail: 'Подключена к выводу 88: нажатая даёт 1, отпущенная — 0.',
+          title: t('Кнопка S1'),
+          detail: t('Подключена к выводу 88: нажатая даёт 1, отпущенная — 0.'),
           h: 2,
         },
         left + 12.5,
@@ -109,8 +112,8 @@ export function boardParts(
       at(
         {
           id: 's2',
-          title: 'Кнопка S2',
-          detail: 'Подключена к выводу 87: нажатая даёт 1, отпущенная — 0.',
+          title: t('Кнопка S2'),
+          detail: t('Подключена к выводу 87: нажатая даёт 1, отпущенная — 0.'),
           h: 2,
         },
         left + 12.5,
@@ -121,9 +124,10 @@ export function boardParts(
       at(
         {
           id: 'usb',
-          title: 'Разъём USB Type-C',
-          detail:
+          title: t('Разъём USB Type-C'),
+          detail: t(
             'Питание платы и связь с компьютером: отладчик BL616 грузит схему и даёт порт UART.',
+          ),
           h: 3.3,
         },
         left + 4.2,
@@ -134,9 +138,10 @@ export function boardParts(
       at(
         {
           id: 'bl616',
-          title: 'Микросхема BL616',
-          detail:
+          title: t('Микросхема BL616'),
+          detail: t(
             'USB-отладчик: загружает схему в ПЛИС по JTAG и даёт UART для связи с компьютером.',
+          ),
           h: 1,
         },
         left + 12.8,
@@ -147,9 +152,10 @@ export function boardParts(
       at(
         {
           id: 'fpga',
-          title: 'ПЛИС Gowin GW2AR-18',
-          detail:
+          title: t('ПЛИС Gowin GW2AR-18'),
+          detail: t(
             '20 736 логических ячеек (LUT4), блочная память и ПЛЛ: здесь работает ваша схема.',
+          ),
           h: 1.5,
         },
         left + 22,
@@ -160,8 +166,8 @@ export function boardParts(
       at(
         {
           id: 'flash',
-          title: 'Флеш-память',
-          detail: 'Хранит схему, чтобы после включения питания плата загрузила её сама.',
+          title: t('Флеш-память'),
+          detail: t('Хранит схему, чтобы после включения питания плата загрузила её сама.'),
           h: 1,
         },
         left + 33,
@@ -172,8 +178,8 @@ export function boardParts(
       at(
         {
           id: 'fpc',
-          title: 'Разъём FPC',
-          detail: 'Гибкий шлейф: сюда подключают экран RGB.',
+          title: t('Разъём FPC'),
+          detail: t('Гибкий шлейф: сюда подключают экран RGB.'),
           h: 2.2,
         },
         width / 2 - 21.5,
@@ -184,8 +190,8 @@ export function boardParts(
       at(
         {
           id: 'hdmi',
-          title: 'Разъём HDMI',
-          detail: 'Выход видео: схема сама формирует сигнал для монитора.',
+          title: t('Разъём HDMI'),
+          detail: t('Выход видео: схема сама формирует сигнал для монитора.'),
           h: 6.6,
         },
         width / 2 - 5.2,
@@ -226,7 +232,7 @@ export function boardParts(
         3,
         3,
       ),
-      at(led('led-on', 'Светодиод ON', 'Горит, когда на плату подано питание.'), 22, -2, 3, 3),
+      at(led('led-on', 'Светодиод ON', t('Горит, когда на плату подано питание.')), 22, -2, 3, 3),
       at(crystal16, -6, -2, 10, 4),
       at(
         {
@@ -364,7 +370,7 @@ export function boardParts(
     return [
       at(resetButton, 2.8, 0, 4.4, 3.4),
       at(led('led-l', 'Светодиод L', 'Подключён к выводу 13 (LED_BUILTIN).'), 7.4, 1.55, 2, 1),
-      at(led('led-on', 'Светодиод питания', 'Горит, когда подано питание.'), 7.4, 4.65, 2, 1),
+      at(led('led-on', t('Светодиод питания'), 'Горит, когда подано питание.'), 7.4, 4.65, 2, 1),
       at(led('led-tx', 'Светодиод TX', 'Передача данных в компьютер.'), 7.4, -4.65, 2, 1),
       at(led('led-rx', 'Светодиод RX', 'Приём данных от компьютера.'), 7.4, -1.55, 2, 1),
       at(crystal16, -1, -4.7, 4.5, 4.5),
@@ -440,7 +446,7 @@ export function boardParts(
     at(
       led(
         'led-pwr',
-        'Светодиод питания',
+        t('Светодиод питания'),
         s3 ? 'Индикатор питания 3,3 В.' : 'Индикатор питания 5 В.',
       ),
       left + (s3 ? 17.5 : 12),

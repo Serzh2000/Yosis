@@ -24,36 +24,37 @@ import { specs as verilogE } from './verilog-e';
 import { specs as verilogF } from './verilog-f';
 import { specs as verilogG } from './verilog-g';
 import { specs as verilogH } from './verilog-h';
+import { t } from '../../../lib/i18n';
 
 /**
  * Chapters the authored lessons of the Verilog book go into, in reading order. They come after the
  * chapters of the guided course that the book already has.
  */
 export const verilogChapters: ChapterInfo[] = [
-  { id: 'comb', title: 'В. Комбинационная логика' },
-  { id: 'arith', title: 'Г. Арифметика и сравнение' },
-  { id: 'seq', title: 'Д. Память и такт' },
-  { id: 'counters', title: 'Е. Счётчики, частоты и импульсы' },
-  { id: 'fsm', title: 'Ж. Конечные автоматы' },
-  { id: 'structure', title: 'З. Модули, параметры, массивы' },
-  { id: 'board', title: 'И. Плата: кнопки, светодиоды, выводы' },
-  { id: 'projects', title: 'К. Небольшие проекты' },
+  { id: 'comb', title: t('В. Комбинационная логика') },
+  { id: 'arith', title: t('Г. Арифметика и сравнение') },
+  { id: 'seq', title: t('Д. Память и такт') },
+  { id: 'counters', title: t('Е. Счётчики, частоты и импульсы') },
+  { id: 'fsm', title: t('Ж. Конечные автоматы') },
+  { id: 'structure', title: t('З. Модули, параметры, массивы') },
+  { id: 'board', title: t('И. Плата: кнопки, светодиоды, выводы') },
+  { id: 'projects', title: t('К. Небольшие проекты') },
 ];
 
 /** The same for the schematic book. `blocks` and `bench` also hold lessons written by hand. */
 export const schematicChapters: ChapterInfo[] = [
-  { id: 'blocks', title: 'Первые схемы' },
-  { id: 'gates', title: 'Логические элементы' },
-  { id: 'mux', title: 'Выбор и распределение' },
-  { id: 'arith', title: 'Арифметика' },
-  { id: 'compare', title: 'Сравнение и коды' },
-  { id: 'flops', title: 'Триггеры и регистры' },
-  { id: 'counters', title: 'Счётчики и делители' },
-  { id: 'shift', title: 'Сдвиговые регистры' },
-  { id: 'fsm', title: 'Автоматы' },
-  { id: 'display', title: 'Индикаторы' },
-  { id: 'bench', title: 'Подключаем к плате' },
-  { id: 'projects', title: 'Проекты' },
+  { id: 'blocks', title: t('Первые схемы') },
+  { id: 'gates', title: t('Логические элементы') },
+  { id: 'mux', title: t('Выбор и распределение') },
+  { id: 'arith', title: t('Арифметика') },
+  { id: 'compare', title: t('Сравнение и коды') },
+  { id: 'flops', title: t('Триггеры и регистры') },
+  { id: 'counters', title: t('Счётчики и делители') },
+  { id: 'shift', title: t('Сдвиговые регистры') },
+  { id: 'fsm', title: t('Автоматы') },
+  { id: 'display', title: t('Индикаторы') },
+  { id: 'bench', title: t('Подключаем к плате') },
+  { id: 'projects', title: t('Проекты') },
 ];
 
 export const verilogSpecs: VerilogLessonSpec[] = [

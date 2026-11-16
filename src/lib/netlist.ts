@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import type { Bit, YosysCell, YosysModule, YosysNetlist, YosysPort } from '../../shared/types';
 
 export interface SourceLocation {
@@ -336,7 +337,7 @@ export function buildGraph(
     nodes.push({
       id,
       name,
-      type: port.bits.length > 1 ? `${port.bits.length} бит` : '1 бит',
+      type: port.bits.length > 1 ? t('{count} бит', { count: port.bits.length }) : t('1 бит'),
       kind: port.direction,
       ports: [graphPort],
       source: getSourceLocations(module.netnames[name]?.attributes),
@@ -381,8 +382,8 @@ export function buildGraph(
     special.set(key, endpoint);
     nodes.push({
       id,
-      name: key === '?' ? 'Нет драйвера' : key.toUpperCase(),
-      type: key === '?' ? 'Сигнал без источника' : 'Константа',
+      name: key === '?' ? t('Нет драйвера') : key.toUpperCase(),
+      type: key === '?' ? t('Сигнал без источника') : t('Константа'),
       kind: key === '?' ? 'undriven' : 'constant',
       ports: [port],
       source: [],
@@ -428,7 +429,7 @@ export function buildGraph(
       ...edge,
       id: `edge:${index}`,
       width,
-      label: sameNet ? sameNet[0] : width > 1 ? `${width} бит` : '',
+      label: sameNet ? sameNet[0] : width > 1 ? t('{count} бит', { count: width }) : '',
     };
   });
   return {

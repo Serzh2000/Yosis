@@ -4,6 +4,7 @@ import type { useHardwareState } from '../../hooks/useHardwareState';
 import type { ProjectSummary } from '../../lib/projects';
 import type { WorkTab } from '../../lib/studio-tabs';
 import { MissionTour } from './lazy-panels';
+import { t } from '../../lib/i18n';
 
 type Hardware = ReturnType<typeof useHardwareState>;
 
@@ -74,7 +75,7 @@ export function MissionHost({
         onRestore={(name) => {
           const saved = savedProjects.find((item) => item.name === name);
           if (saved) onRestore(saved.id);
-          else onError('Проект миссии не найден в библиотеке.');
+          else onError(t('Проект миссии не найден в библиотеке.'));
         }}
       />
     </Suspense>

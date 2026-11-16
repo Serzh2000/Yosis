@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Play } from 'lucide-react';
 import type { Project } from '../../shared/types';
@@ -56,7 +57,7 @@ export function SchematicTask({
   }, [pageId, starter, reset]);
 
   const source = project.files.find((file) => isSchematic(file.name));
-  if (!source) return <p className="learn-note">В этом задании нет схемы.</p>;
+  if (!source) return <p className="learn-note">{t('В этом задании нет схемы.')}</p>;
   const change = (next: Project) => {
     reset();
     setProject(next);
@@ -66,7 +67,7 @@ export function SchematicTask({
   return (
     <div className="learn-sim">
       <div className="learn-circuit">
-        <Suspense fallback={<p className="learn-note">Открываем конструктор…</p>}>
+        <Suspense fallback={<p className="learn-note">{t('Открываем конструктор…')}</p>}>
           <CircuitEditor
             key={`${pageId}:${source.name}`}
             project={project}
@@ -84,7 +85,7 @@ export function SchematicTask({
           disabled={run.busy}
           onClick={() => void run.check(project, exercise, source.content)}
         >
-          <Play size={14} /> {run.busy ? 'Проверяем…' : 'Проверить'}
+          <Play size={14} /> {run.busy ? t('Проверяем…') : t('Проверить')}
         </button>
         <button
           type="button"
@@ -96,9 +97,9 @@ export function SchematicTask({
             setProject(starter);
           }}
         >
-          Начать схему заново
+          {t('Начать схему заново')}
         </button>
-        {solved && !run.verdicts ? <span className="learn-ok">Задание уже выполнено</span> : null}
+        {solved && !run.verdicts ? <span className="learn-ok">{t('Задание уже выполнено')}</span> : null}
       </div>
       <Verdicts verdicts={run.verdicts} error={run.error} />
     </div>

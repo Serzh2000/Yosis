@@ -10,6 +10,7 @@ import {
   type Params,
 } from '../../shared/schematic';
 import { normalizeParams } from '../../shared/circuit-edit';
+import { t } from '../lib/i18n';
 
 /** Что сделает блок с такими настройками: показывается сразу, до применения. */
 export function previewText(node: Pick<CircuitNode, 'kind' | 'params'>): string[] {
@@ -20,12 +21,18 @@ export function previewText(node: Pick<CircuitNode, 'kind' | 'params'>): string[
     if (plan.error) lines.push(plan.error);
     else
       lines.push(
-        `Счёт до ${plan.cycles.toLocaleString('ru-RU')}: ${node.params.mode === 'square' ? 'смена уровня каждые' : 'импульс каждые'} ${
-          node.params.mode === 'square'
-            ? plan.cycles.toLocaleString('ru-RU') + ' тактов'
-            : formatSeconds(plan.periodSeconds)
-        }.`,
-        `Точная частота: ${formatHz(plan.actualHz)}, период ${formatSeconds(plan.periodSeconds)}.`,
+        t('Счёт до {v1}: {v2} {v3}.', {
+          v1: plan.cycles.toLocaleString('ru-RU'),
+          v2: node.params.mode === 'square' ? t('смена уровня каждые') : t('импульс каждые'),
+          v3:
+            node.params.mode === 'square'
+              ? plan.cycles.toLocaleString('ru-RU') + t(' тактов')
+              : formatSeconds(plan.periodSeconds),
+        }),
+        t('Точная частота: {v1}, период {v2}.', {
+          v1: formatHz(plan.actualHz),
+          v2: formatSeconds(plan.periodSeconds),
+        }),
       );
   }
   if (node.kind === 'debounce') {
@@ -33,10 +40,12 @@ export function previewText(node: Pick<CircuitNode, 'kind' | 'params'>): string[
       1,
       Math.round(((node.params.ms as number) / 1000) * (node.params.clockHz as number)),
     );
-    lines.push(`Выход меняется, когда вход устойчив ${cycles.toLocaleString('ru-RU')} тактов.`);
+    lines.push(
+      t('Выход меняется, когда вход устойчив {v1} тактов.', { v1: cycles.toLocaleString('ru-RU') }),
+    );
   }
   if (node.kind === 'counter' && node.params.modulus)
-    lines.push(`Считает 0…${(node.params.modulus as number) - 1} и начинает заново.`);
+    lines.push(t('Считает 0…{v1} и начинает заново.', { v1: (node.params.modulus as number) - 1 }));
   return lines;
 }
 
@@ -157,7 +166,7 @@ function Field({
                   })
                 }
               />
-              <span>Вход {spec.names[index]}</span>
+              <span>{t('Вход {name}', { name: spec.names[index] })}</span>
             </label>
           ))}
         </fieldset>
@@ -189,13 +198,13 @@ function Field({
       return (
         <fieldset className="prop-table">
           <legend>{spec.label}</legend>
-          <div role="table" aria-label="Таблица значений">
+          <div role="table" aria-label={t('Таблица значений')}>
             {words.map((word, index) => (
               <label key={index} role="row">
                 <span role="cell">{index}</span>
                 <input
                   role="cell"
-                  aria-label={`Слово ${index}`}
+                  aria-label={t('Слово {index}', { index })}
                   inputMode="numeric"
                   value={word}
                   onChange={(event) =>
@@ -245,15 +254,19 @@ export function CircuitProperties({
       onApply({ name, params });
       setError('');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Проверьте свойства.');
+      setError(cause instanceof Error ? cause.message : t('Проверьте свойства.'));
     }
   }
   return (
-    <form className="circuit-properties" onSubmit={submit} aria-label={`Свойства: ${def.title}`}>
+    <form
+      className="circuit-properties"
+      onSubmit={submit}
+      aria-label={t('Свойства: {title}', { title: def.title })}
+    >
       <strong>{def.title}</strong>
       <p>{def.help}</p>
       <div className="prop-preview" aria-live="polite">
-        <b>Что получится</b>
+        <b>{t('Что получится')}</b>
         {previewText(draft).map((line) => (
           <p key={line}>{line}</p>
         ))}
@@ -264,13 +277,13 @@ export function CircuitProperties({
         ))}
       </div>
       <label className="prop-field" htmlFor="prop-name">
-        <span>Имя в схеме и в Verilog</span>
+        <span>{t('Имя в схеме и в Verilog')}</span>
         <input
           id="prop-name"
           required
           maxLength={128}
           pattern="[A-Za-z_][A-Za-z0-9_$]*"
-          title="Латинские буквы, цифры и подчёркивание; начинается с буквы"
+          title={t('Латинские буквы, цифры и подчёркивание; начинается с буквы')}
           value={name}
           onChange={(event) => setName(event.target.value)}
         />
@@ -282,21 +295,21 @@ export function CircuitProperties({
         ))}
 
       <button className="button primary" disabled={disabled || !dirty}>
-        Применить
+        {t('Применить')}
       </button>
       {def.port?.board && onPins && (
         <p className="prop-note">
-          Вывод платы назначается автоматически, вкладку «Выводы» трогать не нужно.
+          {t('Вывод платы назначается автоматически, вкладку «Выводы» трогать не нужно.')}
         </p>
       )}
       {(node.kind === 'input' || node.kind === 'output') && onPins && (
         <button className="button subtle" type="button" onClick={onPins}>
-          Назначить вывод платы
+          {t('Назначить вывод платы')}
         </button>
       )}
       <button className="button subtle" type="button" disabled={disabled} onClick={onDelete}>
         <Trash2 size={14} />
-        Удалить элемент
+        {t('Удалить элемент')}
       </button>
       {error && (
         <p role="alert" className="circuit-error">

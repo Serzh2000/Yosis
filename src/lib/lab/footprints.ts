@@ -6,6 +6,7 @@ import {
   type PartLayout,
 } from '../../components/lab/reference/src/mcu/scene/layout';
 import type { LabLayout } from './runtime';
+import { t } from '../../../shared/i18n';
 
 /** Where a body stands on the table, in millimetres. */
 export interface Rect {
@@ -62,14 +63,14 @@ export function overlaps(
   for (const item of items) {
     const rect = rectOf(item);
     if (item.part.id !== dockOn && meets(rect, board, 0))
-      found.push({ ids: [item.part.id], text: `«${item.part.id}» стоит на плате` });
+      found.push({ ids: [item.part.id], text: t('«{id}» стоит на плате', { id: item.part.id }) });
     for (const other of items) {
       if (other.part.id <= item.part.id) continue;
       if (item.part.mount?.on === other.part.id || other.part.mount?.on === item.part.id) continue;
       if (meets(rect, rectOf(other)))
         found.push({
           ids: [item.part.id, other.part.id],
-          text: `«${item.part.id}» и «${other.part.id}» стоят друг на друге`,
+          text: t('«{a}» и «{b}» стоят друг на друге', { a: item.part.id, b: other.part.id }),
         });
     }
   }

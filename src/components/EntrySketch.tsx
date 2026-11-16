@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { t } from '../lib/i18n';
 
 /**
  * The cards of the library keep their examples as short text lines: a waveform drawn with
@@ -52,7 +53,11 @@ function Waves({ rows }: { rows: { name: string; wave: string; rest: string }[] 
   const width = nameWidth + length * STEP + 4;
   return (
     <div className="sketch-waves">
-      <svg viewBox={`0 0 ${width} ${rows.length * ROW}`} role="img" aria-label="Временная диаграмма">
+      <svg
+        viewBox={`0 0 ${width} ${rows.length * ROW}`}
+        role="img"
+        aria-label={t('Временная диаграмма')}
+      >
         {rows.map((row, index) => (
           <g key={index} transform={`translate(0,${index * ROW})`}>
             <text className="sketch-name" x={0} y={LOW + 3}>

@@ -8,6 +8,7 @@ import {
 } from '../../../../shared/schematic';
 import type { BenchState, Block, ChapterDef, Exercise, LessonDef, PageDef } from '../schema';
 import type { BenchLessonSpec, LessonBase, SchematicLessonSpec, VerilogLessonSpec } from './types';
+import { t } from '../../../lib/i18n';
 
 const baseConfig: SimulationConfig = {
   clock: null,
@@ -45,7 +46,7 @@ function theoryPages(spec: LessonBase): PageDef[] {
   if (spec.quiz)
     pages.push({
       id: `${spec.id}-quiz`,
-      title: 'Проверь себя',
+      title: t('Проверь себя'),
       blocks: [
         {
           kind: 'quiz',
@@ -55,7 +56,7 @@ function theoryPages(spec: LessonBase): PageDef[] {
           explain: spec.quiz.explain,
         },
       ],
-      task: { kind: 'quiz', text: 'Выбери верный ответ.' },
+      task: { kind: 'quiz', text: t('Выбери верный ответ.') },
     });
   return pages;
 }
@@ -80,7 +81,7 @@ export function verilogExercise(spec: VerilogLessonSpec, source = spec.practice.
 export function verilogLesson(spec: VerilogLessonSpec): LessonDef {
   const practice: PageDef = {
     id: `${spec.id}-practice`,
-    title: 'Попробуй сам',
+    title: t('Попробуй сам'),
     blocks: [{ kind: 'text', md: spec.practice.text }],
     task: {
       kind: 'sim',
@@ -168,7 +169,7 @@ export function schematicExercise(
 export function schematicLesson(spec: SchematicLessonSpec): LessonDef {
   const practice: PageDef = {
     id: `${spec.id}-practice`,
-    title: 'Собери схему',
+    title: t('Собери схему'),
     blocks: [{ kind: 'text', md: spec.practice.text }],
     task: {
       kind: 'circuit',
@@ -209,7 +210,7 @@ export function benchLesson(spec: BenchLessonSpec): LessonDef {
   const done = (state: BenchState) => spec.steps.every((step) => benchStepHolds(step, state));
   const practice: PageDef = {
     id: `${spec.id}-practice`,
-    title: 'Собери на столе',
+    title: t('Собери на столе'),
     blocks: [
       { kind: 'text', md: spec.task },
       { kind: 'parts', items: spec.parts.map((item) => ({ def: item.part, count: item.count })) },

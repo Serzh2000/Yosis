@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { Suspense, lazy } from 'react';
 import type { Project } from '../../shared/types';
 import { partById } from '../lib/lab/catalog';
@@ -10,7 +11,7 @@ const LabPanel = lazy(() =>
 /** The bench of the book is its own: lessons do not touch the learner's projects. */
 export const BENCH_PROJECT: Project = {
   id: '00000000-0000-4000-8000-00000000b001',
-  name: 'Стол учебника',
+  name: t('Стол учебника'),
   top: 'top',
   board: 'tangnano20k',
   files: [
@@ -55,7 +56,7 @@ export function Bench({
   onBench: (state: BenchState) => void;
 }) {
   return (
-    <Suspense fallback={<p className="learn-note desk-note">Готовим стол…</p>}>
+    <Suspense fallback={<p className="learn-note desk-note">{t('Готовим стол…')}</p>}>
       <LabPanel
         project={BENCH_PROJECT}
         active={active}

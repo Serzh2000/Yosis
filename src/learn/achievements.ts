@@ -1,19 +1,20 @@
 // Names of the achievements (plan §5.6) and the diff between what is earned and what was shown.
+import { t } from '../lib/i18n';
 import type { BookDef } from './content/schema';
 import { earnedAchievements, type BookProgress } from './progress';
 
 const fixed: Record<string, string> = {
-  'first-led': 'Первый светодиод',
-  'first-program': 'Первая программа',
-  'no-hints': 'Без пропусков',
-  'book-done': 'Книга пройдена',
+  'first-led': t('Первый светодиод'),
+  'first-program': t('Первая программа'),
+  'no-hints': t('Без пропусков'),
+  'book-done': t('Книга пройдена'),
 };
 
 /** «Глава пройдена: Электроника» for `chapter:<id>`; the plain name for the others. */
 export function achievementTitle(book: BookDef, id: string): string {
   if (id.startsWith('chapter:')) {
     const chapter = book.chapters.find((item) => `chapter:${item.id}` === id);
-    return chapter ? `Глава пройдена: ${chapter.title}` : 'Глава пройдена';
+    return chapter ? t('Глава пройдена: {title}', { title: chapter.title }) : t('Глава пройдена');
   }
   return fixed[id] ?? id;
 }

@@ -1,10 +1,11 @@
+import { t } from '../lib/i18n';
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
 import type { BookDef } from './content/schema';
 import { lessonState, type BookProgress } from './progress';
 
 const MARK = { new: '·', started: '◐', done: '✓' } as const;
-const STATE = { new: 'не начат', started: 'начат', done: 'пройден' } as const;
+const STATE = { new: t('не начат'), started: t('начат'), done: t('пройден') } as const;
 
 /**
  * The map of the course: a window over the desk with the books of the shelf, and the chapters and
@@ -33,15 +34,15 @@ export function Contents({
     return () => window.removeEventListener('keydown', key);
   }, [onClose]);
   return (
-    <div className="map" role="dialog" aria-label="Оглавление">
+    <div className="map" role="dialog" aria-label={t('Оглавление')}>
       <header className="map-head">
         <h2>{book.title}</h2>
-        <button type="button" aria-label="Закрыть оглавление" onClick={onClose}>
+        <button type="button" aria-label={t('Закрыть оглавление')} onClick={onClose}>
           <X size={18} />
         </button>
       </header>
       <div className="map-body">
-        <ul className="map-books" aria-label="Книги">
+        <ul className="map-books" aria-label={t('Книги')}>
           {books.map((item) => (
             <li key={item.id}>
               <button
@@ -51,7 +52,7 @@ export function Contents({
                 onClick={() => onPickBook(item.id)}
               >
                 <b>{item.title}</b>
-                <small>{item.available ? `${item.done} из ${item.total} заданий` : 'скоро'}</small>
+                <small>{item.available ? t('{done} из {total} заданий', { done: item.done, total: item.total }) : t('скоро')}</small>
                 <i
                   style={{
                     width: item.total ? `${Math.round((100 * item.done) / item.total)}%` : '0%',
@@ -80,7 +81,7 @@ export function Contents({
                       </span>
                       <span>{lesson.title}</span>
                       <small>
-                        {lesson.minutes ? `${lesson.minutes} мин · ` : ''}
+                        {lesson.minutes ? t('{n} мин · ', { n: lesson.minutes }) : ''}
                         {STATE[state]}
                       </small>
                     </button>

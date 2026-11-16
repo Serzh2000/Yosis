@@ -1,5 +1,6 @@
 // What the cabinets show, computed from plain data: the matrix «learner × lesson», sorting,
 // the «stuck» label and the CSV for the teacher. No React, no network.
+import { language, t } from '../../lib/i18n';
 import type { BookDef, LessonDef } from '../content/schema';
 import { flattenBook } from '../content/schema';
 import { bookProgress, lessonState, type BookProgress, type LessonState } from '../progress';
@@ -28,9 +29,9 @@ export function lessonStates(student: StudentSummary, book: BookDef): LessonStat
 }
 
 export const STATE_LABEL: Record<LessonState, string> = {
-  new: 'не начат',
-  started: 'начат',
-  done: 'пройден',
+  new: t('не начат'),
+  started: t('начат'),
+  done: t('пройден'),
 };
 export const STATE_MARK: Record<LessonState, string> = { new: '·', started: '◐', done: '✓' };
 
@@ -39,9 +40,9 @@ export function describePage(book: BookDef | undefined, pageId: string): string 
   if (!book) return pageId;
   const found = flattenBook(book).find(({ page }) => page.id === pageId);
   if (!found) return pageId;
-  if (!found.lesson) return 'Справочник';
+  if (!found.lesson) return t('Справочник');
   const no = lessonColumns(book).find((column) => column.lesson === found.lesson)?.no;
-  return `Урок ${no}: ${found.lesson.title}`;
+  return t('Урок {no}: {title}', { no: String(no), title: found.lesson.title });
 }
 
 export type SortKey = 'name' | 'activity' | 'progress';
@@ -71,7 +72,7 @@ export function sortStudents(
 ): StudentSummary[] {
   const doneIn = (student: StudentSummary) => bookProgress(book, progressOf(student, book.id)).done;
   const byName = (a: StudentSummary, b: StudentSummary) =>
-    a.displayName.localeCompare(b.displayName, 'ru');
+    a.displayName.localeCompare(b.displayName, language() === 'en' ? 'en' : 'ru');
   return [...students].sort((a, b) => {
     if (key === 'activity') return (b.lastActiveAt ?? 0) - (a.lastActiveAt ?? 0) || byName(a, b);
     if (key === 'progress') return doneIn(b) - doneIn(a) || byName(a, b);
@@ -90,17 +91,20 @@ export function classSummary(students: StudentSummary[], now: number) {
   };
 }
 
+/** Локаль для дат: русская по умолчанию, английская в английском интерфейсе. */
+export const dateLocale = () => (language() === 'en' ? 'en-GB' : 'ru-RU');
+
 /** «5 мин назад», «вчера», «12 дней назад», «не заходил». */
 export function ago(at: number | null, now = Date.now()): string {
-  if (at === null) return 'не заходил';
+  if (at === null) return t('не заходил');
   const minutes = Math.floor((now - at) / 60_000);
-  if (minutes < 1) return 'только что';
-  if (minutes < 60) return `${minutes} мин назад`;
+  if (minutes < 1) return t('только что');
+  if (minutes < 60) return t('{n} мин назад', { n: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} ч назад`;
+  if (hours < 24) return t('{n} ч назад', { n: hours });
   const days = Math.floor(hours / 24);
-  if (days === 1) return 'вчера';
-  return `${days} дн. назад`;
+  if (days === 1) return t('вчера');
+  return t('{n} дн. назад', { n: days });
 }
 
 /* CSV: Excel in a Russian locale opens UTF-8 with a BOM and wants «;» between the cells. */
@@ -119,14 +123,14 @@ export function classCsv(
 ): string {
   const columns = lessonColumns(book);
   const head = [
-    'Имя',
-    'Логин',
-    'Класс',
-    'Последний вход',
-    'Заданий выполнено',
-    'Заданий всего',
-    'Застрял',
-    ...columns.map((column) => `Урок ${column.no}`),
+    t('Имя'),
+    t('Логин'),
+    t('Класс'),
+    t('Последний вход'),
+    t('Заданий выполнено'),
+    t('Заданий всего'),
+    t('Застрял'),
+    ...columns.map((column) => t('Урок {n}', { n: column.no })),
   ];
   const rows = students.map((student) => {
     const share = bookProgress(book, progressOf(student, book.id));
@@ -148,7 +152,7 @@ export function classCsv(
 
 export function credentialsCsv(rows: { displayName: string; login: string; password: string }[]) {
   const lines = [
-    ['Имя', 'Логин', 'Временный пароль'],
+    [t('Имя'), t('Логин'), t('Временный пароль')],
     ...rows.map((r) => [r.displayName, r.login, r.password]),
   ];
   return '﻿' + lines.map((row) => row.map(csvCell).join(';')).join('\r\n') + '\r\n';

@@ -1,5 +1,6 @@
 import type { Example } from './examples';
 import { learningExample, clockPin, resetPin, ledPins, type ExampleCategory } from './example-kit';
+import { t } from './i18n';
 
 type Pin = [string, number, string];
 interface Options {
@@ -70,8 +71,8 @@ const pressSync = `    // Два триггера уменьшают риск м
 export const systemExamples: Example[] = [
   system(
     'button-debounce',
-    'Антидребезг кнопки',
-    'Принимаем новое состояние только после устойчивого интервала.',
+    t('Антидребезг кнопки'),
+    t('Принимаем новое состояние только после устойчивого интервала.'),
     `${pressSync}
     reg stable;
     reg [19:0] quiet;
@@ -91,8 +92,8 @@ export const systemExamples: Example[] = [
 
   system(
     'pulse-capture',
-    'Фронт → растянутый импульс',
-    'Одно нажатие включает LED на фиксированное время.',
+    t('Фронт → растянутый импульс'),
+    t('Одно нажатие включает LED на фиксированное время.'),
     `${pressSync}
     reg [23:0] remaining;
     always @(posedge clk) begin
@@ -110,8 +111,8 @@ export const systemExamples: Example[] = [
 
   system(
     'async-toggle-sync',
-    'Передача события через toggle',
-    'Событие меняет бит, принимающая сторона обнаруживает изменение.',
+    t('Передача события через toggle'),
+    t('Событие меняет бит, принимающая сторона обнаруживает изменение.'),
     `${pressSync}
     reg source_toggle;
     reg target_meta, target_sync, target_seen;
@@ -135,8 +136,8 @@ export const systemExamples: Example[] = [
 
   system(
     'reset-release',
-    'Безопасное отпускание сброса',
-    'Асинхронное включение и синхронное снятие reset.',
+    t('Безопасное отпускание сброса'),
+    t('Асинхронное включение и синхронное снятие reset.'),
     `    reg [1:0] release_pipe;
     always @(posedge clk or negedge reset_n) begin
         if (!reset_n) release_pipe <= 2'b00;
@@ -157,8 +158,8 @@ export const systemExamples: Example[] = [
 
   system(
     'pulse-width',
-    'Измерение длительности нажатия',
-    'Число тактов высокого уровня сохраняется после отпускания.',
+    t('Измерение длительности нажатия'),
+    t('Число тактов высокого уровня сохраняется после отпускания.'),
     `${pressSync}
     reg [5:0] width, captured;
     always @(posedge clk) begin
@@ -176,8 +177,8 @@ export const systemExamples: Example[] = [
 
   system(
     'one-shot',
-    'Одновибратор без повторного запуска',
-    'Следующие нажатия игнорируются, пока длится импульс.',
+    t('Одновибратор без повторного запуска'),
+    t('Следующие нажатия игнорируются, пока длится импульс.'),
     `${pressSync}
     reg [23:0] remaining;
     always @(posedge clk) begin
@@ -195,8 +196,8 @@ export const systemExamples: Example[] = [
 
   system(
     'retrigger-timer',
-    'Таймер после последнего события',
-    'Каждое нажатие отодвигает выключение.',
+    t('Таймер после последнего события'),
+    t('Каждое нажатие отодвигает выключение.'),
     `${pressSync}
     reg [23:0] remaining;
     reg expired;
@@ -221,8 +222,8 @@ export const systemExamples: Example[] = [
 
   system(
     'watchdog',
-    'Сторожевой таймер',
-    'Нет подтверждений — появляется и сохраняется сигнал тревоги.',
+    t('Сторожевой таймер'),
+    t('Нет подтверждений — появляется и сохраняется сигнал тревоги.'),
     `${pressSync}
     reg [23:0] silence;
     reg alarm;
@@ -242,8 +243,8 @@ export const systemExamples: Example[] = [
 
   system(
     'divide-by-three',
-    'Деление частоты на три',
-    'Только для диаграмм: модуль 3 и несимметричный импульс 1/3 периода.',
+    t('Деление частоты на три'),
+    t('Только для диаграмм: модуль 3 и несимметричный импульс 1/3 периода.'),
     `    reg [1:0] phase;
     always @(posedge clk) begin
         if (!reset_n) phase <= 0;
@@ -260,8 +261,8 @@ export const systemExamples: Example[] = [
 
   system(
     'fractional-tick',
-    'Дробный делитель',
-    'Аккумулятор выдаёт 3 события на каждые 8 тактов.',
+    t('Дробный делитель'),
+    t('Аккумулятор выдаёт 3 события на каждые 8 тактов.'),
     `    reg [2:0] phase;
     reg tick;
     reg [4:0] events;
@@ -283,8 +284,8 @@ export const systemExamples: Example[] = [
 
   system(
     'duty-cycle',
-    'Измеритель заполнения',
-    'Сколько из восьми последних отсчётов вход был нажат.',
+    t('Измеритель заполнения'),
+    t('Сколько из восьми последних отсчётов вход был нажат.'),
     `${pressSync}
     reg [2:0] phase;
     reg [3:0] high_count, measured;
@@ -303,8 +304,8 @@ export const systemExamples: Example[] = [
 
   system(
     'stopwatch',
-    'Секундомер с паузой',
-    'Нажатие переключает запуск; пауза сохраняет долю секунды.',
+    t('Секундомер с паузой'),
+    t('Нажатие переключает запуск; пауза сохраняет долю секунды.'),
     `${pressSync}
     reg running;
     reg [24:0] ticks;
@@ -329,8 +330,8 @@ export const systemExamples: Example[] = [
 
   system(
     'countdown',
-    'Таймер обратного отсчёта',
-    'Запуск на 15 секунд, затем устойчивый сигнал завершения.',
+    t('Таймер обратного отсчёта'),
+    t('Запуск на 15 секунд, затем устойчивый сигнал завершения.'),
     `${pressSync}
     reg [24:0] ticks;
     reg [3:0] seconds;
@@ -355,8 +356,8 @@ export const systemExamples: Example[] = [
 
   system(
     'event-window',
-    'События в окне времени',
-    'Считаем фронты, а не длительность кнопки.',
+    t('События в окне времени'),
+    t('Считаем фронты, а не длительность кнопки.'),
     `${pressSync}
     reg [24:0] ticks;
     reg [5:0] in_window, published;
@@ -376,8 +377,8 @@ export const systemExamples: Example[] = [
 
   system(
     'breathing-pwm',
-    'Плавное дыхание LED',
-    'PWM и треугольное изменение яркости без нового такта.',
+    t('Плавное дыхание LED'),
+    t('PWM и треугольное изменение яркости без нового такта.'),
     `    reg [7:0] phase;
     reg [17:0] ticks;
     reg [7:0] level;
@@ -409,8 +410,8 @@ export const systemExamples: Example[] = [
 
   system(
     'walking-pairs',
-    'Два огня навстречу',
-    'Два независимых кольца и их объединение.',
+    t('Два огня навстречу'),
+    t('Два независимых кольца и их объединение.'),
     `    reg [21:0] ticks;
     reg [5:0] left, right;
     always @(posedge clk) begin
@@ -430,8 +431,8 @@ export const systemExamples: Example[] = [
 
   system(
     'serial-parity',
-    'Последовательный бит чётности',
-    'XOR копит четыре входных бита и выдаёт результат кадра.',
+    t('Последовательный бит чётности'),
+    t('XOR копит четыре входных бита и выдаёт результат кадра.'),
     `${pressSync}
     reg [1:0] position;
     reg parity, published;
@@ -453,8 +454,8 @@ export const systemExamples: Example[] = [
 
   system(
     'crc4',
-    'CRC-4 по последовательным битам',
-    'Сдвиг с обратной связью по полиному x⁴+x+1.',
+    t('CRC-4 по последовательным битам'),
+    t('Сдвиг с обратной связью по полиному x⁴+x+1.'),
     `${pressSync}
     reg [3:0] crc;
     reg [1:0] bit_index;
@@ -475,8 +476,8 @@ export const systemExamples: Example[] = [
 
   system(
     'lfsr6',
-    'Псевдослучайная последовательность',
-    'LFSR с 63 ненулевыми состояниями.',
+    t('Псевдослучайная последовательность'),
+    t('LFSR с 63 ненулевыми состояниями.'),
     `    reg [5:0] state;
     reg [21:0] ticks;
     always @(posedge clk) begin
@@ -495,8 +496,8 @@ export const systemExamples: Example[] = [
 
   system(
     'sequence-1011',
-    'Распознаватель 1011',
-    'Автомат Мили обнаруживает образец, включая перекрытия.',
+    t('Распознаватель 1011'),
+    t('Автомат Мили обнаруживает образец, включая перекрытия.'),
     `${pressSync}
     reg [1:0] state;
     reg matched;
@@ -525,8 +526,8 @@ export const systemExamples: Example[] = [
 
   system(
     'door-controller',
-    'Автомат двери',
-    'Открытие, удержание и автоматическое закрытие.',
+    t('Автомат двери'),
+    t('Открытие, удержание и автоматическое закрытие.'),
     `${pressSync}
     localparam CLOSED = 0, OPENING = 1, OPEN = 2, CLOSING = 3;
     reg [1:0] state;
@@ -558,8 +559,8 @@ export const systemExamples: Example[] = [
 
   system(
     'request-ack',
-    'Запрос и подтверждение',
-    'Один запрос хранится до получения ответа.',
+    t('Запрос и подтверждение'),
+    t('Один запрос хранится до получения ответа.'),
     `${pressSync}
     reg pending, acknowledged;
     reg [23:0] latency;
@@ -585,8 +586,8 @@ export const systemExamples: Example[] = [
 
   system(
     'elevator-fsm',
-    'Лифт между двумя этажами',
-    'Запрос, движение и прибытие с памятью направления.',
+    t('Лифт между двумя этажами'),
+    t('Запрос, движение и прибытие с памятью направления.'),
     `${pressSync}
     reg floor, moving;
     reg [23:0] travel;
@@ -607,8 +608,8 @@ export const systemExamples: Example[] = [
 
   system(
     'vending-fsm',
-    'Автомат с монетами',
-    'Три события дают товар, удержание кнопки не считается повторно.',
+    t('Автомат с монетами'),
+    t('Три события дают товар, удержание кнопки не считается повторно.'),
     `${pressSync}
     reg [1:0] credit;
     reg dispense;
@@ -632,8 +633,8 @@ export const systemExamples: Example[] = [
 
   system(
     'arbiter-round-robin',
-    'Арбитр round-robin',
-    'При двух запросах приоритет чередуется без голодания.',
+    t('Арбитр round-robin'),
+    t('При двух запросах приоритет чередуется без голодания.'),
     `${pressSync}
     reg prefer_b;
     reg [1:0] grant;
@@ -659,8 +660,8 @@ export const systemExamples: Example[] = [
 
   system(
     'fifo-four',
-    'FIFO на четыре слова',
-    'Кольцевые указатели и полный/пустой буфер.',
+    t('FIFO на четыре слова'),
+    t('Кольцевые указатели и полный/пустой буфер.'),
     `${pressSync}
     reg [3:0] memory [0:3];
     reg [1:0] write_ptr, read_ptr;
@@ -689,8 +690,8 @@ export const systemExamples: Example[] = [
 
   system(
     'stack-four',
-    'Стек на четыре слова',
-    'Последнее записанное слово читается первым.',
+    t('Стек на четыре слова'),
+    t('Последнее записанное слово читается первым.'),
     `${pressSync}
     reg [3:0] memory [0:3];
     reg [2:0] depth;
@@ -714,8 +715,8 @@ export const systemExamples: Example[] = [
 
   system(
     'ram-write-read',
-    'RAM: запись и чтение',
-    'Сначала заполняем массив, затем проверяем синхронное чтение.',
+    t('RAM: запись и чтение'),
+    t('Сначала заполняем массив, затем проверяем синхронное чтение.'),
     `    reg [3:0] memory [0:3];
     reg [1:0] address;
     reg writing;
@@ -744,8 +745,8 @@ export const systemExamples: Example[] = [
 
   system(
     'rom-melody',
-    'ROM с последовательностью узоров',
-    'Адрес выбирает заранее заданное слово.',
+    t('ROM с последовательностью узоров'),
+    t('Адрес выбирает заранее заданное слово.'),
     `    reg [2:0] address;
     reg [21:0] ticks;
     reg [5:0] pattern;
@@ -774,8 +775,8 @@ export const systemExamples: Example[] = [
 
   system(
     'lookup-sine',
-    'Таблица синусоиды',
-    'Четыре четверти формы из маленькой ROM.',
+    t('Таблица синусоиды'),
+    t('Четыре четверти формы из маленькой ROM.'),
     `    reg [3:0] phase;
     reg [21:0] ticks;
     reg [5:0] sample;
@@ -804,8 +805,8 @@ export const systemExamples: Example[] = [
 
   system(
     'uart-tx',
-    'UART-передатчик 8N1',
-    'По нажатию отправляем байт ASCII A на настоящий TX платы.',
+    t('UART-передатчик 8N1'),
+    t('По нажатию отправляем байт ASCII A на настоящий TX платы.'),
     `${pressSync}
     reg [8:0] baud_count;
     reg [3:0] position;
@@ -842,8 +843,8 @@ export const systemExamples: Example[] = [
 
   system(
     'uart-rx',
-    'UART-приёмник 8N1',
-    'Принимаем байт по RX и показываем младшие пять битов.',
+    t('UART-приёмник 8N1'),
+    t('Принимаем байт по RX и показываем младшие пять битов.'),
     `    reg rx_meta, rx_sync;
     reg [8:0] ticks;
     reg [3:0] position;
@@ -884,8 +885,8 @@ export const systemExamples: Example[] = [
 
   system(
     'spi-loopback',
-    'SPI mode 0: внутренний loopback',
-    'Передатчик и приёмник соединены внутри FPGA.',
+    t('SPI mode 0: внутренний loopback'),
+    t('Передатчик и приёмник соединены внутри FPGA.'),
     `${pressSync}
     reg [23:0] ticks;
     reg busy, sck, cs_n;
@@ -914,8 +915,8 @@ export const systemExamples: Example[] = [
 
   system(
     'i2c-pattern',
-    'I²C: START и STOP',
-    'Учебная последовательность линий с моделью открытого стока.',
+    t('I²C: START и STOP'),
+    t('Учебная последовательность линий с моделью открытого стока.'),
     `${pressSync}
     reg [23:0] ticks;
     reg [2:0] state;
@@ -949,8 +950,8 @@ export const systemExamples: Example[] = [
 
   system(
     'serial-sum',
-    'Последовательный сумматор',
-    'Один полный сумматор обрабатывает четыре разряда за четыре такта.',
+    t('Последовательный сумматор'),
+    t('Один полный сумматор обрабатывает четыре разряда за четыре такта.'),
     `${pressSync}
     reg [3:0] a_shift, b_shift, result;
     reg [1:0] position;
@@ -976,8 +977,8 @@ export const systemExamples: Example[] = [
 
   system(
     'majority-filter',
-    'Фильтр большинства 3 отсчётов',
-    'Изолированный выброс не меняет выход.',
+    t('Фильтр большинства 3 отсчётов'),
+    t('Изолированный выброс не меняет выход.'),
     `${pressSync}
     reg [2:0] history;
     wire majority = (history[0] & history[1]) | (history[0] & history[2]) | (history[1] & history[2]);
@@ -994,8 +995,8 @@ export const systemExamples: Example[] = [
 
   system(
     'capture-minmax',
-    'Минимум и максимум потока',
-    'Память экстремумов с отдельным сбросом измерения.',
+    t('Минимум и максимум потока'),
+    t('Память экстремумов с отдельным сбросом измерения.'),
     `${pressSync}
     reg [2:0] sample, minimum, maximum;
     always @(posedge clk) begin
@@ -1018,8 +1019,8 @@ export const systemExamples: Example[] = [
 
   system(
     'bcd-stopwatch',
-    'Десятичные цифры BCD',
-    'Два десятичных счётчика с переносом 9→0.',
+    t('Десятичные цифры BCD'),
+    t('Два десятичных счётчика с переносом 9→0.'),
     `    reg [24:0] ticks;
     reg [3:0] units, tens;
     always @(posedge clk) begin

@@ -10,6 +10,7 @@ import {
   saveLastBuild,
   validateProject,
 } from '../lib/projects';
+import { t } from '../../shared/i18n';
 
 const terminalStatuses = new Set(['success', 'error', 'cancelled']);
 export function useBuild({
@@ -82,7 +83,7 @@ export function useBuild({
       } catch (cause) {
         if (controller.signal.aborted || run !== generation.current) return;
         setPollError(
-          cause instanceof Error ? cause.message : 'Не удалось получить состояние сборки.',
+          cause instanceof Error ? cause.message : t('Не удалось получить состояние сборки.'),
         );
       }
       timer = window.setTimeout(poll, 1000);
@@ -119,7 +120,7 @@ export function useBuild({
       validated = validateProject(projectRef.current);
     } catch (cause) {
       callbacks.current.onError(
-        cause instanceof Error ? cause.message : 'Проверьте настройки проекта.',
+        cause instanceof Error ? cause.message : t('Проверьте настройки проекта.'),
       );
       return;
     }
@@ -145,7 +146,7 @@ export function useBuild({
     } catch (cause) {
       if (run === generation.current)
         callbacks.current.onError(
-          cause instanceof Error ? cause.message : 'Не удалось запустить синтез.',
+          cause instanceof Error ? cause.message : t('Не удалось запустить синтез.'),
         );
     } finally {
       setSubmitting(false);
@@ -166,7 +167,7 @@ export function useBuild({
       setBuild(result);
     } catch (cause) {
       callbacks.current.onError(
-        cause instanceof Error ? cause.message : 'Не удалось отменить сборку.',
+        cause instanceof Error ? cause.message : t('Не удалось отменить сборку.'),
       );
     }
   }, []);

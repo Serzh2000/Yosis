@@ -1,11 +1,12 @@
-// Оборачивает русские фразы из src/i18n/en.ts в t('…') в указанных файлах.
+// Оборачивает русские фразы из словаря области (src/i18n/en-*.ts) в t('…') в указанных файлах.
 // Запуск: node scripts/i18n-apply.mjs src/components/Foo.tsx …
 // Трогает только точные совпадения: значение атрибута, строка JSX-текста целиком, `>фраза<`
 // и строковый литерал. Длинные многострочные абзацы переводятся вручную.
 import fs from 'node:fs';
 import path from 'node:path';
 
-const dictionary = fs.readFileSync('src/i18n/en.ts', 'utf8');
+// Словарь области: I18N_DICT=src/i18n/en-chip.ts node scripts/i18n-apply.mjs файлы…
+const dictionary = fs.readFileSync(process.env.I18N_DICT ?? 'src/i18n/en-shell.ts', 'utf8');
 const keyPattern = /^\s*(?:'((?:\\.|[^'\\])*)'|"((?:\\.|[^"\\])*)"):/gm;
 const keys = [...dictionary.matchAll(keyPattern)]
   .map((match) => (match[1] ?? match[2]).replace(/\\'/g, "'"))

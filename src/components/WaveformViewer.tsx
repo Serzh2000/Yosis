@@ -26,6 +26,7 @@ import {
 } from '../lib/waveform';
 import type { TimeWindow, WaveformRadix } from '../lib/waveform';
 import './waveform.css';
+import { t } from '../lib/i18n';
 
 export interface WaveformViewerProps {
   trace: VcdTrace;
@@ -60,7 +61,7 @@ const SignalDrawing = memo(function SignalDrawing({
       <g className="waveform-dense">
         <rect x="0" y="7" width={width} height="23" />
         <text x={width / 2} y="21" textAnchor="middle">
-          Много переходов — увеличьте масштаб
+          {t('Много переходов — увеличьте масштаб')}
         </text>
       </g>
     );
@@ -303,8 +304,8 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
         <label className="waveform-search">
           <Search size={12} />
           <input
-            aria-label="Поиск сигнала"
-            placeholder="Найти сигнал…"
+            aria-label={t('Поиск сигнала')}
+            placeholder={t('Найти сигнал…')}
             value={search}
             onChange={(event) => {
               setSearch(event.target.value);
@@ -321,7 +322,7 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
             onClick={() => setPickerOpen(!pickerOpen)}
           >
             <Eye size={12} />
-            Сигналы{' '}
+            {t('Сигналы')}{' '}
             <small>
               {visibleKeys.size}/{trace.signals.length}
             </small>
@@ -332,7 +333,7 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
               <button
                 type="button"
                 className="waveform-picker-backdrop"
-                aria-label="Закрыть выбор сигналов"
+                aria-label={t('Закрыть выбор сигналов')}
                 onClick={() => setPickerOpen(false)}
               />
               <div className="waveform-signal-picker">
@@ -341,10 +342,10 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
                     type="button"
                     onClick={() => setVisibleKeys(new Set(filteredSignals.map((item) => item.key)))}
                   >
-                    Показать найденные
+                    {t('Показать найденные')}
                   </button>
                   <button type="button" onClick={() => setVisibleKeys(new Set())}>
-                    Скрыть все
+                    {t('Скрыть все')}
                   </button>
                 </div>
                 <div className="waveform-picker-list">
@@ -359,17 +360,17 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
                       <small>{item.signal.width}</small>
                     </label>
                   ))}
-                  {filteredSignals.length > 500 && <p>Первые 500 сигналов. Уточните поиск.</p>}
-                  {!filteredSignals.length && <p>Сигналы не найдены.</p>}
+                  {filteredSignals.length > 500 && <p>{t('Первые 500 сигналов. Уточните поиск.')}</p>}
+                  {!filteredSignals.length && <p>{t('Сигналы не найдены.')}</p>}
                 </div>
               </div>
             </>
           )}
         </div>
         <label className="waveform-radix">
-          Формат
+          {t('Формат')}
           <select
-            aria-label="Формат значений шин"
+            aria-label={t('Формат значений шин')}
             value={radix}
             onChange={(event) => setRadix(event.target.value as WaveformRadix)}
           >
@@ -382,8 +383,8 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
           <button
             type="button"
             className="icon-button"
-            title="Сдвинуть влево · Shift + ←"
-            aria-label="Сдвинуть диаграмму влево"
+            title={t('Сдвинуть влево · Shift + ←')}
+            aria-label={t('Сдвинуть диаграмму влево')}
             disabled={window.start <= domain.start}
             onClick={() => pan(-0.25)}
           >
@@ -392,8 +393,8 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
           <button
             type="button"
             className="icon-button"
-            title="Уменьшить масштаб · −"
-            aria-label="Уменьшить масштаб диаграммы"
+            title={t('Уменьшить масштаб · −')}
+            aria-label={t('Уменьшить масштаб диаграммы')}
             disabled={span >= domain.end - domain.start}
             onClick={() => zoom(2)}
           >
@@ -402,8 +403,8 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
           <button
             type="button"
             className="icon-button"
-            title="Увеличить масштаб · +"
-            aria-label="Увеличить масштаб диаграммы"
+            title={t('Увеличить масштаб · +')}
+            aria-label={t('Увеличить масштаб диаграммы')}
             disabled={span <= 1}
             onClick={() => zoom(0.5)}
           >
@@ -412,8 +413,8 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
           <button
             type="button"
             className="icon-button"
-            title="Показать весь интервал"
-            aria-label="Показать весь интервал диаграммы"
+            title={t('Показать весь интервал')}
+            aria-label={t('Показать весь интервал диаграммы')}
             onClick={() => setWindow(domain)}
           >
             <Focus size={14} />
@@ -421,8 +422,8 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
           <button
             type="button"
             className="icon-button"
-            title="Сдвинуть вправо · Shift + →"
-            aria-label="Сдвинуть диаграмму вправо"
+            title={t('Сдвинуть вправо · Shift + →')}
+            aria-label={t('Сдвинуть диаграмму вправо')}
             disabled={window.end >= domain.end}
             onClick={() => pan(0.25)}
           >
@@ -430,12 +431,12 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
           </button>
         </div>
         <span className="waveform-cursor-readout">
-          Курсор <strong>{formatWaveTime(cursor, trace.timescaleFs, span)}</strong>
+          {t('Курсор')} <strong>{formatWaveTime(cursor, trace.timescaleFs, span)}</strong>
         </span>
       </div>
       <div className="waveform-table-header">
         <span className="waveform-signal-heading">
-          Сигнал <small>{shownSignals.length}</small>
+          {t('Сигнал')} <small>{shownSignals.length}</small>
         </span>
         <div className="waveform-axis" ref={plotRef}>
           <svg width={width} height="28" aria-hidden="true">
@@ -459,7 +460,7 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
             )}
           </svg>
         </div>
-        <span className="waveform-value-heading">На курсоре</span>
+        <span className="waveform-value-heading">{t('На курсоре')}</span>
       </div>
       <div
         className="waveform-scroll"
@@ -480,8 +481,8 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
                   <div className="waveform-signal-label">
                     <button
                       type="button"
-                      title="Скрыть сигнал"
-                      aria-label={`Скрыть сигнал ${signalPath(item.signal)}`}
+                      title={t('Скрыть сигнал')}
+                      aria-label={t('Скрыть сигнал {name}', { name: signalPath(item.signal) })}
                       onClick={() => toggleSignal(item.key)}
                     >
                       <EyeOff size={12} />
@@ -490,12 +491,12 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
                       {onRevealSignal ? (
                         <button
                           className="waveform-rtl-link"
-                          aria-label={`Показать ${item.signal.name} в RTL`}
+                          aria-label={t('Показать {name} в RTL', { name: item.signal.name })}
                           disabled={!canRevealSignal?.(item.signal)}
                           title={
                             canRevealSignal?.(item.signal)
-                              ? 'Открыть RTL и подсветить связи этого сигнала'
-                              : 'Нет соответствия в RTL текущей сборки'
+                              ? t('Открыть RTL и подсветить связи этого сигнала')
+                              : t('Нет соответствия в RTL текущей сборки')
                           }
                           onClick={() => onRevealSignal(item.signal)}
                         >
@@ -505,8 +506,8 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
                         <strong>{item.signal.name}</strong>
                       )}
                       <small>
-                        {item.signal.scope.join('.') || 'верхний уровень'}
-                        <span>{item.signal.width > 1 ? `${item.signal.width} бит` : ''}</span>
+                        {item.signal.scope.join('.') || t('верхний уровень')}
+                        <span>{item.signal.width > 1 ? t('{width} бит', { width: item.signal.width }) : ''}</span>
                       </small>
                     </div>
                   </div>
@@ -517,7 +518,10 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
                       height={ROW_HEIGHT}
                       tabIndex={0}
                       role="img"
-                      aria-label={`Диаграмма ${signalPath(item.signal)}; значение на курсоре ${formatted}. Стрелки перемещают курсор, Shift и стрелки сдвигают интервал.`}
+                      aria-label={t(
+                        'Диаграмма {name}; значение на курсоре {value}. Стрелки перемещают курсор, Shift и стрелки сдвигают интервал.',
+                        { name: signalPath(item.signal), value: formatted },
+                      )}
                       onPointerDown={pointerDown}
                       onPointerMove={pointerMove}
                       onPointerUp={pointerUp}
@@ -546,7 +550,7 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
                   </div>
                   <code
                     className={`waveform-value ${/[xz]/i.test(value) ? 'is-unknown' : ''}`}
-                    title={`${formatted}\nДвоичное значение: ${value}`}
+                    title={`${formatted}\n${t('Двоичное значение: {value}', { value })}`}
                   >
                     {formatted}
                   </code>
@@ -559,8 +563,8 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
             <Search size={17} />
             <span>
               {search
-                ? 'Подходящих видимых сигналов нет. Измените поиск или выбор сигналов.'
-                : 'Выберите сигналы в меню над диаграммой.'}
+                ? t('Подходящих видимых сигналов нет. Измените поиск или выбор сигналов.')
+                : t('Выберите сигналы в меню над диаграммой.')}
             </span>
           </div>
         )}
@@ -576,8 +580,8 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
         <input
           className="waveform-pan-slider"
           type="range"
-          aria-label="Перемещение по времени"
-          title="Сдвигает видимый интервал, сохраняя масштаб"
+          aria-label={t('Перемещение по времени')}
+          title={t('Сдвигает видимый интервал, сохраняя масштаб')}
           min={domain.start}
           max={Math.max(
             domain.start,
@@ -607,7 +611,7 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
         <div className="waveform-footer-tools">
           <span
             className="waveform-gesture-hint"
-            title="Клик — курсор · Shift + перетаскивание — сдвиг"
+            title={t('Клик — курсор · Shift + перетаскивание — сдвиг')}
           >
             Shift ↔
           </span>
@@ -615,7 +619,7 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
             <button
               type="button"
               className="waveform-warning-button"
-              title="Предупреждения диаграмм"
+              title={t('Предупреждения диаграмм')}
               onClick={() => setWarningsOpen(!warningsOpen)}
               aria-expanded={warningsOpen}
             >
@@ -629,8 +633,10 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
         <div className="waveform-warnings" role="status">
           {denseCount > 0 && (
             <p>
-              {denseCount} сигналов содержат более 2000 переходов в окне. Их диаграммы скрыты:
-              увеличьте масштаб, чтобы увидеть переходы.
+              {t(
+                '{count} сигналов содержат более 2000 переходов в окне. Их диаграммы скрыты: увеличьте масштаб, чтобы увидеть переходы.',
+                { count: denseCount },
+              )}
             </p>
           )}
           {trace.warnings.map((warning, index) => (

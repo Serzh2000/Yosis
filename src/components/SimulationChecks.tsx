@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import type { SimulationConfig, SimulationCheck, YosysPort } from '../../shared/types';
+import { t } from '../lib/i18n';
 
 export function SimulationChecks({
   expectations,
@@ -21,8 +22,9 @@ export function SimulationChecks({
   return (
     <>
       <p className="simulation-settings-note">
-        Задайте время и ожидаемый уровень порта. Значение снимается через 0,001 нс после указанного
-        момента, когда изменения RTL уже обработаны. X — неизвестно, Z — отключённый выход.
+        {t(
+          'Задайте время и ожидаемый уровень порта. Значение снимается через 0,001 нс после указанного момента, когда изменения RTL уже обработаны. X — неизвестно, Z — отключённый выход.',
+        )}
       </p>
       <div className="simulation-check-list">
         {expectations.map((entry, index) => {
@@ -30,9 +32,9 @@ export function SimulationChecks({
           return (
             <div key={index} className="simulation-check-row">
               <label>
-                Время, нс
+                {t('Время, нс')}
                 <input
-                  aria-label={`Время проверки ${index + 1}, нс`}
+                  aria-label={t('Время проверки {n}, нс', { n: index + 1 })}
                   type="number"
                   min="0"
                   max={durationNs}
@@ -49,9 +51,9 @@ export function SimulationChecks({
                 />
               </label>
               <label>
-                Порт
+                {t('Порт')}
                 <select
-                  aria-label={`Порт проверки ${index + 1}`}
+                  aria-label={t('Порт проверки {n}', { n: index + 1 })}
                   value={entry.signal}
                   disabled={busy}
                   onChange={(e) =>
@@ -63,19 +65,19 @@ export function SimulationChecks({
                   }
                 >
                   {!ports[entry.signal] && (
-                    <option value={entry.signal}>{entry.signal} · отсутствует</option>
+                    <option value={entry.signal}>{t('{name} · отсутствует', { name: entry.signal })}</option>
                   )}
                   {names.map((name) => (
                     <option key={name} value={name}>
-                      {name} · {ports[name].bits.length} бит
+                      {name} · {t('{count} бит', { count: ports[name].bits.length })}
                     </option>
                   ))}
                 </select>
               </label>
               <label>
-                Ожидается
+                {t('Ожидается')}
                 <input
-                  aria-label={`Ожидаемое значение ${index + 1}`}
+                  aria-label={t('Ожидаемое значение {n}', { n: index + 1 })}
                   value={entry.value}
                   placeholder="0, 0xFF, 0b10, X"
                   disabled={busy}
@@ -91,15 +93,15 @@ export function SimulationChecks({
               <button
                 className="icon-button"
                 disabled={busy}
-                aria-label={`Удалить проверку ${index + 1}`}
+                aria-label={t('Удалить проверку {n}', { n: index + 1 })}
                 onClick={() => onChange(expectations.filter((_, i) => i !== index))}
               >
                 <X size={14} />
               </button>
               {check && (
                 <p className={check.passed ? 'check-pass' : 'check-fail'}>
-                  {check.passed ? 'Совпало' : 'Не совпало'} · фактически{' '}
-                  {check.actual === null ? 'нет образца' : `0b${check.actual}`}
+                  {check.passed ? t('Совпало') : t('Не совпало')} · {t('фактически')}{' '}
+                  {check.actual === null ? t('нет образца') : `0b${check.actual}`}
                 </p>
               )}
             </div>
@@ -108,7 +110,7 @@ export function SimulationChecks({
       </div>
       {!expectations.length && (
         <p className="simulation-settings-note">
-          Проверок пока нет. Диаграммы можно смотреть и без них.
+          {t('Проверок пока нет. Диаграммы можно смотреть и без них.')}
         </p>
       )}
       <button
@@ -118,7 +120,7 @@ export function SimulationChecks({
           onChange([...expectations, { timeNs: 0, signal: defaultSignal, value: '0' }])
         }
       >
-        Добавить проверку
+        {t('Добавить проверку')}
       </button>
     </>
   );

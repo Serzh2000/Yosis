@@ -4,6 +4,7 @@ import type * as monaco from 'monaco-editor/editor/editor.api.js';
 import type { Diagnostic, Project, SourceFile } from '../../../shared/types';
 import type { Theme } from '../../hooks/useTheme';
 import { SourceEditor } from './lazy-panels';
+import { t } from '../../lib/i18n';
 
 /** Всё, что редактору исходника нужно от студии, кроме самого файла. */
 export interface EditorBindings {
@@ -35,7 +36,7 @@ export function ProjectSourceEditor({
     <Suspense
       fallback={
         <div className="editor-loading" role="status">
-          Загрузка редактора…
+          {t('Загрузка редактора…')}
         </div>
       }
     >

@@ -1,3 +1,4 @@
+import { t } from '../../../../../../../shared/i18n';
 import { partCatalog, type PartKind } from '../../../shared/catalog';
 // Plain-language notes for the header pins of each board, shown while the pointer is on a pin or
 // a jumper is being dragged towards it: what the pin is called in code and what it can do.
@@ -73,32 +74,32 @@ const s3Fixed: Record<string, string[]> = {
 export function fpgaPadNote(label: string): PinNote {
   const rails: Record<string, PinNote> = {
     '3V3': {
-      title: '3V3 · питание 3,3 В',
-      facts: ['Плюс для деталей: к нему подключают выводы VCC.'],
+      title: t('3V3 · питание 3,3 В'),
+      facts: [t('Плюс для деталей: к нему подключают выводы VCC.')],
     },
     '5V': {
-      title: '5V · питание 5 В',
-      facts: ['Питание 5 В с USB. Логика платы работает на 3,3 В.'],
+      title: t('5V · питание 5 В'),
+      facts: [t('Питание 5 В с USB. Логика платы работает на 3,3 В.')],
     },
-    GND: { title: 'GND · земля', facts: ['Общий минус: к нему подключают выводы GND.'] },
+    GND: { title: t('GND · земля'), facts: [t('Общий минус: к нему подключают выводы GND.')] },
   };
   if (rails[label]) return rails[label]!;
   const roles: Record<string, string> = {
-    '4': 'Генератор платы, 27 МГц',
-    '15': 'Светодиод LED0, светится при 0',
-    '16': 'Светодиод LED1, светится при 0',
-    '17': 'Светодиод LED2, светится при 0',
-    '18': 'Светодиод LED3, светится при 0',
-    '19': 'Светодиод LED4, светится при 0',
-    '20': 'Светодиод LED5, светится при 0',
-    '69': 'UART: передача в USB-терминал',
-    '70': 'UART: приём из USB-терминала',
-    '87': 'Кнопка S2, нажата = 1',
-    '88': 'Кнопка S1, нажата = 1',
+    '4': t('Генератор платы, 27 МГц'),
+    '15': t('Светодиод LED0, светится при 0'),
+    '16': t('Светодиод LED1, светится при 0'),
+    '17': t('Светодиод LED2, светится при 0'),
+    '18': t('Светодиод LED3, светится при 0'),
+    '19': t('Светодиод LED4, светится при 0'),
+    '20': t('Светодиод LED5, светится при 0'),
+    '69': t('UART: передача в USB-терминал'),
+    '70': t('UART: приём из USB-терминала'),
+    '87': t('Кнопка S2, нажата = 1'),
+    '88': t('Кнопка S1, нажата = 1'),
   };
   return {
-    title: `Вывод ${label}`,
-    facts: [roles[label] ?? 'Свободный вывод ПЛИС: сигнал назначают во вкладке «Выводы».'],
+    title: t('Вывод {label}', { label }),
+    facts: [roles[label] ?? t('Свободный вывод ПЛИС: сигнал назначают во вкладке «Выводы».')],
   };
 }
 
@@ -137,26 +138,26 @@ export function pinNote(board: McuBoardId, label: string): PinNote {
 export function componentPinNote(kind: PartKind | undefined, pin: string) {
   if (!kind) return '';
   const definition = partCatalog[kind];
-  if (pin === definition.supply?.vcc) return 'Питание модуля (VCC)';
-  if (pin === definition.supply?.gnd || pin === 'GND') return 'Общий провод (земля, 0 В)';
+  if (pin === definition.supply?.vcc) return t('Питание модуля (VCC)');
+  if (pin === definition.supply?.gnd || pin === 'GND') return t('Общий провод (земля, 0 В)');
   const roles: Record<string, string> = {
-    SDA: 'I²C · линия данных',
-    SCL: 'I²C · тактовая линия',
-    MOSI: 'SPI · данные от контроллера',
-    MISO: 'SPI · данные к контроллеру',
-    SCK: 'SPI · тактовая линия',
-    CS: 'SPI · выбор устройства',
-    TX: 'Передача последовательных данных',
-    RX: 'Приём последовательных данных',
-    TRIG: 'Вход: импульс запуска измерения',
-    ECHO: 'Выход: длительность импульса задаёт расстояние',
-    AO: 'Аналоговый выход датчика',
-    DO: 'Цифровой выход датчика',
-    DIN: 'Вход последовательных данных',
-    DOUT: 'Выход последовательных данных',
+    SDA: t('I²C · линия данных'),
+    SCL: t('I²C · тактовая линия'),
+    MOSI: t('SPI · данные от контроллера'),
+    MISO: t('SPI · данные к контроллеру'),
+    SCK: t('SPI · тактовая линия'),
+    CS: t('SPI · выбор устройства'),
+    TX: t('Передача последовательных данных'),
+    RX: t('Приём последовательных данных'),
+    TRIG: t('Вход: импульс запуска измерения'),
+    ECHO: t('Выход: длительность импульса задаёт расстояние'),
+    AO: t('Аналоговый выход датчика'),
+    DO: t('Цифровой выход датчика'),
+    DIN: t('Вход последовательных данных'),
+    DOUT: t('Выход последовательных данных'),
   };
   if (roles[pin]) return roles[pin];
-  if (definition.outputs?.pins.includes(pin)) return 'Сигнальный выход датчика';
-  if (pin === definition.load?.pin) return 'Управляющий вход';
+  if (definition.outputs?.pins.includes(pin)) return t('Сигнальный выход датчика');
+  if (pin === definition.load?.pin) return t('Управляющий вход');
   return '';
 }

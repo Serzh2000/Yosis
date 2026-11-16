@@ -1,3 +1,4 @@
+import { t, translateServerMessage } from '../../lib/i18n';
 // The textbook's talk with the accounts server. Every call returns parsed JSON or throws an
 // ApiError whose message is already in Russian and safe to show.
 import type { WireProgress } from '../../../shared/learn-sync';
@@ -45,13 +46,13 @@ export async function request<T>(
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
-    throw new ApiError(0, 'Нет связи с сервером. Проверь интернет и попробуй ещё раз.');
+    throw new ApiError(0, t('Нет связи с сервером. Проверь интернет и попробуй ещё раз.'));
   }
   const data = (await response.json().catch(() => null)) as (T & { error?: string }) | null;
   if (!response.ok)
     throw new ApiError(
       response.status,
-      typeof data?.error === 'string' ? data.error : 'Сервер ответил с ошибкой. Попробуй позже.',
+      typeof data?.error === 'string' ? translateServerMessage(data.error) : t('Сервер ответил с ошибкой. Попробуй позже.'),
     );
   return data as T;
 }

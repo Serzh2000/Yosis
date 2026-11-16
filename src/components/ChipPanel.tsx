@@ -11,6 +11,7 @@ import { getProjectSnapshot } from '../lib/projects';
 import { HelpTrigger } from './HelpCard';
 import { ChipMap } from './ChipMap';
 import './physical.css';
+import { t } from '../lib/i18n';
 
 interface Props {
   project: Project;
@@ -199,7 +200,7 @@ export function ChipPanel({
     if (busy) return;
     const currentGeneration = ++generation.current;
     try {
-      if (file.size > 64 * 1024 * 1024) throw new Error('JSON размещения превышает 64 МБ.');
+      if (file.size > 64 * 1024 * 1024) throw new Error(t('JSON размещения превышает 64 МБ.'));
       const data = JSON.parse(await file.text());
       parsePlacement(data);
       if (generation.current !== currentGeneration) return;
@@ -237,7 +238,7 @@ export function ChipPanel({
         <div className="physical-build-heading">
           <div className="physical-card-title">
             <Activity size={16} />
-            <h3>Размещение и трассировка</h3>
+            <h3>{t('Размещение и трассировка')}</h3>
             <span className="physical-muted">GW2A-18C</span>
           </div>
           <div className="physical-pipeline">
@@ -252,14 +253,14 @@ export function ChipPanel({
         </div>
         <div className="physical-controls">
           <label>
-            Ограничения
+            {t('Ограничения')}
             <select
-              aria-label="Файл ограничений для размещения"
+              aria-label={t('Файл ограничений для размещения')}
               value={cstFile}
               onChange={(event) => setCstFile(event.target.value)}
               disabled={busy}
             >
-              {!cstFiles.length && <option value="">Добавьте .cst в проект</option>}
+              {!cstFiles.length && <option value="">{t('Добавьте .cst в проект')}</option>}
               {cstFiles.map((file) => (
                 <option key={file.name} value={file.name}>
                   {file.name}
@@ -268,10 +269,10 @@ export function ChipPanel({
             </select>
           </label>
           <label>
-            Частота, МГц
+            {t('Частота, МГц')}
             <input
               type="number"
-              aria-label="Целевая частота"
+              aria-label={t('Целевая частота')}
               min={1}
               max={500}
               step="any"
@@ -283,7 +284,7 @@ export function ChipPanel({
           {busy ? (
             <button className="button stop" onClick={() => void cancel()}>
               <Square size={14} />
-              Остановить
+              {t('Остановить')}
             </button>
           ) : (
             <button
@@ -295,7 +296,7 @@ export function ChipPanel({
               onClick={() => void start()}
             >
               <Play size={14} />
-              Разместить и собрать
+              {t('Разместить и собрать')}
             </button>
           )}
           <button
@@ -304,7 +305,7 @@ export function ChipPanel({
             onClick={() => uploadRef.current?.click()}
           >
             <Upload size={14} />
-            Открыть nextpnr JSON
+            {t('Открыть nextpnr JSON')}
           </button>
           <input
             ref={uploadRef}
@@ -320,30 +321,34 @@ export function ChipPanel({
         </div>
         {!technology && (
           <p className="physical-muted">
-            Сначала выполните синтез проекта.
+            {t('Сначала выполните синтез проекта.')}
             {onSynthesize && (
               <button
                 className="physical-text-button"
                 onClick={onSynthesize}
                 disabled={synthesisBusy}
               >
-                Синтезировать
+                {t('Синтезировать')}
               </button>
             )}
           </p>
         )}
         {status && !status.available && (
           <p className="physical-note">
-            {status.error ?? 'nextpnr пока недоступен.'} Карта также открывает готовые результаты{' '}
-            <code>nextpnr --write</code>.
+            {status.error ?? t('nextpnr пока недоступен.')}{' '}
+            {t('Карта также открывает готовые результаты')} <code>nextpnr --write</code>.
           </p>
         )}
         {job && (
           <div className={`physical-job-status status-${job.status}`} role="status">
             <span>{job.stage}</span>
-            {job.elapsedMs && <small>{(job.elapsedMs / 1000).toFixed(1)} с</small>}
+            {job.elapsedMs && (
+              <small>
+                {(job.elapsedMs / 1000).toFixed(1)} {t('с')}
+              </small>
+            )}
             <button className="physical-text-button" onClick={() => setShowLogs((value) => !value)}>
-              {showLogs ? 'Скрыть журнал' : 'Журнал'}
+              {showLogs ? t('Скрыть журнал') : t('Журнал')}
             </button>
             {job.placed && (
               <a
@@ -360,12 +365,12 @@ export function ChipPanel({
                 href={`/api/physical/${job.id}/artifacts/design.fs`}
                 download
               >
-                <Download size={13} /> Битстрим .fs
+                <Download size={13} /> {t('Битстрим .fs')}
               </a>
             )}
           </div>
         )}
-        {showLogs && <pre className="physical-logs">{job?.logs || 'Журнал пока пуст.'}</pre>}
+        {showLogs && <pre className="physical-logs">{job?.logs || t('Журнал пока пуст.')}</pre>}
         {(error || job?.error || parsed.error) && (
           <div className="physical-error" role="alert">
             {error || job?.error || parsed.error}
@@ -373,19 +378,26 @@ export function ChipPanel({
         )}
         {stale && (
           <p className="physical-note">
-            Карта относится к предыдущей версии проекта. Повторите синтез и размещение после
-            изменения файлов.
+            {t(
+              t(
+                'Карта относится к предыдущей версии проекта. Повторите синтез и размещение после изменения файлов.',
+              ),
+            )}
           </p>
         )}
       </section>
       {resourceCounts && (
-        <div className="physical-resources" role="group" aria-label="Ресурсы проекта после синтеза">
+        <div
+          className="physical-resources"
+          role="group"
+          aria-label={t('Ресурсы проекта после синтеза')}
+        >
           {CATEGORIES.map((category) => (
             <HelpTrigger
               key={category}
               topic={{ kind: 'resource', resource: category, view: 'technology' }}
             >
-              <span>{category === 'other' ? 'Другие' : category}</span>
+              <span>{category === 'other' ? t('Другие') : category}</span>
               <strong>{resourceCounts[category]}</strong>
             </HelpTrigger>
           ))}
@@ -396,7 +408,7 @@ export function ChipPanel({
           <section className="physical-card chip-map-card">
             <div className="physical-card-title">
               <Map size={18} />
-              <h3>Карта размещения на кристалле</h3>
+              <h3>{t('Карта размещения на кристалле')}</h3>
             </div>
             <ChipMap
               map={map}
@@ -405,15 +417,16 @@ export function ChipPanel({
               onSelect={setSelected}
             />
             <details className="physical-muted chip-map-caption">
-              <summary>Как читать карту?</summary>
+              <summary>{t('Как читать карту?')}</summary>
               <p>
-                Кристалл разбит на тайлы, у каждого есть координаты X и Y из nextpnr. Цвет тайла
-                показывает, какого ресурса в нём больше всего, а полоска внизу тайла: сколько связей
-                проходит через него. Это карта занятости по координатам. Температура, мощность и
-                процент ёмкости тайла не рассчитываются.{' '}
+                {t(
+                  t(
+                    'Кристалл разбит на тайлы, у каждого есть координаты X и Y из nextpnr. Цвет тайла показывает, какого ресурса в нём больше всего, а полоска внизу тайла: сколько связей проходит через него. Это карта занятости по координатам. Температура, мощность и процент ёмкости тайла не рассчитываются.',
+                  ),
+                )}{' '}
                 {map.fullChipBounds
-                  ? 'Границы 56 × 55 тайлов взяты из базы GW2A-18C Apicula.'
-                  : 'Граница показана по максимальным координатам артефакта.'}
+                  ? t('Границы 56 × 55 тайлов взяты из базы GW2A-18C Apicula.')
+                  : t('Граница показана по максимальным координатам артефакта.')}
               </p>
             </details>
           </section>
@@ -422,14 +435,18 @@ export function ChipPanel({
               <div className="physical-card-title">
                 <Layers size={18} />
                 <h3>
-                  {selectedTile ? `Тайл X${selectedTile.x} Y${selectedTile.y}` : 'Выберите тайл'}
+                  {selectedTile
+                    ? t('Тайл X{x} Y{y}', { x: selectedTile.x, y: selectedTile.y })
+                    : t('Выберите тайл')}
                 </h3>
               </div>
               {selectedTile ? (
                 <>
                   <p>
-                    {selectedTile.cells.length} ячеек · {selectedTile.routingPips} переходов
-                    трассировки
+                    {t('{cells} ячеек · {pips} переходов трассировки', {
+                      cells: selectedTile.cells.length,
+                      pips: selectedTile.routingPips,
+                    })}
                   </p>
                   <ul className="chip-cell-list">
                     {selectedTile.cells.slice(0, 200).map((cell) => (
@@ -449,23 +466,27 @@ export function ChipPanel({
                 </>
               ) : (
                 <p>
-                  Нажмите на окрашенную ячейку карты, чтобы увидеть физические элементы и их имена.
+                  {t(
+                    t(
+                      'Нажмите на окрашенную ячейку карты, чтобы увидеть физические элементы и их имена.',
+                    ),
+                  )}
                 </p>
               )}
             </section>
             <section className="physical-card">
-              <h3>Результат nextpnr</h3>
+              <h3>{t('Результат nextpnr')}</h3>
               <dl className="board-profile">
                 <div>
-                  <dt>Размещено</dt>
+                  <dt>{t('Размещено')}</dt>
                   <dd>{map.cells.length}</dd>
                 </div>
                 <div>
-                  <dt>Тайлов с ячейками</dt>
+                  <dt>{t('Тайлов с ячейками')}</dt>
                   <dd>{map.tiles.filter((tile) => tile.cells.length).length}</dd>
                 </div>
                 <div>
-                  <dt>Переходов</dt>
+                  <dt>{t('Переходов')}</dt>
                   <dd>{map.routingPips}</dd>
                 </div>
               </dl>
@@ -478,12 +499,12 @@ export function ChipPanel({
                 <div className="timing-result" key={timing.name}>
                   <strong>{timing.name}</strong>
                   <span>
-                    {timing.achieved.toFixed(2)} / {timing.requested.toFixed(2)} МГц
+                    {timing.achieved.toFixed(2)} / {timing.requested.toFixed(2)} {t('МГц')}
                   </span>
                   <small>
                     {timing.achieved >= timing.requested
-                      ? 'Частота достигнута'
-                      : 'Частота не достигнута'}
+                      ? t('Частота достигнута')
+                      : t('Частота не достигнута')}
                   </small>
                 </div>
               ))}
@@ -493,10 +514,13 @@ export function ChipPanel({
       ) : (
         <section className="physical-card chip-empty-state">
           <Map size={55} strokeWidth={1} />
-          <h3>Где ваша логика окажется в FPGA?</h3>
+          <h3>{t('Где ваша логика окажется в FPGA?')}</h3>
           <p>
-            После nextpnr здесь появятся реальные координаты LUT, триггеров, блоков памяти и
-            выводов. Переключайте слои, исследуйте плотность и проваливайтесь в отдельный тайл.
+            {t(
+              t(
+                'После nextpnr здесь появятся реальные координаты LUT, триггеров, блоков памяти и выводов. Переключайте слои, исследуйте плотность и проваливайтесь в отдельный тайл.',
+              ),
+            )}
           </p>
           <div className="chip-preview-legend">
             <span>
@@ -505,15 +529,15 @@ export function ChipPanel({
             </span>
             <span>
               <i style={{ background: COLORS[1] }} />
-              Регистры
+              {t('Регистры')}
             </span>
             <span>
               <i style={{ background: COLORS[3] }} />
-              Память
+              {t('Память')}
             </span>
             <span>
               <i style={{ background: COLORS[5] }} />
-              Выводы
+              {t('Выводы')}
             </span>
           </div>
         </section>

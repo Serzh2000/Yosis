@@ -1,5 +1,6 @@
 import type { Project } from '../../shared/types';
 import { moduleDeclarations } from './verilog-modules';
+import { t } from './i18n';
 
 export type SchematicAdditionPlan = { ok: true; fileName: string } | { ok: false; reason: string };
 
@@ -10,13 +11,16 @@ export type SchematicAdditionPlan = { ok: true; fileName: string } | { ok: false
  */
 export function planSchematicAddition(project: Project): SchematicAdditionPlan {
   if (project.files.some((file) => file.name.endsWith('.ysch')))
-    return { ok: false, reason: 'В проекте уже есть схема: допустим один файл .ysch.' };
+    return { ok: false, reason: t('В проекте уже есть схема: допустим один файл .ysch.') };
   const generated = `${project.top}.v`;
   const clash = project.files.find((file) => file.name.toLowerCase() === generated.toLowerCase());
   if (clash)
     return {
       ok: false,
-      reason: `В проекте уже есть файл ${clash.name}. Из схемы получился бы тот же ${generated}, и сборка не станет его перезаписывать.`,
+      reason: t(
+        'В проекте уже есть файл {name}. Из схемы получился бы тот же {generated}, и сборка не станет его перезаписывать.',
+        { name: clash.name, generated },
+      ),
     };
   const declaring = project.files.find(
     (file) =>
@@ -26,7 +30,10 @@ export function planSchematicAddition(project: Project): SchematicAdditionPlan {
   if (declaring)
     return {
       ok: false,
-      reason: `Верхний модуль «${project.top}» уже описан в ${declaring.name}. Схема тоже создаёт модуль с этим именем, а подмодулей схема не поддерживает, поэтому у проекта получились бы два верхних модуля.`,
+      reason: t(
+        'Верхний модуль «{top}» уже описан в {name}. Схема тоже создаёт модуль с этим именем, а подмодулей схема не поддерживает, поэтому у проекта получились бы два верхних модуля.',
+        { top: project.top, name: declaring.name },
+      ),
     };
   return { ok: true, fileName: `${project.top}.ysch` };
 }

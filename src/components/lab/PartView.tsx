@@ -1,14 +1,16 @@
 import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { BOARD_CLOCK_HZ, type Device } from '../../lib/lab/devices';
 import { BusPartBody } from './BusPartView';
+import { language, t } from '../../lib/i18n';
 
 export function formatHz(value: number): string {
-  if (!value) return '0 Гц';
-  if (value >= 1e6) return `${(value / 1e6).toFixed(2)} МГц`;
-  if (value >= 1e3) return `${(value / 1e3).toFixed(value >= 1e5 ? 0 : 2)} кГц`;
-  return `${value >= 100 ? value.toFixed(0) : value.toFixed(1)} Гц`;
+  if (!value) return t('{n} Гц', { n: 0 });
+  if (value >= 1e6) return t('{n} МГц', { n: (value / 1e6).toFixed(2) });
+  if (value >= 1e3) return t('{n} кГц', { n: (value / 1e3).toFixed(value >= 1e5 ? 0 : 2) });
+  return t('{n} Гц', { n: value >= 100 ? value.toFixed(0) : value.toFixed(1) });
 }
-const russian = (value: number, digits = 2) => value.toFixed(digits).replace('.', ',');
+const russian = (value: number, digits = 2) =>
+  language() === 'en' ? value.toFixed(digits) : value.toFixed(digits).replace('.', ',');
 
 /** A lamp of the given colour at brightness 0..1. */
 function glow(color: string, brightness: number): CSSProperties {
@@ -105,7 +107,7 @@ function Buzzer({ frequency, raw, muted }: { frequency: number; raw: number; mut
   return (
     <div className={`lab-buzzer ${frequency ? 'sounding' : ''}`}>
       <i />
-      <small>{raw ? formatHz(raw) : 'тихо'}</small>
+      <small>{raw ? formatHz(raw) : t('тихо')}</small>
     </div>
   );
 }
@@ -119,8 +121,8 @@ function Terminal({ device, act }: { device: Device; act: Act }) {
   }, [view.text]);
   return (
     <div className="lab-terminal">
-      <pre ref={screen} aria-label="Принятые данные">
-        {view.text || 'Здесь появятся принятые байты.'}
+      <pre ref={screen} aria-label={t('Принятые данные')}>
+        {view.text || t('Здесь появятся принятые байты.')}
       </pre>
       <form
         onSubmit={(event) => {
@@ -132,16 +134,16 @@ function Terminal({ device, act }: { device: Device; act: Act }) {
         <input
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder="Текст для схемы"
-          aria-label="Текст для отправки"
+          placeholder={t('Текст для схемы')}
+          aria-label={t('Текст для отправки')}
         />
         <button type="submit" className="lab-mini">
-          Отправить
+          {t('Отправить')}
         </button>
       </form>
       <div className="lab-terminal-tools">
         <label>
-          Скорость
+          {t('Скорость')}
           <select value={view.baud} onChange={(event) => act('baud', Number(event.target.value))}>
             {[9600, 19200, 57600, 115200, 230400, 1_000_000].map((baud) => (
               <option key={baud} value={baud}>
@@ -151,7 +153,7 @@ function Terminal({ device, act }: { device: Device; act: Act }) {
           </select>
         </label>
         <button type="button" className="lab-mini" onClick={() => act('clear')}>
-          Очистить
+          {t('Очистить')}
         </button>
       </div>
     </div>
@@ -186,15 +188,15 @@ function Waves({ device, act }: { device: Device; act: Act }) {
         })}
       </svg>
       <label>
-        Окно
+        {t('Окно')}
         <select value={view.window} onChange={(event) => act('window', Number(event.target.value))}>
           {[200, 2000, 20_000, 200_000, 2_000_000, 27_000_000].map((cycles) => (
             <option key={cycles} value={cycles}>
               {cycles >= BOARD_CLOCK_HZ
-                ? '1 с'
+                ? t('1 с')
                 : cycles / BOARD_CLOCK_HZ >= 0.001
-                  ? `${russian((cycles / BOARD_CLOCK_HZ) * 1000, 1)} мс`
-                  : `${russian((cycles / BOARD_CLOCK_HZ) * 1e6, 1)} мкс`}
+                  ? t('{n} мс', { n: russian((cycles / BOARD_CLOCK_HZ) * 1000, 1) })
+                  : t('{n} мкс', { n: russian((cycles / BOARD_CLOCK_HZ) * 1e6, 1) })}
             </option>
           ))}
         </select>
@@ -443,7 +445,7 @@ function PartBodyView({ device, version, title, color = '#ffd23f', act, muted }:
           <button
             type="button"
             className="lab-mini"
-            aria-label="Меньше"
+            aria-label={t('Меньше')}
             onClick={() => act('step', -1)}
           >
             −
@@ -452,7 +454,7 @@ function PartBodyView({ device, version, title, color = '#ffd23f', act, muted }:
           <button
             type="button"
             className="lab-mini"
-            aria-label="Больше"
+            aria-label={t('Больше')}
             onClick={() => act('step', 1)}
           >
             +
@@ -496,7 +498,7 @@ function PartBodyView({ device, version, title, color = '#ffd23f', act, muted }:
           <button
             type="button"
             className="lab-mini"
-            aria-label="Повернуть влево"
+            aria-label={t('Повернуть влево')}
             onClick={() => act('turn', -1)}
           >
             ↺
@@ -505,7 +507,7 @@ function PartBodyView({ device, version, title, color = '#ffd23f', act, muted }:
             type="button"
             className={`lab-knob ${view.pressed ? 'down' : ''}`}
             style={{ transform: `rotate(${((view.position as number | undefined) ?? 0) * 18}deg)` }}
-            aria-label="Нажать на ручку"
+            aria-label={t('Нажать на ручку')}
             onPointerDown={() => act('press', true)}
             onPointerUp={() => act('press', false)}
             onPointerLeave={() => act('press', false)}
@@ -515,7 +517,7 @@ function PartBodyView({ device, version, title, color = '#ffd23f', act, muted }:
           <button
             type="button"
             className="lab-mini"
-            aria-label="Повернуть вправо"
+            aria-label={t('Повернуть вправо')}
             onClick={() => act('turn', 1)}
           >
             ↻
@@ -542,7 +544,7 @@ function PartBodyView({ device, version, title, color = '#ffd23f', act, muted }:
           return (
             <div className={`lab-relay ${duty > 0.5 ? 'closed' : ''}`}>
               <i />
-              <small>{duty > 0.5 ? 'замкнуто' : 'разомкнуто'}</small>
+              <small>{duty > 0.5 ? t('замкнуто') : t('разомкнуто')}</small>
             </div>
           );
         case 'motor':
@@ -565,14 +567,14 @@ function PartBodyView({ device, version, title, color = '#ffd23f', act, muted }:
           return (
             <div className="lab-servo">
               <i style={{ transform: `rotate(${(angle ?? 90) - 90}deg)` }} />
-              <small>{angle === null ? 'нет импульсов' : `${Math.round(angle)}°`}</small>
+              <small>{angle === null ? t('нет импульсов') : `${Math.round(angle)}°`}</small>
             </div>
           );
         }
         case 'freq':
           return <output className="lab-readout">{formatHz(frequency)}</output>;
         case 'volt':
-          return <output className="lab-readout">{russian(duty * 3.3)} В</output>;
+          return <output className="lab-readout">{t('{n} В', { n: russian(duty * 3.3) })}</output>;
         default:
           return (
             <div className="lab-probe">
@@ -627,7 +629,7 @@ function PartBodyView({ device, version, title, color = '#ffd23f', act, muted }:
                   className={`lab-toggle ${(switches >> bit) & 1 ? 'on' : ''}`}
                   role="switch"
                   aria-checked={!!((switches >> bit) & 1)}
-                  aria-label={`Вход D${bit}`}
+                  aria-label={t('Вход D{bit}', { bit })}
                   onClick={() => act('toggle', bit)}
                 >
                   <i />
@@ -649,7 +651,7 @@ function PartBodyView({ device, version, title, color = '#ffd23f', act, muted }:
           <select
             value={(view.hz as number | undefined) ?? 2}
             onChange={(event) => act('hz', Number(event.target.value))}
-            aria-label="Частота"
+            aria-label={t('Частота')}
           >
             {[1, 2, 10, 100, 1000, 10_000, 100_000, 1_000_000].map((hz) => (
               <option key={hz} value={hz}>

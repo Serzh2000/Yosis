@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { Project } from '../../../shared/types';
 import type { useProjectFiles } from '../../hooks/useProjectFiles';
 import { ProjectFiles } from '../ProjectFiles';
+import { t } from '../../lib/i18n';
 
 /** Дерево файлов на вкладках «Код» и «Выводы» и затемнение под ним на узких экранах. */
 export function ProjectFilesPane({
@@ -17,7 +18,7 @@ export function ProjectFilesPane({
     <>
       <button
         className="files-overlay-backdrop"
-        aria-label="Закрыть дерево файлов"
+        aria-label={t('Закрыть дерево файлов')}
         onClick={() => files.setFileManagerOpen(false)}
       />
       <ProjectFiles

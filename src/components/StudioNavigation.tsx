@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import {
   Activity,
   ChevronDown,
@@ -12,10 +12,12 @@ import {
   GitBranch,
   GraduationCap,
   Layers3,
+  MoreHorizontal,
   SlidersHorizontal,
   Usb,
   type LucideIcon,
 } from 'lucide-react';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { getTabDestination } from '../lib/accessibility';
 import { localStore, STORAGE_KEYS } from '../lib/storage';
 import { studioTabs, type WorkspaceStatus, type WorkTab } from '../lib/studio-tabs';
@@ -81,7 +83,10 @@ export function StudioNavigation({
   physicalStatus,
   schematicAvailable = true,
 }: StudioNavigationProps) {
+  const mobile = useIsMobile();
+  const [moreOpen, setMoreOpen] = useState(false);
   const [opened, setOpened] = useState(savedOpen);
+  useEffect(() => setMoreOpen(false), [tab, mobile]);
   const tabs = useRef<HTMLElement>(null);
   const hasTab = (group: (typeof groups)[number], id: WorkTab) => group.tabs.includes(id);
   // A group that is folded away still shows the tab that is open in it.
@@ -109,6 +114,103 @@ export function StudioNavigation({
     const destination = visible[next].id;
     onChange(destination);
     tabs.current?.querySelector<HTMLButtonElement>(`#tab-${destination}`)?.focus();
+  }
+  if (mobile) {
+    // Phones: four everyday tabs in a bottom bar, everything else behind "Ещё".
+    const main: WorkTab[] = [
+      'code',
+      schematicAvailable ? 'design' : 'constraints',
+      'simulation',
+      'virtual',
+    ];
+    const rest = workspaceTabs.filter(
+      (item) => !main.includes(item.id) && (item.id !== 'design' || schematicAvailable),
+    );
+    const statusOf = (id: WorkTab) =>
+      id === 'chip'
+        ? physicalStatus
+        : id === 'rtl' || id === 'technology'
+          ? synthesisStatus
+          : undefined;
+    const tabButton = (id: WorkTab, wide: boolean) => {
+      const item = workspaceTabs.find((candidate) => candidate.id === id)!;
+      const status = statusOf(id);
+      const state = status ? statuses[status] : null;
+      return (
+        <button
+          key={id}
+          id={`tab-${id}`}
+          data-tour={`tab-${id}`}
+          type="button"
+          role="tab"
+          aria-selected={tab === id}
+          aria-controls={`panel-${id}`}
+          aria-label={`${item.label}${state ? ` · ${state.label}` : ''}`}
+          className={`sh-tab ${wide ? 'sheet' : ''} ${tab === id ? 'active' : ''}`}
+          onClick={() => onChange(id)}
+        >
+          <item.icon size={wide ? 20 : 22} aria-hidden="true" />
+          <span>{item.label}</span>
+          {status && <i className={`sh-via ${status}`} aria-hidden="true" />}
+        </button>
+      );
+    };
+    const restBusy = rest.some((item) => ['busy', 'error'].includes(statusOf(item.id) ?? ''));
+    return (
+      <>
+        {moreOpen && (
+          <div
+            className="sh-sheet-backdrop"
+            onClick={() => setMoreOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+        {moreOpen && (
+          <div className="sh-sheet" role="dialog" aria-label={t('Ещё')}>
+            <span className="sh-sheet-grip" aria-hidden="true" />
+            <div className="sh-sheet-tabs" role="tablist" aria-label={t('Рабочие вкладки')}>
+              {rest.map((item) => tabButton(item.id, true))}
+            </div>
+            {filesAvailable && (
+              <button
+                type="button"
+                className={`sh-files sheet ${fileManagerOpen ? 'active' : ''}`}
+                aria-expanded={fileManagerOpen}
+                aria-controls="project-files"
+                onClick={() => {
+                  onToggleFiles();
+                  setMoreOpen(false);
+                }}
+              >
+                <Folder size={20} aria-hidden="true" />
+                <span>{t('Файлы проекта')}</span>
+              </button>
+            )}
+          </div>
+        )}
+        <nav className="sh-bottom" aria-label={t('Рабочие вкладки')}>
+          <div className="sh-bottom-tabs" role="tablist" aria-orientation="horizontal">
+            {main.map((id) => tabButton(id, false))}
+          </div>
+          <button
+            type="button"
+            className={`sh-tab sh-more-tab ${moreOpen || rest.some((item) => item.id === tab) ? 'active' : ''}`}
+            aria-expanded={moreOpen}
+            aria-haspopup="dialog"
+            onClick={() => setMoreOpen((value) => !value)}
+          >
+            <MoreHorizontal size={22} aria-hidden="true" />
+            <span>{t('Ещё')}</span>
+            {restBusy && (
+              <i
+                className={`sh-via ${[physicalStatus, synthesisStatus].find((v) => v === 'busy' || v === 'error')}`}
+                aria-hidden="true"
+              />
+            )}
+          </button>
+        </nav>
+      </>
+    );
   }
   return (
     <div className="sh-nav">

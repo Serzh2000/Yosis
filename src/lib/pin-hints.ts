@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import type { Project } from '../../shared/types';
 import {
   BUTTON_PINS,
@@ -39,27 +40,30 @@ export function suggestPinForSignal(signal: PlannerSignal): PinSuggestion | null
   });
   if (signal.direction === 'input') {
     if (index === null && /^(clk|clock|sys_?clk|clk_?27m?)$/i.test(base))
-      return make(CLOCK_PIN, 'Вывод 4 подключён к кварцевому генератору 27 МГц.');
+      return make(CLOCK_PIN, t('Вывод 4 подключён к кварцевому генератору 27 МГц.'));
     if (index === null && /^(reset|rst)(_?n)?$/i.test(base))
-      return make(BUTTON_PINS.S1, 'Сброс удобно подать кнопкой S1 (вывод 88): нажата = 1.');
+      return make(BUTTON_PINS.S1, t('Сброс удобно подать кнопкой S1 (вывод 88): нажата = 1.'));
     if (/^(btn|button|key|sw|switch|s)_?(1|a)?$/i.test(base) && (index === null || index === 0))
-      return make(BUTTON_PINS.S1, 'Кнопка S1 (вывод 88): нажата = 1, отпущена = 0.');
+      return make(BUTTON_PINS.S1, t('Кнопка S1 (вывод 88): нажата = 1, отпущена = 0.'));
     if (
       (/^(btn|button|key|sw|switch|s)_?(2|b)$/i.test(base) && index === null) ||
       (/^(btn|button|key|sw|switch|buttons|keys)$/i.test(base) && index === 1)
     )
-      return make(BUTTON_PINS.S2, 'Кнопка S2 (вывод 87): нажата = 1, отпущена = 0.');
+      return make(BUTTON_PINS.S2, t('Кнопка S2 (вывод 87): нажата = 1, отпущена = 0.'));
     if (index === null && /^(uart_?)?rxd?$/i.test(base))
-      return make(UART_RX_PIN, 'Вывод 70 принимает данные от компьютера через USB (UART RX).');
+      return make(UART_RX_PIN, t('Вывод 70 принимает данные от компьютера через USB (UART RX).'));
   }
   if (signal.direction === 'output') {
     if (/^(led|leds|led_?n|led_?o|ledn)$/i.test(base)) {
       const led = index ?? 0;
       if (led >= 0 && led < LED_PINS.length)
-        return make(LED_PINS[led], `Светодиод LED${led} (вывод ${LED_PINS[led]}) горит при 0.`);
+        return make(
+          LED_PINS[led],
+          t('Светодиод LED{led} (вывод {pin}) горит при 0.', { led, pin: LED_PINS[led] }),
+        );
     }
     if (index === null && /^(uart_?)?txd?$/i.test(base))
-      return make(UART_TX_PIN, 'Вывод 69 передаёт данные в компьютер через USB (UART TX).');
+      return make(UART_TX_PIN, t('Вывод 69 передаёт данные в компьютер через USB (UART TX).'));
   }
   return null;
 }
@@ -115,7 +119,11 @@ export function ledBusPlan(signals: PlannerSignal[], directives: CstDirective[])
     .map((bit, position) => ({
       signal: bit.name,
       pin: LED_PINS[position],
-      reason: `Бит ${bit.index} → светодиод LED${position} (вывод ${LED_PINS[position]}).`,
+      reason: t('Бит {bit} → светодиод LED{position} (вывод {pin}).', {
+        bit: bit.index,
+        position,
+        pin: LED_PINS[position],
+      }),
     }))
     .filter((item) => !taken(item.pin, item.signal));
 }
@@ -158,27 +166,35 @@ export function pinDetails(
   const warnings: string[] = [];
   if (pin.reserved)
     warnings.push(
-      'Этот вывод занят платой (питание, программатор или флеш). Его нельзя назначать.',
+      t('Этот вывод занят платой (питание, программатор или флеш). Его нельзя назначать.'),
     );
   if (signal) {
     const incompatible = pinCompatibility(signal, pin);
     if (incompatible && !pin.reserved) warnings.push(incompatible);
     const others = assignedTo.filter((name) => name !== signal.name);
-    if (others.length) warnings.push(`Уже назначен: ${others.join(', ')}.`);
+    if (others.length) warnings.push(t('Уже назначен: {names}.', { names: others.join(', ') }));
   } else if (assignedTo.length > 1)
-    warnings.push(`К одному выводу назначено несколько сигналов: ${assignedTo.join(', ')}.`);
+    warnings.push(
+      t('К одному выводу назначено несколько сигналов: {names}.', { names: assignedTo.join(', ') }),
+    );
   if (part && !part.service && signal && part.direction === signal.direction && !warnings.length)
     warnings.push(
-      `На плате к этому выводу уже подключено: ${part.title}. Назначайте сигнал, только если хотите им управлять.`,
+      t(
+        'На плате к этому выводу уже подключено: {title}. Назначайте сигнал, только если хотите им управлять.',
+        { title: part.title },
+      ),
     );
   return {
     pin,
-    title: part?.title ?? (pin.reserved ? 'Служебный контакт' : 'Свободный вывод ввода-вывода'),
+    title:
+      part?.title ?? (pin.reserved ? t('Служебный контакт') : t('Свободный вывод ввода-вывода')),
     effect:
       part?.effect ??
       (pin.reserved
-        ? 'Питание, земля или служебный контакт корпуса.'
-        : 'К этому выводу на плате ничего не припаяно, он выведен на разъём. Сигнал, назначенный сюда, появится на контакте разъёма как напряжение 0 или 3,3 В.'),
+        ? t('Питание, земля или служебный контакт корпуса.')
+        : t(
+            'К этому выводу на плате ничего не припаяно, он выведен на разъём. Сигнал, назначенный сюда, появится на контакте разъёма как напряжение 0 или 3,3 В.',
+          )),
     assignedTo,
     warnings,
   };

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, request, requestVoid } from '../lib/api';
+import { t } from '../../shared/i18n';
 
 export interface ServerSession {
   user: string;
@@ -23,7 +24,7 @@ export function useServerSession() {
         setSession(null);
         setError('');
       } else
-        setError(cause instanceof Error ? cause.message : 'Не удалось подключиться к серверу.');
+        setError(cause instanceof Error ? cause.message : t('Не удалось подключиться к серверу.'));
     } finally {
       setLoading(false);
     }
@@ -43,7 +44,7 @@ export function useServerSession() {
     return result;
   }, []);
   const logout = useCallback(async () => {
-    await requestVoid('/api/session', { method: 'DELETE' }, 'Не удалось завершить сеанс.');
+    await requestVoid('/api/session', { method: 'DELETE' }, t('Не удалось завершить сеанс.'));
     if (session?.guest) {
       await refresh();
       return;

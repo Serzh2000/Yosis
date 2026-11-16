@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 import type { Project } from '../../shared/types';
 import { identifyProject } from '../lib/projects';
+import { t } from '../../shared/i18n';
 
 export type OpenProject = (next: Project, savePrevious?: boolean) => Promise<void>;
 
@@ -38,7 +39,7 @@ export function useProjectSwitch({
           await flushSave();
         } catch (cause) {
           onError(
-            cause instanceof Error ? cause.message : 'Сохранение текущего проекта недоступно.',
+            cause instanceof Error ? cause.message : t('Сохранение текущего проекта недоступно.'),
           );
           return;
         }

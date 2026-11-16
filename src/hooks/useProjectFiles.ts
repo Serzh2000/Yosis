@@ -7,6 +7,7 @@ import { assignSchematicPins } from '../lib/circuit-board';
 import { canDeleteFile, newFileContent, workTabForFile } from '../lib/file-templates';
 import { cloneProject, validateProject } from '../lib/projects';
 import type { WorkTab } from '../lib/studio-tabs';
+import { t } from '../../shared/i18n';
 
 export type FileDialogState = {
   kind: 'add' | 'rename';
@@ -111,7 +112,7 @@ export function useProjectFiles({
         next.files = assignSchematicPins(next, newFileContent(name)).files;
       validateProject(next);
     } catch (cause) {
-      setFileError(cause instanceof Error ? cause.message : 'Некорректное имя файла.');
+      setFileError(cause instanceof Error ? cause.message : t('Некорректное имя файла.'));
       return;
     }
     setProject(next);
@@ -131,7 +132,7 @@ export function useProjectFiles({
       next.files = assignSchematicPins(next, content).files;
       validateProject(next);
     } catch (cause) {
-      onError(cause instanceof Error ? cause.message : 'Не удалось добавить схему.');
+      onError(cause instanceof Error ? cause.message : t('Не удалось добавить схему.'));
       return;
     }
     setProject(next);
@@ -164,7 +165,7 @@ export function useProjectFiles({
       closeProjectHub();
       setDeletedFile(null);
     } catch (cause) {
-      onError(cause instanceof Error ? cause.message : 'Не удалось восстановить файл.');
+      onError(cause instanceof Error ? cause.message : t('Не удалось восстановить файл.'));
     }
   };
 

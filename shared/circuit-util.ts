@@ -1,4 +1,5 @@
 import type { CircuitPin, EvalContext, Params } from './circuit-types';
+import { t } from './i18n';
 
 export const mask = (width: number): bigint => (1n << BigInt(width)) - 1n;
 /** Число бит, нужное для адресации n значений (не меньше 1). */
@@ -38,7 +39,7 @@ export const output = (
   direction: 'output',
   ...extra,
 });
-export const clockPin = (): CircuitPin => input('CLK', 1, { clock: true, hint: 'Такт' });
+export const clockPin = (): CircuitPin => input('CLK', 1, { clock: true, hint: t('Такт') });
 
 /** Выходы с учётом неизвестных входов: любой неизвестный вход делает все выходы неизвестными. */
 export function combine(
@@ -75,3 +76,15 @@ export function guarded(
 }
 /** Нумерованные имена контактов: A, B, C… */
 export const letters = 'ABCDEFGH';
+
+/** `t()` для текстов с подстановками из параметров блоков: значения любого типа приводятся к строке. */
+export const tn = (text: string, values: Record<string, unknown>): string =>
+  t(text, Object.fromEntries(Object.entries(values).map(([key, value]) => [key, String(value)])));
+
+/** Убирает префикс «Схема: » из сообщения разбора схемы (русский или переведённый). */
+export const stripSchemaPrefix = (message: string): string => {
+  for (const prefix of [t('Схема: {message}', { message: '' }), 'Схема: ']) {
+    if (message.startsWith(prefix)) return message.slice(prefix.length);
+  }
+  return message;
+};

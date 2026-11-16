@@ -12,6 +12,7 @@ import {
 } from '../lib/projects';
 import type { ProjectSummary } from '../lib/projects';
 import { starterProject } from '../lib/starter-project';
+import { t } from '../../shared/i18n';
 
 export function useProjectStore(initialId?: string) {
   const initialProjectId = useRef(initialId).current;
@@ -39,7 +40,7 @@ export function useProjectStore(initialId?: string) {
       .catch(async (cause) => {
         if (disposed) return;
         setStorageError(
-          cause instanceof Error ? cause.message : 'Не удалось открыть сохранённые проекты.',
+          cause instanceof Error ? cause.message : t('Не удалось открыть сохранённые проекты.'),
         );
         // A link may refer to another browser. Preserve this browser's selected project.
         if (initialProjectId) {
@@ -88,7 +89,7 @@ export function useProjectStore(initialId?: string) {
       .catch((cause) => {
         if (projectRef.current === value) {
           setSaveState('error');
-          setStorageError(cause instanceof Error ? cause.message : 'Не удалось сохранить проект.');
+          setStorageError(cause instanceof Error ? cause.message : t('Не удалось сохранить проект.'));
         }
         throw cause;
       });

@@ -1,6 +1,7 @@
 // The route of a lesson. Every lesson goes through the same few stages (an idea, a guess, a try);
 // the pages of a lesson are sorted into them, so the learner sees where in the lesson they are
 // without counting pages. Pure, no React.
+import { t } from '../lib/i18n';
 import type { PageDef } from './content/schema';
 
 export type StageId = 'idea' | 'predict' | 'practice';
@@ -15,9 +16,9 @@ export interface StageInfo {
 }
 
 export const stages: StageInfo[] = [
-  { id: 'idea', label: 'Идея', verb: 'Разберись', to: 'К идее' },
-  { id: 'predict', label: 'Прогноз', verb: 'Предскажи', to: 'К прогнозу' },
-  { id: 'practice', label: 'Практика', verb: 'Попробуй', to: 'К практике' },
+  { id: 'idea', label: t('Идея'), verb: t('Разберись'), to: t('К идее') },
+  { id: 'predict', label: t('Прогноз'), verb: t('Предскажи'), to: t('К прогнозу') },
+  { id: 'practice', label: t('Практика'), verb: t('Попробуй'), to: t('К практике') },
 ];
 const rank = new Map(stages.map((stage, at) => [stage.id, at]));
 export const stageInfo = (id: StageId) => stages[rank.get(id)!]!;

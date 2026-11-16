@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import type { Project, SimulationConfig } from '../../shared/types';
 import { checkLessonTrace, type LessonCase, type LessonVerdict } from '../lib/lessons';
 import { runSimulation } from '../lib/simulation-client';
@@ -23,5 +24,5 @@ export async function checkExercise(
 /** The first failed check in words, for the teacher's view of an attempt. */
 export function failureDetail(verdicts: LessonVerdict[]): string {
   const failed = verdicts.find((item) => !item.passed);
-  return failed ? `${failed.title}: ждали ${failed.expected}, получили ${failed.actual}` : '';
+  return failed ? t('{title}: ждали {expected}, получили {actual}', { title: failed.title, expected: failed.expected, actual: failed.actual }) : '';
 }

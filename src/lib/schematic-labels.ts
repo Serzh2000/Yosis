@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import type { Bit } from '../../shared/types';
 import type { GraphEdge, GraphPort } from './netlist';
 
@@ -64,7 +65,7 @@ export function getBusTapAnnotation(
   const label = [from?.label, to?.label].filter(Boolean).join(' → ');
   return {
     label,
-    description: `${label} · ${edge.width} бит. Подпись указывает разряды этой ветви в общей шине.${from?.aliases || to?.aliases ? ' Повторяющиеся позиции содержат один и тот же сигнал.' : ' Остальные разряды шины подключаются отдельными ветвями.'}`,
+    description: `${label} · ${t('{count} бит.', { count: edge.width })} ${t('Подпись указывает разряды этой ветви в общей шине.')} ${from?.aliases || to?.aliases ? t('Повторяющиеся позиции содержат один и тот же сигнал.') : t('Остальные разряды шины подключаются отдельными ветвями.')}`,
   };
 }
 
@@ -78,7 +79,7 @@ export function friendlyCellName(name: string): string {
   const located = /^\$[^$]*\$(.+?):(\d+)(?:\.\d+(?:-\d+(?:\.\d+)?)?)?\$\d+$/.exec(name);
   if (located) {
     const file = located[1].split('/').pop();
-    return `${file} · строка ${located[2]}`;
+    return `${file} · ${t('строка {line}', { line: located[2] })}`;
   }
   return '';
 }

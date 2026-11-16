@@ -2,6 +2,7 @@ import { validateProject } from '../../shared/project-validation';
 import type { Project, YosysNetlist } from '../../shared/types';
 import { boardPorts, portBitName } from './virtual-board';
 import packageData from './tangnano20k-pins.json';
+import { t } from './i18n';
 
 export interface PlannerSignal {
   name: string;
@@ -17,7 +18,7 @@ export interface PackagePin {
   direction?: 'input' | 'output';
 }
 const labels: Record<number, string> = {
-  4: 'Генератор 27 МГц',
+  4: t('Генератор 27 МГц'),
   5: 'JTAG TMS',
   6: 'JTAG TCK',
   7: 'JTAG TDI',
@@ -29,8 +30,8 @@ const labels: Record<number, string> = {
   62: 'Flash MISO',
   69: 'UART TX → BL616',
   70: 'UART RX ← BL616',
-  87: 'Кнопка S2 · нажата = 1',
-  88: 'Кнопка S1 · нажата = 1',
+  87: t('Кнопка S2 · нажата = 1'),
+  88: t('Кнопка S1 · нажата = 1'),
 };
 const reserved = new Set([5, 6, 7, 8, 9, 59, 60, 61, 62]);
 export const packagePins: PackagePin[] = Array.from({ length: 88 }, (_, index) => {
@@ -44,10 +45,10 @@ export const packagePins: PackagePin[] = Array.from({ length: 88 }, (_, index) =
     label:
       labels[number] ??
       (number >= 15 && number <= 20
-        ? `LED${number - 15} · светится при 0`
+        ? `LED${number - 15} · ${t('светится при 0')}`
         : pin
-          ? 'I/O · сверяйте подключение со схемой платы'
-          : 'Питание, земля или служебный контакт'),
+          ? t('I/O · сверяйте подключение со схемой платы')
+          : t('Питание, земля или служебный контакт')),
     reserved: !pin || reserved.has(number),
     ...([4, 70, 87, 88].includes(number)
       ? { direction: 'input' as const }
@@ -60,7 +61,7 @@ export const packagePins: PackagePin[] = Array.from({ length: 88 }, (_, index) =
 export function plannerSignals(project: Project, rtl?: YosysNetlist): PlannerSignal[] {
   const ports = boardPorts(project, rtl);
   if (ports.reduce((sum, port) => sum + port.width, 0) > 4096)
-    throw new Error('Верхний модуль содержит больше 4096 бит портов.');
+    throw new Error(t('Верхний модуль содержит больше 4096 бит портов.'));
   return ports.flatMap((port) =>
     Array.from({ length: port.width }, (_, bit) => ({
       name: portBitName(port, bit),
@@ -131,9 +132,15 @@ export function assignedPins(directives: CstDirective[]): number[] {
 }
 export function pinCompatibility(signal: PlannerSignal, pin: PackagePin): string | null {
   if (pin.reserved)
-    return `Вывод ${pin.number} занят питанием, конфигурацией или программатором платы.`;
+    return t('Вывод {number} занят питанием, конфигурацией или программатором платы.', {
+      number: pin.number,
+    });
   if (pin.direction && pin.direction !== signal.direction)
-    return `Вывод ${pin.number}: ${pin.label}. Здесь нужен ${pin.direction === 'input' ? 'вход' : 'выход'} схемы.`;
+    return t('Вывод {number}: {label}. Здесь нужен {kind} схемы.', {
+      number: pin.number,
+      label: pin.label,
+      kind: pin.direction === 'input' ? t('вход') : t('выход'),
+    });
   return null;
 }
 
@@ -154,12 +161,16 @@ function properties(directives: CstDirective[], signal: string): Map<string, str
       directive.value.replace(/([A-Za-z_][A-Za-z0-9_]*)\s*=\s*([^\s]+)/g, '').trim()
     )
       throw new Error(
-        `Не удалось разобрать свойства ${signal}. Исправьте IO_PORT в текстовом редакторе.`,
+        t('Не удалось разобрать свойства {signal}. Исправьте IO_PORT в текстовом редакторе.', {
+          signal,
+        }),
       );
     for (const match of matches) {
       const key = match[1].toUpperCase();
       if (result.has(key) && result.get(key) !== match[2])
-        throw new Error(`Для ${signal} заданы противоречивые свойства ${key} в .cst.`);
+        throw new Error(
+          t('Для {signal} заданы противоречивые свойства {key} в .cst.', { signal, key }),
+        );
       result.set(key, match[2]);
     }
   }
@@ -179,15 +190,15 @@ export function readPinProperties(
 /** Patch only this signal's commands; all other constraints and comments survive. */
 export function applyPinEdit(project: Project, signals: PlannerSignal[], edit: PinEdit): Project {
   const signal = signals.find((value) => value.name === edit.signal);
-  if (!signal) throw new Error('Сигнал отсутствует в свежем верхнем модуле. Обновите порты.');
+  if (!signal) throw new Error(t('Сигнал отсутствует в свежем верхнем модуле. Обновите порты.'));
   if (/["\r\n\\]/.test(edit.signal))
-    throw new Error('Это имя порта требует ручного назначения в .cst.');
-  if (!/\.cst$/i.test(edit.file)) throw new Error('Выберите файл .cst.');
-  if (!['NONE', 'UP', 'DOWN'].includes(edit.pull)) throw new Error('Неизвестная подтяжка.');
+    throw new Error(t('Это имя порта требует ручного назначения в .cst.'));
+  if (!/\.cst$/i.test(edit.file)) throw new Error(t('Выберите файл .cst.'));
+  if (!['NONE', 'UP', 'DOWN'].includes(edit.pull)) throw new Error(t('Неизвестная подтяжка.'));
   const directives = readCst(project);
   if (edit.pin !== null) {
     const pin = packagePins.find((value) => value.number === edit.pin);
-    if (!pin) throw new Error('Такого вывода нет у QN88.');
+    if (!pin) throw new Error(t('Такого вывода нет у QN88.'));
     const incompatible = pinCompatibility(signal, pin);
     if (incompatible) throw new Error(incompatible);
     const occupied = directives.find(
@@ -198,13 +209,20 @@ export function applyPinEdit(project: Project, signals: PlannerSignal[], edit: P
     );
     if (occupied)
       throw new Error(
-        `Вывод ${edit.pin} уже назначен сигналу ${occupied.signal} (${occupied.file}:${occupied.line}).`,
+        t('Вывод {pin} уже назначен сигналу {signal} ({file}:{line}).', {
+          pin: edit.pin,
+          signal: occupied.signal,
+          file: occupied.file,
+          line: occupied.line,
+        }),
       );
   }
   const attributes = properties(directives, edit.signal);
   if (attributes.has('IO_TYPE') && !/^LVCMOS33$/i.test(attributes.get('IO_TYPE')!))
     throw new Error(
-      'Дифференциальные и другие стандарты редактируйте в тексте .cst. Планировщик поддерживает LVCMOS33.',
+      t(
+        'Дифференциальные и другие стандарты редактируйте в тексте .cst. Планировщик поддерживает LVCMOS33.',
+      ),
     );
   // Never turn an existing pair assignment into a single pin silently.
   if (
@@ -213,7 +231,7 @@ export function applyPinEdit(project: Project, signals: PlannerSignal[], edit: P
         value.kind === 'IO_LOC' && value.signal === edit.signal && !/^\d+$/.test(value.value),
     )
   )
-    throw new Error('Парное или символьное назначение редактируйте в тексте .cst.');
+    throw new Error(t('Парное или символьное назначение редактируйте в тексте .cst.'));
   attributes.set('IO_TYPE', 'LVCMOS33');
   attributes.set('PULL_MODE', edit.pull);
   const replaceKinds = edit.pin === null ? ['IO_LOC'] : ['IO_LOC', 'IO_PORT'];
@@ -251,7 +269,7 @@ export function applyPinEdit(project: Project, signals: PlannerSignal[], edit: P
     if (!file) {
       file = {
         name: edit.file,
-        content: '// Назначения Tang Nano 20K: номера выводов корпуса QN88.\n',
+        content: `${t('// Назначения Tang Nano 20K: номера выводов корпуса QN88.')}\n`,
       };
       files.push(file);
     }
@@ -272,19 +290,32 @@ export function plannerIssues(project: Project, signals: PlannerSignal[]): strin
     usedPins = new Map<number, string>(),
     issues: string[] = [];
   for (const assignment of directives) {
-    if (seenSignals.has(assignment.signal)) issues.push(`${assignment.signal}: несколько IO_LOC.`);
+    if (seenSignals.has(assignment.signal))
+      issues.push(t('{signal}: несколько IO_LOC.', { signal: assignment.signal }));
     seenSignals.add(assignment.signal);
     const signal = signals.find((value) => value.name === assignment.signal);
-    if (!signal) issues.push(`${assignment.signal}: нет такого порта в верхнем модуле.`);
+    if (!signal)
+      issues.push(t('{signal}: нет такого порта в верхнем модуле.', { signal: assignment.signal }));
     const pins = assignedPins([assignment]);
     if (!pins.length)
-      issues.push(`${assignment.signal}: символьное назначение, проверяйте в .cst.`);
+      issues.push(
+        t('{signal}: символьное назначение, проверяйте в .cst.', { signal: assignment.signal }),
+      );
     for (const number of pins) {
       if (usedPins.has(number))
-        issues.push(`Вывод ${number}: конфликт ${usedPins.get(number)} и ${assignment.signal}.`);
+        issues.push(
+          t('Вывод {number}: конфликт {first} и {second}.', {
+            number,
+            first: usedPins.get(number) ?? '',
+            second: assignment.signal,
+          }),
+        );
       usedPins.set(number, assignment.signal);
       const pin = packagePins.find((value) => value.number === number);
-      if (!pin) issues.push(`${assignment.signal}: вывод ${number} вне корпуса QN88.`);
+      if (!pin)
+        issues.push(
+          t('{signal}: вывод {number} вне корпуса QN88.', { signal: assignment.signal, number }),
+        );
       else if (signal) {
         const error = pinCompatibility(signal, pin);
         if (error) issues.push(`${assignment.signal}: ${error}`);

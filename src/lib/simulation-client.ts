@@ -1,14 +1,15 @@
 import type { Project, SimulationConfig, SimulationResult } from '../../shared/types';
 import { request, requestVoid } from './api';
 import { pollJob } from './job-client';
+import { t } from './i18n';
 
 function pause(signal: AbortSignal): Promise<void> {
-  if (signal.aborted) return Promise.reject(new DOMException('Операция отменена', 'AbortError'));
+  if (signal.aborted) return Promise.reject(new DOMException(t('Операция отменена'), 'AbortError'));
   return new Promise<void>((resolve, reject) => {
     const abort = () => {
       clearTimeout(timer);
       signal.removeEventListener('abort', abort);
-      reject(new DOMException('Операция отменена', 'AbortError'));
+      reject(new DOMException(t('Операция отменена'), 'AbortError'));
     };
     const timer = setTimeout(() => {
       signal.removeEventListener('abort', abort);
@@ -24,7 +25,7 @@ export async function runSimulation(
   signal: AbortSignal,
   onProgress?: (result: SimulationResult) => void,
 ): Promise<SimulationResult> {
-  if (signal.aborted) throw new DOMException('Операция отменена', 'AbortError');
+  if (signal.aborted) throw new DOMException(t('Операция отменена'), 'AbortError');
   // Keep the submission response so cancellation can retrieve and cancel its job id.
   // Aborting this POST after the server queued the job would lose that id.
   let result = await request<SimulationResult>('/api/simulations', {
@@ -39,20 +40,20 @@ export async function runSimulation(
   signal.addEventListener('abort', cancel, { once: true });
   if (signal.aborted) {
     cancel();
-    throw new DOMException('Операция отменена', 'AbortError');
+    throw new DOMException(t('Операция отменена'), 'AbortError');
   }
   try {
     onProgress?.(result);
     while (result.status === 'queued' || result.status === 'running') {
       await pause(signal);
-      if (signal.aborted) throw new DOMException('Операция отменена', 'AbortError');
+      if (signal.aborted) throw new DOMException(t('Операция отменена'), 'AbortError');
       result = await pollJob(`/api/simulations/${id}`, result, signal);
       onProgress?.(result);
     }
     if (result.status !== 'success' || !result.vcd)
       throw new Error(
         result.error ||
-          (result.status === 'cancelled' ? 'Симуляция отменена.' : 'Симулятор не вернул VCD.'),
+          (result.status === 'cancelled' ? t('Симуляция отменена.') : t('Симулятор не вернул VCD.')),
       );
     return result;
   } catch (failure) {

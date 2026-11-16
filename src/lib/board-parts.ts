@@ -1,3 +1,4 @@
+import { t } from './i18n';
 /**
  * Parts soldered on the Sipeed Tang Nano 20K that are wired to FPGA pins (QN88 package numbers).
  * Shared by the virtual board and the pin planner so both describe the board the same way.
@@ -26,23 +27,26 @@ export const UART_TX_PIN = 69;
 export const UART_RX_PIN = 70;
 
 const ledEffect = (index: number) =>
-  `Светодиод LED${index} на плате. Он горит, когда на выводе 0, и гаснет, когда на выводе 1.`;
+  t('Светодиод LED{index} на плате. Он горит, когда на выводе 0, и гаснет, когда на выводе 1.', {
+    index,
+  });
 
 export const boardParts: BoardPart[] = [
   {
     pin: CLOCK_PIN,
     kind: 'clock',
-    caption: '27 МГц',
-    title: 'Генератор тактов 27 МГц',
+    caption: t('27 МГц'),
+    title: t('Генератор тактов 27 МГц'),
     direction: 'input',
-    effect:
+    effect: t(
       'Кварцевый генератор. Сигнал на этом выводе 27 миллионов раз в секунду меняется с 0 на 1 и обратно: это «метроном» для всей схемы.',
+    ),
   },
   ...LED_PINS.map((pin, index): BoardPart => ({
     pin,
     kind: 'led',
     caption: `LED${index}`,
-    title: `Светодиод LED${index}`,
+    title: t('Светодиод LED{index}', { index }),
     direction: 'output',
     effect: ledEffect(index),
   })),
@@ -50,17 +54,17 @@ export const boardParts: BoardPart[] = [
     pin: BUTTON_PINS.S2,
     kind: 'button',
     caption: 'S2',
-    title: 'Кнопка S2',
+    title: t('Кнопка S2'),
     direction: 'input',
-    effect: 'Кнопка S2. Пока она нажата, на выводе 1, когда отпущена — 0.',
+    effect: t('Кнопка S2. Пока она нажата, на выводе 1, когда отпущена — 0.'),
   },
   {
     pin: BUTTON_PINS.S1,
     kind: 'button',
     caption: 'S1',
-    title: 'Кнопка S1',
+    title: t('Кнопка S1'),
     direction: 'input',
-    effect: 'Кнопка S1. Пока она нажата, на выводе 1, когда отпущена — 0.',
+    effect: t('Кнопка S1. Пока она нажата, на выводе 1, когда отпущена — 0.'),
   },
   {
     pin: UART_TX_PIN,
@@ -68,8 +72,9 @@ export const boardParts: BoardPart[] = [
     caption: 'TX',
     title: 'UART TX → BL616',
     direction: 'output',
-    effect:
+    effect: t(
       'Передача данных в компьютер через USB: чип BL616 превращает эти сигналы в виртуальный COM-порт.',
+    ),
   },
   {
     pin: UART_RX_PIN,
@@ -77,7 +82,7 @@ export const boardParts: BoardPart[] = [
     caption: 'RX',
     title: 'UART RX ← BL616',
     direction: 'input',
-    effect: 'Приём данных из компьютера через USB (виртуальный COM-порт).',
+    effect: t('Приём данных из компьютера через USB (виртуальный COM-порт).'),
   },
   ...(
     [
@@ -92,7 +97,7 @@ export const boardParts: BoardPart[] = [
     caption: name,
     title: `JTAG ${name}`,
     service: true,
-    effect: 'Служебный вывод программатора JTAG: через него компьютер загружает схему в FPGA.',
+    effect: t('Служебный вывод программатора JTAG: через него компьютер загружает схему в FPGA.'),
   })),
   {
     pin: 9,
@@ -100,7 +105,7 @@ export const boardParts: BoardPart[] = [
     caption: 'RECONFIG',
     title: 'RECONFIG_N',
     service: true,
-    effect: 'Служебный вывод: перезапуск загрузки конфигурации.',
+    effect: t('Служебный вывод: перезапуск загрузки конфигурации.'),
   },
   ...(
     [
@@ -115,7 +120,7 @@ export const boardParts: BoardPart[] = [
     caption: name,
     title: name,
     service: true,
-    effect: 'Связь с микросхемой флеш-памяти, где хранится схема после выключения питания.',
+    effect: t('Связь с микросхемой флеш-памяти, где хранится схема после выключения питания.'),
   })),
 ];
 

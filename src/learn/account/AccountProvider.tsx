@@ -1,3 +1,4 @@
+import { t } from '../../lib/i18n';
 import {
   createContext,
   useCallback,
@@ -87,7 +88,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       setUserState(null);
       setStatus('guest');
       setNotice(
-        'Вход закончился. Прогресс сохранён в этом браузере; войди снова, и он синхронизируется.',
+        t('Вход закончился. Прогресс сохранён в этом браузере; войди снова, и он синхронизируется.'),
       );
     };
     return () => {
@@ -164,12 +165,12 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         <div className="acct-notice" role="status">
           <span>{notice}</span>
           <button type="button" onClick={() => setAuthOpen(true)}>
-            Войти
+            {t('Войти')}
           </button>
           <button
             type="button"
-            aria-label="Закрыть сообщение"
-            title="Закрыть"
+            aria-label={t('Закрыть сообщение')}
+            title={t('Закрыть')}
             onClick={() => setNotice('')}
           >
             ×

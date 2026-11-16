@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Boxes, ChevronDown, ChevronRight } from 'lucide-react';
 import type { HierarchyNode } from '../lib/netlist';
+import { t } from '../lib/i18n';
 
 export function HierarchyBranch({
   node,
@@ -23,7 +24,7 @@ export function HierarchyBranch({
         <button
           className="tree-expander"
           onClick={() => setExpanded(!expanded)}
-          aria-label={expanded ? 'Свернуть модуль' : 'Раскрыть модуль'}
+          aria-label={expanded ? t('Свернуть модуль') : t('Раскрыть модуль')}
           disabled={!node.children.length}
         >
           {node.children.length ? (
@@ -39,7 +40,7 @@ export function HierarchyBranch({
         <button
           className="tree-module"
           onClick={() => onSelect(node.moduleName)}
-          title={`${node.moduleName} · ${node.resources.total} элементов`}
+          title={`${node.moduleName} · ${t('{count} элементов', { count: node.resources.total })}`}
         >
           <Boxes size={14} />
           <span>{node.name}</span>
@@ -58,7 +59,7 @@ export function HierarchyBranch({
         ))}
       {node.truncated && (
         <div className="tree-truncated" style={{ paddingLeft: 17 + depth * 15 }}>
-          Часть экземпляров скрыта
+          {t('Часть экземпляров скрыта')}
         </div>
       )}
     </>

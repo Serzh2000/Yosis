@@ -2,6 +2,7 @@ import { memo, useState } from 'react';
 import { ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { PARTS, PART_GROUPS } from '../../lib/lab/catalog';
 import { PartIcon } from './PartIcon';
+import { t } from '../../lib/i18n';
 
 /** What a card dragged out of the library carries: the id of its part. */
 export const PART_DRAG_TYPE = 'application/x-yosis-lab-part';
@@ -22,14 +23,14 @@ export const Library = memo(function Library({
   );
   const found = query.trim().toLowerCase();
   return (
-    <aside className="lab-library" aria-label="Детали">
+    <aside className="lab-library" aria-label={t('Детали')}>
       <label className="lab-search">
         <Search size={14} aria-hidden="true" />
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder={`Найти среди ${offered.length} деталей`}
-          aria-label="Поиск детали"
+          placeholder={t('Найти среди {n} деталей', { n: offered.length })}
+          aria-label={t('Поиск детали')}
         />
       </label>
       <div className="lab-library-list">
@@ -58,7 +59,7 @@ export const Library = memo(function Library({
                 }
               >
                 <Chevron size={14} aria-hidden="true" />
-                {group} <small>{parts.length}</small>
+                {t(group)} <small>{parts.length}</small>
               </button>
               {shown && (
                 <div className="lab-cards">
@@ -68,7 +69,7 @@ export const Library = memo(function Library({
                       type="button"
                       className="lab-item"
                       title={`${part.title}. ${part.note}`}
-                      aria-label={`Добавить деталь: ${part.title}`}
+                      aria-label={t('Добавить деталь: {title}', { title: part.title })}
                       onClick={() => onAdd(part.id)}
                       draggable
                       onDragStart={(event) => {
@@ -106,15 +107,15 @@ export const PartsShelf = memo(function PartsShelf({
   const offered = PARTS.filter((part) => parts.includes(part.id));
   if (!offered.length) return null;
   return (
-    <aside className="lab-shelf" aria-label="Детали страницы">
-      <span className="lab-shelf-title">Детали</span>
+    <aside className="lab-shelf" aria-label={t('Детали страницы')}>
+      <span className="lab-shelf-title">{t('Детали')}</span>
       {offered.map((part) => (
         <button
           key={part.id}
           type="button"
           className="lab-shelf-item"
           title={`${part.title}. ${part.note}`}
-          aria-label={`Добавить деталь: ${part.title}`}
+          aria-label={t('Добавить деталь: {title}', { title: part.title })}
           onClick={() => onAdd(part.id)}
           draggable
           onDragStart={(event) => {

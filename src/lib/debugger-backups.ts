@@ -1,5 +1,6 @@
 import { FLASH_SECTOR, MAX_DEBUGGER_FLASH, firmwareHash, type DebuggerFlash } from './bl616-flash';
 import { DATABASES } from './storage';
+import { t } from '../../shared/i18n';
 
 export interface DebuggerBackup {
   version: 1;
@@ -26,12 +27,12 @@ export async function validateDebuggerBackup(value: DebuggerBackup): Promise<Deb
     !Number.isFinite(value.createdAt) ||
     (await firmwareHash(new Uint8Array(value.bytes))) !== value.hash
   )
-    throw new Error('Резервная копия BL616 повреждена. Запись запрещена.');
+    throw new Error(t('Резервная копия BL616 повреждена. Запись запрещена.'));
   return value;
 }
 async function database() {
   if (typeof indexedDB === 'undefined')
-    throw new Error('Браузер не поддерживает сохранение резервной копии. Установка запрещена.');
+    throw new Error(t('Браузер не поддерживает сохранение резервной копии. Установка запрещена.'));
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(
       DATABASES.debuggerBackups.name,
@@ -43,9 +44,9 @@ async function database() {
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () =>
-      reject(new Error('Не удалось открыть хранилище резервных копий BL616.'));
+      reject(new Error(t('Не удалось открыть хранилище резервных копий BL616.')));
     request.onblocked = () =>
-      reject(new Error('Другая вкладка блокирует хранилище. Закрой её перед установкой.'));
+      reject(new Error(t('Другая вкладка блокирует хранилище. Закрой её перед установкой.')));
   });
 }
 export async function saveDebuggerBackup(
@@ -84,14 +85,14 @@ export async function saveDebuggerBackup(
       transaction.onerror = transaction.onabort = () =>
         reject(
           new Error(
-            'Резервная копия не сохранена. Проверь свободное место в браузере. Запись запрещена.',
+            t('Резервная копия не сохранена. Проверь свободное место в браузере. Запись запрещена.'),
           ),
         );
     });
     const read = await new Promise<DebuggerBackup>((resolve, reject) => {
       const request = db.transaction('backups', 'readonly').objectStore('backups').get(key);
       request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(new Error('Не удалось перечитать сохранённую копию.'));
+      request.onerror = () => reject(new Error(t('Не удалось перечитать сохранённую копию.')));
     });
     return await validateDebuggerBackup(read);
   } finally {
@@ -108,7 +109,7 @@ export async function originalDebuggerBackup(chipId: string): Promise<DebuggerBa
         .index('chipId')
         .getAll(chipId);
       request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(new Error('Не удалось прочитать резервную копию.'));
+      request.onerror = () => reject(new Error(t('Не удалось прочитать резервную копию.')));
     });
     rows.sort((a, b) => a.createdAt - b.createdAt);
     return rows.length ? await validateDebuggerBackup(rows[0]) : null;
@@ -123,7 +124,7 @@ export async function storedDebuggerBackup(key: string): Promise<DebuggerBackup>
       const request = db.transaction('backups', 'readonly').objectStore('backups').get(key);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () =>
-        reject(new Error('Не удалось перечитать резервную копию перед записью.'));
+        reject(new Error(t('Не удалось перечитать резервную копию перед записью.')));
     });
     return await validateDebuggerBackup(backup);
   } finally {

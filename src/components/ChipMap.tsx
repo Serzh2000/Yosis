@@ -24,6 +24,7 @@ import {
   type TileBounds,
 } from '../lib/chip-map';
 import './chip-map.css';
+import { t } from '../lib/i18n';
 
 const AXIS_X = 30;
 const AXIS_Y = 20;
@@ -366,35 +367,37 @@ export function ChipMap({
   return (
     <div className="chip-map">
       <div className="chip-map-main">
-        <div className="chip-map-toolbar" role="toolbar" aria-label="Масштаб карты кристалла">
+        <div className="chip-map-toolbar" role="toolbar" aria-label={t('Масштаб карты кристалла')}>
           <button
             onClick={() => fit(used ?? whole, used ? 2.5 : 0.5)}
-            title="Приблизить к области, где разместилась ваша логика"
+            title={t('Приблизить к области, где разместилась ваша логика')}
           >
-            <Focus size={14} /> Моя логика
+            <Focus size={14} /> {t('Моя логика')}
           </button>
-          <button onClick={() => fit(whole, 0.5)} title="Показать весь кристалл">
-            <Maximize2 size={14} /> Весь кристалл
+          <button onClick={() => fit(whole, 0.5)} title={t('Показать весь кристалл')}>
+            <Maximize2 size={14} /> {t('Весь кристалл')}
           </button>
           <button
             disabled={!selectionBounds}
             onClick={() => focusTiles(selectionBounds)}
-            title="Приблизить к выбранному тайлу или модулю"
+            title={t('Приблизить к выбранному тайлу или модулю')}
           >
-            <ScanSearch size={14} /> К выбору
+            <ScanSearch size={14} /> {t('К выбору')}
           </button>
           <span className="chip-zoom-buttons">
             <button
-              aria-label="Уменьшить"
+              aria-label={t('Уменьшить')}
               onClick={() =>
                 setView((v) => zoomAt(v, 1 / 1.4, viewport.width / 2, viewport.height / 2))
               }
             >
               <Minus size={14} />
             </button>
-            <output aria-label="Масштаб">{Math.round(view.scale)} px/тайл</output>
+            <output aria-label={t('Масштаб')}>
+              {Math.round(view.scale)} {t('px/тайл')}
+            </output>
             <button
-              aria-label="Увеличить"
+              aria-label={t('Увеличить')}
               onClick={() =>
                 setView((v) => zoomAt(v, 1.4, viewport.width / 2, viewport.height / 2))
               }
@@ -407,7 +410,7 @@ export function ChipMap({
           <canvas
             ref={canvas}
             role="img"
-            aria-label="Тепловая карта размещённых элементов FPGA"
+            aria-label={t('Тепловая карта размещённых элементов FPGA')}
             style={{ width: size.width, height: size.height }}
             onPointerDown={(event) => {
               event.currentTarget.setPointerCapture(event.pointerId);
@@ -466,16 +469,18 @@ export function ChipMap({
                 top: Math.min(hover.py + 14, size.height - 120),
               }}
             >
-              <strong>
-                Тайл X{hovered.x} Y{hovered.y}
-              </strong>
+              <strong>{t('Тайл X{x} Y{y}', { x: hovered.x, y: hovered.y })}</strong>
               <span>
                 {hovered.cells.length
-                  ? `LUT: ${hoveredSummary.logic} · регистры: ${hoveredSummary.registers}${hoveredSummary.pins ? ` · выводы: ${hoveredSummary.pins}` : ''}${hoveredSummary.memory ? ` · память: ${hoveredSummary.memory}` : ''}`
-                  : 'Свободный тайл'}
+                  ? `LUT: ${hoveredSummary.logic} · ${t('регистры')}: ${hoveredSummary.registers}${hoveredSummary.pins ? ` · ${t('выводы')}: ${hoveredSummary.pins}` : ''}${hoveredSummary.memory ? ` · ${t('память')}: ${hoveredSummary.memory}` : ''}`
+                  : t('Свободный тайл')}
               </span>
-              {!!hovered.routingPips && <span>Включено связей: {hovered.routingPips}</span>}
-              {!!hoverModules.length && <span>Модуль: {hoverModules.join(', ')}</span>}
+              {!!hovered.routingPips && (
+                <span>{t('Включено связей: {count}', { count: hovered.routingPips })}</span>
+              )}
+              {!!hoverModules.length && (
+                <span>{t('Модуль: {names}', { names: hoverModules.join(', ') })}</span>
+              )}
             </div>
           )}
           {hover && !hovered && (
@@ -487,20 +492,18 @@ export function ChipMap({
                 top: Math.min(hover.py + 14, size.height - 80),
               }}
             >
-              <strong>
-                Тайл X{hover.x} Y{hover.y}
-              </strong>
+              <strong>{t('Тайл X{x} Y{y}', { x: hover.x, y: hover.y })}</strong>
               <span>
                 {isBorderTile(map, hover.x, hover.y)
-                  ? 'Край кристалла (ввод-вывод)'
-                  : 'Свободный тайл'}
+                  ? t('Край кристалла (ввод-вывод)')
+                  : t('Свободный тайл')}
               </span>
             </div>
           )}
           <button
             className="chip-minimap"
-            aria-label="Мини-карта: нажмите, чтобы перейти"
-            title="Мини-карта всего кристалла. Рамка показывает, что вы видите сейчас."
+            aria-label={t('Мини-карта: нажмите, чтобы перейти')}
+            title={t('Мини-карта всего кристалла. Рамка показывает, что вы видите сейчас.')}
             onClick={miniClick}
           >
             <canvas ref={mini} style={{ width: MINI_W, height: miniH }} />
@@ -511,13 +514,16 @@ export function ChipMap({
             {map.family ?? 'Gowin'} · {artifactName}
           </span>
           <span>
-            Тайлы X: 0–{map.maxX} · Y: 0–{map.maxY} · колесо — масштаб, перетаскивание — сдвиг
+            {t('Тайлы X: 0–{maxX} · Y: 0–{maxY} · колесо — масштаб, перетаскивание — сдвиг', {
+              maxX: map.maxX,
+              maxY: map.maxY,
+            })}
           </span>
         </div>
       </div>
       <aside className="chip-map-side">
         <fieldset className="chip-layers">
-          <legend>Слои карты</legend>
+          <legend>{t('Слои карты')}</legend>
           {chipLayers.map((layer) => (
             <label key={layer.id}>
               <input
@@ -534,15 +540,18 @@ export function ChipMap({
           ))}
         </fieldset>
         <div className="chip-regions">
-          <strong>Области кристалла</strong>
+          <strong>{t('Области кристалла')}</strong>
           <small>
-            Тонкая цветная подложка по краю: ряд ввода-вывода. Вертикальная полоса: колонка блочной
-            памяти или DSP (видна, только если схема её использует).
+            {t(
+              t(
+                'Тонкая цветная подложка по краю: ряд ввода-вывода. Вертикальная полоса: колонка блочной памяти или DSP (видна, только если схема её использует).',
+              ),
+            )}
           </small>
         </div>
         <div className="chip-modules">
-          <strong>Модули вашей схемы</strong>
-          <small>Выберите модуль: все его ячейки подсветятся на карте.</small>
+          <strong>{t('Модули вашей схемы')}</strong>
+          <small>{t('Выберите модуль: все его ячейки подсветятся на карте.')}</small>
           <ul>
             {modules.map((item) => (
               <li key={item.hierarchy}>
@@ -553,14 +562,14 @@ export function ChipMap({
                 >
                   <span title={item.hierarchy}>{item.hierarchy}</span>
                   <small>
-                    {item.cells} яч. · {item.tiles} тайл.
+                    {t('{cells} яч. · {tiles} тайл.', { cells: item.cells, tiles: item.tiles })}
                   </small>
                 </button>
               </li>
             ))}
           </ul>
           {module && (
-            <div className="chip-module-cells" aria-label={`Ячейки модуля ${module}`}>
+            <div className="chip-module-cells" aria-label={t('Ячейки модуля {module}', { module })}>
               {moduleCells.slice(0, 40).map((cell) => (
                 <button
                   key={cell.name}
@@ -578,21 +587,25 @@ export function ChipMap({
                 </button>
               ))}
               {moduleCells.length > 40 && (
-                <small>Показаны первые 40 из {moduleCells.length}.</small>
+                <small>{t('Показаны первые 40 из {count}.', { count: moduleCells.length })}</small>
               )}
             </div>
           )}
         </div>
-        <div className="chip-scale" aria-label="Шкала цвета">
-          <strong>Цвет</strong>
+        <div className="chip-scale" aria-label={t('Шкала цвета')}>
+          <strong>{t('Цвет')}</strong>
           <small>
-            Цвет тайла: ресурс, которого в нём больше всего. Полоска внизу тайла: плотность
-            трассировки от 1 до {maxRouting} связей. Это занятость, а не температура и не мощность.
+            {t(
+              t(
+                'Цвет тайла: ресурс, которого в нём больше всего. Полоска внизу тайла: плотность трассировки от 1 до {max} связей. Это занятость, а не температура и не мощность.',
+              ),
+              { max: maxRouting },
+            )}
           </small>
           <span className="chip-gradient" />
           <span className="chip-gradient-labels">
-            <small>мало</small>
-            <small>много связей</small>
+            <small>{t('мало')}</small>
+            <small>{t('много связей')}</small>
           </span>
         </div>
       </aside>
@@ -641,7 +654,11 @@ function drawSlots(
     });
     if (tile.cells.length > rows) {
       ctx.fillStyle = soft;
-      ctx.fillText(`ещё ${tile.cells.length - rows}…`, px + 15, py + 6 + rows * 17 - 6);
+      ctx.fillText(
+        t('ещё {count}…', { count: tile.cells.length - rows }),
+        px + 15,
+        py + 6 + rows * 17 - 6,
+      );
     }
     return;
   }

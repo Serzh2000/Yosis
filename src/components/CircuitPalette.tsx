@@ -26,7 +26,7 @@ export function SymbolPreview({ entry }: { entry: LibraryEntry }) {
       className="palette-symbol"
       viewBox={`${-margin} ${-margin} ${geo.width + margin * 2} ${geo.height + margin * 2}`}
       role="img"
-      aria-label={`Символ: ${entry.title}`}
+      aria-label={t('Символ: {title}', { title: entry.title })}
     >
       <CircuitSymbol node={node} />
       {geo.pins.map((pin) => (
@@ -62,8 +62,8 @@ export function CircuitPalette({
         <Search size={14} aria-hidden="true" />
         <input
           type="search"
-          aria-label="Поиск элемента"
-          placeholder="Найти: счётчик, И, кнопка…"
+          aria-label={t('Поиск элемента')}
+          placeholder={t('Найти: счётчик, И, кнопка…')}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
@@ -110,10 +110,10 @@ export function CircuitPalette({
           );
         })}
         {!visible.length && (
-          <p className="palette-empty">Ничего не найдено. Попробуйте другое слово.</p>
+          <p className="palette-empty">{t('Ничего не найдено. Попробуйте другое слово.')}</p>
         )}
       </div>
-      <p className="palette-hint">Нажмите на элемент или перетащите его на схему.</p>
+      <p className="palette-hint">{t('Нажмите на элемент или перетащите его на схему.')}</p>
       {hover && (
         <div className="palette-card" id="palette-card" role="tooltip">
           <SymbolPreview entry={hover} />

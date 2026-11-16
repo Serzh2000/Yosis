@@ -1,4 +1,5 @@
 import { LAB_OP, type LabDesign } from '../../../shared/lab';
+import { t } from '../../../shared/i18n';
 
 /** One watched net: where a device looks at the design. */
 export interface LabProbe {
@@ -368,7 +369,9 @@ function orderGates(design: LabDesign): Int32Array {
   }
   if (placed !== count)
     throw new Error(
-      'В схеме есть комбинационная петля: выход логики приходит на её же вход без регистра. Лаборатория не может её посчитать.',
+      t(
+        'В схеме есть комбинационная петля: выход логики приходит на её же вход без регистра. Лаборатория не может её посчитать.',
+      ),
     );
   return order;
 }

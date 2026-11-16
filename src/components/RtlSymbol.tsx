@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { friendlyCellName } from '../lib/schematic-labels';
 import type { YosysCell } from '../../shared/types';
 import type { GraphNode, GraphPort } from '../lib/netlist';
@@ -93,10 +94,10 @@ export function getRtlSymbol(node: GraphNode, cell?: YosysCell): RtlSymbolSpec |
           ? 'NOT'
           : kind.toUpperCase() + (inverted ? ' + NOT' : '');
     const detail = logical
-      ? `${kind === 'not' ? 'A == 0' : kind === 'and' ? '&&' : '||'} · логическое ${inputWidth}→${outputWidth}`
+      ? `${kind === 'not' ? 'A == 0' : kind === 'and' ? '&&' : '||'} · ${t('логическое {input}→{output}', { input: inputWidth, output: outputWidth })}`
       : reduce
-        ? `свёртка ${inputWidth}→${outputWidth}`
-        : `${kind === 'not' ? '~ · ' : ''}${outputWidth > 1 ? `×${outputWidth} · побитовое` : label}`;
+        ? t('свёртка {input}→{output}', { input: inputWidth, output: outputWidth })
+        : `${kind === 'not' ? '~ · ' : ''}${outputWidth > 1 ? `×${outputWidth} · ${t('побитовое')}` : label}`;
     const pins: RtlSymbolPort[] = node.ports.map((port) => {
       const output = port.direction === 'output';
       const index = inputs.indexOf(port);
@@ -125,7 +126,7 @@ export function getRtlSymbol(node: GraphNode, cell?: YosysCell): RtlSymbolSpec |
       inverted: type === '$_NMUX_',
       detail: parallel
         ? `one-hot · ${selector?.bits.length ?? '?'}×${outputWidth}`
-        : `${outputWidth} бит`,
+        : t('{count} бит', { count: outputWidth }),
       ports: node.ports.map((port) => ({
         id: port.id,
         name: port.name,
@@ -136,7 +137,7 @@ export function getRtlSymbol(node: GraphNode, cell?: YosysCell): RtlSymbolSpec |
         role: port.name === 'S' ? 'select' : port.direction === 'output' ? 'output' : 'input',
       })),
       ...(parallel && b && selector && b.bits.length !== selector.bits.length * outputWidth
-        ? { detail: `one-hot · B=${b.bits.length} бит` }
+        ? { detail: `one-hot · B=${t('{count} бит', { count: b.bits.length })}` }
         : {}),
     };
   }
@@ -147,7 +148,7 @@ export function getRtlSymbol(node: GraphNode, cell?: YosysCell): RtlSymbolSpec |
       height: 138,
       label: type === '$sub' ? '−' : '+',
       subtract: type === '$sub',
-      detail: `${outputWidth} бит${polarity(params.A_SIGNED, false) && polarity(params.B_SIGNED, false) ? ' · знаковый' : ''}`,
+      detail: `${t('{count} бит', { count: outputWidth })}${polarity(params.A_SIGNED, false) && polarity(params.B_SIGNED, false) ? ` · ${t('знаковый')}` : ''}`,
       ports: node.ports.map((port) => ({
         id: port.id,
         name: port.name,
@@ -182,8 +183,8 @@ export function getRtlSymbol(node: GraphNode, cell?: YosysCell): RtlSymbolSpec |
       height: 138,
       label: comparisons[type] ?? shifts[type],
       detail: compare
-        ? `сравнение${signed ? ' · знаковое' : ''}${type === '$eqx' || type === '$nex' ? ' · X/Z' : ''}`
-        : `${outputWidth} бит · ${signed ? 'со знаком' : 'сдвиг'}`,
+        ? `${t('сравнение')}${signed ? ` · ${t('знаковое')}` : ''}${type === '$eqx' || type === '$nex' ? ' · X/Z' : ''}`
+        : `${t('{count} бит', { count: outputWidth })} · ${signed ? t('со знаком') : t('сдвиг')}`,
       ports: node.ports.map((port) => ({
         id: port.id,
         name: port.name,
@@ -256,7 +257,7 @@ export function getRtlSymbol(node: GraphNode, cell?: YosysCell): RtlSymbolSpec |
     height: 172,
     label: latch ? 'LATCH' : 'DFF',
     resetInfo,
-    detail: `${outputWidth} бит${latch ? ' · по уровню EN' : synchronous && enable ? ` · ${enabledReset ? 'EN > R' : 'R > EN'}` : ''}`,
+    detail: `${t('{count} бит', { count: outputWidth })}${latch ? ` · ${t('по уровню EN')}` : synchronous && enable ? ` · ${enabledReset ? 'EN > R' : 'R > EN'}` : ''}`,
     ports: node.ports.map((port) => {
       const resetIndex = resetPorts.indexOf(port);
       if (resetIndex >= 0)
@@ -394,7 +395,7 @@ export function RtlSymbol({ node, spec }: { node: GraphNode; spec: RtlSymbolSpec
         }
         return (
           <g key={port.id} className={`rtl-terminal role-${port.role}`} data-pin={port.name}>
-            <title>{`${port.label}${port.role === 'clock' ? (port.negative ? ' · спад тактового сигнала' : ' · фронт тактового сигнала') : port.negative ? ' · активный низкий уровень' : ''}`}</title>
+            <title>{`${port.label}${port.role === 'clock' ? (port.negative ? ` · ${t('спад тактового сигнала')}` : ` · ${t('фронт тактового сигнала')}`) : port.negative ? ` · ${t('активный низкий уровень')}` : ''}`}</title>
             <path className="rtl-pin-line" d={`M${port.x},${port.y} L${endX},${endY}`} />
             <circle className="schematic-port rtl-port-dot" cx={port.x} cy={port.y} r="2" />
             {port.negative && (

@@ -24,8 +24,9 @@ import './pin-planner.css';
 import { CanvasViewport } from './CanvasViewport';
 import { Dialog } from './Dialog';
 import { explainPin } from '../lib/pin-glossary';
+import { t } from '../lib/i18n';
 
-const directionLabels = { input: 'Вход', output: 'Выход', inout: 'I/O' };
+const directionLabels = { input: t('Вход'), output: t('Выход'), inout: 'I/O' };
 export function PinPlanner({
   project,
   rtl,
@@ -98,10 +99,16 @@ export function PinPlanner({
   function applyPlan(list: typeof suggestions, label: string) {
     try {
       onChange(applySuggestions(project, signals, list, fileName));
-      setMessage(`${label}: назначено ${list.length}. Записано в ${fileName}.`);
+      setMessage(
+        t('{label}: назначено {count}. Записано в {fileName}.', {
+          label,
+          count: list.length,
+          fileName,
+        }),
+      );
       setError('');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Не удалось применить подсказки.');
+      setError(cause instanceof Error ? cause.message : t('Не удалось применить подсказки.'));
     }
   }
   const conflict =
@@ -144,7 +151,7 @@ export function PinPlanner({
       pull: pullMode,
     });
     if (other) {
-      note = ` Сигнал ${other} остался без вывода.`;
+      note = ` ${t('Сигнал {other} остался без вывода.', { other })}`;
       if (old !== null)
         try {
           next = applyPinEdit(next, signals, {
@@ -153,7 +160,7 @@ export function PinPlanner({
             file: fileName,
             pull: pullOf(other),
           });
-          note = ` Сигнал ${other} переехал на вывод ${old}.`;
+          note = ` ${t('Сигнал {other} переехал на вывод {old}.', { other, old })}`;
         } catch {
           /* The freed pin does not suit the other signal: it stays unassigned. */
         }
@@ -185,13 +192,13 @@ export function PinPlanner({
       const note = place(current, unassign ? null : pin, pull);
       setMessage(
         unassign
-          ? `${current.name}: вывод освобождён.`
-          : `${current.name} → ${pin}. Назначение записано в ${fileName}.${note}`,
+          ? t('{name}: вывод освобождён.', { name: current.name })
+          : `${t('{name} → {pin}. Назначение записано в {fileName}.', { name: current.name, pin: pin ?? '', fileName })}${note}`,
       );
       setError('');
       if (unassign) setPin(null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Не удалось сохранить назначение.');
+      setError(cause instanceof Error ? cause.message : t('Не удалось сохранить назначение.'));
     }
   }
   function changeInTable(signal: PlannerSignal, value: string) {
@@ -207,12 +214,12 @@ export function PinPlanner({
       );
       setMessage(
         number === null
-          ? `${signal.name}: вывод освобождён.`
-          : `${signal.name} → ${number}. Назначение записано в ${fileName}.${note}`,
+          ? t('{name}: вывод освобождён.', { name: signal.name })
+          : `${t('{name} → {pin}. Назначение записано в {fileName}.', { name: signal.name, pin: number, fileName })}${note}`,
       );
       setError('');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Не удалось сохранить назначение.');
+      setError(cause instanceof Error ? cause.message : t('Не удалось сохранить назначение.'));
     }
   }
   function createFile() {
@@ -223,8 +230,7 @@ export function PinPlanner({
         ...project.files,
         {
           name: fileName,
-          content:
-            '// Физические ограничения Tang Nano 20K.\n// Назначьте порты на рисунке корпуса или добавьте IO_LOC / IO_PORT вручную.\n',
+          content: `${t('// Физические ограничения Tang Nano 20K.')}\n${t('// Назначьте порты на рисунке корпуса или добавьте IO_LOC / IO_PORT вручную.')}\n`,
         },
       ],
     });
@@ -238,20 +244,20 @@ export function PinPlanner({
   return (
     <section className="pin-planner">
       <header className="pin-toolbar">
-        <div className="pin-view-switch" role="group" aria-label="Вид назначений">
+        <div className="pin-view-switch" role="group" aria-label={t('Вид назначений')}>
           <button aria-pressed={view === 'planner'} onClick={() => setView('planner')}>
             <MapPin size={15} />
-            Планировщик выводов
+            {t('Планировщик выводов')}
           </button>
           <button aria-pressed={view === 'text'} onClick={() => setView('text')}>
             <Code2 size={15} />
-            Текст .cst
+            {t('Текст .cst')}
           </button>
         </div>
         <label className="pin-file">
-          Файл
+          {t('Файл')}
           <select
-            aria-label="Файл назначений"
+            aria-label={t('Файл назначений')}
             value={fileName}
             onChange={(event) => setTargetFile(event.target.value)}
           >
@@ -269,35 +275,35 @@ export function PinPlanner({
             renderEditor(file)
           ) : (
             <div className="empty-workspace">
-              <h2>Файл назначений ещё не создан</h2>
+              <h2>{t('Файл назначений ещё не создан')}</h2>
               <button className="button primary" onClick={createFile}>
-                Создать {fileName}
+                {t('Создать {fileName}', { fileName })}
               </button>
             </div>
           )}
         </div>
       ) : (
         <>
-          <ol className="pin-steps" aria-label="Как назначить вывод">
+          <ol className="pin-steps" aria-label={t('Как назначить вывод')}>
             <li className={stepState[0]}>
-              <b>{stepState[0] === 'done' ? <Check size={16} aria-label="готово" /> : 1}</b>
+              <b>{stepState[0] === 'done' ? <Check size={16} aria-label={t('готово')} /> : 1}</b>
               <span>
-                <strong>Выберите сигнал</strong>
-                <em>Порт вашей схемы в таблице слева</em>
+                <strong>{t('Выберите сигнал')}</strong>
+                <em>{t('Порт вашей схемы в таблице слева')}</em>
               </span>
             </li>
             <li className={stepState[1]}>
-              <b>{stepState[1] === 'done' ? <Check size={16} aria-label="готово" /> : 2}</b>
+              <b>{stepState[1] === 'done' ? <Check size={16} aria-label={t('готово')} /> : 2}</b>
               <span>
-                <strong>Выберите контакт</strong>
-                <em>Нажмите на рисунке микросхемы или в списке</em>
+                <strong>{t('Выберите контакт')}</strong>
+                <em>{t('Нажмите на рисунке микросхемы или в списке')}</em>
               </span>
             </li>
             <li className={stepState[2]}>
-              <b>{stepState[2] === 'done' ? <Check size={16} aria-label="готово" /> : 3}</b>
+              <b>{stepState[2] === 'done' ? <Check size={16} aria-label={t('готово')} /> : 3}</b>
               <span>
-                <strong>Нажмите «Назначить»</strong>
-                <em>Запись появится в файле .cst</em>
+                <strong>{t('Нажмите «Назначить»')}</strong>
+                <em>{t('Запись появится в файле .cst')}</em>
               </span>
             </li>
           </ol>
@@ -305,29 +311,40 @@ export function PinPlanner({
             <div className="pin-analysis-needed">
               <span>
                 {preliminary
-                  ? 'Порты прочитаны из текста Verilog (предварительно). Нажмите «Прочитать порты», чтобы проверить их по настоящему синтезу.'
-                  : 'Портов пока нет: проект ещё не проанализирован. Нажмите «Прочитать порты», и они появятся здесь, а после синтеза список обновляется сам.'}
+                  ? t(
+                      t(
+                        'Порты прочитаны из текста Verilog (предварительно). Нажмите «Прочитать порты», чтобы проверить их по настоящему синтезу.',
+                      ),
+                    )
+                  : t(
+                      t(
+                        'Портов пока нет: проект ещё не проанализирован. Нажмите «Прочитать порты», и они появятся здесь, а после синтеза список обновляется сам.',
+                      ),
+                    )}
               </span>
               <button className="button subtle" disabled={busy} onClick={onSynthesize}>
                 <Play size={13} />
-                {busy ? 'Читаем порты…' : 'Прочитать порты'}
+                {busy ? t('Читаем порты…') : t('Прочитать порты')}
               </button>
             </div>
           )}
           <div className="pin-columns">
-            <section className="pin-signal-panel" aria-label="Порты верхнего модуля">
+            <section className="pin-signal-panel" aria-label={t('Порты верхнего модуля')}>
               <div className="pin-signal-heading">
                 <strong>{project.top}</strong>
                 <span>
-                  {signals.length} бит портов · {assigned.length} назначений
+                  {t('{bits} бит портов · {count} назначений', {
+                    bits: signals.length,
+                    count: assigned.length,
+                  })}
                 </span>
               </div>
               <label className="pin-search">
                 <Search size={14} />
                 <input
-                  aria-label="Найти порт"
+                  aria-label={t('Найти порт')}
                   value={query}
-                  placeholder="Найти порт…"
+                  placeholder={t('Найти порт…')}
                   onChange={(event) => setQuery(event.target.value)}
                 />
               </label>
@@ -335,9 +352,9 @@ export function PinPlanner({
                 <table className="pin-signal-table">
                   <thead>
                     <tr>
-                      <th>Сигнал</th>
-                      <th>Направление</th>
-                      <th>Вывод</th>
+                      <th>{t('Сигнал')}</th>
+                      <th>{t('Направление')}</th>
+                      <th>{t('Вывод')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -371,12 +388,12 @@ export function PinPlanner({
                             {locations.length <= 1 && file ? (
                               <select
                                 className="pin-row-select"
-                                aria-label={`Вывод для ${signal.name}`}
+                                aria-label={t('Вывод для {name}', { name: signal.name })}
                                 value={locations[0]?.value ?? ''}
                                 disabled={busy}
                                 onChange={(event) => changeInTable(signal, event.target.value)}
                               >
-                                <option value="">— нет</option>
+                                <option value="">{t('— нет')}</option>
                                 {packagePins
                                   .filter(
                                     (value) =>
@@ -388,7 +405,7 @@ export function PinPlanner({
                                     return (
                                       <option value={value.number} key={value.number}>
                                         {value.number}
-                                        {holder ? ` · занят: ${holder}` : ''}
+                                        {holder ? ` · ${t('занят: {holder}', { holder })}` : ''}
                                       </option>
                                     );
                                   })}
@@ -409,31 +426,34 @@ export function PinPlanner({
                 </table>
                 {!signals.length && (
                   <p className="pin-empty">
-                    После анализа здесь появятся отдельные биты входов и выходов. Имена берутся из
-                    настоящего нетлиста Yosys.
+                    {t(
+                      t(
+                        'После анализа здесь появятся отдельные биты входов и выходов. Имена берутся из настоящего нетлиста Yosys.',
+                      ),
+                    )}
                   </p>
                 )}
               </div>
               {(!!suggestions.length || !!ledPlan.length) && (
-                <section className="pin-suggest" aria-label="Подсказки">
+                <section className="pin-suggest" aria-label={t('Подсказки')}>
                   <div className="pin-suggest-title">
                     <Lightbulb size={14} />
-                    <strong>Подсказки по именам портов</strong>
+                    <strong>{t('Подсказки по именам портов')}</strong>
                   </div>
                   {!!ledPlan.length && (
                     <button
                       className="button subtle"
                       disabled={busy}
                       title={ledPlan.map((item) => `${item.signal} → ${item.pin}`).join('\n')}
-                      onClick={() => applyPlan(ledPlan, 'Светодиоды по порядку')}
+                      onClick={() => applyPlan(ledPlan, t('Светодиоды по порядку'))}
                     >
-                      Назначить LED по порядку · {ledPlan.length}
+                      {t('Назначить LED по порядку')} · {ledPlan.length}
                     </button>
                   )}
                   {suggestions.slice(0, 6).map((item) => (
                     <div className="pin-suggest-row" key={item.signal}>
                       <span>
-                        <code>{item.signal}</code> → вывод {item.pin}
+                        <code>{item.signal}</code> → {t('вывод')} {item.pin}
                         <small>{item.reason}</small>
                       </span>
                       <button
@@ -441,7 +461,7 @@ export function PinPlanner({
                         disabled={busy}
                         onClick={() => applyPlan([item], item.signal)}
                       >
-                        Назначить
+                        {t('Назначить')}
                       </button>
                     </div>
                   ))}
@@ -449,14 +469,14 @@ export function PinPlanner({
                     <button
                       className="button subtle"
                       disabled={busy}
-                      onClick={() => applyPlan(suggestions, 'Все подсказки')}
+                      onClick={() => applyPlan(suggestions, t('Все подсказки'))}
                     >
-                      Применить все подсказки · {suggestions.length}
+                      {t('Применить все подсказки')} · {suggestions.length}
                     </button>
                   )}
                 </section>
               )}
-              <section className="pin-edit-card" aria-label="Назначение выбранного порта">
+              <section className="pin-edit-card" aria-label={t('Назначение выбранного порта')}>
                 {current ? (
                   <>
                     <div className="pin-edit-title pin-arrive" key={current.name}>
@@ -464,20 +484,20 @@ export function PinPlanner({
                       <span>
                         {directionLabels[current.direction]}
                         {selectedPin
-                          ? ` · ${selectedPin.io ?? 'служебный'} · Bank ${selectedPin.bank ?? '—'}`
+                          ? ` · ${selectedPin.io ?? t('служебный')} · Bank ${selectedPin.bank ?? '—'}`
                           : ''}
                       </span>
                     </div>
                     <div className="pin-edit-fields">
                       <label>
-                        Вывод
+                        {t('Вывод')}
                         <select
-                          aria-label="Вывод выбранного порта"
+                          aria-label={t('Вывод выбранного порта')}
                           value={pin ?? ''}
                           onChange={(event) => selectPin(Number(event.target.value))}
                         >
                           <option value="" disabled>
-                            Выберите контакт
+                            {t('Выберите контакт')}
                           </option>
                           {packagePins
                             .filter((value) => !value.reserved)
@@ -489,18 +509,18 @@ export function PinPlanner({
                         </select>
                       </label>
                       <label>
-                        Подтяжка
+                        {t('Подтяжка')}
                         <select
-                          aria-label="Подтяжка входа"
+                          aria-label={t('Подтяжка входа')}
                           value={pull}
                           onChange={(event) => setPull(event.target.value as typeof pull)}
                         >
-                          <option value="NONE">Нет</option>
-                          <option value="UP">К 1 (UP)</option>
-                          <option value="DOWN">К 0 (DOWN)</option>
+                          <option value="NONE">{t('Нет')}</option>
+                          <option value="UP">{t('К 1 (UP)')}</option>
+                          <option value="DOWN">{t('К 0 (DOWN)')}</option>
                         </select>
                       </label>
-                      <span className="pin-voltage">LVCMOS33 · 3,3 В</span>
+                      <span className="pin-voltage">LVCMOS33 · {t('3,3 В')}</span>
                     </div>
                     {conflict && (
                       <p className="pin-error" role="alert">
@@ -509,8 +529,12 @@ export function PinPlanner({
                     )}
                     {!conflict && swapWith && (
                       <p className="pin-swap" role="status">
-                        Вывод {pin} сейчас у сигнала {swapWith}. При назначении они поменяются
-                        местами.
+                        {t(
+                          t(
+                            'Вывод {pin} сейчас у сигнала {swapWith}. При назначении они поменяются местами.',
+                          ),
+                          { pin: pin ?? '', swapWith },
+                        )}
                       </p>
                     )}
                     <div className="pin-edit-actions">
@@ -520,7 +544,7 @@ export function PinPlanner({
                         onClick={() => commit()}
                       >
                         <Check size={14} />
-                        Назначить
+                        {t('Назначить')}
                       </button>
                       <button
                         className="button subtle"
@@ -528,14 +552,17 @@ export function PinPlanner({
                         onClick={() => commit(true)}
                       >
                         <X size={14} />
-                        Освободить
+                        {t('Освободить')}
                       </button>
                     </div>
                   </>
                 ) : (
                   <p className="pin-empty">
-                    Выберите порт в таблице. Наведите на контакт, чтобы увидеть его банк, функцию и
-                    текущее назначение.
+                    {t(
+                      t(
+                        'Выберите порт в таблице. Наведите на контакт, чтобы увидеть его банк, функцию и текущее назначение.',
+                      ),
+                    )}
                   </p>
                 )}
                 {error && (
@@ -552,7 +579,9 @@ export function PinPlanner({
               </section>
               {!!issues.length && (
                 <details className="pin-issues" open>
-                  <summary>Проверка назначений · {issues.length}</summary>
+                  <summary>
+                    {t('Проверка назначений')} · {issues.length}
+                  </summary>
                   <ul>
                     {issues.slice(0, 24).map((issue, index) => (
                       <li key={index}>{issue}</li>
@@ -561,19 +590,19 @@ export function PinPlanner({
                 </details>
               )}
             </section>
-            <section className="pin-map-panel" aria-label="Корпус и назначение">
+            <section className="pin-map-panel" aria-label={t('Корпус и назначение')}>
               <div className="pin-map-tools">
                 <strong>GW2AR-18 · QN88</strong>
                 <label>
-                  Банк
+                  {t('Банк')}
                   <select
-                    aria-label="Фильтр I/O банка"
+                    aria-label={t('Фильтр I/O банка')}
                     value={bank ?? 'all'}
                     onChange={(event) =>
                       setBank(event.target.value === 'all' ? null : Number(event.target.value))
                     }
                   >
-                    <option value="all">Все</option>
+                    <option value="all">{t('Все')}</option>
                     {[0, 1, 2, 3, 4, 5, 6, 7].map((value) => (
                       <option key={value} value={value}>
                         Bank {value}
@@ -587,7 +616,7 @@ export function PinPlanner({
                   className="pin-package"
                   width={1010}
                   height={850}
-                  label="Назначение портов на корпус QN88, вид сверху"
+                  label={t('Назначение портов на корпус QN88, вид сверху')}
                 >
                   {() => (
                     <g transform="translate(172 82)">
@@ -607,11 +636,11 @@ export function PinPlanner({
                         GW2AR-LV18QN88C8/I7
                       </text>
                       <text x="350" y="319" textAnchor="middle" className="pin-chip-subtitle">
-                        Вид сверху · номера корпуса
+                        {t('Вид сверху · номера корпуса')}
                       </text>
                       {hoverPinInfo && (
                         <text x="350" y="520" textAnchor="middle" className="pin-chip-signal">
-                          {`Вывод ${hoverPinInfo.number}${signalOfPin(hoverPinInfo.number) ? ` · ${signalOfPin(hoverPinInfo.number)}` : ''}`}
+                          {`${t('Вывод')} ${hoverPinInfo.number}${signalOfPin(hoverPinInfo.number) ? ` · ${signalOfPin(hoverPinInfo.number)}` : ''}`}
                         </text>
                       )}
                       {current && (
@@ -629,7 +658,7 @@ export function PinPlanner({
                           </text>
                           <text x="350" y="397" textAnchor="middle" className="pin-chip-subtitle">
                             {directionLabels[current.direction]}
-                            {pin ? ` → вывод ${pin}` : ' · выберите контакт'}
+                            {pin ? ` → ${t('вывод')} ${pin}` : ` · ${t('выберите контакт')}`}
                           </text>
                         </>
                       )}
@@ -662,12 +691,12 @@ export function PinPlanner({
                           (!!hoverSignal &&
                             assignments.some((item) => item.signal === hoverSignal)) ||
                           (!!current && assignments.some((item) => item.signal === current.name));
-                        const label = `Вывод ${value.number}${value.bank !== undefined ? ` · Bank ${value.bank}` : ''} · ${value.label}${assignments.length ? ` · ${assignments.map((command) => command.signal).join(', ')}` : ''}`;
+                        const label = `${t('Вывод')} ${value.number}${value.bank !== undefined ? ` · Bank ${value.bank}` : ''} · ${value.label}${assignments.length ? ` · ${assignments.map((command) => command.signal).join(', ')}` : ''}`;
                         // Datasheet naming: the FPGA pad and its special function, then what
                         // the board wires to it, then the project signal assigned here.
                         const padName = value.io
                           ? [value.io, ...value.functions].join('/')
-                          : 'питание';
+                          : t('питание');
                         const role =
                           caption ||
                           (part?.service || (value.reserved && value.io) ? value.label : '');
@@ -786,11 +815,11 @@ export function PinPlanner({
                         onClose={() => setExplained(null)}
                       >
                         <div className="pin-explain-head">
-                          <h2>Что написано у вывода {target.number}</h2>
+                          <h2>{t('Что написано у вывода {number}', { number: target.number })}</h2>
                           <button
                             type="button"
                             className="mini-button"
-                            aria-label="Закрыть пояснение"
+                            aria-label={t('Закрыть пояснение')}
                             onClick={() => setExplained(null)}
                           >
                             <X size={16} />
@@ -810,7 +839,7 @@ export function PinPlanner({
                             className="button primary"
                             onClick={() => setExplained(null)}
                           >
-                            Понятно
+                            {t('Понятно')}
                           </button>
                         </div>
                       </Dialog>
@@ -818,29 +847,29 @@ export function PinPlanner({
                   })()}
               </div>
               <details className="pin-legend-fold">
-                <summary>Цвета и обозначения</summary>
-                <div className="pin-legend" aria-label="Условные обозначения">
+                <summary>{t('Цвета и обозначения')}</summary>
+                <div className="pin-legend" aria-label={t('Условные обозначения')}>
                   <div>
-                    <strong>Цвета контактов</strong>
+                    <strong>{t('Цвета контактов')}</strong>
                     <ul>
                       <li>
                         <i className="pin-legend-free" />
-                        Свободный контакт: цвет показывает банк
+                        {t('Свободный контакт: цвет показывает банк')}
                       </li>
                       <li>
                         <i className="pin-legend-assigned" />
-                        Назначен: рядом подписан сигнал
+                        {t('Назначен: рядом подписан сигнал')}
                       </li>
                       <li>
                         <i className="pin-legend-part" />
-                        Подключён к детали платы (LED, кнопка, генератор, UART)
+                        {t('Подключён к детали платы (LED, кнопка, генератор, UART)')}
                       </li>
                       <li>
                         <i className="pin-legend-reserved" />
-                        Служебный: питание, JTAG, флеш. Назначать нельзя
+                        {t('Служебный: питание, JTAG, флеш. Назначать нельзя')}
                       </li>
                     </ul>
-                    <div className="pin-bank-swatches" aria-label="Цвета банков">
+                    <div className="pin-bank-swatches" aria-label={t('Цвета банков')}>
                       {(
                         [
                           ['0–1', 'bank-a'],
@@ -852,19 +881,19 @@ export function PinPlanner({
                       ).map(([name, tone]) => (
                         <span key={name}>
                           <i className={`pin-bank-chip ${tone}`} />
-                          банк {name}
+                          {t('банк')} {name}
                         </span>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <strong>Что это значит</strong>
+                    <strong>{t('Что это значит')}</strong>
                     <p>
-                      <b>Банк</b> — группа соседних контактов, у которых одно общее питание для
-                      сигналов.
+                      <b>{t('Банк')}</b>{' '}
+                      {t('— группа соседних контактов, у которых одно общее питание для сигналов.')}
                     </p>
                     <p>
-                      <b>LVCMOS33</b> — обычный цифровой сигнал: 0 — это 0 В, 1 — это 3,3 В.
+                      <b>LVCMOS33</b> {t('— обычный цифровой сигнал: 0 — это 0 В, 1 — это 3,3 В.')}
                     </p>
                   </div>
                 </div>
@@ -873,15 +902,18 @@ export function PinPlanner({
           </div>
           <footer className="pin-footer">
             <span>
-              Питание и JTAG недоступны для назначения. Дифференциальные пары редактируются в тексте
-              .cst.
+              {t(
+                t(
+                  'Питание и JTAG недоступны для назначения. Дифференциальные пары редактируются в тексте .cst.',
+                ),
+              )}
             </span>
             <a
               href="https://wiki.sipeed.com/hardware/en/tang/tang-nano-20k/nano-20k.html#Pin-diagram"
               target="_blank"
               rel="noreferrer"
             >
-              Схема платы
+              {t('Схема платы')}
             </a>
           </footer>
         </>

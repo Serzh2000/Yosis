@@ -4,6 +4,7 @@ import type { Project, SourceFile } from '../../../shared/types';
 import type { SchematicAdditionPlan } from '../../lib/circuit-add';
 import { PanelBoundary } from '../PanelBoundary';
 import { CircuitEditor } from './lazy-panels';
+import { t } from '../../lib/i18n';
 
 /** Вкладка «Конструктор»: редактор схемы или объяснение, почему схемы в проекте нет. */
 export function DesignWorkspace({
@@ -27,8 +28,8 @@ export function DesignWorkspace({
 }) {
   return (
     <div id="panel-design" role="tabpanel" aria-labelledby="tab-design" className="pin-workspace">
-      <PanelBoundary name="конструктор схем" resetKey={project.id}>
-        <Suspense fallback={<div className="editor-loading">Открываем конструктор…</div>}>
+      <PanelBoundary name={t('конструктор схем')} resetKey={project.id}>
+        <Suspense fallback={<div className="editor-loading">{t('Открываем конструктор…')}</div>}>
           {circuitSource ? (
             <CircuitEditor
               key={`${project.id}:${circuitSource.name}`}
@@ -40,7 +41,7 @@ export function DesignWorkspace({
             />
           ) : (
             <div className="empty-workspace" data-testid="no-schematic">
-              <h2>В этом проекте нет схемы</h2>
+              <h2>{t('В этом проекте нет схемы')}</h2>
               {schematicPlan.ok ? (
                 <>
                   <p>
@@ -48,15 +49,14 @@ export function DesignWorkspace({
                     {schematicPlan.fileName} станет модулем «{project.top}».
                   </p>
                   <button className="button primary" onClick={onAddSchematic}>
-                    Добавить схему в этот проект
+                    {t('Добавить схему в этот проект')}
                   </button>
                 </>
               ) : (
                 <>
                   <p>{schematicPlan.reason}</p>
                   <p>
-                    Безопасный выбор — новый проект из логических элементов: текущий проект
-                    останется в библиотеке без изменений.
+                    {t('Безопасный выбор — новый проект из логических элементов: текущий проект останется в библиотеке без изменений.')}
                   </p>
                 </>
               )}
@@ -64,7 +64,7 @@ export function DesignWorkspace({
                 className={schematicPlan.ok ? 'button subtle' : 'button primary'}
                 onClick={onNewFromElements}
               >
-                Новый проект из элементов
+                {t('Новый проект из элементов')}
               </button>
             </div>
           )}

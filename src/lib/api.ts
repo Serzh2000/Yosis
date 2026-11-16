@@ -1,3 +1,5 @@
+import { t, translateServerMessage } from './i18n';
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -90,7 +92,10 @@ async function expectOk(response: Response, failure?: Failure): Promise<Response
   } catch {
     /* Тело ответа не JSON: остаётся общее сообщение. */
   }
-  throw new ApiError(message || `Ошибка сервиса: ${response.status}`, response.status);
+  throw new ApiError(
+    translateServerMessage(message) || t('Ошибка сервиса: {status}', { status: response.status }),
+    response.status,
+  );
 }
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -99,12 +104,32 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   try {
     data = await response.json();
   } catch {
-    throw new Error('Сервис вернул некорректный ответ.');
+    throw new Error(t('Сервис вернул некорректный ответ.'));
   }
   if (!response.ok)
     throw new ApiError(
-      (data as { error?: string }).error || `Ошибка сервиса: ${response.status}`,
+      translateServerMessage((data as { error?: string }).error ?? '') ||
+        t('Ошибка сервиса: {status}', { status: response.status }),
       response.status,
     );
-  return data as T;
+  return translateFields(data) as T;
+}
+
+const TRANSLATED_FIELDS = new Set(['error', 'stage', 'detail', 'reason']);
+
+/** Тексты сервера в ответе (`error`, `stage`…) на выбранном языке; логи переводит `pollJob`. */
+function translateFields(data: unknown, depth = 0): unknown {
+  if (depth > 2 || !data || typeof data !== 'object') return data;
+  if (Array.isArray(data)) {
+    if (data.length <= 500) data.forEach((item) => translateFields(item, depth + 1));
+    return data;
+  }
+  const record = data as Record<string, unknown>;
+  for (const key of Object.keys(record)) {
+    const value = record[key];
+    if (typeof value === 'string') {
+      if (TRANSLATED_FIELDS.has(key)) record[key] = translateServerMessage(value);
+    } else translateFields(value, depth + 1);
+  }
+  return data;
 }

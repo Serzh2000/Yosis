@@ -13,6 +13,7 @@ import {
   Square,
 } from 'lucide-react';
 import type { Project, SimulationResult } from '../../shared/types';
+import { t } from '../lib/i18n';
 import { lessons, checkLessonTrace, type LessonVerdict } from '../lib/lessons';
 import { parseVcd } from '../lib/vcd';
 import { runSimulation } from '../lib/simulation-client';
@@ -105,7 +106,7 @@ export function LessonsPanel({
         );
     } catch (failure) {
       if (run === generation.current && !abort.signal.aborted)
-        setError(failure instanceof Error ? failure.message : 'Не удалось проверить решение.');
+        setError(failure instanceof Error ? failure.message : t('Не удалось проверить решение.'));
     } finally {
       if (run === generation.current) setBusy(false);
     }
@@ -115,23 +116,23 @@ export function LessonsPanel({
     <section className="lessons-workspace">
       <header className="lessons-heading">
         <div>
-          <span>От первого вентиля к своей схеме</span>
-          <h2>Маленькие задания</h2>
-          <p>Предскажите результат, опишите устройство на Verilog и проверьте его симулятором.</p>
+          <span>{t('От первого вентиля к своей схеме')}</span>
+          <h2>{t('Маленькие задания')}</h2>
+          <p>{t('Предскажите результат, опишите устройство на Verilog и проверьте его симулятором.')}</p>
         </div>
         <div className="lessons-progress">
           <strong>
             {completed.length}
             <small> / {lessons.length}</small>
           </strong>
-          <span>заданий пройдено</span>
+          <span>{t('заданий пройдено')}</span>
           <div>
             <i style={{ width: `${(completed.length / lessons.length) * 100}%` }} />
           </div>
         </div>
       </header>
       <div className="lessons-columns">
-        <nav className="lessons-list" aria-label="Учебные задания">
+        <nav className="lessons-list" aria-label={t('Учебные задания')}>
           {lessons.map((item) => (
             <button
               key={item.id}
@@ -148,7 +149,7 @@ export function LessonsPanel({
                 <span className="lesson-meta">
                   {item.concept}
                   <b>·</b>
-                  {item.minutes} мин
+                  {t('{n} мин', { n: item.minutes })}
                 </span>
               </div>
               <ChevronRight size={15} />
@@ -157,19 +158,19 @@ export function LessonsPanel({
           <div className="lessons-route">
             <BookOpen size={18} />
             <span>
-              Каждое задание открывает отдельный проект. Решения остаются в вашей библиотеке.
+              {t('Каждое задание открывает отдельный проект. Решения остаются в вашей библиотеке.')}
             </span>
           </div>
         </nav>
         <article className="lesson-detail">
           <div className="lesson-detail-title">
-            <span>ЗАДАНИЕ {lesson.number}</span>
+            <span>{t('ЗАДАНИЕ {n}', { n: lesson.number })}</span>
             <h2>{lesson.title}</h2>
             <p>{lesson.objective}</p>
           </div>
           <section className="lesson-quiz">
             <h3>
-              <span>1</span> Сначала подумайте
+              <span>1</span> {t('Сначала подумайте')}
             </h3>
             <p>{lesson.question}</p>
             <div>
@@ -186,14 +187,14 @@ export function LessonsPanel({
             </div>
             {quiz !== null && (
               <p className={`lesson-quiz-feedback ${quiz === lesson.answer ? 'correct' : ''}`}>
-                {quiz === lesson.answer ? 'Верно. ' : 'Попробуйте ещё раз. '}
+                {quiz === lesson.answer ? t('Верно. ') : t('Попробуйте ещё раз. ')}
                 {lesson.explanation}
               </p>
             )}
           </section>
           <section className="lesson-code-step">
             <h3>
-              <span>2</span> Опишите устройство
+              <span>2</span> {t('Опишите устройство')}
             </h3>
             <div className="lesson-open-row">
               <button
@@ -204,34 +205,34 @@ export function LessonsPanel({
                 }}
               >
                 <Code2 size={15} />
-                {loaded ? 'Открыть заготовку заново' : 'Открыть заготовку'}
+                {loaded ? t('Открыть заготовку заново') : t('Открыть заготовку')}
                 <ArrowRight size={14} />
               </button>
               {loaded && (
                 <button className="lesson-secondary" onClick={onOpenEditor}>
-                  Продолжить решение <ArrowRight size={14} />
+                  {t('Продолжить решение')} <ArrowRight size={14} />
                 </button>
               )}
             </div>
             <small>
               {loaded
-                ? 'Заготовка заново заменит код текущего учебного проекта.'
-                : `Будет создан проект ${lesson.project.name} с файлом top.v.`}
+                ? t('Заготовка заново заменит код текущего учебного проекта.')
+                : t('Будет создан проект {name} с файлом top.v.', { name: lesson.project.name })}
             </small>
             <button className="lesson-hint-toggle" onClick={() => setHint(!hint)}>
               <Lightbulb size={14} />
-              {hint ? 'Скрыть подсказку' : 'Нужна подсказка'}
+              {hint ? t('Скрыть подсказку') : t('Нужна подсказка')}
             </button>
             {hint && <div className="lesson-hint">{lesson.hint}</div>}
           </section>
           <section className="lesson-verify">
             <h3>
-              <span>3</span> Проверьте поведение
+              <span>3</span> {t('Проверьте поведение')}
             </h3>
             <div className="lesson-check-intro">
               <p>
-                Проверка запускает ваш текущий проект в Icarus Verilog и сравнивает выход{' '}
-                <code>{lesson.output}</code> с ожидаемыми значениями.
+                {t('Проверка запускает ваш текущий проект в Icarus Verilog и сравнивает выход')}{' '}
+                <code>{lesson.output}</code> {t('с ожидаемыми значениями.')}
               </p>
               <button
                 className="lesson-primary"
@@ -239,17 +240,17 @@ export function LessonsPanel({
                 onClick={() => void verify()}
               >
                 {busy ? <LoaderCircle size={15} className="spinning" /> : <Play size={15} />}
-                {busy ? 'Проверяем…' : 'Проверить решение'}
+                {busy ? t('Проверяем…') : t('Проверить решение')}
               </button>
             </div>
             {!loaded && (
               <p className="lesson-load-note">
-                Откройте заготовку задания, затем вернитесь сюда для проверки.
+                {t('Откройте заготовку задания, затем вернитесь сюда для проверки.')}
               </p>
             )}
             {busy && (
               <div className="lesson-progress-state">
-                <span>{result?.stage ?? 'Подготовка симуляции'}</span>
+                <span>{result?.stage ?? t('Подготовка симуляции')}</span>
                 <button
                   onClick={() => {
                     controller.current?.abort();
@@ -257,7 +258,7 @@ export function LessonsPanel({
                     setBusy(false);
                   }}
                 >
-                  <Square size={12} /> Отменить
+                  <Square size={12} /> {t('Отменить')}
                 </button>
               </div>
             )}
@@ -267,18 +268,18 @@ export function LessonsPanel({
               </div>
             )}
             {stale && (
-              <p className="lesson-stale">Код изменён после проверки. Запустите проверку снова.</p>
+              <p className="lesson-stale">{t('Код изменён после проверки. Запустите проверку снова.')}</p>
             )}
             {verdicts && (
               <div className={`lesson-verdict ${passed ? 'passed' : 'failed'}`} role="status">
                 {passed ? <CheckCircle2 size={19} /> : <RotateCcw size={18} />}
                 <div>
                   <strong>
-                    {passed ? 'Устройство работает как задумано' : 'Есть над чем поработать'}
+                    {passed ? t('Устройство работает как задумано') : t('Есть над чем поработать')}
                   </strong>
                   <span>
-                    {verdicts.filter((item) => item.passed).length} из {verdicts.length} проверок
-                    прошли{passed ? '. Можно идти дальше.' : '. Сравните входы и выходы в таблице.'}
+                    {t('{n} из {total} проверок прошли', { n: verdicts.filter((item) => item.passed).length, total: verdicts.length })}
+                    {passed ? t('. Можно идти дальше.') : t('. Сравните входы и выходы в таблице.')}
                   </span>
                 </div>
               </div>
@@ -287,12 +288,12 @@ export function LessonsPanel({
               <table className="lesson-truth-table">
                 <thead>
                   <tr>
-                    <th>Проверка</th>
-                    <th>Входы</th>
-                    <th>Ожидается</th>
+                    <th>{t('Проверка')}</th>
+                    <th>{t('Входы')}</th>
+                    <th>{t('Ожидается')}</th>
                     {verdicts && (
                       <>
-                        <th>Ваш выход</th>
+                        <th>{t('Ваш выход')}</th>
                         <th />
                       </>
                     )}
@@ -336,9 +337,9 @@ export function LessonsPanel({
           </section>
           {result && (
             <footer className="lesson-simulation-footnote">
-              <span>Проверка реальной RTL симуляцией · {result.engine}</span>
+              <span>{t('Проверка реальной RTL симуляцией · {engine}', { engine: result.engine })}</span>
               <button onClick={() => setShowLog(!showLog)}>
-                {showLog ? 'Скрыть журнал' : 'Журнал'}
+                {showLog ? t('Скрыть журнал') : t('Журнал')}
               </button>
               {showLog && <pre>{result.logs}</pre>}
             </footer>

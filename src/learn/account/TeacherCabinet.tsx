@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { WireProgress } from '../../../shared/learn-sync';
+import { t, translateServerMessage } from '../../lib/i18n';
 import { books } from '../content/books';
 import { flattenBook, type BookDef } from '../content/schema';
 import { bookProgress, lessonState } from '../progress';
@@ -15,6 +16,7 @@ import {
   STATE_LABEL,
   STATE_MARK,
   ago,
+  dateLocale,
   classCsv,
   classSummary,
   credentialsCsv,
@@ -32,7 +34,7 @@ import { Message, ProfileCard } from './ProfileCard';
 
 const openBooks = books.filter((book) => book.available);
 const problemText = (error: unknown) =>
-  error instanceof ApiError ? error.message : 'Не получилось. Попробуй ещё раз.';
+  error instanceof ApiError ? error.message : t('Не получилось. Попробуй ещё раз.');
 
 function download(name: string, text: string) {
   const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
@@ -62,7 +64,7 @@ export function TeacherCabinet() {
     void reload();
   }, [reload]);
 
-  if (!overview) return problem ? <Message text={problem} bad /> : <p role="status">Загрузка…</p>;
+  if (!overview) return problem ? <Message text={problem} bad /> : <p role="status">{t('Загрузка…')}</p>;
   const student = openId ? overview.students.find((item) => item.id === openId) : undefined;
   if (student)
     return (
@@ -80,11 +82,11 @@ export function TeacherCabinet() {
     <>
       {problem ? <Message text={problem} bad /> : null}
       <Summary overview={overview} />
-      <div className="acct-tabs page" role="tablist" aria-label="Разделы кабинета">
+      <div className="acct-tabs page" role="tablist" aria-label={t('Разделы кабинета')}>
         {(
           [
-            ['class', 'Класс'],
-            ['people', 'Ученики и классы'],
+            ['class', t('Класс')],
+            ['people', t('Ученики и классы')],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -105,7 +107,7 @@ export function TeacherCabinet() {
         <People overview={overview} onOpen={setOpenId} onChanged={reload} />
       )}
       <details className="acct-card">
-        <summary>Мой пароль и имя</summary>
+        <summary>{t('Мой пароль и имя')}</summary>
         <ProfileCard />
       </details>
     </>
@@ -116,13 +118,13 @@ function Summary({ overview }: { overview: Overview }) {
   const now = Date.now();
   const s = classSummary(overview.students, now);
   const cards: [number, string][] = [
-    [s.total, 'учеников'],
-    [s.activeToday, 'заходили за сутки'],
-    [s.stuck, 'застряли'],
-    [s.away, 'не заходили неделю'],
+    [s.total, t('учеников')],
+    [s.activeToday, t('заходили за сутки')],
+    [s.stuck, t('застряли')],
+    [s.away, t('не заходили неделю')],
   ];
   return (
-    <ul className="acct-stats" aria-label="Сводка по ученикам">
+    <ul className="acct-stats" aria-label={t('Сводка по ученикам')}>
       {cards.map(([n, label]) => (
         <li key={label}>
           <strong>{n}</strong> {label}
@@ -155,10 +157,10 @@ function ClassTable({ overview, onOpen }: { overview: Overview; onOpen: (id: str
   const now = Date.now();
   return (
     <section className="acct-card" aria-labelledby="acct-matrix-h">
-      <h2 id="acct-matrix-h">Ученики и уроки</h2>
+      <h2 id="acct-matrix-h">{t('Ученики и уроки')}</h2>
       <div className="acct-toolbar">
         <label>
-          <span>Книга</span>
+          <span>{t('Книга')}</span>
           <select value={bookId} onChange={(e) => setBookId(e.target.value)}>
             {openBooks.map((item) => (
               <option key={item.id} value={item.id}>
@@ -168,13 +170,13 @@ function ClassTable({ overview, onOpen }: { overview: Overview; onOpen: (id: str
           </select>
         </label>
         <label>
-          <span>Класс</span>
+          <span>{t('Класс')}</span>
           <select
             value={filter.classId}
             onChange={(e) => setFilter({ ...filter, classId: e.target.value })}
           >
-            <option value="all">Все</option>
-            <option value="none">Без класса</option>
+            <option value="all">{t('Все')}</option>
+            <option value="none">{t('Без класса')}</option>
             {overview.classes.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.name}
@@ -183,20 +185,20 @@ function ClassTable({ overview, onOpen }: { overview: Overview; onOpen: (id: str
           </select>
         </label>
         <label>
-          <span>Поиск</span>
+          <span>{t('Поиск')}</span>
           <input
             type="search"
             value={filter.query}
             onChange={(e) => setFilter({ ...filter, query: e.target.value })}
-            placeholder="Имя или логин"
+            placeholder={t('Имя или логин')}
           />
         </label>
         <label>
-          <span>Сортировка</span>
+          <span>{t('Сортировка')}</span>
           <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
-            <option value="name">По имени</option>
-            <option value="activity">По последнему входу</option>
-            <option value="progress">По числу выполненных заданий</option>
+            <option value="name">{t('По имени')}</option>
+            <option value="activity">{t('По последнему входу')}</option>
+            <option value="progress">{t('По числу выполненных заданий')}</option>
           </select>
         </label>
         <label className="check">
@@ -205,7 +207,7 @@ function ClassTable({ overview, onOpen }: { overview: Overview; onOpen: (id: str
             checked={filter.onlyStuck}
             onChange={(e) => setFilter({ ...filter, onlyStuck: e.target.checked })}
           />
-          <span>Только застрявшие</span>
+          <span>{t('Только застрявшие')}</span>
         </label>
         <button
           type="button"
@@ -213,35 +215,35 @@ function ClassTable({ overview, onOpen }: { overview: Overview; onOpen: (id: str
           disabled={!rows.length}
           onClick={() => download(`class-${book.id}.csv`, classCsv(rows, book, className))}
         >
-          Скачать CSV
+          {t('Скачать CSV')}
         </button>
       </div>
       <p className="acct-legend">
-        <span className="cell done">✓</span> пройден <span className="cell started">◐</span> начат{' '}
-        <span className="cell new">·</span> не начат. Застрял — три неудачные проверки прошивки
-        подряд на одном задании.
+        <span className="cell done">✓</span> {t('пройден')} <span className="cell started">◐</span> {t('начат')}{' '}
+        <span className="cell new">·</span> {t('не начат. Застрял — три неудачные проверки прошивки подряд на одном задании.')}
+
       </p>
       {rows.length === 0 ? (
         <p>
           {overview.students.length
-            ? 'Никто не подошёл под условия.'
-            : 'Учеников пока нет. Они регистрируются сами, или добавь список на вкладке «Ученики и классы».'}
+            ? t('Никто не подошёл под условия.')
+            : t('Учеников пока нет. Они регистрируются сами, или добавь список на вкладке «Ученики и классы».')}
         </p>
       ) : (
         <div
           className="acct-scroll"
           tabIndex={0}
           role="region"
-          aria-label="Таблица «ученик × урок»"
+          aria-label={t('Таблица «ученик × урок»')}
         >
           <table className="acct-matrix">
-            <caption className="sr-only">Уроки книги «{book.title}» по ученикам</caption>
+            <caption className="sr-only">{t('Уроки книги «{title}» по ученикам', { title: book.title })}</caption>
             <thead>
               <tr>
-                <th scope="col">Ученик</th>
-                <th scope="col">Заходил</th>
-                <th scope="col">Задания</th>
-                <th scope="col">Застрял</th>
+                <th scope="col">{t('Ученик')}</th>
+                <th scope="col">{t('Заходил')}</th>
+                <th scope="col">{t('Задания')}</th>
+                <th scope="col">{t('Застрял')}</th>
                 {columns.map((column) => (
                   <th key={column.no} scope="col" className="lesson" title={column.lesson.title}>
                     {column.no}
@@ -277,7 +279,7 @@ function ClassTable({ overview, onOpen }: { overview: Overview; onOpen: (id: str
                       <td
                         key={at}
                         className={'cell ' + state}
-                        title={`Урок ${columns[at]!.no}: ${columns[at]!.lesson.title} — ${STATE_LABEL[state]}`}
+                        title={t('Урок {no}: {title} — {state}', { no: columns[at]!.no, title: columns[at]!.lesson.title, state: STATE_LABEL[state] })}
                       >
                         <span aria-hidden="true">{STATE_MARK[state]}</span>
                         <span className="sr-only">{STATE_LABEL[state]}</span>
@@ -308,9 +310,9 @@ function People({
       <Classes overview={overview} onChanged={onChanged} />
       <AddStudents overview={overview} onChanged={onChanged} />
       <section className="acct-card" aria-labelledby="acct-people-h">
-        <h2 id="acct-people-h">Все ученики</h2>
+        <h2 id="acct-people-h">{t('Все ученики')}</h2>
         {overview.students.length === 0 ? (
-          <p>Пока никого.</p>
+          <p>{t('Пока никого.')}</p>
         ) : (
           <ul className="acct-people">
             {overview.students.map((student) => (
@@ -321,7 +323,7 @@ function People({
                 <span>{student.login}</span>
                 <span>
                   {overview.classes.find((item) => item.id === student.classId)?.name ??
-                    'без класса'}
+                    t('без класса')}
                 </span>
                 <span>{ago(student.lastActiveAt)}</span>
               </li>
@@ -347,32 +349,32 @@ function Classes({ overview, onChanged }: { overview: Overview; onChanged: () =>
   };
   return (
     <section className="acct-card" aria-labelledby="acct-classes-h">
-      <h2 id="acct-classes-h">Классы</h2>
+      <h2 id="acct-classes-h">{t('Классы')}</h2>
       <ul className="acct-people">
         {overview.classes.map((group) => (
           <li key={group.id}>
             <strong>{group.name}</strong>
-            <span>{group.count} уч.</span>
+            <span>{t('{n} уч.', { n: group.count })}</span>
             <button
               type="button"
               className="acct-link"
               onClick={() => {
-                const next = window.prompt('Новое название класса', group.name);
+                const next = window.prompt(t('Новое название класса'), group.name);
                 if (next && next !== group.name)
-                  void run(() => api.renameClass(group.id, next), 'Класс переименован.');
+                  void run(() => api.renameClass(group.id, next), t('Класс переименован.'));
               }}
             >
-              Переименовать
+              {t('Переименовать')}
             </button>
             <button
               type="button"
               className="acct-link danger"
               onClick={() => {
-                if (window.confirm(`Удалить класс «${group.name}»? Ученики останутся без класса.`))
-                  void run(() => api.deleteClass(group.id), 'Класс удалён.');
+                if (window.confirm(t('Удалить класс «{name}»? Ученики останутся без класса.', { name: group.name })))
+                  void run(() => api.deleteClass(group.id), t('Класс удалён.'));
               }}
             >
-              Удалить
+              {t('Удалить')}
             </button>
           </li>
         ))}
@@ -381,21 +383,21 @@ function Classes({ overview, onChanged }: { overview: Overview; onChanged: () =>
         className="acct-form inline"
         onSubmit={(event: FormEvent) => {
           event.preventDefault();
-          void run(() => api.createClass(name), 'Класс создан.').then(() => setName(''));
+          void run(() => api.createClass(name), t('Класс создан.')).then(() => setName(''));
         }}
       >
         <label>
-          <span>Новый класс</span>
+          <span>{t('Новый класс')}</span>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={40}
-            placeholder="Например, 8Б"
+            placeholder={t('Например, 8Б')}
             required
           />
         </label>
         <button type="submit" className="acct-btn">
-          Создать
+          {t('Создать')}
         </button>
       </form>
       {msg ? <Message {...msg} /> : null}
@@ -430,20 +432,20 @@ function AddStudents({
   };
   return (
     <section className="acct-card" aria-labelledby="acct-add-h">
-      <h2 id="acct-add-h">Добавить учеников списком</h2>
+      <h2 id="acct-add-h">{t('Добавить учеников списком')}</h2>
       <form className="acct-form" onSubmit={submit}>
         <label>
-          <span>Имена, по одному в строке</span>
+          <span>{t('Имена, по одному в строке')}</span>
           <textarea value={names} onChange={(e) => setNames(e.target.value)} rows={5} required />
           <small>
-            Логины и временные пароли придумает сервер. Настоящие фамилии вписывать не обязательно:
-            подойдёт «Аня К.».
+            {t('Логины и временные пароли придумает сервер. Настоящие фамилии вписывать не обязательно: подойдёт «Аня К.».')}
+
           </small>
         </label>
         <label>
-          <span>Класс</span>
+          <span>{t('Класс')}</span>
           <select value={classId} onChange={(e) => setClassId(e.target.value)}>
-            <option value="">Без класса</option>
+            <option value="">{t('Без класса')}</option>
             {overview.classes.map((group) => (
               <option key={group.id} value={group.id}>
                 {group.name}
@@ -452,7 +454,7 @@ function AddStudents({
           </select>
         </label>
         <button type="submit" className="acct-btn primary">
-          Создать учеников
+          {t('Создать учеников')}
         </button>
       </form>
       {problem ? <Message text={problem} bad /> : null}
@@ -471,17 +473,17 @@ function Credentials({
 }) {
   return (
     <div className="acct-print">
-      <h3>Логины и временные пароли</h3>
+      <h3>{t('Логины и временные пароли')}</h3>
       <p className="acct-meta">
-        Пароли показаны один раз: потом их можно только сбросить. Ученику предложат сменить пароль
-        при входе.
+        {t('Пароли показаны один раз: потом их можно только сбросить. Ученику предложат сменить пароль при входе.')}
+
       </p>
       <table className="acct-table">
         <thead>
           <tr>
-            <th scope="col">Имя</th>
-            <th scope="col">Логин</th>
-            <th scope="col">Пароль</th>
+            <th scope="col">{t('Имя')}</th>
+            <th scope="col">{t('Логин')}</th>
+            <th scope="col">{t('Пароль')}</th>
           </tr>
         </thead>
         <tbody>
@@ -498,21 +500,21 @@ function Credentials({
         <ul className="acct-skipped">
           {skipped.map((item, at) => (
             <li key={at}>
-              «{item.line}» не добавлен: {item.reason}
+              {t('«{line}» не добавлен: {reason}', { line: item.line, reason: translateServerMessage(item.reason) })}
             </li>
           ))}
         </ul>
       ) : null}
       <div className="acct-actions no-print">
         <button type="button" className="acct-btn" onClick={() => window.print()}>
-          Напечатать
+          {t('Напечатать')}
         </button>
         <button
           type="button"
           className="acct-btn"
           onClick={() => download('passwords.csv', credentialsCsv(rows))}
         >
-          Скачать CSV
+          {t('Скачать CSV')}
         </button>
       </div>
     </div>
@@ -558,7 +560,7 @@ function StudentPage({
     event.preventDefault();
     try {
       await api.updateStudent(summary.id, { displayName: name, classId: classId || null, note });
-      setMsg({ text: 'Сохранено.', bad: false });
+      setMsg({ text: t('Сохранено.'), bad: false });
       await onChanged();
     } catch (error) {
       setMsg({ text: problemText(error), bad: true });
@@ -575,31 +577,31 @@ function StudentPage({
     <>
       <p>
         <button type="button" className="acct-link" onClick={onBack}>
-          ← Ко всему классу
+          {t('← Ко всему классу')}
         </button>
       </p>
       <section className="acct-card" aria-labelledby="acct-student-h">
         <h2 id="acct-student-h">{summary.displayName}</h2>
         <p className="acct-meta">
-          Логин <strong>{summary.login}</strong> · заходил: {ago(summary.lastActiveAt)} ·
-          зарегистрирован {new Date(summary.createdAt).toLocaleDateString('ru-RU')}
-          {summary.mustChangePassword ? ' · пароль временный' : ''}
+          {t('Логин')} <strong>{summary.login}</strong> · {t('заходил:')} {ago(summary.lastActiveAt)} ·
+          {t('зарегистрирован')} {new Date(summary.createdAt).toLocaleDateString(dateLocale())}
+          {summary.mustChangePassword ? t(' · пароль временный') : ''}
         </p>
         {summary.stuck ? (
           <p className="acct-msg bad" role="status">
-            Застрял: {describePage(bookById(summary.stuck.bookId), summary.stuck.pageId)} —{' '}
-            {summary.stuck.fails} неудачных проверок подряд.
+            {t('Застрял: {page} — {n} неудачных проверок подряд.', { page: describePage(bookById(summary.stuck.bookId), summary.stuck.pageId), n: summary.stuck.fails })}
+
           </p>
         ) : null}
         <form className="acct-form" onSubmit={save}>
           <label>
-            <span>Имя</span>
+            <span>{t('Имя')}</span>
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} required />
           </label>
           <label>
-            <span>Класс</span>
+            <span>{t('Класс')}</span>
             <select value={classId} onChange={(e) => setClassId(e.target.value)}>
-              <option value="">Без класса</option>
+              <option value="">{t('Без класса')}</option>
               {overview.classes.map((group) => (
                 <option key={group.id} value={group.id}>
                   {group.name}
@@ -608,17 +610,17 @@ function StudentPage({
             </select>
           </label>
           <label>
-            <span>Заметка учителя</span>
+            <span>{t('Заметка учителя')}</span>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={2}
               maxLength={400}
             />
-            <small>Ученик её не видит.</small>
+            <small>{t('Ученик её не видит.')}</small>
           </label>
           <button type="submit" className="acct-btn">
-            Сохранить
+            {t('Сохранить')}
           </button>
         </form>
         {msg ? <Message {...msg} /> : null}
@@ -640,11 +642,11 @@ function StudentPage({
               }
             }}
           >
-            Сбросить пароль
+            {t('Сбросить пароль')}
           </button>
           {confirmDelete ? (
-            <span role="alertdialog" aria-label="Удалить ученика">
-              Удалить ученика вместе с прогрессом? Это нельзя отменить.{' '}
+            <span role="alertdialog" aria-label={t('Удалить ученика')}>
+              {t('Удалить ученика вместе с прогрессом? Это нельзя отменить.')}{' '}
               <button
                 type="button"
                 className="acct-btn danger"
@@ -657,10 +659,10 @@ function StudentPage({
                   }
                 }}
               >
-                Да, удалить
+                {t('Да, удалить')}
               </button>{' '}
               <button type="button" className="acct-btn" onClick={() => setConfirmDelete(false)}>
-                Отмена
+                {t('Отмена')}
               </button>
             </span>
           ) : (
@@ -669,7 +671,7 @@ function StudentPage({
               className="acct-btn danger"
               onClick={() => setConfirmDelete(true)}
             >
-              Удалить ученика
+              {t('Удалить ученика')}
             </button>
           )}
         </div>
@@ -677,10 +679,10 @@ function StudentPage({
       </section>
 
       <section className="acct-card" aria-labelledby="acct-lessons-h">
-        <h2 id="acct-lessons-h">Прогресс</h2>
+        <h2 id="acct-lessons-h">{t('Прогресс')}</h2>
         <div className="acct-toolbar">
           <label>
-            <span>Книга</span>
+            <span>{t('Книга')}</span>
             <select value={bookId} onChange={(e) => setBookId(e.target.value)}>
               {openBooks.map((item) => (
                 <option key={item.id} value={item.id}>
@@ -690,7 +692,7 @@ function StudentPage({
             </select>
           </label>
           <p className="acct-meta">
-            Заданий выполнено: {share.done} из {share.total}
+            {t('Заданий выполнено: {done} из {total}', { done: share.done, total: share.total })}
           </p>
         </div>
         {problem ? <Message text={problem} bad /> : null}
@@ -705,7 +707,7 @@ function StudentPage({
                   <span className={'cell ' + state} aria-hidden="true">
                     {STATE_MARK[state]}
                   </span>{' '}
-                  Урок {no}. {lesson.title} <small>({STATE_LABEL[state]})</small>
+                  {t('Урок {no}. {title}', { no, title: lesson.title })} <small>({STATE_LABEL[state]})</small>
                 </h3>
                 <ul>
                   {tasks.map(({ page }) => (
@@ -730,29 +732,29 @@ function StudentPage({
       </section>
 
       <section className="acct-card" aria-labelledby="acct-attempts-h">
-        <h2 id="acct-attempts-h">Проверки прошивки</h2>
+        <h2 id="acct-attempts-h">{t('Проверки прошивки')}</h2>
         {!detail ? (
-          <p role="status">Загрузка…</p>
+          <p role="status">{t('Загрузка…')}</p>
         ) : detail.attempts.length === 0 ? (
-          <p>Проверок пока не было.</p>
+          <p>{t('Проверок пока не было.')}</p>
         ) : (
           <ul className="acct-attempts">
             {detail.attempts.map((attempt, at) => (
               <li key={at} className={attempt.solved ? 'ok' : 'fail'}>
                 <p>
                   <strong>
-                    {attempt.solved ? 'Прошла' : attempt.error ? 'Не запустилась' : 'Не прошла'}
+                    {attempt.solved ? t('Прошла') : attempt.error ? t('Не запустилась') : t('Не прошла')}
                   </strong>{' '}
-                  {new Date(attempt.at).toLocaleString('ru-RU')} ·{' '}
+                  {new Date(attempt.at).toLocaleString(dateLocale())} ·{' '}
                   {describePage(bookById(attempt.bookId), attempt.pageId)}
-                  {attempt.total ? ` · не прошло ${attempt.failed} из ${attempt.total}` : ''}
+                  {attempt.total ? t(' · не прошло {failed} из {total}', { failed: attempt.failed, total: attempt.total }) : ''}
                 </p>
                 {attempt.error || attempt.detail ? (
                   <p className="acct-meta">{attempt.error ?? attempt.detail}</p>
                 ) : null}
                 {attempt.code ? (
                   <details>
-                    <summary>Код ученика</summary>
+                    <summary>{t('Код ученика')}</summary>
                     <pre>{attempt.code}</pre>
                   </details>
                 ) : null}
@@ -783,9 +785,9 @@ function TaskRow({
       <span className="acct-meta">
         {entry
           ? entry.by === 'teacher'
-            ? `Засчитано учителем${entry.note ? `: «${entry.note}»` : ''}`
-            : `Выполнено ${new Date(entry.at).toLocaleDateString('ru-RU')}`
-          : 'Не выполнено'}
+            ? entry.note ? t('Засчитано учителем: «{note}»', { note: entry.note }) : t('Засчитано учителем')
+            : t('Выполнено {date}', { date: new Date(entry.at).toLocaleDateString(dateLocale()) })
+          : t('Не выполнено')}
       </span>
       {entry?.by === 'student' ? null : open ? (
         <form
@@ -802,20 +804,20 @@ function TaskRow({
           }}
         >
           <label>
-            <span>Комментарий ученику</span>
+            <span>{t('Комментарий ученику')}</span>
             <input value={comment} onChange={(e) => setComment(e.target.value)} maxLength={400} />
           </label>
           <button type="submit" className="acct-btn primary">
-            Засчитать
+            {t('Засчитать')}
           </button>
           <button type="button" className="acct-btn" onClick={() => setOpen(false)}>
-            Отмена
+            {t('Отмена')}
           </button>
           {error ? <Message text={error} bad /> : null}
         </form>
       ) : (
         <button type="button" className="acct-btn" onClick={() => setOpen(true)}>
-          {entry ? 'Изменить комментарий' : 'Засчитать вручную'}
+          {entry ? t('Изменить комментарий') : t('Засчитать вручную')}
         </button>
       )}
     </li>

@@ -1,5 +1,7 @@
 import { RequestError } from './errors';
 import { validIdentifier } from './verilog-identifiers';
+import { t } from './i18n';
+import { tn } from './circuit-util';
 
 /**
  * Миграция документов .ysch версии 1 в версию 2.
@@ -7,7 +9,7 @@ import { validIdentifier } from './verilog-identifiers';
  * В версии 1 неизвестные поля молча отбрасывались; это поведение сохранено.
  */
 const fail = (message: string): never => {
-  throw new RequestError(`Схема: ${message}`);
+  throw new RequestError(tn(t('Схема: {message}'), { message }));
 };
 const integer = (value: unknown, min: number, max: number) =>
   typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
@@ -63,7 +65,7 @@ export function migrateV1(raw: Record<string, unknown>): Record<string, unknown>
       to: { node: string; pin: string };
     }[];
   if (!Array.isArray(nodes) || nodes.length > 200 || !Array.isArray(wires) || wires.length > 2000)
-    return fail('максимум 200 элементов и 2000 соединений.');
+    return fail(t('максимум 200 элементов и 2000 соединений.'));
   const kinds = new Map<string, string>();
   const migrated = nodes.map((node) => {
     if (
@@ -72,8 +74,8 @@ export function migrateV1(raw: Record<string, unknown>): Record<string, unknown>
       typeof node.id !== 'string' ||
       !/^n[0-9]{1,9}$/.test(node.id)
     )
-      return fail('неверный или повторяющийся ID элемента.');
-    if (kinds.has(node.id)) return fail('неверный или повторяющийся ID элемента.');
+      return fail(t('неверный или повторяющийся ID элемента.'));
+    if (kinds.has(node.id)) return fail(t('неверный или повторяющийся ID элемента.'));
     kinds.set(node.id, node.kind);
     if (
       !v1Kinds.includes(node.kind) ||
@@ -92,7 +94,7 @@ export function migrateV1(raw: Record<string, unknown>): Record<string, unknown>
       Math.abs(node.x) > 10000 ||
       Math.abs(node.y) > 10000
     )
-      return fail(`неверные свойства элемента ${node.id}.`);
+      return fail(tn(t('неверные свойства элемента {id}.'), { id: node.id }));
     const { id, name, x, y, width } = node,
       base = { id, name, x, y, rot: 0, flip: false };
     switch (node.kind) {
@@ -166,7 +168,7 @@ export function migrateV1(raw: Record<string, unknown>): Record<string, unknown>
   });
   const renamed = wires.map((wire) => {
     if (!wire || typeof wire !== 'object' || typeof wire.id !== 'string' || !wire.from || !wire.to)
-      return fail('неверный или повторяющийся ID соединения.');
+      return fail(t('неверный или повторяющийся ID соединения.'));
     const from = { node: wire.from.node, pin: wire.from.pin },
       to = { node: wire.to.node, pin: wire.to.pin };
     if (kinds.get(to.node) === 'mux')

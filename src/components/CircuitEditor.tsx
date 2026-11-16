@@ -82,24 +82,30 @@ import {
 import { fullCheck, quickCheck, type ConnectCheck } from '../lib/circuit-connect';
 import { syncBoardConstraints } from '../lib/circuit-board';
 import { canvasPoint, fitCanvas, zoomCanvas, type CanvasView } from '../lib/canvas-view';
+import { attachPinch } from '../lib/pinch';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { CircuitSymbol, type SymbolStyle } from './CircuitSymbol';
 import { localStore, STORAGE_KEYS } from '../lib/storage';
 import { CircuitPalette, BLOCK_DRAG_TYPE } from './CircuitPalette';
 import { CircuitProperties } from './CircuitProperties';
 import './circuit-editor.css';
 import { t } from '../lib/i18n';
+import { stripSchemaPrefix } from '../../shared/circuit-util';
 
 type Selection = { nodes: string[]; wires: string[] };
 const noSelection: Selection = { nodes: [], wires: [] };
 function boardNotice(sync: { assigned: string[]; problems: string[] }) {
   const more = (list: string[], limit: number) =>
     list.length > limit
-      ? `${list.slice(0, limit).join('; ')} и ещё ${list.length - limit}`
+      ? t('{v1} и ещё {v2}', { v1: list.slice(0, limit).join('; '), v2: list.length - limit })
       : list.join('; ');
   return [
-    sync.assigned.length ? `Выводы платы назначены: ${more(sync.assigned, 4)}.` : '',
+    sync.assigned.length ? t('Выводы платы назначены: {v1}.', { v1: more(sync.assigned, 4) }) : '',
     sync.problems.length
-      ? `Выводы платы не назначены (${sync.problems.length}): ${more(sync.problems, 1)}`
+      ? t('Выводы платы не назначены ({length}): {v2}', {
+          length: sync.problems.length,
+          v2: more(sync.problems, 1),
+        })
       : '',
   ]
     .filter(Boolean)
@@ -108,25 +114,25 @@ function boardNotice(sync: { assigned: string[]; problems: string[] }) {
 const kindTitle = (node: CircuitNode) => blocks[node.kind].title;
 
 const shortcuts: [string, string][] = [
-  ['Перетащить от контакта', 'Провести провод; цель подсвечивается'],
-  ['Щелчок на выход, затем на вход', 'Соединить без перетаскивания'],
-  ['Shift + щелчок', 'Добавить к выделению или убрать'],
-  ['Рамка на пустом месте', 'Выделить несколько элементов'],
-  ['Ctrl + A', 'Выделить всё'],
-  ['Ctrl + C / X / V', 'Копировать, вырезать, вставить (в том числе в другой проект)'],
-  ['Ctrl + D', 'Дублировать'],
-  ['Delete', 'Удалить выделенное'],
-  ['R', 'Повернуть на 90°'],
-  ['M', 'Отразить по горизонтали'],
-  ['Стрелки', 'Сдвинуть выделенное на шаг сетки (Shift — на 5 шагов)'],
-  ['F2 или двойной щелчок', 'Переименовать элемент'],
-  ['Ctrl + F', 'Найти элемент по имени'],
-  ['F', 'Показать всю схему; Z — приблизить к выделению'],
-  ['+ / −', 'Масштаб; колесо мыши — масштаб к курсору'],
-  ['Пробел + перетаскивание, колёсико мыши или «Рука»', 'Двигать полотно'],
-  ['Ctrl + Z / Ctrl + Y', 'Отменить и повторить'],
-  ['Esc', 'Отменить действие или снять выделение'],
-  ['? или F1', 'Эта подсказка'],
+  [t('Перетащить от контакта'), t('Провести провод; цель подсвечивается')],
+  [t('Щелчок на выход, затем на вход'), t('Соединить без перетаскивания')],
+  [t('Shift + щелчок'), t('Добавить к выделению или убрать')],
+  [t('Рамка на пустом месте'), t('Выделить несколько элементов')],
+  ['Ctrl + A', t('Выделить всё')],
+  ['Ctrl + C / X / V', t('Копировать, вырезать, вставить (в том числе в другой проект)')],
+  ['Ctrl + D', t('Дублировать')],
+  ['Delete', t('Удалить выделенное')],
+  ['R', t('Повернуть на 90°')],
+  ['M', t('Отразить по горизонтали')],
+  [t('Стрелки'), t('Сдвинуть выделенное на шаг сетки (Shift — на 5 шагов)')],
+  [t('F2 или двойной щелчок'), t('Переименовать элемент')],
+  ['Ctrl + F', t('Найти элемент по имени')],
+  ['F', t('Показать всю схему; Z — приблизить к выделению')],
+  ['+ / −', t('Масштаб; колесо мыши — масштаб к курсору')],
+  [t('Пробел + перетаскивание, колёсико мыши или «Рука»'), t('Двигать полотно')],
+  ['Ctrl + Z / Ctrl + Y', t('Отменить и повторить')],
+  ['Esc', t('Отменить действие или снять выделение')],
+  [t('? или F1'), t('Эта подсказка')],
 ];
 
 interface NodeViewProps {
@@ -188,7 +194,11 @@ const NodeView = memo(function NodeView({
         role="button"
         tabIndex={0}
         aria-pressed={selected}
-        aria-label={`Элемент ${node.name}: ${kindTitle(node)}${level === 'error' ? ', есть ошибка' : ''}`}
+        aria-label={t('Элемент {name}: {v2}{v3}', {
+          name: node.name,
+          v2: kindTitle(node),
+          v3: level === 'error' ? t(', есть ошибка') : '',
+        })}
         onPointerDown={(event) => api.nodePointerDown(event, node)}
         onDoubleClick={() => api.nodeDoubleClick(node)}
         onContextMenu={(event) => api.nodeContext(event, node)}
@@ -239,7 +249,7 @@ const NodeView = memo(function NodeView({
             key={pin.name}
             role="button"
             tabIndex={0}
-            aria-label={`${node.name}.${pin.name}: ${pin.direction === 'input' ? 'вход' : 'выход'}, ${pin.width} бит${pin.hint ? `, ${pin.hint}` : ''}${badPins.includes(pin.name) ? ', не соединён' : ''}`}
+            aria-label={`${node.name}.${pin.name}: ${pin.direction === 'input' ? t('вход') : t('выход')}, ${t('{width} бит', { width: pin.width })}${pin.hint ? `, ${pin.hint}` : ''}${badPins.includes(pin.name) ? t(', не соединён') : ''}`}
             aria-pressed={pendingPin === pin.name}
             data-pin={key}
             className={`circuit-terminal ${pin.direction} ${connected ? 'connected' : ''} ${badPins.includes(pin.name) ? 'problem' : ''} ${state ? `target-${state}` : ''} ${pendingPin === pin.name ? 'pending' : ''}`}
@@ -365,11 +375,12 @@ export function CircuitEditor({
     } catch (cause) {
       return {
         doc: { format: 'yosis-schematic', version: 2, nodes: [], wires: [] } as CircuitDocument,
-        error: cause instanceof Error ? cause.message : 'Не удалось прочитать схему.',
+        error: cause instanceof Error ? cause.message : t('Не удалось прочитать схему.'),
       };
     }
   }, [source.content]);
   const doc = parsed.doc;
+  const mobile = useIsMobile();
   const [selection, setSelection] = useState<Selection>(noSelection),
     [pending, setPending] = useState<Endpoint | null>(null),
     [message, setMessage] = useState(''),
@@ -379,7 +390,7 @@ export function CircuitEditor({
     [gallery, setGallery] = useState(false),
     [menu, setMenu] = useState<MenuState | null>(null),
     [tool, setTool] = useState<'select' | 'hand'>('select'),
-    [panels, setPanels] = useState({ palette: true, inspector: false }),
+    [panels, setPanels] = useState({ palette: !mobile, inspector: false }),
     [find, setFind] = useState(''),
     [rename, setRename] = useState<{ id: string; field: 'name' | 'text'; value: string } | null>(
       null,
@@ -421,8 +432,10 @@ export function CircuitEditor({
   // The properties card covers part of the canvas, so it opens when there is something to edit.
   const hasSelection = selection.nodes.length + selection.wires.length > 0;
   useEffect(() => {
-    if (hasSelection) setPanels((value) => (value.inspector ? value : { ...value, inspector: true }));
-  }, [hasSelection]);
+    // On a phone the card is a sheet over half the sheet of paper: opened by hand only.
+    if (hasSelection && !mobile)
+      setPanels((value) => (value.inspector ? value : { ...value, inspector: true }));
+  }, [hasSelection, mobile]);
 
   useEffect(() => {
     if (!notice) return;
@@ -463,6 +476,23 @@ export function CircuitEditor({
     surface.addEventListener('wheel', wheel, { passive: false });
     return () => surface.removeEventListener('wheel', wheel);
   }, [size.height, code]);
+  // Two fingers zoom and pan the sheet; whatever one finger had started is dropped.
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  useEffect(() => {
+    const surface = svgRef.current;
+    if (!surface) return;
+    return attachPinch(surface, {
+      getView: () => viewRef.current,
+      setView,
+      onStart: () => {
+        gesture.current = null;
+        setMoveDelta(null);
+        setBand(null);
+        setWireDrag(null);
+      },
+    });
+  }, [code]);
 
   const worldPoint = useCallback(
     (clientX: number, clientY: number): Point => {
@@ -533,7 +563,7 @@ export function CircuitEditor({
       action();
     } catch (cause) {
       setMessage(
-        cause instanceof Error ? cause.message.replace(/^Схема: /, '') : 'Действие невозможно.',
+        cause instanceof Error ? stripSchemaPrefix(cause.message) : t('Действие невозможно.'),
       );
     }
   }, []);
@@ -666,7 +696,13 @@ export function CircuitEditor({
         labelAt: midpoint(points),
         bad: badWires.has(wire.id),
         ends: [points[0], points[points.length - 1]] as [Point, Point],
-        title: `Провод ${sourceNode.name}.${wire.from.pin} → ${nodesById.get(wire.to.node)?.name}.${wire.to.pin}, ${width} бит. Delete — удалить.`,
+        title: t('Провод {name}.{pin} → {v3}.{pin2}, {width} бит. Delete — удалить.', {
+          name: sourceNode.name,
+          pin: wire.from.pin,
+          v3: nodesById.get(wire.to.node)?.name ?? '',
+          pin2: wire.to.pin,
+          width,
+        }),
         related: related.has(wire.id),
       };
     });
@@ -763,7 +799,7 @@ export function CircuitEditor({
       /* буфер недоступен: работает внутренний */
     }
     if (cut) deleteSelection();
-    else setNotice(`Скопировано элементов: ${selection.nodes.length}.`);
+    else setNotice(t('Скопировано элементов: {length}.', { length: selection.nodes.length }));
   }
   function pasteText(text: string) {
     if (busy) return;
@@ -786,7 +822,7 @@ export function CircuitEditor({
     } catch {
       /* используем внутренний буфер */
     }
-    if (!text) return setMessage('Буфер пуст. Сначала скопируйте элементы (Ctrl+C).');
+    if (!text) return setMessage(t('Буфер пуст. Сначала скопируйте элементы (Ctrl+C).'));
     pasteText(text);
   }
   function duplicate() {
@@ -800,6 +836,7 @@ export function CircuitEditor({
 
   function addFromLibrary(entryId: string, at?: Point) {
     if (busy) return;
+    if (mobile && !at) setPanels((value) => ({ ...value, palette: false }));
     guard(() => {
       const node = newLibraryNode(doc, entryId);
       if (at) {
@@ -1208,13 +1245,19 @@ export function CircuitEditor({
       (node) =>
         node.name.toLowerCase().includes(needle) || kindTitle(node).toLowerCase().includes(needle),
     );
-    if (!hits.length) return setMessage(`Элемент «${find}» не найден.`);
+    if (!hits.length) return setMessage(t('Элемент «{find}» не найден.', { find }));
     findIndex.current = (findIndex.current + 1) % hits.length;
     const hit = hits[findIndex.current];
     setSelection({ nodes: [hit.id], wires: [] });
     centerOn(hit.id);
     setMessage('');
-    setNotice(`Найдено: ${hit.name} (${findIndex.current + 1} из ${hits.length}).`);
+    setNotice(
+      t('Найдено: {name} ({v2} из {length}).', {
+        name: hit.name,
+        v2: findIndex.current + 1,
+        length: hits.length,
+      }),
+    );
   }
   function selectProblem(issue: CircuitIssue) {
     if (issue.node) {
@@ -1251,7 +1294,7 @@ export function CircuitEditor({
     try {
       return compileCircuit(doc, project.top);
     } catch (cause) {
-      return cause instanceof Error ? cause.message : 'Проверьте имя верхнего модуля.';
+      return cause instanceof Error ? cause.message : t('Проверьте имя верхнего модуля.');
     }
   }, [code, doc, project.top]);
   const errors = problems.filter((issue) => issue.severity !== 'warning'),
@@ -1260,14 +1303,23 @@ export function CircuitEditor({
   const status = wireDrag
     ? wireDrag.hover && wireDrag.check
       ? wireDrag.check.ok
-        ? 'Отпустите кнопку мыши, чтобы соединить.'
+        ? t('Отпустите кнопку мыши, чтобы соединить.')
         : wireDrag.check.reason
-      : 'Ведите провод к контакту. Подходящие контакты подсвечены зелёным, неподходящие — красным.'
+      : t(
+          'Ведите провод к контакту. Подходящие контакты подсвечены зелёным, неподходящие — красным.',
+        )
     : pending
-      ? `Выбран контакт ${nodesById.get(pending.node)?.name}.${pending.pin}. Нажмите другой контакт, чтобы соединить. Esc — отмена.`
+      ? t('Выбран контакт {v1}.{pin}. Нажмите другой контакт, чтобы соединить. Esc — отмена.', {
+          v1: nodesById.get(pending.node)?.name ?? '',
+          pin: pending.pin,
+        })
       : preview.on
-        ? 'Предпросмотр: нажимайте входы и кнопки, шагайте тактом. Это быстрая проверка; точное моделирование — на вкладках «Диаграммы» и «Виртуальная».'
-        : 'Перетащите элемент из библиотеки. Протяните провод от контакта к контакту. Подсказки — клавиша «?».';
+        ? t(
+            'Предпросмотр: нажимайте входы и кнопки, шагайте тактом. Это быстрая проверка; точное моделирование — на вкладках «Диаграммы» и «Виртуальная».',
+          )
+        : t(
+            'Перетащите элемент из библиотеки. Протяните провод от контакта к контакту. Подсказки — клавиша «?».',
+          );
 
   const toolbarButton = (
     label: string,
@@ -1322,50 +1374,55 @@ export function CircuitEditor({
           clipboardText.current = text;
           pasteText(text);
         } else if (clipboardText.current) pasteText(clipboardText.current);
-        else setMessage('В буфере нет схемы Logra.');
+        else setMessage(t('В буфере нет схемы Logra.'));
       }}
     >
-      <header className="circuit-toolbar" role="toolbar" aria-label="Инструменты конструктора">
+      <header className="circuit-toolbar" role="toolbar" aria-label={t('Инструменты конструктора')}>
         {toolbarButton(
-          'Отменить (Ctrl+Z)',
+          t('Отменить (Ctrl+Z)'),
           <Undo2 size={16} />,
           () => undo(),
           !history.undo.length || busy,
         )}
         {toolbarButton(
-          'Повторить (Ctrl+Y)',
+          t('Повторить (Ctrl+Y)'),
           <Redo2 size={16} />,
           () => undo(true),
           !history.redo.length || busy,
         )}
         <span className="toolbar-sep" aria-hidden="true" />
         {toolbarButton(
-          'Вырезать (Ctrl+X)',
+          t('Вырезать (Ctrl+X)'),
           <Scissors size={16} />,
           () => void copy(true),
           !selection.nodes.length || busy,
         )}
         {toolbarButton(
-          'Копировать (Ctrl+C)',
+          t('Копировать (Ctrl+C)'),
           <Copy size={16} />,
           () => void copy(),
           !selection.nodes.length,
         )}
-        {toolbarButton('Вставить (Ctrl+V)', <ClipboardPaste size={16} />, () => void paste(), busy)}
         {toolbarButton(
-          'Повернуть на 90° (R)',
+          t('Вставить (Ctrl+V)'),
+          <ClipboardPaste size={16} />,
+          () => void paste(),
+          busy,
+        )}
+        {toolbarButton(
+          t('Повернуть на 90° (R)'),
           <RotateCw size={16} />,
           () => transform((ids) => rotateNodes(doc, ids)),
           !selection.nodes.length || busy,
         )}
         {toolbarButton(
-          'Отразить (M)',
+          t('Отразить (M)'),
           <FlipHorizontal2 size={16} />,
           () => transform((ids) => rotateNodes(doc, ids, true)),
           !selection.nodes.length || busy,
         )}
         {toolbarButton(
-          'Удалить (Delete)',
+          t('Удалить (Delete)'),
           <Trash2 size={16} />,
           deleteSelection,
           (!selection.nodes.length && !selection.wires.length) || busy,
@@ -1383,8 +1440,8 @@ export function CircuitEditor({
           <input
             id="circuit-find"
             type="search"
-            aria-label="Найти элемент по имени"
-            placeholder="Найти по имени"
+            aria-label={t('Найти элемент по имени')}
+            placeholder={t('Найти по имени')}
             value={find}
             onChange={(event) => {
               setFind(event.target.value);
@@ -1393,29 +1450,33 @@ export function CircuitEditor({
           />
         </form>
         {toolbarButton(
-          'Рука: двигать полотно',
+          t('Рука: двигать полотно'),
           <Hand size={16} />,
           () => setTool(tool === 'hand' ? 'select' : 'hand'),
           false,
           tool === 'hand',
         )}
-        {toolbarButton('Уменьшить масштаб (−)', <Minus size={16} />, () =>
+        {toolbarButton(t('Уменьшить масштаб (−)'), <Minus size={16} />, () =>
           setView((v) => zoomCanvas(v, 1 / 1.25, { x: size.width / 2, y: size.height / 2 })),
         )}
-        <output aria-label="Текущий масштаб">{Math.round(view.scale * 100)}%</output>
-        {toolbarButton('Увеличить масштаб (+)', <Plus size={16} />, () =>
+        <output aria-label={t('Текущий масштаб')}>{Math.round(view.scale * 100)}%</output>
+        {toolbarButton(t('Увеличить масштаб (+)'), <Plus size={16} />, () =>
           setView((v) => zoomCanvas(v, 1.25, { x: size.width / 2, y: size.height / 2 })),
         )}
-        {toolbarButton('Показать всю схему (F)', <Maximize size={16} />, () => fitAll())}
+        {toolbarButton(t('Показать всю схему (F)'), <Maximize size={16} />, () => fitAll())}
         <span className="toolbar-sep" aria-hidden="true" />
-        <div className="symbol-style-toggle" role="group" aria-label="Стиль обозначений элементов">
+        <div
+          className="symbol-style-toggle"
+          role="group"
+          aria-label={t('Стиль обозначений элементов')}
+        >
           {(
             [
-              ['ansi', 'ANSI', 'Вентили привычной формы: И, ИЛИ, НЕ'],
+              ['ansi', 'ANSI', t('Вентили привычной формы: И, ИЛИ, НЕ')],
               [
                 'gost',
-                'ЕСКД',
-                'Прямоугольники с обозначениями &, ≥1, =1 по ГОСТ 2.743 и IEC 60617',
+                t('ЕСКД'),
+                t('Прямоугольники с обозначениями &, ≥1, =1 по ГОСТ 2.743 и IEC 60617'),
               ],
             ] as const
           ).map(([value, label, hint]) => (
@@ -1488,7 +1549,11 @@ export function CircuitEditor({
       <div className="circuit-instruction">
         <span role="status">{status}</span>
         <small>
-          {source.name} · {doc.nodes.length} элементов · {doc.wires.length} проводов
+          {source.name} ·{' '}
+          {t('{nodes} элементов · {wires} проводов', {
+            nodes: doc.nodes.length,
+            wires: doc.wires.length,
+          })}
         </small>
       </div>
       {(message || parsed.error || notice) && (
@@ -1500,10 +1565,12 @@ export function CircuitEditor({
         </p>
       )}
       {code ? (
-        <pre className="circuit-code" aria-label="Verilog из схемы">
+        <pre className="circuit-code" aria-label={t('Verilog из схемы')}>
           {generated && !errors.length
             ? generated
-            : `Сначала исправьте схему:\n${errors.map((issue) => issue.message).join('\n')}`}
+            : t('Сначала исправьте схему:\n{v1}', {
+                v1: errors.map((issue) => issue.message).join('\n'),
+              })}
         </pre>
       ) : (
         <div
@@ -1525,7 +1592,7 @@ export function CircuitEditor({
               ref={svgRef}
               viewBox={`0 0 ${Math.max(size.width, 1)} ${Math.max(size.height, 1)}`}
               role="group"
-              aria-label="Конструктор логической схемы"
+              aria-label={t('Конструктор логической схемы')}
               tabIndex={0}
               onPointerDown={onBackgroundDown}
               onPointerMove={onMove}
@@ -1663,7 +1730,11 @@ export function CircuitEditor({
             </svg>
             {!doc.nodes.length && (
               <div className="circuit-empty">
-                <p>{t('Схема пуста. Выберите элемент в библиотеке слева или откройте готовый пример.')}</p>
+                <p>
+                  {t(
+                    'Схема пуста. Выберите элемент в библиотеке слева или откройте готовый пример.',
+                  )}
+                </p>
                 <button type="button" className="button primary" onClick={() => setGallery(true)}>
                   {t('Открыть примеры')}
                 </button>
@@ -1680,7 +1751,7 @@ export function CircuitEditor({
                 {rename.field === 'text' ? (
                   <textarea
                     autoFocus
-                    aria-label="Текст заметки"
+                    aria-label={t('Текст заметки')}
                     value={rename.value}
                     onChange={(event) => setRename({ ...rename, value: event.target.value })}
                     onBlur={commitRename}
@@ -1692,7 +1763,7 @@ export function CircuitEditor({
                 ) : (
                   <input
                     autoFocus
-                    aria-label="Новое имя элемента"
+                    aria-label={t('Новое имя элемента')}
                     value={rename.value}
                     maxLength={128}
                     onFocus={(event) => event.target.select()}
@@ -1710,27 +1781,31 @@ export function CircuitEditor({
               <ul className="circuit-menu" role="menu" style={{ left: menu.x, top: menu.y }}>
                 {[
                   [t('Копировать'), () => void copy(), !selection.nodes.length],
-                  ['Вырезать', () => void copy(true), !selection.nodes.length],
-                  ['Вставить', () => void paste(), false],
-                  ['Дублировать', duplicate, !selection.nodes.length],
+                  [t('Вырезать'), () => void copy(true), !selection.nodes.length],
+                  [t('Вставить'), () => void paste(), false],
+                  [t('Дублировать'), duplicate, !selection.nodes.length],
                   [
-                    'Повернуть (R)',
+                    t('Повернуть (R)'),
                     () => transform((ids) => rotateNodes(doc, ids)),
                     !selection.nodes.length,
                   ],
                   [
-                    'Отразить (M)',
+                    t('Отразить (M)'),
                     () => transform((ids) => rotateNodes(doc, ids, true)),
                     !selection.nodes.length,
                   ],
-                  ['Переименовать (F2)', () => single && api.nodeDoubleClick(single), !single],
+                  [t('Переименовать (F2)'), () => single && api.nodeDoubleClick(single), !single],
                   [
-                    'Приблизить к выделению (Z)',
+                    t('Приблизить к выделению (Z)'),
                     () => fitAll(selectedNodes),
                     !selection.nodes.length,
                   ],
-                  ['Выделить всё', selectAll, false],
-                  [t('Удалить'), deleteSelection, !selection.nodes.length && !selection.wires.length],
+                  [t('Выделить всё'), selectAll, false],
+                  [
+                    t('Удалить'),
+                    deleteSelection,
+                    !selection.nodes.length && !selection.wires.length,
+                  ],
                 ].map(([label, action, disabled]) => (
                   <li key={label as string} role="none">
                     <button
@@ -1749,23 +1824,30 @@ export function CircuitEditor({
               </ul>
             )}
             <span className="canvas-hint">
-              {doc.nodes.length} элементов · {doc.wires.length} проводов · рамка — выделение · колесо —
-              масштаб · пробел + мышь — сдвиг
+              {t(
+                t(
+                  '{nodes} элементов · {wires} проводов · рамка — выделение · колесо — масштаб · пробел + мышь — сдвиг',
+                ),
+                { nodes: doc.nodes.length, wires: doc.wires.length },
+              )}
             </span>
           </div>
           {panels.inspector && (
-            <aside className="circuit-inspector" aria-label="Свойства и проверка схемы">
+            <aside className="circuit-inspector" aria-label={t('Свойства и проверка схемы')}>
               {preview.on && (
-                <section className="preview-panel" aria-label="Предпросмотр значений">
+                <section className="preview-panel" aria-label={t('Предпросмотр значений')}>
                   <h3>{t('Предпросмотр')}</h3>
                   <p>
-                    Быстрая проверка в браузере: показывает значения на проводах. Точное
-                    моделирование выполняют вкладки «Диаграммы» и «Виртуальная».
+                    {t(
+                      t(
+                        'Быстрая проверка в браузере: показывает значения на проводах. Точное моделирование выполняют вкладки «Диаграммы» и «Виртуальная».',
+                      ),
+                    )}
                   </p>
                   <div className="preview-actions">
                     <button type="button" className="button subtle" onClick={() => stepClock(1)}>
                       <StepForward size={14} />
-                      Такт
+                      {t('Такт')}
                     </button>
                     <button type="button" className="button subtle" onClick={() => stepClock(10)}>
                       ×10
@@ -1777,7 +1859,7 @@ export function CircuitEditor({
                       onClick={() => setPreview({ ...preview, running: !preview.running })}
                     >
                       <Play size={14} />
-                      {preview.running ? 'Стоп' : 'Ход'}
+                      {preview.running ? t('Стоп') : t('Ход')}
                     </button>
                     <button
                       type="button"
@@ -1795,7 +1877,7 @@ export function CircuitEditor({
                         })
                       }
                     >
-                      Сброс
+                      {t('Сброс')}
                     </button>
                   </div>
                   <label className="prop-check">
@@ -1804,11 +1886,15 @@ export function CircuitEditor({
                       checked={preview.fast}
                       onChange={(event) => setPreview({ ...preview, fast: event.target.checked })}
                     />
-                    <span>Ускорить делители частоты (период — несколько тактов)</span>
+                    <span>{t('Ускорить делители частоты (период — несколько тактов)')}</span>
                   </label>
                   <p>
-                    Выполнено тактов: {preview.cycles}. «?» — значение неизвестно до сброса или
-                    загрузки.
+                    {t(
+                      t(
+                        'Выполнено тактов: {cycles}. «?» — значение неизвестно до сброса или загрузки.',
+                      ),
+                      { cycles: preview.cycles },
+                    )}
                   </p>
                   {doc.nodes
                     .filter(
@@ -1820,7 +1906,7 @@ export function CircuitEditor({
                       return (
                         <label key={node.id} className="prop-field">
                           <span>
-                            {node.name} ({width} бит)
+                            {node.name} ({t('{width} бит', { width })})
                           </span>
                           <input
                             type="number"
@@ -1841,16 +1927,16 @@ export function CircuitEditor({
               )}
               {selection.nodes.length > 1 && (
                 <section className="multi-panel">
-                  <h3>Выбрано элементов: {selection.nodes.length}</h3>
+                  <h3>{t('Выбрано элементов: {count}', { count: selection.nodes.length })}</h3>
                   <div className="preview-actions">
                     {(
                       [
-                        ['left', 'По левому краю'],
-                        ['top', 'По верху'],
-                        ['hcenter', 'По центру ↔'],
-                        ['vcenter', 'По центру ↕'],
-                        ['hdistribute', 'Распределить ↔'],
-                        ['vdistribute', 'Распределить ↕'],
+                        ['left', t('По левому краю')],
+                        ['top', t('По верху')],
+                        ['hcenter', t('По центру ↔')],
+                        ['vcenter', t('По центру ↕')],
+                        ['hdistribute', t('Распределить ↔')],
+                        ['vdistribute', t('Распределить ↕')],
                       ] as [AlignMode, string][]
                     ).map(([mode, label]) => (
                       <button
@@ -1880,19 +1966,19 @@ export function CircuitEditor({
                 />
               ) : (
                 !selection.nodes.length && (
-                  <p>Выберите элемент, чтобы изменить имя, ширину и другие свойства.</p>
+                  <p>{t('Выберите элемент, чтобы изменить имя, ширину и другие свойства.')}</p>
                 )
               )}
               {single && (single.kind === 'tag_in' || single.kind === 'tag_out') && (
                 <p className="prop-note">
-                  Связанные метки «{single.name}»:{' '}
+                  {t('Связанные метки «{name}»:', { name: single.name })}{' '}
                   {doc.nodes
                     .filter(
                       (node) =>
                         (node.kind === 'tag_in' || node.kind === 'tag_out') &&
                         node.name === single.name,
                     )
-                    .map((node) => (node.kind === 'tag_out' ? 'передаёт' : 'принимает'))
+                    .map((node) => (node.kind === 'tag_out' ? t('передаёт') : t('принимает')))
                     .join(', ')}
                   .
                 </p>
@@ -1900,10 +1986,10 @@ export function CircuitEditor({
               <details className="circuit-issues" open>
                 <summary>
                   {errors.length
-                    ? `Исправьте перед сборкой · ${errors.length}`
+                    ? t('Исправьте перед сборкой · {length}', { length: errors.length })
                     : warnings.length
-                      ? `Схема готова · замечаний ${warnings.length}`
-                      : 'Схема готова к сборке'}
+                      ? t('Схема готова · замечаний {length}', { length: warnings.length })
+                      : t('Схема готова к сборке')}
                 </summary>
                 {problems.length ? (
                   <ul>
@@ -1918,8 +2004,11 @@ export function CircuitEditor({
                   </ul>
                 ) : (
                   <p>
-                    Можно синтезировать и проверить диаграммы. Выводы платы для кнопок и светодиодов
-                    назначаются автоматически.
+                    {t(
+                      t(
+                        'Можно синтезировать и проверить диаграммы. Выводы платы для кнопок и светодиодов назначаются автоматически.',
+                      ),
+                    )}
                   </p>
                 )}
               </details>
@@ -1932,10 +2021,10 @@ export function CircuitEditor({
           className="circuit-dialog"
           role="dialog"
           aria-modal="true"
-          aria-label="Горячие клавиши конструктора"
+          aria-label={t('Горячие клавиши конструктора')}
         >
           <div>
-            <h3>Горячие клавиши</h3>
+            <h3>{t('Горячие клавиши')}</h3>
             <dl>
               {shortcuts.map(([keys, text]) => (
                 <div key={keys}>
@@ -1945,18 +2034,26 @@ export function CircuitEditor({
               ))}
             </dl>
             <button className="button primary" autoFocus onClick={() => setHelp(false)}>
-              Закрыть
+              {t('Закрыть')}
             </button>
           </div>
         </div>
       )}
       {gallery && (
-        <div className="circuit-dialog" role="dialog" aria-modal="true" aria-label="Готовые схемы">
+        <div
+          className="circuit-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('Готовые схемы')}
+        >
           <div>
-            <h3>Готовые схемы</h3>
+            <h3>{t('Готовые схемы')}</h3>
             <p>
-              Выбранный пример заменит текущую схему. Это можно отменить кнопкой «Отменить»
-              (Ctrl+Z). Кнопки, светодиоды и такт получат выводы платы автоматически.
+              {t(
+                t(
+                  'Выбранный пример заменит текущую схему. Это можно отменить кнопкой «Отменить» (Ctrl+Z). Кнопки, светодиоды и такт получат выводы платы автоматически.',
+                ),
+              )}
             </p>
             <ul className="example-list">
               {circuitExamples.map((example) => (
@@ -1976,13 +2073,13 @@ export function CircuitEditor({
                       setGallery(false);
                     }}
                   >
-                    Открыть
+                    {t('Открыть')}
                   </button>
                 </li>
               ))}
             </ul>
             <button className="button subtle" onClick={() => setGallery(false)}>
-              Закрыть
+              {t('Закрыть')}
             </button>
           </div>
         </div>

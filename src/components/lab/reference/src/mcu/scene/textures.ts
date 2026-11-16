@@ -1,5 +1,6 @@
 // Flat detail is painted on canvases: silkscreen, sockets and screens stay sharp at any zoom
 // without adding geometry.
+import { t } from '../../../../../../../shared/i18n';
 import * as THREE from 'three';
 import type { DeviceState } from '../../../shared/mcu';
 
@@ -329,7 +330,7 @@ export function chatScreen() {
     g.fillRect(0, 0, c.width, 46);
     g.fillStyle = state?.active ? '#4cc38a' : '#8a93a6';
     g.font = '600 20px system-ui, sans-serif';
-    g.fillText(state?.active ? 'HC-05 · подключено' : 'HC-05 · нет связи', 14, 30);
+    g.fillText(state?.active ? t('HC-05 · подключено') : t('HC-05 · нет связи'), 14, 30);
     g.font = '20px system-ui, sans-serif';
     (state?.text ?? []).forEach((line, i) => {
       const mine = line.startsWith('→'),

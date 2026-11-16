@@ -1,3 +1,4 @@
+import { t } from '../../lib/i18n';
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 
 const FOCUSABLE =
@@ -70,8 +71,8 @@ export function Modal({
           <button
             type="button"
             className="acct-x"
-            aria-label="Закрыть"
-            title="Закрыть"
+            aria-label={t('Закрыть')}
+            title={t('Закрыть')}
             onClick={onClose}
           >
             ×

@@ -1,3 +1,4 @@
+import { t, translateServerMessage } from './i18n';
 import type { Project } from '../../shared/types';
 import type { CourseProgress } from './learning-course';
 import type { LearningDrafts } from './learning-session';
@@ -33,7 +34,7 @@ export async function serverProject(id: string): Promise<ServerProject> {
   return { ...value, project: validateProject(value.project) };
 }
 export async function uploadProject(project: Project, revision?: string): Promise<ServerProject> {
-  if (!project.id) throw new Error('Сначала сохраните проект в браузере.');
+  if (!project.id) throw new Error(t('Сначала сохраните проект в браузере.'));
   return request(`/api/projects/${project.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...(revision ? { 'If-Match': revision } : {}) },
@@ -44,7 +45,7 @@ export async function removeServerProject(id: string): Promise<void> {
   await requestVoid(
     `/api/projects/${id}`,
     { method: 'DELETE' },
-    'Не удалось удалить проект на сервере.',
+    t('Не удалось удалить проект на сервере.'),
   );
 }
 export function currentCourseBackup(): CourseBackup {
@@ -56,7 +57,7 @@ export function currentCourseBackup(): CourseBackup {
 }
 export function parseCourseBackup(value: unknown): CourseBackup {
   if (!value || typeof value !== 'object' || (value as Partial<CourseBackup>).version !== 1)
-    throw new Error('Сохранённый прогресс имеет неизвестный формат.');
+    throw new Error(t('Сохранённый прогресс имеет неизвестный формат.'));
   const backup = value as Partial<CourseBackup>;
   return {
     version: 1,
@@ -73,12 +74,16 @@ export async function uploadCourse(): Promise<void> {
   });
   if (!response.ok) {
     const result = (await response.json()) as { error?: string };
-    throw new Error(result.error ?? 'Не удалось сохранить прогресс на сервере.');
+    throw new Error(
+      result.error
+        ? translateServerMessage(result.error)
+        : t('Не удалось сохранить прогресс на сервере.'),
+    );
   }
 }
 export async function downloadCourse(): Promise<CourseBackup> {
   const value = await request<unknown>('/api/progress');
-  if (value === null) throw new Error('На сервере пока нет сохранённого прогресса курса.');
+  if (value === null) throw new Error(t('На сервере пока нет сохранённого прогресса курса.'));
   return parseCourseBackup(value);
 }
 export function restoreCourse(backup: CourseBackup): void {

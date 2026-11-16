@@ -5,6 +5,7 @@ import { hasSameHdlSources } from '../../lib/pin-planner';
 import { PanelBoundary } from '../PanelBoundary';
 import { PinPlanner } from './lazy-panels';
 import { ProjectSourceEditor, type EditorBindings } from './ProjectSourceEditor';
+import { t } from '../../lib/i18n';
 
 /** Вкладка «Выводы»: планировщик выводов; редактор .cst передаётся ему как render-prop. */
 export function PinsWorkspace({
@@ -35,8 +36,8 @@ export function PinsWorkspace({
       aria-labelledby="tab-constraints"
       className="pin-workspace"
     >
-      <PanelBoundary name="назначение выводов" resetKey={project.id}>
-        <Suspense fallback={<div className="editor-loading">Открываем выводы…</div>}>
+      <PanelBoundary name={t('назначение выводов')} resetKey={project.id}>
+        <Suspense fallback={<div className="editor-loading">{t('Открываем выводы…')}</div>}>
           <PinPlanner
             project={project}
             rtl={hasSameHdlSources(project, buildSnapshot) ? build?.rtl : undefined}

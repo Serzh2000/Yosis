@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import type { PlacedCell, PlacementMap, PlacementTile } from '../../shared/physical';
 import { resourceCategory } from './netlist';
 
@@ -18,9 +19,9 @@ function location(value: string): { x: number; y: number } | null {
 export function parsePlacement(value: unknown): PlacementMap {
   const netlist = object(value),
     modules = object(netlist?.modules);
-  if (!modules) throw new Error('Ожидается JSON из nextpnr --write с полем modules.');
+  if (!modules) throw new Error(t('Ожидается JSON из nextpnr --write с полем modules.'));
   const moduleEntries = Object.entries(modules);
-  if (moduleEntries.length > 4096) throw new Error('В файле слишком много модулей.');
+  if (moduleEntries.length > 4096) throw new Error(t('В файле слишком много модулей.'));
   const candidates = moduleEntries.filter(([, module]) => {
     const cells = object(object(module)?.cells);
     return (
@@ -32,14 +33,16 @@ export function parsePlacement(value: unknown): PlacementMap {
   });
   if (!candidates.length)
     throw new Error(
-      'В файле нет координат NEXTPNR_BEL. Загрузите результат размещения nextpnr, а не результат синтеза.',
+      t(
+        'В файле нет координат NEXTPNR_BEL. Загрузите результат размещения nextpnr, а не результат синтеза.',
+      ),
     );
   if (candidates.length > 1)
-    throw new Error('Ожидается плоский результат nextpnr с одним размещённым модулем.');
+    throw new Error(t('Ожидается плоский результат nextpnr с одним размещённым модулем.'));
   const [top, rawModule] = candidates[0],
     module = object(rawModule)!;
   const cells = object(module.cells)!;
-  if (Object.keys(cells).length > 100000) throw new Error('Файл содержит больше 100 000 ячеек.');
+  if (Object.keys(cells).length > 100000) throw new Error(t('Файл содержит больше 100 000 ячеек.'));
   const tiles = new Map<string, PlacementTile>();
   const placed: PlacedCell[] = [];
   const warnings: string[] = [];
@@ -90,9 +93,11 @@ export function parsePlacement(value: unknown): PlacementMap {
     placed.push(item);
     tile(point.x, point.y).cells.push(item);
   }
-  if (!placed.length) throw new Error('Координаты файла не соответствуют формату Gowin X…Y…/BEL.');
+  if (!placed.length)
+    throw new Error(t('Координаты файла не соответствуют формату Gowin X…Y…/BEL.'));
   const nets = object(module.netnames);
-  if (nets && Object.keys(nets).length > 200000) throw new Error('В файле слишком много сигналов.');
+  if (nets && Object.keys(nets).length > 200000)
+    throw new Error(t('В файле слишком много сигналов.'));
   let examinedPips = 0;
   for (const rawNet of Object.values(nets ?? {})) {
     const routing = object(object(rawNet)?.attributes)?.ROUTING;
@@ -102,7 +107,7 @@ export function parsePlacement(value: unknown): PlacementMap {
     const seen = new Set<string>();
     for (let index = 1; index < pieces.length; index += 3) {
       if (++examinedPips > 2000000)
-        throw new Error('Маршрутизация превышает лимит 2 000 000 переходов.');
+        throw new Error(t('Маршрутизация превышает лимит 2 000 000 переходов.'));
       const pip = pieces[index],
         point = location(pip);
       if (!point || seen.has(pip)) continue;
@@ -113,10 +118,12 @@ export function parsePlacement(value: unknown): PlacementMap {
   }
   if (unplaced)
     warnings.push(
-      `${unplaced} ячеек не имеют распознанной физической координаты и исключены из карты.`,
+      t('{count} ячеек не имеют распознанной физической координаты и исключены из карты.', {
+        count: unplaced,
+      }),
     );
   if (!routingPips)
-    warnings.push('В файле нет распознанной трассировки ROUTING; доступна карта размещения.');
+    warnings.push(t('В файле нет распознанной трассировки ROUTING; доступна карта размещения.'));
   const settings = object(module.settings);
   const family = settings?.['packer.chipdb'],
     device = settings?.['packer.partno'];

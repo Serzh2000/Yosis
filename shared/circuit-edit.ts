@@ -11,6 +11,8 @@ import {
   type CircuitWire,
   type Params,
 } from './schematic';
+import { t } from './i18n';
+import { tn } from './circuit-util';
 
 /** Приводит параметры к допустимым: меняет размеры таблицы, обрезает числа по границам. */
 export function normalizeParams(
@@ -183,18 +185,18 @@ export function pasteSelection(
   try {
     clip = JSON.parse(text);
   } catch {
-    return fail('в буфере обмена нет схемы.');
+    return fail(t('в буфере обмена нет схемы.'));
   }
   if (clip.format !== CLIPBOARD_FORMAT || clip.version !== 2)
-    return fail('в буфере обмена нет схемы Logra.');
+    return fail(t('в буфере обмена нет схемы Logra.'));
   // Проверяем фрагмент теми же правилами, что и документ.
   const parsed = parseCircuit(
     JSON.stringify({ format: 'yosis-schematic', version: 2, nodes: clip.nodes, wires: clip.wires }),
   );
   if (doc.nodes.length + parsed.nodes.length > MAX_NODES)
-    return fail(`достигнут предел ${MAX_NODES} элементов.`);
+    return fail(tn(t('достигнут предел {MAX_NODES} элементов.'), { MAX_NODES }));
   if (doc.wires.length + parsed.wires.length > MAX_WIRES)
-    return fail('достигнут предел соединений.');
+    return fail(t('достигнут предел соединений.'));
   const idMap = new Map<string, string>(),
     used = new Set(doc.nodes.map((node) => node.id)),
     names = new Set(doc.nodes.map((node) => node.name));

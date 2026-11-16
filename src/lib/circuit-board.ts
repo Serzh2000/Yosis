@@ -7,6 +7,7 @@ import {
   type CircuitDocument,
 } from '../../shared/schematic';
 import { applyPinEdit, assignedPins, readCst, type PlannerSignal } from './pin-planner';
+import { t } from './i18n';
 
 /** A project with the pins of the board blocks of its schematic already assigned in the .cst. */
 export function assignSchematicPins(project: Project, schematic: string): Project {
@@ -93,7 +94,11 @@ export function syncBoardConstraints(
     );
     if (holder && isPort(holder.signal)) {
       problems.push(
-        `Вывод ${item.pin} уже занят портом ${holder.signal}. Для ${item.signal} назначение не добавлено.`,
+        t('Вывод {pin} уже занят портом {signal}. Для {signal2} назначение не добавлено.', {
+          pin: item.pin,
+          signal: holder.signal,
+          signal2: item.signal,
+        }),
       );
       continue;
     }
@@ -110,7 +115,9 @@ export function syncBoardConstraints(
       assigned.push(`${item.signal} → ${item.pin}`);
     } catch (error) {
       problems.push(
-        error instanceof Error ? error.message : `${item.signal}: назначение не удалось.`,
+        error instanceof Error
+          ? error.message
+          : t('{signal}: назначение не удалось.', { signal: item.signal }),
       );
     }
   }

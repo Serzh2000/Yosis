@@ -1,4 +1,5 @@
 import type { VcdSignal, VcdTrace } from './vcd';
+import { t } from './i18n';
 
 export type WaveformRadix = 'hex' | 'bin' | 'dec';
 export interface TimeWindow {
@@ -161,12 +162,12 @@ export function timeTicks(window: TimeWindow, pixelWidth: number): number[] {
 
 export function formatWaveTime(time: number, timescaleFs: number, span: number): string {
   const units = [
-    { factor: 1e15, label: 'с' },
-    { factor: 1e12, label: 'мс' },
-    { factor: 1e9, label: 'мкс' },
-    { factor: 1e6, label: 'нс' },
-    { factor: 1e3, label: 'пс' },
-    { factor: 1, label: 'фс' },
+    { factor: 1e15, label: t('с') },
+    { factor: 1e12, label: t('мс') },
+    { factor: 1e9, label: t('мкс') },
+    { factor: 1e6, label: t('нс') },
+    { factor: 1e3, label: t('пс') },
+    { factor: 1, label: t('фс') },
   ];
   const unit = units.find((candidate) => span * timescaleFs >= candidate.factor) || units.at(-1)!;
   const value = Number(((time * timescaleFs) / unit.factor).toPrecision(10));

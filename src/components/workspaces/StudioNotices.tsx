@@ -3,6 +3,7 @@ import type { SourceFile } from '../../../shared/types';
 import type { StaleExampleCopy } from '../../lib/example-origin';
 import type { LearningGuide } from '../../lib/learning-types';
 import type { WorkTab } from '../../lib/studio-tabs';
+import { t } from '../../lib/i18n';
 
 /** Сообщения под навигацией: ошибки, информация, устаревший пример, отмена удаления, наставник. */
 export function StudioNotices({
@@ -54,19 +55,19 @@ export function StudioNotices({
           <span>
             {error ||
               (healthError
-                ? `Сервис сборки недоступен: ${healthError}`
+                ? t('Сервис сборки недоступен: {error}', { error: healthError })
                 : pollError
-                  ? `Связь со сборкой прервана: ${pollError} Повторяем подключение…`
-                  : storageError || 'Не удалось сохранить проект в браузере.')}
+                  ? t('Связь со сборкой прервана: {error} Повторяем подключение…', { error: pollError })
+                  : storageError || t('Не удалось сохранить проект в браузере.'))}
           </span>
           {healthError && (
             <button onClick={onReconnect}>
               <RotateCcw size={13} />
-              Подключиться
+              {t('Подключиться')}
             </button>
           )}
           {error && (
-            <button className="notice-close" aria-label="Закрыть сообщение" onClick={onCloseError}>
+            <button className="notice-close" aria-label={t('Закрыть сообщение')} onClick={onCloseError}>
               <X size={14} />
             </button>
           )}
@@ -75,7 +76,7 @@ export function StudioNotices({
       {info && (
         <div className="notice" role="status">
           <span>{info}</span>
-          <button className="notice-close" aria-label="Закрыть сообщение" onClick={onCloseInfo}>
+          <button className="notice-close" aria-label={t('Закрыть сообщение')} onClick={onCloseInfo}>
             <X size={14} />
           </button>
         </div>
@@ -83,14 +84,19 @@ export function StudioNotices({
       {staleExample && (
         <div className="notice" role="status" data-testid="stale-example-notice">
           <span>
-            {staleExample.certainty === 'guess' ? 'Похоже, это копия' : 'Это копия'} примера «
-            {staleExample.example.title}», а в библиотеке пример с тех пор исправлен. Ваш проект не
-            изменён.
+            {t(
+              t('{prefix} примера «{title}», а в библиотеке пример с тех пор исправлен. Ваш проект не изменён.'),
+              {
+                prefix:
+                  staleExample.certainty === 'guess' ? t('Похоже, это копия') : t('Это копия'),
+                title: staleExample.example.title,
+              },
+            )}
           </span>
-          <button onClick={onOpenFreshExample}>Открыть свежую копию</button>
+          <button onClick={onOpenFreshExample}>{t('Открыть свежую копию')}</button>
           <button
             className="notice-close"
-            aria-label="Скрыть напоминание об обновлении примера"
+            aria-label={t('Скрыть напоминание об обновлении примера')}
             onClick={onDismissStaleExample}
           >
             <X size={14} />
@@ -99,14 +105,14 @@ export function StudioNotices({
       )}
       {deletedFile && (
         <div className="notice undo-notice">
-          <span>Файл {deletedFile.name} удалён.</span>
+          <span>{t('Файл {name} удалён.', { name: deletedFile.name })}</span>
           <button onClick={onRestoreFile}>
             <RotateCcw size={13} />
-            Восстановить
+            {t('Восстановить')}
           </button>
           <button
             className="notice-close"
-            aria-label="Закрыть сообщение об удалении"
+            aria-label={t('Закрыть сообщение об удалении')}
             onClick={onCloseDeletedFile}
           >
             <X size={14} />
@@ -115,17 +121,17 @@ export function StudioNotices({
       )}
 
       {learningGuide && workTab !== 'lessons' && (
-        <aside className="learning-tutor-dock" aria-label="Наставник">
+        <aside className="learning-tutor-dock" aria-label={t('Наставник')}>
           <GraduationCap size={18} />
           <div>
             <strong>{learningGuide.title}</strong>
             <span title={learningGuide.tip}>{learningGuide.tip}</span>
           </div>
           <button className="button subtle" onClick={onBackToLesson}>
-            Вернуться к уроку
+            {t('Вернуться к уроку')}
             <ArrowRight size={13} />
           </button>
-          <button className="icon-button" aria-label="Скрыть наставника" onClick={onHideGuide}>
+          <button className="icon-button" aria-label={t('Скрыть наставника')} onClick={onHideGuide}>
             <X size={13} />
           </button>
         </aside>

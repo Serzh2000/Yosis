@@ -1,4 +1,5 @@
 import { BusDevice, option, ms, us } from './base';
+import { t } from '../../../../shared/i18n';
 
 /**
  * HC-SR04 ultrasonic ranger. A TRIG pulse of at least 10 us makes it send a burst; ECHO then
@@ -185,7 +186,7 @@ export const PS2_KEYS: { id: string; label: string; code: number; extended?: boo
     label: c,
     code: [0x16, 0x1e, 0x26, 0x25, 0x2e, 0x36, 0x3d, 0x3e, 0x46, 0x45][i],
   })),
-  { id: 'Space', label: 'Пробел', code: 0x29 },
+  { id: 'Space', label: t('Пробел'), code: 0x29 },
   { id: 'Enter', label: 'Enter', code: 0x5a },
   { id: 'Esc', label: 'Esc', code: 0x76 },
   { id: 'Backspace', label: '⌫', code: 0x66 },

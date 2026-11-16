@@ -8,6 +8,7 @@ import {
   type FolderFile,
 } from '../lib/gowin-import';
 import { identifyProject, validateProject } from '../lib/projects';
+import { t } from '../../shared/i18n';
 
 export type FolderChoice = {
   files: FolderFile[];
@@ -45,13 +46,13 @@ export function useProjectImport({
     if (!file || busyRef.current) return;
     const generation = ++selectionGeneration.current;
     try {
-      if (file.size > MAX_PROJECT_FILE_BYTES) throw new Error('Файл проекта превышает 3 МБ.');
+      if (file.size > MAX_PROJECT_FILE_BYTES) throw new Error(t('Файл проекта превышает 3 МБ.'));
       const next = validateProject(JSON.parse(await file.text()));
       if (generation !== selectionGeneration.current || busyRef.current) return;
       void openProject(identifyProject(next, true));
     } catch (cause) {
       if (generation === selectionGeneration.current)
-        onError(cause instanceof Error ? cause.message : 'Не удалось открыть проект.');
+        onError(cause instanceof Error ? cause.message : t('Не удалось открыть проект.'));
     }
     if (importRef.current) importRef.current.value = '';
   };
@@ -65,7 +66,7 @@ export function useProjectImport({
         (file) => IMPORTED_FILE.test(file.name) && file.size <= MAX_IMPORTED_FILE_BYTES,
       );
       if (wanted.length > MAX_IMPORTED_FILES)
-        throw new Error('В папке слишком много файлов. Выберите папку одного проекта.');
+        throw new Error(t('В папке слишком много файлов. Выберите папку одного проекта.'));
       const files = await Promise.all(
         wanted.map(async (file) => ({
           path: file.webkitRelativePath || file.name,
@@ -79,7 +80,7 @@ export function useProjectImport({
       else void openProject(identifyProject(validateProject(projectFromFolder(files)), true));
     } catch (cause) {
       if (generation === selectionGeneration.current)
-        onError(cause instanceof Error ? cause.message : 'Не удалось открыть папку проекта.');
+        onError(cause instanceof Error ? cause.message : t('Не удалось открыть папку проекта.'));
     }
     if (folderRef.current) folderRef.current.value = '';
   };
@@ -92,7 +93,7 @@ export function useProjectImport({
     try {
       void openProject(identifyProject(validateProject(projectFromFolder(files, path)), true));
     } catch (cause) {
-      onError(cause instanceof Error ? cause.message : 'Не удалось открыть проект.');
+      onError(cause instanceof Error ? cause.message : t('Не удалось открыть проект.'));
     }
   };
 

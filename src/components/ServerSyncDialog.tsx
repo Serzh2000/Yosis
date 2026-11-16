@@ -11,6 +11,7 @@ import {
   uploadProject,
 } from '../lib/server-sync';
 import type { CourseBackup, ServerProjectSummary } from '../lib/server-sync';
+import { t } from '../lib/i18n';
 
 export function ServerSyncDialog({
   project,
@@ -47,7 +48,7 @@ export function ServerSyncDialog({
       await operation();
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : 'Не удалось обменяться данными с сервером.',
+        cause instanceof Error ? cause.message : t('Не удалось обменяться данными с сервером.'),
       );
     } finally {
       setBusy(false);
@@ -73,35 +74,37 @@ export function ServerSyncDialog({
   const remote = projects.find((item) => item.id === project.id);
   return (
     <Dialog
-      title="Проекты и прогресс на сервере"
+      title={t('Проекты и прогресс на сервере')}
       className="dialog project-library-dialog"
       onClose={onClose}
       closeDisabled={busy}
       busy={busy}
     >
       <p>
-        Участник: <strong>{user}</strong>. Вы выбираете, что сохранить на сервере. Локальные проекты
-        из этого браузера доступны отдельно.
+        {t(
+          t('Участник: {user}. Вы выбираете, что сохранить на сервере. Локальные проекты из этого браузера доступны отдельно.'),
+          { user },
+        )}
       </p>
       {confirm || deleting ? (
         <section>
           <h3>
             {deleting
-              ? `Удалить «${deleting.name}» с сервера?`
+              ? t('Удалить «{name}» с сервера?', { name: deleting.name })
               : confirm === 'upload'
-                ? `Обновить серверную версию «${remote?.name}»?`
+                ? t('Обновить серверную версию «{name}»?', { name: remote?.name ?? '' })
                 : confirm === 'course-upload'
-                  ? 'Сохранить текущий прогресс курса?'
-                  : 'Восстановить прогресс курса с сервера?'}
+                  ? t('Сохранить текущий прогресс курса?')
+                  : t('Восстановить прогресс курса с сервера?')}
           </h3>
           <p>
             {confirm === 'course-restore'
-              ? 'Текущий прогресс и черновики уроков в этом браузере будут заменены выбранной серверной копией.'
+              ? t('Текущий прогресс и черновики уроков в этом браузере будут заменены выбранной серверной копией.')
               : confirm === 'course-upload'
-                ? 'Серверная копия прогресса будет заменена текущими результатами и черновиками этого браузера.'
+                ? t('Серверная копия прогресса будет заменена текущими результатами и черновиками этого браузера.')
                 : deleting
-                  ? 'Локальная копия останется в браузере.'
-                  : 'На сервер будут записаны текущие исходники. Изменения других сеансов проверяются перед записью.'}
+                  ? t('Локальная копия останется в браузере.')
+                  : t('На сервер будут записаны текущие исходники. Изменения других сеансов проверяются перед записью.')}
           </p>
           <div className="dialog-actions">
             <button
@@ -113,7 +116,7 @@ export function ServerSyncDialog({
                 setCourse(null);
               }}
             >
-              Отмена
+              {t('Отмена')}
             </button>
             <button
               className="button primary"
@@ -127,14 +130,14 @@ export function ServerSyncDialog({
                   } else if (confirm === 'upload') {
                     await uploadProject(project, remote?.revision);
                     setProjects(await serverProjects());
-                    setMessage('Проект сохранён на сервере.');
+                    setMessage(t('Проект сохранён на сервере.'));
                   } else if (confirm === 'course-upload') {
                     await uploadCourse();
-                    setMessage('Прогресс курса сохранён на сервере.');
+                    setMessage(t('Прогресс курса сохранён на сервере.'));
                   } else if (course) {
                     restoreCourse(course);
                     onCourseRestore();
-                    setMessage('Прогресс курса восстановлен.');
+                    setMessage(t('Прогресс курса восстановлен.'));
                   }
                   setConfirm(null);
                   setCourse(null);
@@ -142,10 +145,10 @@ export function ServerSyncDialog({
               }
             >
               {deleting
-                ? 'Удалить с сервера'
+                ? t('Удалить с сервера')
                 : confirm === 'course-restore'
-                  ? 'Восстановить'
-                  : 'Сохранить'}
+                  ? t('Восстановить')
+                  : t('Сохранить')}
             </button>
           </div>
         </section>
@@ -161,11 +164,11 @@ export function ServerSyncDialog({
                   : void run(async () => {
                       await uploadProject(project);
                       setProjects(await serverProjects());
-                      setMessage('Проект сохранён на сервере.');
+                      setMessage(t('Проект сохранён на сервере.'));
                     })
               }
             >
-              Сохранить «{project.name}» на сервере
+              {t('Сохранить «{name}» на сервере', { name: project.name })}
             </button>
             <button
               className="button subtle"
@@ -173,11 +176,11 @@ export function ServerSyncDialog({
               onClick={() =>
                 void run(async () => {
                   setProjects(await serverProjects());
-                  setMessage('Список обновлён.');
+                  setMessage(t('Список обновлён.'));
                 })
               }
             >
-              Обновить список
+              {t('Обновить список')}
             </button>
           </div>
           <div className="saved-project-list">
@@ -194,24 +197,24 @@ export function ServerSyncDialog({
                 >
                   <span>
                     <strong>{item.name}</strong>
-                    <small>{item.top} · Открыть локальную копию</small>
+                    <small>{t('{top} · Открыть локальную копию', { top: item.top })}</small>
                   </span>
                 </button>
                 <button className="button subtle" disabled={busy} onClick={() => setDeleting(item)}>
-                  Удалить с сервера
+                  {t('Удалить с сервера')}
                 </button>
               </div>
             ))}
-            {!projects.length && <p>Серверная библиотека пока пуста.</p>}
+            {!projects.length && <p>{t('Серверная библиотека пока пуста.')}</p>}
           </div>
-          <h3>Обучение</h3>
+          <h3>{t('Обучение')}</h3>
           <div className="dialog-actions">
             <button
               className="button subtle"
               disabled={busy}
               onClick={() => setConfirm('course-upload')}
             >
-              Сохранить прогресс курса
+              {t('Сохранить прогресс курса')}
             </button>
             <button
               className="button subtle"
@@ -223,7 +226,7 @@ export function ServerSyncDialog({
                 })
               }
             >
-              Восстановить прогресс курса
+              {t('Восстановить прогресс курса')}
             </button>
           </div>
         </>
@@ -246,11 +249,11 @@ export function ServerSyncDialog({
               })
             }
           >
-            Завершить сеанс
+            {t('Завершить сеанс')}
           </button>
         )}
         <button className="button primary" disabled={busy} onClick={onClose}>
-          Закрыть
+          {t('Закрыть')}
         </button>
       </div>
     </Dialog>

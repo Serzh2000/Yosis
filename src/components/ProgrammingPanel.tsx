@@ -17,6 +17,7 @@ import './programming.css';
 import { DebuggerInstaller } from './DebuggerInstaller';
 import { requestText } from '../lib/api';
 import { getProjectSnapshot } from '../lib/projects';
+import { t } from '../lib/i18n';
 
 interface Props {
   project: Project;
@@ -153,7 +154,7 @@ export function ProgrammingPanel({
       if (event.device === target) {
         setTarget(null);
         setIdentity(null);
-        setError('USB-плата отключена. Подключите её и выберите снова.');
+        setError(t('USB-плата отключена. Подключите её и выберите снова.'));
       }
     };
     usb?.addEventListener('disconnect', disconnected);
@@ -169,7 +170,7 @@ export function ProgrammingPanel({
         })
         .catch(() => {
           if (active)
-            setArtifactError('SHA-256 недоступен. Откройте приложение через HTTPS или localhost.');
+            setArtifactError(t('SHA-256 недоступен. Откройте приложение через HTTPS или localhost.'));
         });
     return () => {
       active = false;
@@ -191,7 +192,7 @@ export function ProgrammingPanel({
         const text = await requestText(
           `/api/physical/${encodeURIComponent(id)}/artifacts/design.fs`,
           { signal: abort.signal, cache: 'no-store' },
-          'Не удалось получить битстрим. Повторите размещение.',
+          t('Не удалось получить битстрим. Повторите размещение.'),
         );
         parseGowinBitstream(text);
         const sha256 = await sha256Text(text);
@@ -207,7 +208,7 @@ export function ProgrammingPanel({
           });
       } catch (cause) {
         if (!abort.signal.aborted)
-          setArtifactError(cause instanceof Error ? cause.message : 'Ошибка чтения битстрима.');
+          setArtifactError(cause instanceof Error ? cause.message : t('Ошибка чтения битстрима.'));
       } finally {
         if (!abort.signal.aborted) setLoadingArtifact(false);
       }
@@ -240,7 +241,7 @@ export function ProgrammingPanel({
       }
     } catch (cause) {
       if (mounted.current && !(cause instanceof DOMException && cause.name === 'NotFoundError')) {
-        setError(cause instanceof Error ? cause.message : 'Не удалось получить доступ к USB.');
+        setError(cause instanceof Error ? cause.message : t('Не удалось получить доступ к USB.'));
       }
     } finally {
       if (transport) {
@@ -263,7 +264,7 @@ export function ProgrammingPanel({
     setArtifactError('');
     try {
       if (!/\.fs$/i.test(file.name) || file.size > MAX_BITSTREAM_BYTES)
-        throw new Error('Выберите Gowin .fs размером до 16 МБ.');
+        throw new Error(t('Выберите Gowin .fs размером до 16 МБ.'));
       const text = await file.text();
       parseGowinBitstream(text);
       const sha256 = await sha256Text(text);
@@ -274,7 +275,7 @@ export function ProgrammingPanel({
     } catch (cause) {
       if (mounted.current && generation === fileGeneration.current) {
         setFileArtifact(null);
-        setArtifactError(cause instanceof Error ? cause.message : 'Не удалось открыть файл.');
+        setArtifactError(cause instanceof Error ? cause.message : t('Не удалось открыть файл.'));
       }
     }
   }
@@ -282,7 +283,7 @@ export function ProgrammingPanel({
     if (!romSerial || operation.current || uartBusy || setupBusy) return;
     operation.current = true;
     setRomProbing(true);
-    setRomStage('Выберите ROM-порт…');
+    setRomStage(t('Выберите ROM-порт…'));
     setRomInfo(null);
     setRomError('');
     setTarget(null);
@@ -299,7 +300,7 @@ export function ProgrammingPanel({
       if (mounted.current) setRomInfo(info);
     } catch (cause) {
       if (mounted.current && !(cause instanceof DOMException && cause.name === 'NotFoundError'))
-        setRomError(cause instanceof Error ? cause.message : 'Не удалось прочитать ROM.');
+        setRomError(cause instanceof Error ? cause.message : t('Не удалось прочитать ROM.'));
     } finally {
       operation.current = false;
       if (mounted.current) {
@@ -329,7 +330,7 @@ export function ProgrammingPanel({
       sha256: selected.sha256,
       device: device.productName || 'Tang Nano 20K',
       status: 'running',
-      progress: { stage: 'Подготовка', percent: 0 },
+      progress: { stage: t('Подготовка'), percent: 0 },
       logs: '',
     });
     let transport: FtdiWebUsbTransport | DirtyJtagWebUsbTransport | undefined;
@@ -343,9 +344,9 @@ export function ProgrammingPanel({
           selected.snapshot !== current.current.snapshot ||
           selected.physicalId !== current.current.physicalId)
       )
-        throw new Error('Проект изменился. Повторите синтез и размещение.');
+        throw new Error(t('Проект изменился. Повторите синтез и размещение.'));
       if ((await sha256Text(selected.text)) !== selected.sha256)
-        throw new Error('Битстрим изменился. Выберите файл заново.');
+        throw new Error(t('Битстрим изменился. Выберите файл заново.'));
       transport = await openAdapter(device);
       result = await new GowinJtag(transport, (progress) => {
         if (mounted.current)
@@ -362,7 +363,7 @@ export function ProgrammingPanel({
           );
       }).program(selected.text);
     } catch (cause) {
-      failure = cause instanceof Error ? cause.message : 'Ошибка USB/JTAG.';
+      failure = cause instanceof Error ? cause.message : t('Ошибка USB/JTAG.');
     } finally {
       if (transport) {
         const warnings = await transport.close();
@@ -380,7 +381,7 @@ export function ProgrammingPanel({
               error: failure || undefined,
               result,
               progress: {
-                stage: failure ? 'Ошибка загрузки' : 'Загрузка завершена',
+                stage: failure ? t('Ошибка загрузки') : t('Загрузка завершена'),
                 percent: failure ? previous.progress.percent : 100,
               },
             },
@@ -393,29 +394,30 @@ export function ProgrammingPanel({
   return (
     <section
       className="physical-card programming-panel"
-      aria-label={mode === 'program' ? 'Загрузка битстрима в плату' : 'Обслуживание USB-отладчика'}
+      aria-label={mode === 'program' ? t('Загрузка битстрима в плату') : t('Обслуживание USB-отладчика')}
     >
       <div hidden={mode !== 'program'} className="programming-main-flow">
         <div className="physical-card-title">
           <Usb size={17} />
-          <h3>Загрузка в FPGA</h3>
+          <h3>{t('Загрузка в FPGA')}</h3>
           <span className={`connection-badge ${target ? 'is-connected' : ''}`}>
             {adapterKind === 'dirtyjtag' ? 'DirtyJTAG v2' : 'WebUSB · JTAG'}
           </span>
         </div>
         <p className="programming-intro">
-          Запустите схему на плате. Загрузка в SRAM действует до отключения питания.
+          {t('Запустите схему на плате. Загрузка в SRAM действует до отключения питания.')}
         </p>
         <section className={`programming-step ${target ? 'is-done' : ''}`}>
           <h4 className="programming-step-heading">
-            <span>{target ? <Check size={13} aria-label="готово" /> : 1}</span>Подключите плату
+            <span>{target ? <Check size={13} aria-label={t('готово')} /> : 1}</span>
+            {t('Подключите плату')}
           </h4>
           <div className={`programming-device-row ${target ? 'is-connected' : ''}`}>
             {target && (
               <div className="programming-device">
                 <i aria-hidden="true" />
                 <strong>{target.productName || 'Tang Nano 20K'}</strong>
-                <small>{identity ? 'FPGA отвечает по JTAG' : 'USB подключён'}</small>
+                <small>{identity ? t('FPGA отвечает по JTAG') : t('USB подключён')}</small>
               </div>
             )}
             <button
@@ -427,17 +429,17 @@ export function ProgrammingPanel({
               {connecting ? <LoaderCircle size={14} className="spin" /> : <Link2 size={14} />}{' '}
               {connecting
                 ? choosingDevice
-                  ? 'Выберите USB в окне браузера…'
-                  : 'Проверяем JTAG…'
+                  ? t('Выберите USB в окне браузера…')
+                  : t('Проверяем JTAG…')
                 : target
-                  ? 'Выбрать другую плату'
-                  : 'Выбрать USB-плату'}
+                  ? t('Выбрать другую плату')
+                  : t('Выбрать USB-плату')}
             </button>
             {target && (
               <button
                 className="programming-icon-button"
-                aria-label="Отключить USB-плату"
-                title="Отключить USB-плату"
+                aria-label={t('Отключить USB-плату')}
+                title={t('Отключить USB-плату')}
                 disabled={running}
                 onClick={() => {
                   setTarget(null);
@@ -450,13 +452,14 @@ export function ProgrammingPanel({
           </div>
           {!usb && (
             <div className="physical-note">
-              WebUSB недоступен. Откройте Logra через HTTPS или localhost в браузере с WebUSB,
-              например Chrome или Edge.
+              {t(
+                t('WebUSB недоступен. Откройте Logra через HTTPS или localhost в браузере с WebUSB, например Chrome или Edge.'),
+              )}
             </div>
           )}
           {identity && (
             <details className="programming-helper-detail">
-              <summary>FPGA GW2AR-18C распознана</summary>
+              <summary>{t('FPGA GW2AR-18C распознана')}</summary>
               <span>ID {registerHex(identity.idCode)}</span>
               <span>
                 Status {registerHex(identity.status)} · UserCode {registerHex(identity.userCode)}
@@ -467,14 +470,18 @@ export function ProgrammingPanel({
             <div className="physical-error" role="alert">
               {error}
               <details className="programming-error-hint">
-                <summary>Как исправить подключение</summary>
+                <summary>{t('Как исправить подключение')}</summary>
                 {adapterKind === 'dirtyjtag'
-                  ? 'Выбран DirtyJTAG. Ошибка захвата требует проверки WinUSB и доступа к interface 0. Переподключите USB без UPDATE и закройте другие программы, работающие с платой.'
-                  : 'Штатная FTDI-эмуляция на Windows может блокировать WebUSB. Откройте раздел «Отладчик» и выберите Bouffalo CDC в режиме UPDATE. Закройте другие программы, работающие с платой.'}
+                  ? t(
+                      t('Выбран DirtyJTAG. Ошибка захвата требует проверки WinUSB и доступа к interface 0. Переподключите USB без UPDATE и закройте другие программы, работающие с платой.'),
+                    )
+                  : t(
+                      t('Штатная FTDI-эмуляция на Windows может блокировать WebUSB. Откройте раздел «Отладчик» и выберите Bouffalo CDC в режиме UPDATE. Закройте другие программы, работающие с платой.'),
+                    )}
               </details>
               {onOpenSetup && adapterKind !== 'dirtyjtag' && (
                 <button className="button subtle" onClick={onOpenSetup}>
-                  Открыть настройку отладчика
+                  {t('Открыть настройку отладчика')}
                 </button>
               )}
             </div>
@@ -482,15 +489,16 @@ export function ProgrammingPanel({
         </section>
         <section className={`programming-step ${validArtifact ? 'is-done' : ''}`}>
           <h4 className="programming-step-heading">
-            <span>{validArtifact ? <Check size={13} aria-label="готово" /> : 2}</span>Выберите схему
+            <span>{validArtifact ? <Check size={13} aria-label={t('готово')} /> : 2}</span>
+            {t('Выберите схему')}
           </h4>
-          <div className="programming-source-row" role="group" aria-label="Источник битстрима">
+          <div className="programming-source-row" role="group" aria-label={t('Источник битстрима')}>
             <button
               className={`button subtle ${source === 'project' ? 'is-active' : ''}`}
               disabled={running}
               onClick={() => setSource('project')}
             >
-              Сборка проекта
+              {t('Сборка проекта')}
             </button>
             <button
               className={`button subtle ${source === 'file' ? 'is-active' : ''}`}
@@ -501,7 +509,7 @@ export function ProgrammingPanel({
               }}
             >
               <Upload size={13} />
-              Свой .fs
+              {t('Свой .fs')}
             </button>
             <input
               ref={fileRef}
@@ -519,38 +527,41 @@ export function ProgrammingPanel({
             {source === 'project' && loadingArtifact ? (
               <span>
                 <LoaderCircle size={14} className="spin" />
-                Проверяем битстрим…
+                {t('Проверяем битстрим…')}
               </span>
             ) : validArtifact && artifact ? (
               <>
                 <strong>{artifact.projectName}</strong>
                 <span>
-                  {artifact.name} · {(artifact.text.length / 1024 / 1024).toFixed(2)} МБ
+                  {t('{name} · {size} МБ', {
+                    name: artifact.name,
+                    size: (artifact.text.length / 1024 / 1024).toFixed(2),
+                  })}
                 </span>
                 <details className="programming-artifact-hash">
-                  <summary>Проверка файла</summary>
+                  <summary>{t('Проверка файла')}</summary>
                   <code>SHA-256 {artifact.sha256}</code>
-                  <span>Модель FPGA и CRC проверены.</span>
+                  <span>{t('Модель FPGA и CRC проверены.')}</span>
                 </details>
               </>
             ) : source === 'project' ? (
               <>
                 <strong>
                   {physical?.status === 'success' && physical.bitstreamAvailable
-                    ? 'Сборка относится к предыдущим исходникам'
-                    : 'Битстрим проекта ещё не готов'}
+                    ? t('Сборка относится к предыдущим исходникам')
+                    : t('Битстрим проекта ещё не готов')}
                 </strong>
-                <span>Синтезируйте проект и выполните размещение во вкладке «Кристалл».</span>
+                <span>{t('Синтезируйте проект и выполните размещение во вкладке «Кристалл».')}</span>
                 {onOpenChip && (
                   <button className="physical-text-button" onClick={onOpenChip}>
-                    Открыть кристалл
+                    {t('Открыть кристалл')}
                   </button>
                 )}
               </>
             ) : (
               <>
-                <strong>Выберите текстовый битстрим .fs</strong>
-                <span>Проверим модель FPGA и CRC каждого кадра.</span>
+                <strong>{t('Выберите текстовый битстрим .fs')}</strong>
+                <span>{t('Проверим модель FPGA и CRC каждого кадра.')}</span>
               </>
             )}
           </div>
@@ -563,9 +574,9 @@ export function ProgrammingPanel({
         <section className={`programming-step ${receipt?.status === 'success' ? 'is-done' : ''}`}>
           <h4 className="programming-step-heading">
             <span>
-              {receipt?.status === 'success' ? <Check size={13} aria-label="готово" /> : 3}
+              {receipt?.status === 'success' ? <Check size={13} aria-label={t('готово')} /> : 3}
             </span>
-            Запустите на FPGA
+            {t('Запустите на FPGA')}
           </h4>
           <div className="programming-action">
             <button
@@ -585,9 +596,9 @@ export function ProgrammingPanel({
               ) : (
                 <Download size={14} />
               )}{' '}
-              {receipt?.status === 'running' ? 'Загрузка…' : 'Загрузить в SRAM'}
+              {receipt?.status === 'running' ? t('Загрузка…') : t('Загрузить в SRAM')}
             </button>
-            {uartConnected && <span>Перед JTAG-проверкой UART будет закрыт.</span>}
+            {uartConnected && <span>{t('Перед JTAG-проверкой UART будет закрыт.')}</span>}
           </div>
           {receipt && (
             <div className={`programming-job status-${receipt.status}`} aria-live="polite">
@@ -597,7 +608,7 @@ export function ProgrammingPanel({
                   className="physical-text-button"
                   onClick={() => setShowLogs((value) => !value)}
                 >
-                  {showLogs ? 'Скрыть журнал' : 'Журнал'}
+                  {showLogs ? t('Скрыть журнал') : t('Журнал')}
                 </button>
               </div>
               {receipt.status === 'running' && (
@@ -605,11 +616,11 @@ export function ProgrammingPanel({
                   className="programming-progress"
                   max={100}
                   value={receipt.progress.percent}
-                  aria-label="Ход загрузки"
+                  aria-label={t('Ход загрузки')}
                 />
               )}
               <details className="programming-receipt-meta">
-                <summary>Подробности загрузки</summary>
+                <summary>{t('Подробности загрузки')}</summary>
                 <small>
                   {receipt.projectName} · SHA-256 {receipt.sha256.slice(0, 16)}… · {receipt.device}
                 </small>
@@ -621,11 +632,11 @@ export function ProgrammingPanel({
                 )}
               </details>
               {receipt.status === 'success' && (
-                <p>FPGA подтвердила конфигурацию. Проверьте LED и поведение устройства на плате.</p>
+                <p>{t('FPGA подтвердила конфигурацию. Проверьте LED и поведение устройства на плате.')}</p>
               )}
               {receipt.error && <p role="alert">{receipt.error}</p>}
               {showLogs && (
-                <pre className="physical-logs">{receipt.logs || 'Передача ещё не началась.'}</pre>
+                <pre className="physical-logs">{receipt.logs || t('Передача ещё не началась.')}</pre>
               )}
             </div>
           )}
@@ -645,11 +656,11 @@ export function ProgrammingPanel({
           onConnect={() => void connect()}
         />
         <details className="programming-rom-probe">
-          <summary>Диагностика: прочитать BootInfo</summary>
+          <summary>{t('Диагностика: прочитать BootInfo')}</summary>
           <p>
-            Отключите USB. Зажмите UPDATE за разъёмом HDMI, подключите USB и отпустите кнопку.
-            Выберите новый порт «Устройство с последовательным интерфейсом USB» или Bouffalo CDC.
-            Проверка читает BootInfo; прошивка отладчика, flash и eFuse сохраняются.
+            {t(
+              t('Отключите USB. Зажмите UPDATE за разъёмом HDMI, подключите USB и отпустите кнопку. Выберите новый порт «Устройство с последовательным интерфейсом USB» или Bouffalo CDC. Проверка читает BootInfo; прошивка отладчика, flash и eFuse сохраняются.'),
+            )}
           </p>
           <button
             className="button subtle"
@@ -657,20 +668,26 @@ export function ProgrammingPanel({
             onClick={() => void probeRom()}
           >
             {romProbing ? <LoaderCircle size={13} className="spin" /> : <Usb size={13} />}{' '}
-            {romProbing ? romStage : 'Прочитать BootInfo'}
+            {romProbing ? romStage : t('Прочитать BootInfo')}
           </button>
-          {!romSerial && <p>Нужен браузер с Web Serial через HTTPS или localhost.</p>}
+          {!romSerial && <p>{t('Нужен браузер с Web Serial через HTTPS или localhost.')}</p>}
           {romError && <p role="alert">{romError}</p>}
           {romInfo && (
             <div className="programming-rom-result" aria-live="polite">
               <span>
-                Ответ ROM получен · USB {romInfo.usbId} · версия {romInfo.version}
+                {t('Ответ ROM получен · USB {usbId} · версия {version}', {
+                  usbId: romInfo.usbId,
+                  version: romInfo.version,
+                })}
               </span>
               <span>
-                Подпись IF: {romInfo.signing} · шифрование IF: {romInfo.encryption}
+                {t('Подпись IF: {signing} · шифрование IF: {encryption}', {
+                  signing: romInfo.signing,
+                  encryption: romInfo.encryption,
+                })}
               </span>
               <details>
-                <summary>Исходный ответ BootInfo</summary>
+                <summary>{t('Исходный ответ BootInfo')}</summary>
                 <code>{romInfo.raw}</code>
               </details>
             </div>

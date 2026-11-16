@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Cpu, GraduationCap, Workflow } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
@@ -27,7 +28,7 @@ import './account/account.css';
 
 const CabinetPage = lazy(() => import('./account/CabinetPage'));
 const MODE_ICON = { verilog: Cpu, schematic: Workflow } as const;
-const DESIGN_LABEL = { verilog: 'Код', schematic: 'Схема' } as const;
+const DESIGN_LABEL = { verilog: t('Код'), schematic: t('Схема') } as const;
 
 /** Entry of the textbook: the lesson screen, or one of the two cabinets that live beside it. */
 export default function LearnApp() {
@@ -217,21 +218,21 @@ function Lesson() {
   return (
     <div className="learn-root" data-theme-mode={theme}>
       <header className="learn-top">
-        <a className="learn-brand" href="/" title="К студии">
-          <GraduationCap size={18} /> <strong>Logra</strong> <span>учебник</span>
+        <a className="learn-brand" href="/" title={t('К студии')}>
+          <GraduationCap size={18} /> <strong>Logra</strong> <span>{t('учебник')}</span>
         </a>
         <BookTitle book={book} />
-        <div className="learn-views" role="group" aria-label="Что на столе">
+        <div className="learn-views" role="group" aria-label={t('Что на столе')}>
           <button type="button" aria-pressed={view === 'design'} onClick={() => setView('design')}>
             {DESIGN_LABEL[book.mode]}
           </button>
           <button type="button" aria-pressed={view === 'bench'} onClick={() => setView('bench')}>
-            Плата
+            {t('Плата')}
           </button>
         </div>
         <span className="learn-top-space" />
         <button type="button" className="learn-top-button" onClick={toggleTheme}>
-          {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+          {theme === 'dark' ? t('Светлая тема') : t('Тёмная тема')}
         </button>
       </header>
       <div className={'learn-desk' + (folded ? ' card-folded' : '')}>
@@ -242,7 +243,7 @@ function Lesson() {
         >
           <DesignDesk book={book} page={page} done={done} insert={insert} onResult={onResult} />
         </section>
-        <section className="desk-view desk-bench" hidden={view !== 'bench'} aria-label="Плата">
+        <section className="desk-view desk-bench" hidden={view !== 'bench'} aria-label={t('Плата')}>
           {benchSeen ? (
             <Bench
               active={view === 'bench'}
@@ -283,11 +284,11 @@ function Lesson() {
               <span className="learn-success-seal" aria-hidden="true">
                 <Check size={30} strokeWidth={3} />
               </span>
-              <strong className="learn-success-kicker">Задание выполнено</strong>
-              <h2>{current.lesson?.title ?? 'Справочник'}</h2>
+              <strong className="learn-success-kicker">{t('Задание выполнено')}</strong>
+              <h2>{current.lesson?.title ?? t('Справочник')}</h2>
               <div className="learn-success-row">
                 <button type="button" onClick={() => setSuccess(null)}>
-                  Остаться
+                  {t('Остаться')}
                 </button>
                 {index < pages.length - 1 ? (
                   <button
@@ -299,7 +300,7 @@ function Lesson() {
                       goPage(pages[index + 1]!.page.id);
                     }}
                   >
-                    К следующему
+                    {t('К следующему')}
                   </button>
                 ) : null}
               </div>
@@ -353,8 +354,7 @@ function DesignDesk({
   return (
     <div className="desk-empty">
       <p>
-        На этой странице нет задания {book.mode === 'verilog' ? 'с кодом' : 'со схемой'}. Откройте
-        «Плата», чтобы посмотреть на стол, или идите дальше по уроку.
+        {t('На этой странице нет задания {kind}. Откройте «Плата», чтобы посмотреть на стол, или идите дальше по уроку.', { kind: book.mode === 'verilog' ? t('с кодом') : t('со схемой') })}
       </p>
     </div>
   );
