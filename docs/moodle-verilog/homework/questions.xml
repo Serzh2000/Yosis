@@ -64,11 +64,8 @@
 </question>
 <question type="coderunner">
   <name><text>ДЗ 1.1 · Лампа и две кнопки</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 1 из 5:</b> по образцу: допишите пропуск.</p>
-<p>Лампа должна гореть, только если нажаты <b>обе</b> кнопки (как в начале урока 1). Допишите в заготовке
-правую часть строки <code>assign</code>.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 1 «Что такое Verilog»: пример «лампа и две кнопки»</li><li>Урок 3 «Логические операторы»: операторы ~ &amp; | ^</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★☆☆☆☆ (по образцу: допишите пропуск). Пригодится: <a href="@@L1@@">урок 1 «Что такое Verilog»</a>, <a href="@@L3@@">урок 3 «Логические операторы»</a>.</i></p>
+<p>Лампа должна загораться, только когда нажаты сразу обе кнопки. В заготовке потерялась правая часть <code>assign</code>, допишите её.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -89,9 +86,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg a, b;
   wire y;
@@ -103,6 +98,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -169,12 +167,8 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 1.2 · Найди три ошибки</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 2 из 5:</b> исправьте или измените готовый код.</p>
-<p>В модуле сигнализации спрятаны <b>три ошибки</b>: из тех, что разбирались на уроке 2. Сирена должна включаться,
-если охрана включена (<code>armed</code>) и открыта дверь или окно. Исправьте код так, чтобы он собирался и
-работал правильно. Если не получается найти ошибку глазами, прочитайте сообщение компилятора: в нём указана строка.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 2 «Модуль и порты»: запятая после последнего порта; забытая «;»; опечатка в имени</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★☆☆☆ (исправьте или измените готовый код). Пригодится: <a href="@@L2@@">урок 2 «Модуль и порты»</a>.</i></p>
+<p>Модуль сигнализации написан в спешке, и в нём три ошибки, все из тех, что разбирались на втором уроке. Сирена должна срабатывать, если охрана включена (<code>armed</code>) и открыта дверь или окно. Исправьте код, чтобы он собрался и заработал. Если ошибку не видно, смотрите на сообщение компилятора: там указана строка.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -202,9 +196,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg door, window, armed;
   wire siren;
@@ -216,6 +208,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -317,11 +312,8 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 1.3 · Голосование «два из трёх»</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 3 из 5:</b> по описанию: порты заданы, содержимое пишете вы.</p>
-<p>Три члена комиссии голосуют кнопками <code>a</code>, <code>b</code>, <code>c</code>. Решение принято
-(<code>y = 1</code>), если «за» проголосовали <b>не менее двух</b>. Порты заданы, напишите содержимое модуля.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 3 «Логические операторы»: пример «голосование»; приоритет и скобки</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★☆☆ (по описанию: порты заданы, содержимое пишете вы). Пригодится: <a href="@@L3@@">урок 3 «Логические операторы»</a>.</i></p>
+<p>Трое голосуют кнопками <code>a</code>, <code>b</code>, <code>c</code>. Решение принято (<code>y = 1</code>), если «за» нажали хотя бы двое. В заготовке только порты, схему пишете вы.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -342,9 +334,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg a, b, c;
   wire y;
@@ -356,6 +346,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -450,13 +443,8 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 1.4 · Охранный индикатор</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 4 из 5:</b> по задаче: интерфейс задан, устройство продумываете сами.</p>
-<p>Модуль <code>guard</code> следит за дверью и окном. Сирена <code>siren</code> включается (1), если охрана включена
-(<code>armed = 1</code>) <b>и</b> открыта дверь или окно. Индикатор <code>led_n</code> на плате горит при 0 (активный
-низкий уровень): он должен <b>гореть, когда сирена включена</b>.</p>
-<p>Интерфейс задан, как устроено внутри — решаете сами: можно завести внутренний провод.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 2 «Модуль и порты»: активный низкий уровень; внутренний провод</li><li>Урок 3 «Логические операторы»: оператор ~</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★★☆ (по задаче: интерфейс задан, устройство продумываете сами). Пригодится: <a href="@@L2@@">урок 2 «Модуль и порты»</a>, <a href="@@L3@@">урок 3 «Логические операторы»</a>.</i></p>
+<p>Модуль <code>guard</code> охраняет дверь и окно. Сирена <code>siren</code> включается, когда охрана включена (<code>armed = 1</code>) и открыто что-нибудь одно или оба (<code>door</code>, <code>window</code>). Рядом стоит светодиод <code>led_n</code>: он горит при 0, а значит, должен гореть, пока сирена воет. Как устроить схему внутри, решайте сами, можно завести промежуточный провод.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -478,9 +466,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg door, window, armed;
   wire siren, led_n;
@@ -492,6 +478,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -590,12 +579,8 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 2.1 · Поменять половинки байта</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 2 из 5:</b> исправьте или измените готовый код.</p>
-<p>Модуль должен поменять местами старшую и младшую <b>половины</b> (по 4 бита) входного байта:
-если <code>a = 8'h1A</code>, то <code>y = 8'hA1</code>. Сейчас выход просто повторяет вход. Измените одну строку:
-используйте срезы <code>a[7:4]</code> и <code>a[3:0]</code> и конкатенацию <code>{ … , … }</code>.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 4 «Шины и числа»: конкатенация; срез шины</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★☆☆☆ (исправьте или измените готовый код). Пригодится: <a href="@@L4@@">урок 4 «Шины и числа»</a>.</i></p>
+<p>Нужно поменять местами половинки байта: старшие четыре бита становятся младшими и наоборот. Для <code>8'h1A</code> получится <code>8'hA1</code>. Сейчас выход просто равен входу. Поправьте одну строку: пригодятся срезы <code>a[7:4]</code> и <code>a[3:0]</code> и фигурные скобки для склейки.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -616,9 +601,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg [7:0] a;
   wire [7:0] y;
@@ -630,6 +613,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -724,14 +710,9 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 2.2 · Выбор узора на светодиодах</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 3 из 5:</b> по описанию: порты заданы, содержимое пишете вы.</p>
-<p>Две кнопки образуют число <code>btn</code> от 0 до 3. По нему выбирается узор на шести светодиодах
-(как в домашнем задании урока 6, вариант «Узоры»):</p>
-<table border="1" cellpadding="4"><tr><th>btn</th><th>led_n</th></tr>
-<tr><td>00</td><td>000000</td></tr><tr><td>01</td><td>101010</td></tr><tr><td>10</td><td>010101</td></tr><tr><td>11</td><td>111000</td></tr></table>
-<p>Напишите содержимое модуля. Подсказка: вложенный условный оператор <code>?:</code>.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 4 «Шины и числа»: константы с размером</li><li>Урок 6 «Условный оператор и мультиплексор»: вложенный ?:; сравнение ==</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★☆☆ (по описанию: порты заданы, содержимое пишете вы). Пригодится: <a href="@@L4@@">урок 4 «Шины и числа»</a>, <a href="@@L6@@">урок 6 «Условный оператор и мультиплексор»</a>.</i></p>
+<p>Две кнопки дают число <code>btn</code> от 0 до 3, и по нему выбирается узор на шести светодиодах (такое же задание было в уроке 6):</p><table border="1" cellpadding="4"><tr><th>btn</th><th>led_n</th></tr>
+<tr><td>00</td><td>000000</td></tr><tr><td>01</td><td>101010</td></tr><tr><td>10</td><td>010101</td></tr><tr><td>11</td><td>111000</td></tr></table><p>Подойдёт вложенный <code>?:</code>.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -752,9 +733,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg [1:0] btn;
   wire [5:0] led_n;
@@ -766,6 +745,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -834,13 +816,8 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 2.3 · Сумма двух чисел с переносом</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 3 из 5:</b> по описанию: порты заданы, содержимое пишете вы.</p>
-<p>Сложите два 2-битных числа <code>a</code> и <code>b</code>. Результат может быть от 0 до 6, то есть
-не помещается в 2 бита: младшие два бита выдайте в <code>sum</code>, а старший (<b>перенос</b>) — в <code>carry</code>.
-Например, <code>3 + 3 = 6 = 110₂</code>: <code>carry = 1</code>, <code>sum = 10</code>.
-Подсказка: на уроке 7 разобрана запись <code>{carry, sum} = a + b</code>.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 7 «Арифметика»: {carry, sum} = a + b; разрядность суммы N+1</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★☆☆ (по описанию: порты заданы, содержимое пишете вы). Пригодится: <a href="@@L7@@">урок 7 «Арифметика»</a>.</i></p>
+<p>Сложите два двухбитных числа. Сумма бывает до 6 и в два бита не влезает, поэтому старший бит выведите отдельно, как перенос <code>carry</code>, а младшие два как <code>sum</code>. Например, 3 + 3 = 6 = 110₂, то есть <code>carry = 1</code>, <code>sum = 10</code>. Как записать такую сумму одной строкой, показано в уроке 7.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -861,9 +838,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg [1:0] a, b;
   wire [1:0] sum;
@@ -876,6 +851,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -1026,13 +1004,8 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 2.4 · Модуль разности</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 4 из 5:</b> по задаче: интерфейс задан, устройство продумываете сами.</p>
-<p>Модуль <code>absdiff</code> получает два 4-битных числа без знака и выдаёт <b>модуль их разности</b>
-<code>d = |a − b|</code> (всегда неотрицательный). Например, для 3 и 5 результат 2 в обоих порядках.</p>
-<p>Интерфейс задан. Подумайте сами, как не получить «отрицательное» число: нужно сравнить числа и вычитать
-меньшее из большего.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 6 «Условный оператор и мультиплексор»: условный оператор и сравнения</li><li>Урок 7 «Арифметика»: вычитание; переполнение при вычитании</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★★☆ (по задаче: интерфейс задан, устройство продумываете сами). Пригодится: <a href="@@L6@@">урок 6 «Условный оператор и мультиплексор»</a>, <a href="@@L7@@">урок 7 «Арифметика»</a>.</i></p>
+<p>Выход <code>d</code> должен равняться разности двух четырёхбитных чисел, всегда со знаком «плюс»: для 3 и 5 получается 2, неважно, какое число первое. Простое <code>a - b</code> не подойдёт, подумайте, как не уйти в «отрицательные» числа.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -1053,9 +1026,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg [3:0] a, b;
   wire [3:0] d;
@@ -1067,6 +1038,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -1175,13 +1149,8 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 3.1 · Дешифратор 2 → 4</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 2 из 5:</b> исправьте или измените готовый код.</p>
-<p>Дешифратор по двухбитному коду <code>code</code> зажигает <b>один</b> из четырёх выходов:
-код 0 → <code>0001</code>, 1 → <code>0010</code>, 2 → <code>0100</code>, 3 → <code>1000</code>.</p>
-<p>В заготовке написаны первые два варианта. Допишите остальные и ветвь <code>default</code>, чтобы не получилась
-защёлка (урок 8).</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 8 «Блок always и оператор case»: case / default; защёлка из-за пропущенного варианта</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★☆☆☆ (исправьте или измените готовый код). Пригодится: <a href="@@L8@@">урок 8 «Блок always и оператор case»</a>.</i></p>
+<p>Дешифратор зажигает один из четырёх выходов по двухбитному коду: код 0 даёт <code>0001</code>, 1 даёт <code>0010</code>, 2 даёт <code>0100</code>, 3 даёт <code>1000</code>. Первые два варианта в заготовке уже есть. Допишите остальные и не забудьте <code>default</code>, иначе получится защёлка.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -1208,9 +1177,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg [1:0] code;
   wire [3:0] y;
@@ -1222,6 +1189,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -1296,19 +1266,13 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 3.2 · Цифра на семисегментном индикаторе</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 3 из 5:</b> по описанию: порты заданы, содержимое пишете вы.</p>
-<p>Модуль <code>seg7</code> по цифре <code>digit</code> (0–9) выдаёт код сегментов <code>seg[6:0]</code>
-(<code>seg[0]</code> — сегмент a, …, <code>seg[6]</code> — g; сегмент горит при 1). Для чисел 10–15 индикатор должен
-<b>погаснуть</b> (все нули).</p>
-<table border="1" cellpadding="4"><tr><th>digit</th><th>seg (g…a)</th><th>digit</th><th>seg (g…a)</th></tr>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★☆☆ (по описанию: порты заданы, содержимое пишете вы). Пригодится: <a href="@@L8@@">урок 8 «Блок always и оператор case»</a>.</i></p>
+<p>Цифра на семисегментном индикаторе. Модуль получает число <code>digit</code> от 0 до 9 и выдаёт код сегментов <code>seg</code>: бит 0 это сегмент a, бит 6 сегмент g, сегмент горит при 1. На числа 10–15 индикатор должен погаснуть.</p><table border="1" cellpadding="4"><tr><th>digit</th><th>seg (g…a)</th><th>digit</th><th>seg (g…a)</th></tr>
 <tr><td>0</td><td>0111111</td><td>5</td><td>1101101</td></tr>
 <tr><td>1</td><td>0000110</td><td>6</td><td>1111101</td></tr>
 <tr><td>2</td><td>1011011</td><td>7</td><td>0000111</td></tr>
 <tr><td>3</td><td>1001111</td><td>8</td><td>1111111</td></tr>
-<tr><td>4</td><td>1100110</td><td>9</td><td>1101111</td></tr></table>
-<p>Порты заданы. Таблицу вариантов удобно описать оператором <code>case</code> в блоке <code>always @(*)</code>.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 8 «Блок always и оператор case»: always @(*); default; тип reg в always</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+<tr><td>4</td><td>1100110</td><td>9</td><td>1101111</td></tr></table><p>Таблицу удобно писать через <code>case</code> внутри <code>always @(*)</code>.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -1329,9 +1293,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg [3:0] digit;
   wire [6:0] seg;
@@ -1343,6 +1305,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -1507,15 +1472,8 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 3.3 · Полный сумматор из полусумматоров</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 3 из 5:</b> по описанию: порты заданы, содержимое пишете вы.</p>
-<p>Модуль <code>half_adder</code> (полусумматор) уже написан. Постройте из <b>двух</b> его экземпляров
-полный сумматор <code>full_adder</code> с входом переноса <code>cin</code> и выходом переноса <code>cout</code>:</p>
-<ul><li>первый полусумматор складывает <code>a</code> и <code>b</code>;</li>
-<li>второй — результат первого и <code>cin</code>;</li>
-<li>перенос <code>cout</code> равен «ИЛИ» двух переносов.</li></ul>
-<p>Подключайте порты по именам: <code>.порт(сигнал)</code>. Это тот же пример, что был на уроке 9.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 9 «Иерархия модулей»: экземпляр модуля; подключение по именам</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★☆☆ (по описанию: порты заданы, содержимое пишете вы). Пригодится: <a href="@@L9@@">урок 9 «Иерархия модулей»</a>.</i></p>
+<p>Полусумматор <code>half_adder</code> уже написан. Соберите из двух таких полусумматоров полный сумматор <code>full_adder</code> с переносом на входе (<code>cin</code>) и на выходе (<code>cout</code>). Первый полусумматор складывает <code>a</code> и <code>b</code>, второй прибавляет к его сумме <code>cin</code>, а <code>cout</code> получается как «ИЛИ» двух промежуточных переносов. Порты экземпляров подключайте по именам, как в уроке 9.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -1541,9 +1499,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg a, b, cin;
   wire sum, cout;
@@ -1555,6 +1511,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -1657,14 +1616,8 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 3.4 · Четырёхразрядный сумматор</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 4 из 5:</b> по задаче: интерфейс задан, устройство продумываете сами.</p>
-<p>Модули <code>half_adder</code> и <code>full_adder</code> уже готовы. Соберите из них 4-разрядный сумматор
-<code>adder4</code>: числа <code>a</code> и <code>b</code> по 4 бита, на выходе сумма <code>sum</code> (4 бита) и перенос
-<code>cout</code>. Вход переноса самого младшего разряда равен 0.</p>
-<p>Как соединить четыре экземпляра цепочкой, решаете сами: промежуточные переносы нужны во внутренних проводах.
-Помните про разрядность: <code>wire [3:0] c</code> — четыре провода одним именем.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 7 «Арифметика»: перенос между разрядами</li><li>Урок 9 «Иерархия модулей»: иерархия модулей; разрядность портов совпадает</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★★☆ (по задаче: интерфейс задан, устройство продумываете сами). Пригодится: <a href="@@L7@@">урок 7 «Арифметика»</a>, <a href="@@L9@@">урок 9 «Иерархия модулей»</a>.</i></p>
+<p>Есть готовые <code>half_adder</code> и <code>full_adder</code>. Соберите из четырёх полных сумматоров сумматор для четырёхбитных чисел: входы <code>a</code> и <code>b</code>, сумма <code>sum</code> и перенос наружу <code>cout</code>. У младшего разряда переноса на входе нет, подайте туда 0. Переносы между разрядами пойдут по внутренним проводам, их удобно объявить одной шиной.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -1697,9 +1650,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg [3:0] a, b;
   wire [3:0] sum;
@@ -1712,6 +1663,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -1823,17 +1777,12 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 4.1 · Файл .cst для проекта</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 3 из 5:</b> по описанию: порты заданы, содержимое пишете вы.</p>
-<p>Проект на плате имеет такие порты верхнего модуля:</p>
-<table border="1" cellpadding="4"><tr><th>Порт</th><th>Вывод ПЛИС</th><th>Свойства</th></tr>
-<tr><td><code>btn[0]</code> (S1)</td><td>88</td><td>LVCMOS33, подтяжка вниз</td></tr>
-<tr><td><code>btn[1]</code> (S2)</td><td>87</td><td>LVCMOS33, подтяжка вниз</td></tr>
-<tr><td><code>led_n[0]</code> … <code>led_n[5]</code></td><td>15 … 20 (по порядку)</td><td>LVCMOS33, подтяжка вверх, ток 8 мА</td></tr>
-<tr><td><code>clk</code></td><td>4</td><td>LVCMOS33</td></tr></table>
-<p>Напишите <b>текст файла .cst</b>: у шины каждый бит назначается отдельной строкой (урок 5). Для каждого порта нужна
-строка <code>IO_LOC</code>, а свойства задаёт <code>IO_PORT</code>.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 5 «Выводы платы и файл .cst»: IO_LOC; IO_PORT; подтяжка DOWN; шина в .cst: каждый бит отдельно</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★☆☆ (по описанию: порты заданы, содержимое пишете вы). Пригодится: <a href="@@L5@@">урок 5 «Выводы платы и файл .cst»</a>.</i></p>
+<p>Проект на плате, порты верхнего модуля:</p><table border="1" cellpadding="4"><tr><th>Порт</th><th>Вывод ПЛИС</th><th>Свойства</th></tr>
+<tr><td><code>btn[0]</code> (кнопка S1)</td><td>88</td><td>LVCMOS33, подтяжка вниз</td></tr>
+<tr><td><code>btn[1]</code> (кнопка S2)</td><td>87</td><td>LVCMOS33, подтяжка вниз</td></tr>
+<tr><td><code>led_n[0]</code> … <code>led_n[5]</code></td><td>15 … 20 по порядку</td><td>LVCMOS33, подтяжка вверх, ток 8 мА</td></tr>
+<tr><td><code>clk</code></td><td>4</td><td>LVCMOS33</td></tr></table><p>Напишите текст файла <code>.cst</code>. Шина назначается по битам, каждый бит отдельной строкой. Для каждого порта нужна строка <code>IO_LOC</code>, а уровни и подтяжку задаёт <code>IO_PORT</code>.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -1855,7 +1804,7 @@ IO_LOC "btn[0]" 88;
   <useace>1</useace>
   <resultcolumns>[["Что проверяем", "testcode"], ["Результат", "expected"]]</resultcolumns>
   <template><![CDATA[import re
-_t = "{{ STUDENT_ANSWER | e('py') }}"
+_t = """{{ STUDENT_ANSWER | e('py') }}"""
 _t = re.sub(r"/\*.*?\*/", "", _t, flags=re.S)
 _t = re.sub(r"//[^\n]*", "", _t)
 
@@ -2030,17 +1979,8 @@ IO_PORT "clk" IO_TYPE=LVCMOS33;
 </question>
 <question type="coderunner">
   <name><text>ДЗ 4.2 · Испытательный стенд для голосования</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 3 из 5:</b> по описанию: порты заданы, содержимое пишете вы.</p>
-<p>Теперь вы проверяете не свой модуль, а <b>чужой</b>. Модуль голосования «два из трёх» уже описан (его
-код вы не видите, интерфейс: <code>vote(a, b, c → y)</code>; <code>y = 1</code>, если «за» не менее двух).
-Некоторые версии модуля содержат ошибки.</p>
-<p>Напишите <b>испытательный стенд</b> с именем <code>tb_vote</code> (урок 10): он не имеет портов, подключает
-экземпляр <code>vote</code>, перебирает <b>все 8 сочетаний</b> входов и для каждого сравнивает <code>y</code> с ожидаемым
-значением. При несовпадении печатайте строку со словом <code>ОШИБКА</code> (с большими буквами). Для исправной
-схемы это слово печататься не должно.</p>
-<p>Модуль <code>vote</code> описывать не нужно.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 10 «Симуляция и testbench»: испытательный стенд; цикл for; сравнение !==; $display</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★☆☆ (по описанию: порты заданы, содержимое пишете вы). Пригодится: <a href="@@L10@@">урок 10 «Симуляция и testbench»</a>.</i></p>
+<p>Теперь вы проверяющий. Кто-то написал модуль голосования «два из трёх» (<code>vote</code>: входы <code>a</code>, <code>b</code>, <code>c</code>, выход <code>y</code>), но в части версий есть ошибки. Код модуля вам не показывают.</p><p>Напишите испытательный стенд <code>tb_vote</code>: без портов, с экземпляром <code>vote</code>, перебирающий все восемь сочетаний входов. Если выход не совпал с ожидаемым, стенд должен напечатать строку со словом <code>ОШИБКА</code>. На исправной версии этого слова быть не должно. Сам модуль <code>vote</code> описывать не нужно.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -2082,6 +2022,7 @@ module vote(input wire a, input wire b, input wire c, output wire y);
 endmodule
 {% endif %}
 
+`line 1 "решение.v" 0
 {{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
@@ -2164,15 +2105,8 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 4.3 · Стенд для мультиплексора 4:1</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 4 из 5:</b> по задаче: интерфейс задан, устройство продумываете сами.</p>
-<p>Проверьте чужой мультиплексор 4:1 <code>mux4</code> с портами: <code>sel</code> (2 бита), <code>d</code> (4 бита
-данных), <code>y</code> (1 бит). Исправный мультиплексор выдаёт на <code>y</code> тот бит <code>d</code>, номер которого
-задан в <code>sel</code> (<code>sel = 2</code> → <code>y = d[2]</code>).</p>
-<p>Напишите стенд <code>tb_mux4</code>: перебор <b>всех сочетаний</b> входов (сколько их?), проверка <code>y</code>, при
-несовпадении печать строки с <code>ОШИБКА</code>. Ошибки в испытуемых версиях бывают редкие, так что одного-двух
-сочетаний мало. Описывать сам <code>mux4</code> не нужно.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 6 «Условный оператор и мультиплексор»: мультиплексор</li><li>Урок 10 «Симуляция и testbench»: цикл for; стенд</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★★☆ (по задаче: интерфейс задан, устройство продумываете сами). Пригодится: <a href="@@L6@@">урок 6 «Условный оператор и мультиплексор»</a>, <a href="@@L10@@">урок 10 «Симуляция и testbench»</a>.</i></p>
+<p>Ещё один чужой модуль: мультиплексор 4:1 <code>mux4(sel, d, y)</code>, где <code>sel</code> двухбитный, <code>d</code> четырёхбитный, а <code>y</code> равен тому биту <code>d</code>, номер которого задан в <code>sel</code>. Среди версий есть такие, где ошибка видна всего на одном сочетании входов, так что двух-трёх проверок не хватит. Напишите стенд <code>tb_mux4</code>, который переберёт всё и напечатает <code>ОШИБКА</code> при расхождении.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -2212,6 +2146,7 @@ module mux4(input wire [1:0] sel, input wire [3:0] d, output wire y);
 endmodule
 {% endif %}
 
+`line 1 "решение.v" 0
 {{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
@@ -2293,11 +2228,8 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 5.1 · D-триггер</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 1 из 5:</b> по образцу: допишите пропуск.</p>
-<p>D-триггер запоминает значение входа <code>d</code> <b>по переднему фронту</b> такта и держит его на выходе
-<code>q</code> до следующего фронта (урок 11). В заготовке пропущена правая часть присваивания. Допишите её.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 11 «Такт и D-триггер»: always @(posedge clk); неблокирующее присваивание q &lt;= d; передний фронт</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★☆☆☆☆ (по образцу: допишите пропуск). Пригодится: <a href="@@L11@@">урок 11 «Такт и D-триггер»</a>.</i></p>
+<p>D-триггер запоминает вход <code>d</code> по переднему фронту такта и держит его на <code>q</code> до следующего фронта. В заготовке пропущена правая часть присваивания.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -2319,9 +2251,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg clk;
   initial clk = 0;
@@ -2338,6 +2268,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -2412,14 +2345,8 @@ q=1</text></expected>
 </question>
 <question type="coderunner">
   <name><text>ДЗ 5.2 · Регистр со сбросом и разрешением</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 3 из 5:</b> по описанию: порты заданы, содержимое пишете вы.</p>
-<p>4-битный регистр <code>reg4</code>. По переднему фронту <code>clk</code>:</p>
-<ul><li>если <code>rst = 1</code> — <code>q</code> становится 0 (<b>синхронный</b> сброс, он важнее всего остального);</li>
-<li>иначе, если <code>en = 1</code> — <code>q</code> запоминает <code>d</code>;</li>
-<li>иначе <code>q</code> не меняется.</li></ul>
-<p>Порядок проверок — это приоритет (урок 12). Порты заданы.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 12 «Сброс, разрешение и виды присваивания»: синхронный сброс; разрешение (enable); приоритет сброса</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★☆☆ (по описанию: порты заданы, содержимое пишете вы). Пригодится: <a href="@@L12@@">урок 12 «Сброс, разрешение и виды присваивания»</a>.</i></p>
+<p>Регистр на четыре бита. По переднему фронту <code>clk</code>: если <code>rst = 1</code>, регистр обнуляется (сброс синхронный и главнее всего); иначе, если <code>en = 1</code>, регистр запоминает <code>d</code>; иначе хранит прежнее значение. Порядок проверок и есть приоритет, об этом урок 12.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -2440,9 +2367,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg clk;
   initial clk = 0;
@@ -2460,6 +2385,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -2545,13 +2473,8 @@ q= 0</text></expected>
 </question>
 <question type="coderunner">
   <name><text>ДЗ 5.3 · Счётчик от 0 до 9</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 3 из 5:</b> по описанию: порты заданы, содержимое пишете вы.</p>
-<p>Десятичный счётчик <code>cnt10</code>: по фронту <code>clk</code> при <code>en = 1</code> значение <code>q</code>
-увеличивается на 1; после <b>9</b> возвращается к 0. При <code>en = 0</code> значение хранится. Сброс <code>rst</code>
-(синхронный) обнуляет счётчик. Выход <code>wrap</code> равен 1, пока <code>q = 9</code> (последнее значение перед
-переходом в 0). Образец записи счёта до N — урок 13.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 12 «Сброс, разрешение и виды присваивания»: синхронный сброс</li><li>Урок 13 «Счётчик и делитель частоты»: счёт до N через сравнение; переполнение</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★☆☆ (по описанию: порты заданы, содержимое пишете вы). Пригодится: <a href="@@L12@@">урок 12 «Сброс, разрешение и виды присваивания»</a>, <a href="@@L13@@">урок 13 «Счётчик и делитель частоты»</a>.</i></p>
+<p>Счётчик по модулю 10. Если <code>en = 1</code>, по фронту значение <code>q</code> растёт на 1, а после девятки сразу идёт ноль; при <code>en = 0</code> значение хранится. Синхронный сброс <code>rst</code> ставит 0. Выход <code>wrap</code> равен 1, пока <code>q = 9</code>, то есть на последнем значении перед переходом к нулю.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -2572,9 +2495,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg clk;
   initial clk = 0;
@@ -2592,6 +2513,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -2686,13 +2610,8 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 5.4 · Делитель частоты на 6</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 4 из 5:</b> по задаче: интерфейс задан, устройство продумываете сами.</p>
-<p>Модуль <code>div6</code> делит частоту тактового сигнала на 6: выход <code>out</code> повторяется в 6 раз
-реже, чем такт <code>clk</code>, и имеет вид «3 такта единица, 3 такта ноль». Сброс <code>rst</code> (синхронный) ставит
-<code>out = 0</code> и начинает счёт заново. Первый переход <code>out</code> в 1 происходит на 3-м фронте после снятия сброса.</p>
-<p>Как это сделать — продумайте сами (урок 13: делитель частоты и счётчик). Интерфейс задан.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 13 «Счётчик и делитель частоты»: делитель частоты; смысл деления частоты; счётчик</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★★☆ (по задаче: интерфейс задан, устройство продумываете сами). Пригодится: <a href="@@L13@@">урок 13 «Счётчик и делитель частоты»</a>.</i></p>
+<p>Разделите частоту на 6. Выход <code>out</code> должен быть три такта единицей и три такта нулём. Сброс (синхронный) ставит <code>out = 0</code> и запускает счёт заново; первое переключение в 1 происходит на третьем фронте после снятия сброса. Чем отсчитывать такты, решайте сами, подсказка в уроке 13.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -2713,9 +2632,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg clk;
   initial clk = 0;
@@ -2732,6 +2649,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -2814,14 +2734,8 @@ out=0</text></expected>
 </question>
 <question type="coderunner">
   <name><text>ДЗ 5.5 · Сдвиговый регистр с направлением</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 4 из 5:</b> по задаче: интерфейс задан, устройство продумываете сами.</p>
-<p>6-битный сдвиговый регистр <code>shreg6</code>. По фронту <code>clk</code>:</p>
-<ul><li><code>rst = 1</code> — все биты в 0 (синхронный сброс);</li>
-<li>иначе при <code>dir = 0</code> — сдвиг <b>влево</b>, новый бит <code>din</code> входит в <code>q[0]</code>;</li>
-<li>иначе при <code>dir = 1</code> — сдвиг <b>вправо</b>, новый бит <code>din</code> входит в <code>q[5]</code>.</li></ul>
-<p>Как записать сдвиги через конкатенацию, смотрите в уроке 14. Интерфейс задан.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 12 «Сброс, разрешение и виды присваивания»: синхронный сброс</li><li>Урок 14 «Сдвиговый регистр»: сдвиг влево; сдвиг вправо</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★★☆ (по задаче: интерфейс задан, устройство продумываете сами). Пригодится: <a href="@@L12@@">урок 12 «Сброс, разрешение и виды присваивания»</a>, <a href="@@L14@@">урок 14 «Сдвиговый регистр»</a>.</i></p>
+<p>Сдвиговый регистр на шесть бит. Синхронный сброс <code>rst</code> обнуляет его. Иначе при <code>dir = 0</code> содержимое сдвигается влево, а новый бит <code>din</code> входит справа в <code>q[0]</code>; при <code>dir = 1</code> сдвиг вправо, и <code>din</code> входит слева в <code>q[5]</code>. Как записывать сдвиги через склейку, смотрите в уроке 14.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -2842,9 +2756,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg clk;
   initial clk = 0;
@@ -2861,6 +2773,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -2939,12 +2854,8 @@ q=011111</text></expected>
 </question>
 <question type="coderunner">
   <name><text>ДЗ 6.1 · Выделитель переднего фронта</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 3 из 5:</b> по описанию: порты заданы, содержимое пишете вы.</p>
-<p>Модуль <code>edge_pulse</code> формирует импульс <code>pulse = 1</code> <b>в течение одного такта</b>,
-когда сигнал <code>sig</code> переходит из 0 в 1 (передний фронт): это «выделитель фронта» из урока 15. Для этого запоминают
-предыдущее значение сигнала в триггере. Сброс <code>rst</code> (синхронный) обнуляет запомненное значение.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 12 «Сброс, разрешение и виды присваивания»: синхронный сброс</li><li>Урок 15 «Кнопки - синхронизация, дребезг, фронт»: выделитель фронта; запоминание предыдущего значения</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★☆☆ (по описанию: порты заданы, содержимое пишете вы). Пригодится: <a href="@@L12@@">урок 12 «Сброс, разрешение и виды присваивания»</a>, <a href="@@L15@@">урок 15 «Кнопки - синхронизация, дребезг, фронт»</a>.</i></p>
+<p>Выделитель переднего фронта из урока 15. Сигнал <code>pulse</code> равен 1 ровно на один такт, когда <code>sig</code> переходит из 0 в 1. Для этого нужно помнить предыдущее значение сигнала. Синхронный сброс обнуляет это «воспоминание».</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -2965,9 +2876,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg clk;
   initial clk = 0;
@@ -2984,6 +2893,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -3048,14 +2960,8 @@ pulse=0</text></expected>
 </question>
 <question type="coderunner">
   <name><text>ДЗ 6.2 · Делитель с параметром N</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 3 из 5:</b> по описанию: порты заданы, содержимое пишете вы.</p>
-<p>Настраиваемый делитель <code>divn</code> с параметром <code>N</code> (по умолчанию 4). Выход <code>strobe</code> равен 1
-<b>один такт из каждых N</b>: когда внутренний счётчик находится в последнем состоянии (N − 1). Счётчик считает от 0 до N − 1
-и снова с 0; сброс <code>rst</code> (синхронный) обнуляет его. Разрядность счётчика вычислите через <code>$clog2(N)</code>.</p>
-<p>Проверка создаёт два экземпляра: с <code>N = 3</code> и <code>N = 5</code>, так что модуль обязан работать при любом N
-(урок 16).</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 13 «Счётчик и делитель частоты»: счёт до N</li><li>Урок 16 «Параметры и generate»: $clog2; parameter; задание параметра при подключении</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★☆☆ (по описанию: порты заданы, содержимое пишете вы). Пригодится: <a href="@@L13@@">урок 13 «Счётчик и делитель частоты»</a>, <a href="@@L16@@">урок 16 «Параметры и generate»</a>.</i></p>
+<p>Делитель с настраиваемым <code>N</code> (по умолчанию 4). Внутри счётчик считает 0, 1, …, N−1 и снова с нуля; выход <code>strobe</code> равен 1 один такт из N, когда счётчик стоит на N−1. Разрядность счётчика посчитайте через <code>$clog2(N)</code>. Сброс синхронный. Проверка берёт два экземпляра, с N = 3 и N = 5, так что модуль обязан работать при любом N.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -3076,9 +2982,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg clk;
   initial clk = 0;
@@ -3096,6 +3000,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -3166,15 +3073,8 @@ s3=0 s5=0</text></expected>
 </question>
 <question type="coderunner">
   <name><text>ДЗ 6.3 · Светофор (автомат Мура)</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 4 из 5:</b> по задаче: интерфейс задан, устройство продумываете сами.</p>
-<p>Автомат светофора <code>traffic</code> имеет три состояния: красный → зелёный → жёлтый → снова красный.
-Переход к следующему состоянию происходит по фронту <code>clk</code>, <b>только если</b> <code>step = 1</code> (иначе
-состояние хранится). Сброс <code>rst</code> (синхронный) возвращает автомат в красный. Выходы <code>red</code>,
-<code>yellow</code>, <code>green</code> — по одному на состояние; они зависят <b>только от состояния</b> (автомат Мура), а не
-от входа <code>step</code>.</p>
-<p>Как закодировать состояния и разложить логику на блоки, решаете сами (урок 17). Интерфейс задан.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 17 «Конечный автомат - светофор»: автомат Мура; localparam для имён состояний; значение next по умолчанию; конечный автомат</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★★☆ (по задаче: интерфейс задан, устройство продумываете сами). Пригодится: <a href="@@L17@@">урок 17 «Конечный автомат - светофор»</a>.</i></p>
+<p>Светофор. Три состояния по кругу: красный, зелёный, жёлтый, снова красный. Переход делается по фронту только при <code>step = 1</code>, иначе состояние хранится. Синхронный сброс возвращает красный. Выходы <code>red</code>, <code>yellow</code>, <code>green</code> по одному на состояние и зависят только от состояния, а не от входа <code>step</code> (автомат Мура, урок 17).</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -3196,9 +3096,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg clk;
   initial clk = 0;
@@ -3215,6 +3113,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -3319,15 +3220,8 @@ r=1 y=0 g=0</text></expected>
 </question>
 <question type="coderunner">
   <name><text>ДЗ 6.4 · ШИМ: управление яркостью</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 4 из 5:</b> по задаче: интерфейс задан, устройство продумываете сами.</p>
-<p>Генератор ШИМ <code>pwm8</code>: 8-битный счётчик циркулирует 0…255 (период 256 тактов), а выход
-<code>pwm</code> равен 1, пока значение счётчика меньше <code>duty</code> (урок 18). Значит, за один период выход
-равен 1 ровно <code>duty</code> тактов: <code>duty = 64</code> → яркость 25 %. Сброс <code>rst</code> (синхронный)
-обнуляет счётчик.</p>
-<p>Интерфейс задан. Проверка считает, сколько раз <code>pwm</code> был равен 1 за 256 тактов, при разных значениях
-<code>duty</code>.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 13 «Счётчик и делитель частоты»: счётчик</li><li>Урок 18 «ШИМ - яркость и «дыхание» светодиода»: pwm = (cnt &lt; duty); коэффициент заполнения</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★★☆ (по задаче: интерфейс задан, устройство продумываете сами). Пригодится: <a href="@@L13@@">урок 13 «Счётчик и делитель частоты»</a>, <a href="@@L18@@">урок 18 «ШИМ - яркость и «дыхание» светодиода»</a>.</i></p>
+<p>Генератор ШИМ. Восьмибитный счётчик бежит по кругу от 0 до 255, а выход <code>pwm</code> равен 1, пока счётчик меньше <code>duty</code>. За период в 256 тактов единица держится ровно <code>duty</code> тактов: при 64 получится четверть яркости. Сброс синхронный и обнуляет счётчик. Проверка считает единицы на выходе за 256 тактов при разных <code>duty</code>.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -3348,9 +3242,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg clk;
   initial clk = 0;
@@ -3378,6 +3270,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -3477,18 +3372,8 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 6.5 · Счётчик нажатий кнопки</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 5 из 5:</b> комплексное: несколько идей из разных уроков.</p>
-<p>Соберите настоящий приёмник кнопки (урок 15) и счётчик нажатий. Модуль <code>presscount</code> считает
-нажатия кнопки <code>btn</code> в 4-битном <code>count</code> (синхронный сброс <code>rst</code> обнуляет счёт):</p>
-<ul><li>кнопка — асинхронный сигнал: пропустите её через <b>синхронизатор</b> из двух триггеров;</li>
-<li>контакты <b>дребезжат</b>: новое значение принимается, только если оно держится <b>не менее 3 тактов подряд</b>;
-более короткие импульсы (помехи) игнорируются;</li>
-<li>каждое <b>нажатие</b> (устойчивый переход 0 → 1) увеличивает <code>count</code> ровно на 1; удержание кнопки и
-отпускание счёт не меняют.</li></ul>
-<p>Это комплексное задание: цепочка «синхронизатор → антидребезг → выделение фронта → счётчик». Точная задержка в
-тактах не проверяется, проверка ждёт несколько тактов после каждого воздействия.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 12 «Сброс, разрешение и виды присваивания»: синхронный сброс</li><li>Урок 13 «Счётчик и делитель частоты»: счётчик</li><li>Урок 15 «Кнопки - синхронизация, дребезг, фронт»: синхронизатор; дребезг; антидребезг; выделитель фронта; порядок цепочки</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★★★ (комплексное: несколько идей из разных уроков). Пригодится: <a href="@@L12@@">урок 12 «Сброс, разрешение и виды присваивания»</a>, <a href="@@L13@@">урок 13 «Счётчик и делитель частоты»</a>, <a href="@@L15@@">урок 15 «Кнопки - синхронизация, дребезг, фронт»</a>.</i></p>
+<p>Настоящий приём кнопки. Модуль считает нажатия <code>btn</code> в четырёхбитном <code>count</code>, синхронный сброс <code>rst</code> обнуляет счёт. Кнопка асинхронная, поэтому сначала пропустите её через два триггера (синхронизатор). Контакты дребезжат: новое значение принимайте, только если оно продержалось не меньше трёх тактов подряд, более короткие всплески считайте помехой. Каждое нажатие (устойчивый переход 0 → 1) прибавляет единицу, а удержание и отпускание счёт не меняют. Точное число тактов задержки не проверяется: тест ждёт после каждого воздействия.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -3509,9 +3394,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg clk;
   initial clk = 0;
@@ -3528,6 +3411,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -3630,17 +3516,12 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 7.1 · ПЗУ на восемь узоров</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 3 из 5:</b> по описанию: порты заданы, содержимое пишете вы.</p>
-<p>Модуль <code>rom8</code> — постоянная память (ПЗУ): по адресу <code>addr</code> (3 бита) выдаёт слово
-<code>data</code> (6 бит), которое «зашито» в схему:</p>
-<table border="1" cellpadding="4"><tr><th>addr</th><th>data</th><th>addr</th><th>data</th></tr>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★☆☆ (по описанию: порты заданы, содержимое пишете вы). Пригодится: <a href="@@L8@@">урок 8 «Блок always и оператор case»</a>, <a href="@@L19@@">урок 19 «Память - массивы, ПЗУ и ОЗУ»</a>.</i></p>
+<p>ПЗУ на восемь слов. По адресу <code>addr</code> модуль выдаёт зашитое слово <code>data</code>:</p><table border="1" cellpadding="4"><tr><th>addr</th><th>data</th><th>addr</th><th>data</th></tr>
 <tr><td>0</td><td>000001</td><td>4</td><td>010000</td></tr>
 <tr><td>1</td><td>000010</td><td>5</td><td>100000</td></tr>
 <tr><td>2</td><td>000100</td><td>6</td><td>010101</td></tr>
-<tr><td>3</td><td>001000</td><td>7</td><td>111111</td></tr></table>
-<p>В уроке 19 такое ПЗУ описывается оператором <code>case</code>. Порты заданы.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 8 «Блок always и оператор case»: case / default</li><li>Урок 19 «Память - массивы, ПЗУ и ОЗУ»: ПЗУ; ПЗУ через case</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+<tr><td>3</td><td>001000</td><td>7</td><td>111111</td></tr></table><p>В уроке 19 такую память писали через <code>case</code>.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -3661,9 +3542,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg [2:0] addr;
   wire [5:0] data;
@@ -3675,6 +3554,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -3781,14 +3663,8 @@ endmodule
 </question>
 <question type="coderunner">
   <name><text>ДЗ 7.2 · ОЗУ 16 × 8 с синхронным чтением</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 3 из 5:</b> по описанию: порты заданы, содержимое пишете вы.</p>
-<p>Модуль <code>ram16x8</code> — оперативная память на 16 слов по 8 бит. По фронту <code>clk</code>:</p>
-<ul><li>если <code>we = 1</code> — слово <code>din</code> записывается по адресу <code>addr</code>;</li>
-<li>в любом случае выход <code>dout</code> получает слово, которое лежало по адресу <code>addr</code>
-<b>до</b> этой записи (чтение <b>синхронное</b>: данные появляются на такт позже смены адреса).</li></ul>
-<p>Массив слов: <code>reg [7:0] mem [0:15];</code> (урок 19). Порты заданы.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 19 «Память - массивы, ПЗУ и ОЗУ»: массив слов; запись по we; синхронное чтение</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★☆☆ (по описанию: порты заданы, содержимое пишете вы). Пригодится: <a href="@@L19@@">урок 19 «Память - массивы, ПЗУ и ОЗУ»</a>.</i></p>
+<p>ОЗУ на шестнадцать слов по восемь бит. По фронту <code>clk</code>: если <code>we = 1</code>, слово <code>din</code> записывается по адресу <code>addr</code>; кроме того, выход <code>dout</code> всегда получает слово, которое лежало по <code>addr</code> до этой записи. Чтение синхронное: данные появляются на такт позже смены адреса. Массив слов объявляется так: <code>reg [7:0] mem [0:15];</code>.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -3810,9 +3686,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg clk;
   initial clk = 0;
@@ -3831,6 +3705,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>
@@ -3906,17 +3783,8 @@ dout=44</text></expected>
 </question>
 <question type="coderunner">
   <name><text>ДЗ 7.3 · Передатчик UART</text></name>
-  <questiontext format="html"><text><![CDATA[<p><b>Уровень самостоятельности 5 из 5:</b> комплексное: несколько идей из разных уроков.</p>
-<p>Напишите передатчик UART <code>uart_tx</code> для кадра <b>8N1</b> (урок 20): в покое линия <code>tx</code> равна 1;
-передача начинается, когда <code>start = 1</code> на фронте такта и передатчик свободен; затем: <b>стартовый бит 0</b>,
-<b>8 бит данных младшим вперёд</b>, <b>стоп-бит 1</b>. Каждый бит длится <code>CLKS</code> тактов (параметр, по умолчанию 4;
-на плате было бы 234). Выход <code>busy = 1</code> всё время, пока идёт кадр, и 0, когда линия свободна. Сброс
-<code>rst</code> (синхронный) возвращает линию в покой.</p>
-<p>Это комплексное задание: автомат состояний (урок 17), счётчик тактов бита и номера бита, сдвиг данных (урок 14),
-параметр (урок 16). Проверка принимает кадр «как приёмник»: ждёт стартовый бит и считывает биты в их серединах, так что
-точная задержка после <code>start</code> не важна.</p>
-<p><b>На что опирается задание</b> (всё это объяснено в презентациях группы):</p><ul><li>Урок 16 «Параметры и generate»: параметр</li><li>Урок 17 «Конечный автомат - светофор»: конечный автомат</li><li>Урок 20 «UART - связь с компьютером и итоговый проект»: кадр 8N1; автомат IDLE → START → DATA → STOP; порядок бит</li></ul>
-<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких проверках решение работает неверно.</p>]]></text></questiontext>
+  <questiontext format="html"><text><![CDATA[<p><i>Сложность ★★★★★ (комплексное: несколько идей из разных уроков). Пригодится: <a href="@@L16@@">урок 16 «Параметры и generate»</a>, <a href="@@L17@@">урок 17 «Конечный автомат - светофор»</a>, <a href="@@L20@@">урок 20 «UART - связь с компьютером и итоговый проект»</a>.</i></p>
+<p>Передатчик UART для кадра 8N1. В покое линия <code>tx</code> равна 1. Когда на фронте <code>start = 1</code> и передатчик свободен, он отправляет стартовый бит 0, затем восемь бит данных младшим вперёд, затем стоп-бит 1. Каждый бит длится <code>CLKS</code> тактов (параметр, по умолчанию 4; на плате было бы 234). Выход <code>busy</code> равен 1 всё время передачи кадра. Сброс синхронный. Проверка ведёт себя как приёмник: ждёт стартовый бит и читает биты посередине, так что точная задержка после <code>start</code> не важна.</p>]]></text></questiontext>
   <generalfeedback format="html"><text><![CDATA[<p>Все проверки пройдены. Переходите к следующему заданию группы.</p>]]></text></generalfeedback>
   <defaultgrade>1.0000000</defaultgrade>
   <penalty>0.0000000</penalty>
@@ -3938,9 +3806,7 @@ endmodule
   <globalextra></globalextra>
   <useace>1</useace>
   <resultcolumns>[["Что подали", "testcode"], ["Ожидалось", "expected"], ["Получено", "got"]]</resultcolumns>
-  <template><![CDATA[{{ STUDENT_ANSWER }}
-
-`timescale 1ns/1ps
+  <template><![CDATA[`timescale 1ns/1ps
 module tb;
   reg clk;
   initial clk = 0;
@@ -3972,6 +3838,9 @@ module tb;
     $finish;
   end
 endmodule
+
+`line 1 "решение.v" 0
+{{ STUDENT_ANSWER }}
 ]]></template>
   <iscombinatortemplate>0</iscombinatortemplate>
   <allowmultiplestdins>0</allowmultiplestdins>

@@ -20,6 +20,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hw_lib as H  # noqa: E402
 import tasks_g1_g2, tasks_g3_g4, tasks_g5_g6, tasks_g7  # noqa: E402,E401
+from texts import TEXTS  # noqa: E402
 
 ap = argparse.ArgumentParser()
 ap.add_argument('root', help='папка ТСП с презентациями')
@@ -76,17 +77,19 @@ for t in TASKS:
     report.append((t, problems))
 
     # текст вопроса
-    needs = {}
-    for lesson, _regex, why in t.get('needs', []):
-        needs.setdefault(lesson, []).append(why)
-    lis = ''.join('<li>Урок %s: %s</li>' % (('«%s»' % H.LESSONS[n]) if n == 0 else
-                                           ('%d «%s»' % (n, H.LESSONS[n].split('. ', 1)[1] if '. ' in H.LESSONS[n] else H.LESSONS[n])),
-                                           html.escape('; '.join(w)))
-                  for n, w in sorted(needs.items()))
-    text = ('<p><b>Уровень самостоятельности %d из 5:</b> %s.</p>\n%s\n<p><b>На что опирается задание</b> (всё это объяснено в '
-            'презентациях группы):</p><ul>%s</ul>\n<p>Напишите код в окне ниже и нажмите «Проверить». Результат покажет, на каких '
-            'проверках решение работает неверно.</p>' % (t['level'], H.LEVELS[t['level']], t['intro'].strip(), lis))
-    t['_text'] = text
+    lessons_needed = sorted({lesson for lesson, _r, _w in t.get('needs', [])})
+
+    def lesson_label(n):
+        # метка @@L<n>@@ при загрузке в Moodle заменяется адресом презентации урока (create_homework.php, режим texts)
+        if n == 0:
+            return '<a href="@@L0@@">введение «Основы проектирования на ПЛИС»</a>'
+        title = H.LESSONS[n].split('. ', 1)[1] if '. ' in H.LESSONS[n] else H.LESSONS[n]
+        return '<a href="@@L%d@@">урок %d «%s»</a>' % (n, n, html.escape(title))
+
+    stars = '★' * t['level'] + '☆' * (5 - t['level'])
+    intro = TEXTS[t['id']]
+    t['_text'] = ('<p><i>Сложность %s (%s). Пригодится: %s.</i></p>\n%s'
+                  % (stars, H.LEVELS[t['level']], ', '.join(lesson_label(n) for n in lessons_needed), intro))
 
 if not ok_all:
     print('\nЕСТЬ ПРОБЛЕМЫ: исправьте их до загрузки')
@@ -115,7 +118,7 @@ for g in H.GROUPS:
     hw.append({'id': g['id'], 'title': g['title'], 'lessons': [H.LESSONS[n] for n in g['lessons']],
                'questions': [t['qname'] for t in TASKS if t['group'] == g['id'] and (not only or t['id'] in only)]})
 with open(os.path.join(here, 'homework.json'), 'w', encoding='utf-8', newline='\n') as f:
-    json.dump({'groups': hw}, f, ensure_ascii=False, indent=1)
+    json.dump({'groups': hw, 'lessons': {str(n): name for n, name in H.LESSONS.items()}}, f, ensure_ascii=False, indent=1)
 
 # карта покрытия
 lines = ['# Карта заданий: что нужно знать и где это объяснено\n',

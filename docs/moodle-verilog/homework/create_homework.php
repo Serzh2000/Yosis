@@ -59,6 +59,16 @@ $find = function (string $name) use ($DB, $qbankcontext) {
         ['n' => $name, 'c' => $qbankcontext->id], IGNORE_MULTIPLE);
 };
 
+function new_module_simple($course, $modname, $info) {
+    global $DB;
+    $info->modulename = $modname;
+    $info->module = $DB->get_field('modules', 'id', ['name' => $modname], MUST_EXIST);
+    $info->course = $course->id;
+    $info->cmidnumber = '';
+    $info->visibleoncoursepage = 1;
+    return add_moduleinfo($info, $course);
+}
+
 /** Находит раздел (запись course_sections) по пути «Раздел|Подраздел». */
 function find_section_by_path($course, array $path) {
     $mi = get_fast_modinfo($course->id, 0);
@@ -119,6 +129,176 @@ if ($mode === 'import') {
     $log = strip_tags(ob_get_clean());
     echo $ok ? "Вопросы импортированы\n" : "ОШИБКА импорта:\n$log\n";
     exit($ok ? 0 : 1);
+}
+
+if ($mode === 'texts') {
+    // Обновить шаблоны и тексты условий уже существующих вопросов (они стоят в тестах, поэтому не пересоздаются).
+    // Метки @@L<n>@@ в тексте заменяются адресами презентаций уроков, найденных в курсе.
+    $urls = [];
+    $mi = get_fast_modinfo($course->id, 0);
+    foreach (($hw['lessons'] ?? []) as $n => $lname) {
+        foreach ($mi->get_cms() as $cm) {
+            if ($cm->modname === 'resource' && $cm->name === $lname && $cm->visible) {
+                $urls[$n] = $CFG->wwwroot . '/mod/resource/view.php?id=' . $cm->id;
+            }
+        }
+    }
+    foreach ($xml->question as $q) {
+        if ((string)$q['type'] !== 'coderunner' || (string)$q->prototypetype !== '0') {
+            continue;
+        }
+        $name = (string)$q->name->text;
+        $id = $find($name);
+        if (!$id) {
+            echo "НЕТ вопроса $name\n";
+            continue;
+        }
+        $text = preg_replace_callback('/@@L(\d+)@@/', function ($m) use ($urls) {
+            return $urls[(int)$m[1]] ?? '#';
+        }, (string)$q->questiontext->text);
+        $DB->set_field('question_coderunner_options', 'template', (string)$q->template, ['questionid' => $id]);
+        $DB->set_field('question', 'questiontext', $text, ['id' => $id]);
+        $DB->set_field('question', 'timemodified', time(), ['id' => $id]);
+        echo "обновлён: $name" . (strpos($text, '"#"') !== false ? ' (есть ссылки без адреса!)' : '') . "\n";
+    }
+    purge_all_caches();
+    exit(0);
+}
+
+if ($mode === 'restructure') {
+    // Из плоского подраздела 3.4 (страница, папки, тесты) делаем «3.4.1 … 3.4.7»: в каждой части презентации и
+    // домашнее задание. Подраздел внутри подраздела в Moodle нельзя, поэтому части идут подряд за 3.4.
+    global $USER;
+    $mi = get_fast_modinfo($course->id, 0);
+    $fs = get_file_storage();
+    $block = null;
+    foreach ($mi->get_section_info_all() as $s) {
+        if (empty($s->component) && get_section_name($course, $s) === $sectionpath[0]) {
+            $block = $s;
+        }
+    }
+    $s34 = find_section_by_path($course, $sectionpath);
+    $folders = [];
+    $quizzes = [];
+    $page = null;
+    foreach (($mi->sections[$s34->section] ?? []) as $cmid) {
+        $cm = $mi->get_cm($cmid);
+        if ($cm->modname === 'folder') {
+            $folders[$cm->name] = $cm;
+        } else if ($cm->modname === 'quiz' && strpos($cm->name, 'ДЗ ') === 0) {
+            $quizzes[$cm->name] = $cm;
+        } else if ($cm->modname === 'page') {
+            $page = $cm;
+        }
+    }
+    foreach ($hw['groups'] as $g) {
+        $folder = null;
+        $quiz = null;
+        foreach ($folders as $n => $cm) {
+            if (strpos($n, 'Группа ' . $g['id'] . '. ') === 0) {
+                $folder = $cm;
+            }
+        }
+        foreach ($quizzes as $n => $cm) {
+            if (strpos($n, 'ДЗ ' . $g['id'] . '. ') === 0) {
+                $quiz = $cm;
+            }
+        }
+        $subname = '3.4.' . $g['id'] . '. ' . $g['title'];
+        $mi = get_fast_modinfo($course->id, 0);
+        $subcm = null;
+        foreach (($mi->sections[$block->section] ?? []) as $cmid) {
+            $cm = $mi->get_cm($cmid);
+            if ($cm->modname === 'subsection' && $cm->name === $subname) {
+                $subcm = $cm;
+            }
+        }
+        if (!$subcm) {
+            $info = new stdClass();
+            $info->section = $block->section;
+            $info->visible = 1;
+            $info->name = $subname;
+            $info->intro = '';
+            $info->introformat = FORMAT_HTML;
+            $r = new_module_simple($course, 'subsection', $info);
+            echo "Подраздел: $subname\n";
+        }
+        $dsec = find_section_by_path($course, [$sectionpath[0], $subname]);
+        // презентации из папки: каждая отдельным элементом «Файл»
+        if ($folder) {
+            $fctx = context_module::instance($folder->id);
+            $files = $fs->get_area_files($fctx->id, 'mod_folder', 'content', 0, 'filename', false);
+            foreach ($g['lessons'] as $lname) {
+                $mi = get_fast_modinfo($course->id, 0);
+                $exists = false;
+                foreach (($mi->sections[$dsec->section] ?? []) as $cmid) {
+                    if ($mi->get_cm($cmid)->name === $lname) {
+                        $exists = true;
+                    }
+                }
+                if ($exists) {
+                    continue;
+                }
+                foreach ($files as $f) {
+                    if (strpos($f->get_filename(), $lname) !== 0) {
+                        continue;
+                    }
+                    $draft = file_get_unused_draft_itemid();
+                    $fs->create_file_from_storedfile([
+                        'contextid' => context_user::instance($USER->id)->id, 'component' => 'user', 'filearea' => 'draft',
+                        'itemid' => $draft, 'filepath' => '/', 'filename' => $f->get_filename(),
+                    ], $f);
+                    $info = new stdClass();
+                    $info->section = $dsec->section;
+                    $info->visible = 1;
+                    $info->name = $lname;
+                    $info->intro = '';
+                    $info->introformat = FORMAT_HTML;
+                    $info->showdescription = 0;
+                    $info->files = $draft;
+                    $info->display = 0;
+                    $info->showsize = 1;
+                    $info->showtype = 1;
+                    $info->showdate = 0;
+                    $info->printintro = 0;
+                    $info->filterfiles = 0;
+                    new_module_simple($course, 'resource', $info);
+                    echo "  презентация: $lname\n";
+                    break;
+                }
+            }
+        }
+        if ($quiz) {
+            \core_courseformat\formatactions::cm($course)->move_end_section($quiz->id, $dsec->id);
+            \core_courseformat\formatactions::cm($course)->rename($quiz->id, 'Домашнее задание');
+            echo "  домашнее задание перенесено\n";
+        }
+        if ($folder) {
+            course_delete_module($folder->id);
+            echo "  папка удалена (в корзине Moodle)\n";
+        }
+    }
+    // страница «как работать» остаётся в 3.4 и описывает новую структуру
+    if ($page) {
+        $text = '<p>Здесь собрано всё про цифровую электронику и Verilog: от первого модуля до передатчика UART. Материал разбит '
+            . 'на семь частей, 3.4.1–3.4.7. В каждой сначала презентации, потом домашнее задание. Читайте по порядку: задания '
+            . 'опираются только на то, что уже было в презентациях.</p>'
+            . '<p>Внутри домашнего задания всё идёт от лёгкого к сложному. Сначала нужно дописать одну строчку, потом исправить '
+            . 'готовый код, потом написать модуль по описанию, а ближе к концу вы сами решаете, как устроить схему. Над каждым '
+            . 'заданием есть ссылки на презентации, которые для него нужны.</p>'
+            . '<p>Кнопка «Проверить» прогоняет вашу схему на наборе входов и показывает, где результат не совпал с ожидаемым. '
+            . 'Пробовать можно сколько угодно. Когда все проверки зелёные, нажмите «Закончить попытку…», иначе оценка не '
+            . 'запишется. Следующая часть откроется, когда за предыдущую набрано не меньше 60 баллов из 100.</p>';
+        $rec = $DB->get_record('page', ['id' => $page->instance], '*', MUST_EXIST);
+        $rec->content = $text;
+        $rec->contentformat = FORMAT_HTML;
+        $rec->revision = $rec->revision + 1;
+        $rec->timemodified = time();
+        $DB->update_record('page', $rec);
+        echo "Страница «как работать» обновлена\n";
+    }
+    rebuild_course_cache($course->id, true);
+    exit(0);
 }
 
 if ($mode === 'test') {

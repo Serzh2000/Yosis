@@ -56,6 +56,9 @@ CLOCK = ('  reg clk;\n  initial clk = 0;\n'
          '  task fall; begin #5 clk = 0; end endtask\n')
 
 
+STUDENT_START = '`line 1 "решение.v" 0\n'
+
+
 def twig_safe(text):
     for bad in ('{{', '{%', '{#'):
         assert bad not in text, 'в шаблоне есть %r: Twig это разберёт' % bad
@@ -69,7 +72,7 @@ def template(t):
         for i, (key, dut) in enumerate(t['variants'].items()):
             parts.append(('{%% if TEST.testcode == "%s" %%}\n%s\n' % (key, dut)) if i == 0
                          else ('{%% elseif TEST.testcode == "%s" %%}\n%s\n' % (key, dut)))
-        s = ''.join(parts) + '{% endif %}\n\n{{ STUDENT_ANSWER }}\n'
+        s = ''.join(parts) + '{% endif %}\n\n' + STUDENT_START + '{{ STUDENT_ANSWER }}\n'
         twig_safe(s.replace('{% if', '').replace('{% elseif', '').replace('{% endif %}', '')
                   .replace('{{ STUDENT_ANSWER }}', '').replace('%}', ''))
         return s
@@ -77,8 +80,9 @@ def template(t):
         return t['python_template']
     tb = t['tb']
     decls = tb.get('decls', '')
+    # Сначала обвязка, потом код ученика: ошибка в его коде не «затягивает» обвязку внутрь модуля.
+    # Директива `line делает номера строк в сообщениях компилятора равными строкам ученика.
     body = (
-        '{{ STUDENT_ANSWER }}\n\n'
         '`timescale 1ns/1ps\n'
         'module tb;\n'
         + decls + ('\n' if decls and not decls.endswith('\n') else '')
@@ -89,7 +93,8 @@ def template(t):
         '    {{ TEST.testcode }}\n'
         '    $finish;\n'
         '  end\n'
-        'endmodule\n')
+        'endmodule\n\n'
+        + STUDENT_START + '{{ STUDENT_ANSWER }}\n')
     twig_safe(body.replace('{{ STUDENT_ANSWER }}', '').replace('{{ TEST.testcode }}', ''))
     return body
 
@@ -116,7 +121,7 @@ def run_verilog(source, extra_args=()):
 def render(t, answer, testcode):
     if t.get('kind') == 'tbwrite':
         # Twig выбирает вариант испытуемого модуля по тесту; локально делаем то же напрямую
-        return t['variants'][testcode] + '\n\n' + answer
+        return t['variants'][testcode] + '\n\n' + STUDENT_START + answer
     tpl = template(t)
     return tpl.replace('{{ STUDENT_ANSWER }}', answer).replace('{{ TEST.testcode }}', testcode)
 
