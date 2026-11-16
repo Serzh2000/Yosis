@@ -360,7 +360,9 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
                       <small>{item.signal.width}</small>
                     </label>
                   ))}
-                  {filteredSignals.length > 500 && <p>{t('Первые 500 сигналов. Уточните поиск.')}</p>}
+                  {filteredSignals.length > 500 && (
+                    <p>{t('Первые 500 сигналов. Уточните поиск.')}</p>
+                  )}
                   {!filteredSignals.length && <p>{t('Сигналы не найдены.')}</p>}
                 </div>
               </div>
@@ -507,7 +509,11 @@ export function WaveformViewer({ trace, onRevealSignal, canRevealSignal }: Wavef
                       )}
                       <small>
                         {item.signal.scope.join('.') || t('верхний уровень')}
-                        <span>{item.signal.width > 1 ? t('{width} бит', { width: item.signal.width }) : ''}</span>
+                        <span>
+                          {item.signal.width > 1
+                            ? t('{width} бит', { width: item.signal.width })
+                            : ''}
+                        </span>
                       </small>
                     </div>
                   </div>

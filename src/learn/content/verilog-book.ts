@@ -53,8 +53,9 @@ export const verilogBook: BookDef = {
   id: 'verilog',
   title: t('Verilog и плата'),
   mode: 'verilog',
-  summary:
-    t('От бита и логического элемента до автоматов и счётчиков: пишешь модуль и проверяешь его.'),
+  summary: t(
+    'От бита и логического элемента до автоматов и счётчиков: пишешь модуль и проверяешь его.',
+  ),
   available: true,
   spine: { color: '#e0a82e' },
   chapters: [

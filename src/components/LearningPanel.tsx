@@ -147,8 +147,9 @@ function LogicPlayground() {
       </div>
       <code>assign y = {expression};</code>
       <p>
-        {t('Нажми на 0 или 1. Выход сразу реагирует: это соединение, которое работает постоянно. Здесь 1 включает виртуальную лампу.')}
-
+        {t(
+          'Нажми на 0 или 1. Выход сразу реагирует: это соединение, которое работает постоянно. Здесь 1 включает виртуальную лампу.',
+        )}
       </p>
     </section>
   );
@@ -459,7 +460,9 @@ export function LearningPanel({
                           disabled={!ready || !unlocked}
                           aria-current={item.id === lesson.id ? 'step' : undefined}
                           title={
-                            unlocked ? item.summary : t('Заверши предыдущий урок, чтобы открыть этот')
+                            unlocked
+                              ? item.summary
+                              : t('Заверши предыдущий урок, чтобы открыть этот')
                           }
                           onClick={() =>
                             setProgress((current) => selectCourseLesson(current, item.id))
@@ -495,12 +498,19 @@ export function LearningPanel({
               <div className="learning-lesson-meta">
                 <span>{courseLevels.find((level) => level.id === lesson.levelId)?.title}</span>
                 <span>
-                  {t('{minutes} мин · шаг {step} из {total}', { minutes: lesson.minutes, step: stepIndex + 1, total: lesson.steps.length })}
+                  {t('{minutes} мин · шаг {step} из {total}', {
+                    minutes: lesson.minutes,
+                    step: stepIndex + 1,
+                    total: lesson.steps.length,
+                  })}
                 </span>
               </div>
               <div
                 className="learning-step-dots"
-                aria-label={t('Шаг {step} из {total}', { step: stepIndex + 1, total: lesson.steps.length })}
+                aria-label={t('Шаг {step} из {total}', {
+                  step: stepIndex + 1,
+                  total: lesson.steps.length,
+                })}
               >
                 {lesson.steps.map((item, index) => (
                   <i key={item.id} className={index <= stepIndex ? 'reached' : ''} />
@@ -528,7 +538,9 @@ export function LearningPanel({
                           : setMode('practice')
                       }
                     >
-                      {nextLesson ? t('Дальше: {title}', { title: nextLesson.title }) : t('К самостоятельной практике')}
+                      {nextLesson
+                        ? t('Дальше: {title}', { title: nextLesson.title })
+                        : t('К самостоятельной практике')}
                       <ArrowRight size={15} />
                     </button>
                     <button
@@ -545,8 +557,9 @@ export function LearningPanel({
                     <div className="learning-roadmap">
                       <h3>{t('Основа пройдена. Что дальше')}</h3>
                       <p>
-                        {t('Следующие модули курса ещё готовятся. Уже сейчас можно исследовать эти темы в библиотеке примеров.')}
-
+                        {t(
+                          'Следующие модули курса ещё готовятся. Уже сейчас можно исследовать эти темы в библиотеке примеров.',
+                        )}
                       </p>
                       {courseRoadmap.map((item) => (
                         <div key={item.title}>
@@ -584,8 +597,9 @@ export function LearningPanel({
                           <div>
                             <strong>{t('Попробуй в настоящей IDE')}</strong>
                             <p>
-                              {t('Подключи кнопку к LED: наставник проведёт по редактору, схеме, проверке и плате.')}
-
+                              {t(
+                                'Подключи кнопку к LED: наставник проведёт по редактору, схеме, проверке и плате.',
+                              )}
                             </p>
                           </div>
                           <button
@@ -728,7 +742,9 @@ export function LearningPanel({
                       {externalCode !== undefined && externalCode !== code && (
                         <div className="learning-import-code">
                           <span>{t('Код в IDE отличается от черновика урока.')}</span>
-                          <button onClick={() => editCode(externalCode)}>{t('Взять код из IDE')}</button>
+                          <button onClick={() => editCode(externalCode)}>
+                            {t('Взять код из IDE')}
+                          </button>
                         </div>
                       )}
                       <div className="learning-lab-actions">
@@ -806,8 +822,9 @@ export function LearningPanel({
                         <p className="learning-feedback success">
                           <CheckCircle2 size={18} />
                           <span>
-                            {t('Этот код уже прошёл проверку. Можно завершить урок или запустить проверку снова.')}
-
+                            {t(
+                              'Этот код уже прошёл проверку. Можно завершить урок или запустить проверку снова.',
+                            )}
                           </span>
                         </p>
                       )}
@@ -815,7 +832,9 @@ export function LearningPanel({
                         <summary>
                           {t('Что проверяем · сценариев: {n}', { n: lesson.exercise.cases.length })}
                           {verdicts &&
-                            t(' · успешно: {n}', { n: verdicts.filter((item) => item.passed).length })}
+                            t(' · успешно: {n}', {
+                              n: verdicts.filter((item) => item.passed).length,
+                            })}
                         </summary>
                         <div>
                           <table>
@@ -870,15 +889,21 @@ export function LearningPanel({
                             onClick={() => setShowWaves(!showWaves)}
                           >
                             <Waves size={15} />
-                            {showWaves ? t('Скрыть диаграммы') : t('Исследовать временные диаграммы')}
+                            {showWaves
+                              ? t('Скрыть диаграммы')
+                              : t('Исследовать временные диаграммы')}
                           </button>
                           {showWaves && (
                             <>
                               <p>
                                 {t('Каждая строка — сигнал. Время идёт слева направо.')}{' '}
                                 {lesson.exercise.config.clock
-                                  ? t('Сравни фронты clk и изменения выхода; между фронтами регистр хранит значение.')
-                                  : t('Сравни изменения входов и выхода: комбинационная схема реагирует на входы без тактов.')}
+                                  ? t(
+                                      'Сравни фронты clk и изменения выхода; между фронтами регистр хранит значение.',
+                                    )
+                                  : t(
+                                      'Сравни изменения входов и выхода: комбинационная схема реагирует на входы без тактов.',
+                                    )}
                               </p>
                               <div className="learning-wave-view">
                                 <WaveformViewer trace={trace} />
@@ -935,7 +960,9 @@ export function LearningPanel({
                 {resetConfirm && (
                   <div>
                     <p>
-                      {t('Прогресс этого и следующих уроков сбросится. Твои черновики кода сохранятся.')}
+                      {t(
+                        'Прогресс этого и следующих уроков сбросится. Твои черновики кода сохранятся.',
+                      )}
                     </p>
                     <button
                       className="button subtle"

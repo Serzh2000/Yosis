@@ -21,8 +21,9 @@ function Field({
   );
 }
 
-export const PRIVACY_LINE =
-  t('Учитель видит твой логин, имя и то, какие уроки пройдены и как прошли проверки прошивки. Почта и настоящее ФИО не нужны.');
+export const PRIVACY_LINE = t(
+  'Учитель видит твой логин, имя и то, какие уроки пройдены и как прошли проверки прошивки. Почта и настоящее ФИО не нужны.',
+);
 
 /** Sign in or register: one dialog, two tabs. The errors come from the server already in Russian. */
 export function AuthDialog({
@@ -54,7 +55,9 @@ export function AuthDialog({
       if (mode === 'login') await onSignIn(login.trim(), password);
       else await onSignUp(login.trim(), name, password);
     } catch (problem) {
-      setError(problem instanceof ApiError ? problem.message : t('Не получилось. Попробуй ещё раз.'));
+      setError(
+        problem instanceof ApiError ? problem.message : t('Не получилось. Попробуй ещё раз.'),
+      );
       setBusy(false);
     }
   };

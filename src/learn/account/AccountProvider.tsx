@@ -88,7 +88,9 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       setUserState(null);
       setStatus('guest');
       setNotice(
-        t('Вход закончился. Прогресс сохранён в этом браузере; войди снова, и он синхронизируется.'),
+        t(
+          'Вход закончился. Прогресс сохранён в этом браузере; войди снова, и он синхронизируется.',
+        ),
       );
     };
     return () => {

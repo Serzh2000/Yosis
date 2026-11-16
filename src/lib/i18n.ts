@@ -5,9 +5,6 @@ import {
   setLanguage,
   type Language,
 } from '../../shared/i18n';
-import { english } from '../i18n/en';
-import { server as serverDictionary } from '../i18n/en-server';
-import { serverPatterns } from '../i18n/server-patterns';
 import { localStore, STORAGE_KEYS } from './storage';
 
 export { t, language } from '../../shared/i18n';
@@ -26,7 +23,32 @@ export function switchLanguage(next: Language): void {
   window.location.reload();
 }
 
+/**
+ * Английские словари тяжёлые (около 1,4 МБ), поэтому грузятся отдельным куском и только для
+ * английского языка. Страница стартует после `loadLanguage()`: модули, собирающие тексты при
+ * загрузке, к этому моменту уже видят словарь.
+ */
+let serverDictionary: Record<string, string> = {};
+let serverPatterns: (typeof import('../i18n/server-patterns'))['serverPatterns'] = [];
 let serverTexts: Map<string, string> | undefined;
+
+/** Загружает и регистрирует английские словари (вызывается и тестами). */
+export async function loadEnglish(): Promise<void> {
+  const [{ english }, { server }, { serverPatterns: patterns }] = await Promise.all([
+    import('../i18n/en'),
+    import('../i18n/en-server'),
+    import('../i18n/server-patterns'),
+  ]);
+  registerEnglish(english);
+  serverDictionary = server;
+  serverPatterns = patterns;
+  serverTexts = undefined;
+}
+
+/** Готовит выбранный язык: для английского подгружает словари. */
+export async function loadLanguage(): Promise<void> {
+  if (readLanguage() === 'en') await loadEnglish();
+}
 
 /** Перевод одной строки серверного сообщения; пробелы по краям сохраняются. */
 function translateServerLine(line: string): string {
@@ -57,6 +79,5 @@ export function translateServerMessage(text: string): string {
     .join('');
 }
 
-registerEnglish(english);
 setLanguage(readLanguage());
 if (typeof document !== 'undefined') document.documentElement.lang = readLanguage();

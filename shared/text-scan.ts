@@ -26,7 +26,8 @@ export function blankComments(source: string, withStrings = false): string {
     } else if (withStrings && char === '"') {
       // Строка без закрывающей кавычки на той же строке строкой не считается.
       let end = at + 1;
-      while (end < length && source[end] !== '"' && source[end] !== '\n') end += source[end] === '\\' ? 2 : 1;
+      while (end < length && source[end] !== '"' && source[end] !== '\n')
+        end += source[end] === '\\' ? 2 : 1;
       if (end < length && source[end] === '"') {
         parts.push(' '.repeat(end + 1 - at));
         at = end + 1;

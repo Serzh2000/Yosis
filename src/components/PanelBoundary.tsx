@@ -22,7 +22,9 @@ export class PanelBoundary extends Component<
       return (
         <div className="empty-workspace" role="alert">
           <h2>{t('Не удалось открыть {name}', { name: this.props.name })}</h2>
-          <p>{t('Исходники проекта сохранены отдельно. Можно повторить открытие рабочей области.')}</p>
+          <p>
+            {t('Исходники проекта сохранены отдельно. Можно повторить открытие рабочей области.')}
+          </p>
           <button className="button primary" onClick={() => this.setState({ failed: false })}>
             {t('Попробовать ещё раз')}
           </button>

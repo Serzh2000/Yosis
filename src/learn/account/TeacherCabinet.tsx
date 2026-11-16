@@ -64,7 +64,8 @@ export function TeacherCabinet() {
     void reload();
   }, [reload]);
 
-  if (!overview) return problem ? <Message text={problem} bad /> : <p role="status">{t('Загрузка…')}</p>;
+  if (!overview)
+    return problem ? <Message text={problem} bad /> : <p role="status">{t('Загрузка…')}</p>;
   const student = openId ? overview.students.find((item) => item.id === openId) : undefined;
   if (student)
     return (
@@ -219,15 +220,17 @@ function ClassTable({ overview, onOpen }: { overview: Overview; onOpen: (id: str
         </button>
       </div>
       <p className="acct-legend">
-        <span className="cell done">✓</span> {t('пройден')} <span className="cell started">◐</span> {t('начат')}{' '}
-        <span className="cell new">·</span> {t('не начат. Застрял — три неудачные проверки прошивки подряд на одном задании.')}
-
+        <span className="cell done">✓</span> {t('пройден')} <span className="cell started">◐</span>{' '}
+        {t('начат')} <span className="cell new">·</span>{' '}
+        {t('не начат. Застрял — три неудачные проверки прошивки подряд на одном задании.')}
       </p>
       {rows.length === 0 ? (
         <p>
           {overview.students.length
             ? t('Никто не подошёл под условия.')
-            : t('Учеников пока нет. Они регистрируются сами, или добавь список на вкладке «Ученики и классы».')}
+            : t(
+                'Учеников пока нет. Они регистрируются сами, или добавь список на вкладке «Ученики и классы».',
+              )}
         </p>
       ) : (
         <div
@@ -237,7 +240,9 @@ function ClassTable({ overview, onOpen }: { overview: Overview; onOpen: (id: str
           aria-label={t('Таблица «ученик × урок»')}
         >
           <table className="acct-matrix">
-            <caption className="sr-only">{t('Уроки книги «{title}» по ученикам', { title: book.title })}</caption>
+            <caption className="sr-only">
+              {t('Уроки книги «{title}» по ученикам', { title: book.title })}
+            </caption>
             <thead>
               <tr>
                 <th scope="col">{t('Ученик')}</th>
@@ -279,7 +284,11 @@ function ClassTable({ overview, onOpen }: { overview: Overview; onOpen: (id: str
                       <td
                         key={at}
                         className={'cell ' + state}
-                        title={t('Урок {no}: {title} — {state}', { no: columns[at]!.no, title: columns[at]!.lesson.title, state: STATE_LABEL[state] })}
+                        title={t('Урок {no}: {title} — {state}', {
+                          no: columns[at]!.no,
+                          title: columns[at]!.lesson.title,
+                          state: STATE_LABEL[state],
+                        })}
                       >
                         <span aria-hidden="true">{STATE_MARK[state]}</span>
                         <span className="sr-only">{STATE_LABEL[state]}</span>
@@ -370,7 +379,13 @@ function Classes({ overview, onChanged }: { overview: Overview; onChanged: () =>
               type="button"
               className="acct-link danger"
               onClick={() => {
-                if (window.confirm(t('Удалить класс «{name}»? Ученики останутся без класса.', { name: group.name })))
+                if (
+                  window.confirm(
+                    t('Удалить класс «{name}»? Ученики останутся без класса.', {
+                      name: group.name,
+                    }),
+                  )
+                )
                   void run(() => api.deleteClass(group.id), t('Класс удалён.'));
               }}
             >
@@ -438,8 +453,9 @@ function AddStudents({
           <span>{t('Имена, по одному в строке')}</span>
           <textarea value={names} onChange={(e) => setNames(e.target.value)} rows={5} required />
           <small>
-            {t('Логины и временные пароли придумает сервер. Настоящие фамилии вписывать не обязательно: подойдёт «Аня К.».')}
-
+            {t(
+              'Логины и временные пароли придумает сервер. Настоящие фамилии вписывать не обязательно: подойдёт «Аня К.».',
+            )}
           </small>
         </label>
         <label>
@@ -475,8 +491,9 @@ function Credentials({
     <div className="acct-print">
       <h3>{t('Логины и временные пароли')}</h3>
       <p className="acct-meta">
-        {t('Пароли показаны один раз: потом их можно только сбросить. Ученику предложат сменить пароль при входе.')}
-
+        {t(
+          'Пароли показаны один раз: потом их можно только сбросить. Ученику предложат сменить пароль при входе.',
+        )}
       </p>
       <table className="acct-table">
         <thead>
@@ -500,7 +517,10 @@ function Credentials({
         <ul className="acct-skipped">
           {skipped.map((item, at) => (
             <li key={at}>
-              {t('«{line}» не добавлен: {reason}', { line: item.line, reason: translateServerMessage(item.reason) })}
+              {t('«{line}» не добавлен: {reason}', {
+                line: item.line,
+                reason: translateServerMessage(item.reason),
+              })}
             </li>
           ))}
         </ul>
@@ -583,14 +603,17 @@ function StudentPage({
       <section className="acct-card" aria-labelledby="acct-student-h">
         <h2 id="acct-student-h">{summary.displayName}</h2>
         <p className="acct-meta">
-          {t('Логин')} <strong>{summary.login}</strong> · {t('заходил:')} {ago(summary.lastActiveAt)} ·
-          {t('зарегистрирован')} {new Date(summary.createdAt).toLocaleDateString(dateLocale())}
+          {t('Логин')} <strong>{summary.login}</strong> · {t('заходил:')}{' '}
+          {ago(summary.lastActiveAt)} ·{t('зарегистрирован')}{' '}
+          {new Date(summary.createdAt).toLocaleDateString(dateLocale())}
           {summary.mustChangePassword ? t(' · пароль временный') : ''}
         </p>
         {summary.stuck ? (
           <p className="acct-msg bad" role="status">
-            {t('Застрял: {page} — {n} неудачных проверок подряд.', { page: describePage(bookById(summary.stuck.bookId), summary.stuck.pageId), n: summary.stuck.fails })}
-
+            {t('Застрял: {page} — {n} неудачных проверок подряд.', {
+              page: describePage(bookById(summary.stuck.bookId), summary.stuck.pageId),
+              n: summary.stuck.fails,
+            })}
           </p>
         ) : null}
         <form className="acct-form" onSubmit={save}>
@@ -707,7 +730,8 @@ function StudentPage({
                   <span className={'cell ' + state} aria-hidden="true">
                     {STATE_MARK[state]}
                   </span>{' '}
-                  {t('Урок {no}. {title}', { no, title: lesson.title })} <small>({STATE_LABEL[state]})</small>
+                  {t('Урок {no}. {title}', { no, title: lesson.title })}{' '}
+                  <small>({STATE_LABEL[state]})</small>
                 </h3>
                 <ul>
                   {tasks.map(({ page }) => (
@@ -743,11 +767,20 @@ function StudentPage({
               <li key={at} className={attempt.solved ? 'ok' : 'fail'}>
                 <p>
                   <strong>
-                    {attempt.solved ? t('Прошла') : attempt.error ? t('Не запустилась') : t('Не прошла')}
+                    {attempt.solved
+                      ? t('Прошла')
+                      : attempt.error
+                        ? t('Не запустилась')
+                        : t('Не прошла')}
                   </strong>{' '}
                   {new Date(attempt.at).toLocaleString(dateLocale())} ·{' '}
                   {describePage(bookById(attempt.bookId), attempt.pageId)}
-                  {attempt.total ? t(' · не прошло {failed} из {total}', { failed: attempt.failed, total: attempt.total }) : ''}
+                  {attempt.total
+                    ? t(' · не прошло {failed} из {total}', {
+                        failed: attempt.failed,
+                        total: attempt.total,
+                      })
+                    : ''}
                 </p>
                 {attempt.error || attempt.detail ? (
                   <p className="acct-meta">{attempt.error ?? attempt.detail}</p>
@@ -785,7 +818,9 @@ function TaskRow({
       <span className="acct-meta">
         {entry
           ? entry.by === 'teacher'
-            ? entry.note ? t('Засчитано учителем: «{note}»', { note: entry.note }) : t('Засчитано учителем')
+            ? entry.note
+              ? t('Засчитано учителем: «{note}»', { note: entry.note })
+              : t('Засчитано учителем')
             : t('Выполнено {date}', { date: new Date(entry.at).toLocaleDateString(dateLocale()) })
           : t('Не выполнено')}
       </span>

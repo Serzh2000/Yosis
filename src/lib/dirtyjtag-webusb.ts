@@ -78,7 +78,10 @@ function translate(source: Uint8Array): Step[] {
       }
       if (opcode === 0x6b && count > 1)
         throw new Error(t('Многобитное чтение TMS не используется сканером Gowin.'));
-    } else throw new Error(t('Неподдерживаемая команда JTAG 0x{opcode}.', { opcode: opcode.toString(16) }));
+    } else
+      throw new Error(
+        t('Неподдерживаемая команда JTAG 0x{opcode}.', { opcode: opcode.toString(16) }),
+      );
   }
   return steps;
 }
@@ -278,7 +281,9 @@ export class DirtyJtagWebUsbTransport implements JtagTransport {
             void this.closeUsb().catch(() => {});
             reject(
               new Error(
-                t('Нет ответа DirtyJTAG: {label}. Переподключите USB; повтор команды запрещён.', { label }),
+                t('Нет ответа DirtyJTAG: {label}. Переподключите USB; повтор команды запрещён.', {
+                  label,
+                }),
               ),
             );
           }, this.timeoutMs);

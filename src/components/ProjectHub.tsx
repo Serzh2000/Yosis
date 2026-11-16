@@ -154,7 +154,9 @@ export function ProjectHub(props: ProjectHubProps) {
             <section className="project-hub-start">
               <h3>{t('С чего начнём?')}</h3>
               <p>
-                {t('Все варианты создают отдельный проект. Текущие исходники сохранятся в библиотеке.')}
+                {t(
+                  'Все варианты создают отдельный проект. Текущие исходники сохранятся в библиотеке.',
+                )}
               </p>
               <div className="project-hub-choices">
                 <button data-create-choice onClick={() => setStart('blank')}>
@@ -165,13 +167,17 @@ export function ProjectHub(props: ProjectHubProps) {
                 <button onClick={() => setStart('schematic')}>
                   <CircuitBoard size={28} />
                   <strong>{t('Из логических элементов')}</strong>
-                  <span>{t('Соберите схему на холсте. Приложение создаст Verilog для сборки.')}</span>
+                  <span>
+                    {t('Соберите схему на холсте. Приложение создаст Verilog для сборки.')}
+                  </span>
                 </button>
                 <button onClick={() => setCatalog(true)}>
                   <BookOpen size={28} />
                   <strong>{t('На основе примера')}</strong>
                   <span>
-                    {t('{count} проектов с комментариями, заданиями и назначенными выводами.', { count: examples.length })}
+                    {t('{count} проектов с комментариями, заданиями и назначенными выводами.', {
+                      count: examples.length,
+                    })}
                   </span>
                 </button>
                 <button
@@ -193,7 +199,9 @@ export function ProjectHub(props: ProjectHubProps) {
                   >
                     <FolderOpen size={28} />
                     <strong>{t('Папка проекта Gowin')}</strong>
-                    <span>{t('Откройте папку с файлом .gprj или просто с файлами Verilog и .cst.')}</span>
+                    <span>
+                      {t('Откройте папку с файлом .gprj или просто с файлами Verilog и .cst.')}
+                    </span>
                   </button>
                 )}
               </div>

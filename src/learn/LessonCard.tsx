@@ -120,7 +120,11 @@ export function LessonCard({
   const done = learning.progress.done.includes(page.id);
   const chapterLessons = flat.chapter?.lessons ?? [];
   const where = lesson
-    ? t('{chapter} · урок {n} из {total}', { chapter: flat.chapter?.title ?? t('Урок'), n: chapterLessons.indexOf(lesson) + 1, total: chapterLessons.length })
+    ? t('{chapter} · урок {n} из {total}', {
+        chapter: flat.chapter?.title ?? t('Урок'),
+        n: chapterLessons.indexOf(lesson) + 1,
+        total: chapterLessons.length,
+      })
     : t('Справочник');
   const stageIds = stagesOfLesson(steps);
   const route = routeOf(stageIds);
@@ -252,8 +256,15 @@ export function LessonCard({
                   {status.result.total === 0
                     ? status.result.detail
                     : status.result.failed === 0
-                      ? t('Все проверки прошли: {n} из {total}.', { n: status.result.total, total: status.result.total })
-                      : t('Прошло {n} из {total}. {detail}', { n: status.result.total - status.result.failed, total: status.result.total, detail: status.result.detail })}
+                      ? t('Все проверки прошли: {n} из {total}.', {
+                          n: status.result.total,
+                          total: status.result.total,
+                        })
+                      : t('Прошло {n} из {total}. {detail}', {
+                          n: status.result.total - status.result.failed,
+                          total: status.result.total,
+                          detail: status.result.detail,
+                        })}
                 </p>
               ) : null}
               {task.kind === 'sim' || task.kind === 'circuit' ? (
@@ -281,7 +292,12 @@ export function LessonCard({
         ) : null}
       </article>
       <footer className="lc-foot">
-        <button type="button" aria-label={t('Назад')} disabled={index === 0} onClick={() => onTurn(-1)}>
+        <button
+          type="button"
+          aria-label={t('Назад')}
+          disabled={index === 0}
+          onClick={() => onTurn(-1)}
+        >
           <ChevronLeft size={18} /> {t('Назад')}
         </button>
         {inStage && inStage.count > 1 ? (
@@ -302,7 +318,8 @@ export function LessonCard({
       {learning.confirmSkip ? (
         <div className="lc-confirm" role="alertdialog" aria-label={t('Задание не выполнено')}>
           <p>
-            <strong>{t('Задание не выполнено.')}</strong>{t(' Всё равно дальше?')}
+            <strong>{t('Задание не выполнено.')}</strong>
+            {t(' Всё равно дальше?')}
           </p>
           <div className="lc-confirm-row">
             <button type="button" autoFocus onClick={() => learning.onSkipAnswer(false)}>

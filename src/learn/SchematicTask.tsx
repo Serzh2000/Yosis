@@ -99,7 +99,9 @@ export function SchematicTask({
         >
           {t('Начать схему заново')}
         </button>
-        {solved && !run.verdicts ? <span className="learn-ok">{t('Задание уже выполнено')}</span> : null}
+        {solved && !run.verdicts ? (
+          <span className="learn-ok">{t('Задание уже выполнено')}</span>
+        ) : null}
       </div>
       <Verdicts verdicts={run.verdicts} error={run.error} />
     </div>

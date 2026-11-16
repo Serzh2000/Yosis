@@ -44,7 +44,9 @@ test('constraint statements are read regardless of case, tabs, comments and miss
 test('configuration and reserved pins are found', () => {
   assert.equal(usesConfigurationPins('IO_LOC "a" 52;'), true);
   assert.equal(usesConfigurationPins('IO_LOC "a" 10;'), false);
-  assert.deepEqual(reservedPinsUsed('IO_LOC "a" 61;'), [{ port: 'a', pin: 61, role: 'flash MOSI' }]);
+  assert.deepEqual(reservedPinsUsed('IO_LOC "a" 61;'), [
+    { port: 'a', pin: 61, role: 'flash MOSI' },
+  ]);
 });
 
 for (const [name, cst] of [

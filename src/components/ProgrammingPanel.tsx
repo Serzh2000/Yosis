@@ -170,7 +170,9 @@ export function ProgrammingPanel({
         })
         .catch(() => {
           if (active)
-            setArtifactError(t('SHA-256 недоступен. Откройте приложение через HTTPS или localhost.'));
+            setArtifactError(
+              t('SHA-256 недоступен. Откройте приложение через HTTPS или localhost.'),
+            );
         });
     return () => {
       active = false;
@@ -394,7 +396,9 @@ export function ProgrammingPanel({
   return (
     <section
       className="physical-card programming-panel"
-      aria-label={mode === 'program' ? t('Загрузка битстрима в плату') : t('Обслуживание USB-отладчика')}
+      aria-label={
+        mode === 'program' ? t('Загрузка битстрима в плату') : t('Обслуживание USB-отладчика')
+      }
     >
       <div hidden={mode !== 'program'} className="programming-main-flow">
         <div className="physical-card-title">
@@ -453,7 +457,9 @@ export function ProgrammingPanel({
           {!usb && (
             <div className="physical-note">
               {t(
-                t('WebUSB недоступен. Откройте Logra через HTTPS или localhost в браузере с WebUSB, например Chrome или Edge.'),
+                t(
+                  'WebUSB недоступен. Откройте Logra через HTTPS или localhost в браузере с WebUSB, например Chrome или Edge.',
+                ),
               )}
             </div>
           )}
@@ -473,10 +479,14 @@ export function ProgrammingPanel({
                 <summary>{t('Как исправить подключение')}</summary>
                 {adapterKind === 'dirtyjtag'
                   ? t(
-                      t('Выбран DirtyJTAG. Ошибка захвата требует проверки WinUSB и доступа к interface 0. Переподключите USB без UPDATE и закройте другие программы, работающие с платой.'),
+                      t(
+                        'Выбран DirtyJTAG. Ошибка захвата требует проверки WinUSB и доступа к interface 0. Переподключите USB без UPDATE и закройте другие программы, работающие с платой.',
+                      ),
                     )
                   : t(
-                      t('Штатная FTDI-эмуляция на Windows может блокировать WebUSB. Откройте раздел «Отладчик» и выберите Bouffalo CDC в режиме UPDATE. Закройте другие программы, работающие с платой.'),
+                      t(
+                        'Штатная FTDI-эмуляция на Windows может блокировать WebUSB. Откройте раздел «Отладчик» и выберите Bouffalo CDC в режиме UPDATE. Закройте другие программы, работающие с платой.',
+                      ),
                     )}
               </details>
               {onOpenSetup && adapterKind !== 'dirtyjtag' && (
@@ -551,7 +561,9 @@ export function ProgrammingPanel({
                     ? t('Сборка относится к предыдущим исходникам')
                     : t('Битстрим проекта ещё не готов')}
                 </strong>
-                <span>{t('Синтезируйте проект и выполните размещение во вкладке «Кристалл».')}</span>
+                <span>
+                  {t('Синтезируйте проект и выполните размещение во вкладке «Кристалл».')}
+                </span>
                 {onOpenChip && (
                   <button className="physical-text-button" onClick={onOpenChip}>
                     {t('Открыть кристалл')}
@@ -632,11 +644,17 @@ export function ProgrammingPanel({
                 )}
               </details>
               {receipt.status === 'success' && (
-                <p>{t('FPGA подтвердила конфигурацию. Проверьте LED и поведение устройства на плате.')}</p>
+                <p>
+                  {t(
+                    'FPGA подтвердила конфигурацию. Проверьте LED и поведение устройства на плате.',
+                  )}
+                </p>
               )}
               {receipt.error && <p role="alert">{receipt.error}</p>}
               {showLogs && (
-                <pre className="physical-logs">{receipt.logs || t('Передача ещё не началась.')}</pre>
+                <pre className="physical-logs">
+                  {receipt.logs || t('Передача ещё не началась.')}
+                </pre>
               )}
             </div>
           )}
@@ -659,7 +677,9 @@ export function ProgrammingPanel({
           <summary>{t('Диагностика: прочитать BootInfo')}</summary>
           <p>
             {t(
-              t('Отключите USB. Зажмите UPDATE за разъёмом HDMI, подключите USB и отпустите кнопку. Выберите новый порт «Устройство с последовательным интерфейсом USB» или Bouffalo CDC. Проверка читает BootInfo; прошивка отладчика, flash и eFuse сохраняются.'),
+              t(
+                'Отключите USB. Зажмите UPDATE за разъёмом HDMI, подключите USB и отпустите кнопку. Выберите новый порт «Устройство с последовательным интерфейсом USB» или Bouffalo CDC. Проверка читает BootInfo; прошивка отладчика, flash и eFuse сохраняются.',
+              ),
             )}
           </p>
           <button

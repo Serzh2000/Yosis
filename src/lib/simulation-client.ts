@@ -53,7 +53,9 @@ export async function runSimulation(
     if (result.status !== 'success' || !result.vcd)
       throw new Error(
         result.error ||
-          (result.status === 'cancelled' ? t('Симуляция отменена.') : t('Симулятор не вернул VCD.')),
+          (result.status === 'cancelled'
+            ? t('Симуляция отменена.')
+            : t('Симулятор не вернул VCD.')),
       );
     return result;
   } catch (failure) {

@@ -89,7 +89,9 @@ export function useProjectStore(initialId?: string) {
       .catch((cause) => {
         if (projectRef.current === value) {
           setSaveState('error');
-          setStorageError(cause instanceof Error ? cause.message : t('Не удалось сохранить проект.'));
+          setStorageError(
+            cause instanceof Error ? cause.message : t('Не удалось сохранить проект.'),
+          );
         }
         throw cause;
       });

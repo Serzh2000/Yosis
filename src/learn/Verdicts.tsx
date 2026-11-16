@@ -29,7 +29,9 @@ export function Verdicts({ verdicts, error }: { verdicts: LessonVerdict[] | null
             </li>
           ))}
           <li className={passed ? 'summary right' : 'summary wrong'}>
-            {passed ? t('Все проверки прошли.') : t('Найди место, которое отвечает за первый сбой.')}
+            {passed
+              ? t('Все проверки прошли.')
+              : t('Найди место, которое отвечает за первый сбой.')}
           </li>
         </ul>
       ) : null}

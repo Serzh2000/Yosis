@@ -125,7 +125,9 @@ export function ProjectWizard({
       await onCreate(createWizardProject(settings, existingNames));
     } catch (value) {
       setCreationError(
-        value instanceof Error ? value.message : t('Не удалось создать проект. Попробуйте ещё раз.'),
+        value instanceof Error
+          ? value.message
+          : t('Не удалось создать проект. Попробуйте ещё раз.'),
       );
     } finally {
       setSubmitting(false);
@@ -188,9 +190,11 @@ export function ProjectWizard({
         <section className="wizard-body" aria-labelledby="wizard-step-title">
           <h3 id="wizard-step-title" ref={headingRef} tabIndex={-1}>
             {
-              [t('С чего начнём?'), t('Как назовём устройство?'), t('Всё готово для первого эксперимента')][
-                step
-              ]
+              [
+                t('С чего начнём?'),
+                t('Как назовём устройство?'),
+                t('Всё готово для первого эксперимента'),
+              ][step]
             }
           </h3>
           {step === 0 && (

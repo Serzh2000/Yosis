@@ -2443,7 +2443,11 @@ kbd {
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
-  font: 13px/1.6 'JetBrains Mono Variable', 'JetBrains Mono', Consolas, monospace;
+  font:
+    13px/1.6 'JetBrains Mono Variable',
+    'JetBrains Mono',
+    Consolas,
+    monospace;
   tab-size: 4;
 }
 .generated-verilog-empty {

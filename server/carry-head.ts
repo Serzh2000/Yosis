@@ -16,7 +16,9 @@ interface PlacedCell {
 }
 
 export function fixCarryHeads(placementJson: string): { json: string; fixed: number } {
-  const netlist = JSON.parse(placementJson) as { modules?: Record<string, { cells?: Record<string, PlacedCell> }> };
+  const netlist = JSON.parse(placementJson) as {
+    modules?: Record<string, { cells?: Record<string, PlacedCell> }>;
+  };
   let fixed = 0;
   for (const module of Object.values(netlist.modules ?? {}))
     for (const cell of Object.values(module.cells ?? {})) {

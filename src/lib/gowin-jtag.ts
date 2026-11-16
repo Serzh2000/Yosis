@@ -132,7 +132,10 @@ export class GowinJtag {
     const deadline = Date.now() + 3000;
     do {
       const status = await this.register(0x41);
-      if (status & 15) throw new Error(t('Ошибка FPGA: 0x{status} ({label}).', { status: status.toString(16), label }));
+      if (status & 15)
+        throw new Error(
+          t('Ошибка FPGA: 0x{status} ({label}).', { status: status.toString(16), label }),
+        );
       if ((status & mask) === expected) return status;
       await this.transport.write(tmsCommands(new Array(60).fill(0)));
       await this.pause(10);

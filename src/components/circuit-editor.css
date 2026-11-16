@@ -943,7 +943,11 @@
 .sketch-table {
   width: 100%;
   border-collapse: collapse;
-  font: 12px/1.4 'JetBrains Mono Variable', 'JetBrains Mono', Consolas, monospace;
+  font:
+    12px/1.4 'JetBrains Mono Variable',
+    'JetBrains Mono',
+    Consolas,
+    monospace;
   text-align: center;
 }
 .sketch-table th {

@@ -3,7 +3,9 @@ import test from 'node:test';
 import { setLanguage } from '../shared/i18n';
 import { server } from '../src/i18n/en-server';
 import { serverPatterns } from '../src/i18n/server-patterns';
-import { translateServerMessage } from '../src/lib/i18n';
+import { loadEnglish, translateServerMessage } from '../src/lib/i18n';
+
+await loadEnglish();
 
 /** Реальные сообщения кода сервера со значениями и их английский вид. */
 const samples: Array<[string, string]> = [

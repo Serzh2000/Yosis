@@ -85,7 +85,9 @@ export async function saveDebuggerBackup(
       transaction.onerror = transaction.onabort = () =>
         reject(
           new Error(
-            t('Резервная копия не сохранена. Проверь свободное место в браузере. Запись запрещена.'),
+            t(
+              'Резервная копия не сохранена. Проверь свободное место в браузере. Запись запрещена.',
+            ),
           ),
         );
     });

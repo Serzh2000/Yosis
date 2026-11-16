@@ -67,7 +67,8 @@ class Tokens {
     while ((token = this.next()) !== null) {
       if (token === '$end') return values;
       if (keep) {
-        if (values.length >= 64) throw new Error(t('Слишком длинное объявление {name} в VCD.', { name }));
+        if (values.length >= 64)
+          throw new Error(t('Слишком длинное объявление {name} в VCD.', { name }));
         values.push(token);
       }
     }
@@ -172,11 +173,15 @@ export function parseVcd(text: string): VcdTrace {
         throw new Error(t('Слишком длинное имя или идентификатор сигнала VCD.'));
       if (!digitalTypes.has(type.toLowerCase())) {
         if (series.has(id))
-          throw new Error(t('Идентификатор {id} в VCD используется для разных типов сигналов.', { id }));
+          throw new Error(
+            t('Идентификатор {id} в VCD используется для разных типов сигналов.', { id }),
+          );
         ignoredIds.add(id);
         warn(
           `type:${type}`,
-          t('Сигналы типа {type} пропущены: просмотр поддерживает цифровые значения 0, 1, X и Z.', { type }),
+          t('Сигналы типа {type} пропущены: просмотр поддерживает цифровые значения 0, 1, X и Z.', {
+            type,
+          }),
         );
         continue;
       }
@@ -186,7 +191,9 @@ export function parseVcd(text: string): VcdTrace {
       if (!Number.isSafeInteger(width) || width < 1 || width > VCD_LIMITS.width)
         throw new Error(t('Разрядность сигнала {name} должна быть от 1 до 4096 бит.', { name }));
       if (ignoredIds.has(id))
-        throw new Error(t('Идентификатор {id} в VCD используется для разных типов сигналов.', { id }));
+        throw new Error(
+          t('Идентификатор {id} в VCD используется для разных типов сигналов.', { id }),
+        );
       const existing = series.get(id);
       if (existing && existing.width !== width)
         throw new Error(t('Псевдонимы сигнала {id} в VCD имеют разную разрядность.', { id }));
@@ -194,7 +201,9 @@ export function parseVcd(text: string): VcdTrace {
       if (fullNames.has(path)) {
         warn(
           `duplicate:${path}`,
-          t('Повторное объявление сигнала {scope} пропущено.', { scope: [...scope, name].join('.') }),
+          t('Повторное объявление сигнала {scope} пропущено.', {
+            scope: [...scope, name].join('.'),
+          }),
         );
         continue;
       }
@@ -209,12 +218,15 @@ export function parseVcd(text: string): VcdTrace {
       warn(`header:${token}`, t('Неизвестное объявление VCD {token} пропущено.', { token }));
       continue;
     }
-    throw new Error(t('Некорректный заголовок VCD возле «{token}».', { token: token.slice(0, 60) }));
+    throw new Error(
+      t('Некорректный заголовок VCD возле «{token}».', { token: token.slice(0, 60) }),
+    );
   }
   if (!definitionsEnded)
     throw new Error(t('В VCD отсутствует $enddefinitions: заголовок не завершён.'));
   if (!declaredCount) throw new Error(t('В VCD нет объявлений сигналов $var.'));
-  if (scope.length) warn('unclosed-scope', t('Области $scope в заголовке VCD закрыты не полностью.'));
+  if (scope.length)
+    warn('unclosed-scope', t('Области $scope в заголовке VCD закрыты не полностью.'));
   if (!timescaleDeclared)
     warn('no-timescale', t('В VCD нет $timescale; для отображения принят шаг 1 нс.'));
 
@@ -236,20 +248,28 @@ export function parseVcd(text: string): VcdTrace {
     if (ignoredIds.has(id)) return;
     const data = series.get(id);
     if (!data) {
-      warn(`id:${id}`, t('Изменения необъявленного сигнала «{id}» пропущены.', { id: id.slice(0, 40) }));
+      warn(
+        `id:${id}`,
+        t('Изменения необъявленного сигнала «{id}» пропущены.', { id: id.slice(0, 40) }),
+      );
       return;
     }
     if (!digital) {
       warn(
         `value-type:${id}`,
-        t('Вещественное или строковое значение цифрового сигнала «{id}» пропущено.', { id: id.slice(0, 40) }),
+        t('Вещественное или строковое значение цифрового сигнала «{id}» пропущено.', {
+          id: id.slice(0, 40),
+        }),
       );
       return;
     }
     if (value.length > data.width)
       warn(
         `truncate:${id}`,
-        t('Значения сигнала «{id}» шире объявления; сохранены младшие {data} бит.', { id: id.slice(0, 40), data: data.width }),
+        t('Значения сигнала «{id}» шире объявления; сохранены младшие {data} бит.', {
+          id: id.slice(0, 40),
+          data: data.width,
+        }),
       );
     const normalized = normalizedValue(value, data.width);
     const last = data.changes[data.changes.length - 1];
@@ -271,7 +291,9 @@ export function parseVcd(text: string): VcdTrace {
   while ((token = tokens.next()) !== null) {
     if (token.startsWith('#')) {
       if (!/^#\d+$/.test(token))
-        throw new Error(t('Некорректная отметка времени VCD «{token}».', { token: token.slice(0, 60) }));
+        throw new Error(
+          t('Некорректная отметка времени VCD «{token}».', { token: token.slice(0, 60) }),
+        );
       const time = Number(token.slice(1));
       if (!Number.isSafeInteger(time))
         throw new Error(t('Отметка времени VCD превышает предел точных целых чисел.'));
@@ -293,7 +315,9 @@ export function parseVcd(text: string): VcdTrace {
       token === '$dumpoff'
     ) {
       if (dumpDirective)
-        throw new Error(t('В VCD не завершена команда {dumpDirective}: отсутствует $end.', { dumpDirective }));
+        throw new Error(
+          t('В VCD не завершена команда {dumpDirective}: отсутствует $end.', { dumpDirective }),
+        );
       dumpDirective = token;
       continue;
     }
@@ -313,9 +337,12 @@ export function parseVcd(text: string): VcdTrace {
     if (/^[bB]/.test(token)) {
       const value = token.slice(1);
       if (!/^[01xXzZ]+$/.test(value))
-        throw new Error(t('Некорректное двоичное значение VCD «{token}».', { token: token.slice(0, 60) }));
+        throw new Error(
+          t('Некорректное двоичное значение VCD «{token}».', { token: token.slice(0, 60) }),
+        );
       const id = tokens.next();
-      if (id === null) throw new Error(t('В VCD отсутствует идентификатор после двоичного значения.'));
+      if (id === null)
+        throw new Error(t('В VCD отсутствует идентификатор после двоичного значения.'));
       change(id, value, true);
       continue;
     }
@@ -326,9 +353,13 @@ export function parseVcd(text: string): VcdTrace {
       change(id, token.slice(1), false);
       continue;
     }
-    throw new Error(t('Некорректная запись изменения VCD «{token}».', { token: token.slice(0, 60) }));
+    throw new Error(
+      t('Некорректная запись изменения VCD «{token}».', { token: token.slice(0, 60) }),
+    );
   }
   if (dumpDirective)
-    throw new Error(t('В VCD не завершена команда {dumpDirective}: отсутствует $end.', { dumpDirective }));
+    throw new Error(
+      t('В VCD не завершена команда {dumpDirective}: отсутствует $end.', { dumpDirective }),
+    );
   return { timescaleFs, startTime: startTime ?? 0, endTime, signals, warnings };
 }

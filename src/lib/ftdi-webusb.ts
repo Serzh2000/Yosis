@@ -184,7 +184,12 @@ export class FtdiWebUsbTransport {
   ) {
     this.endpoints = discoverFtdiInterfaceA(device);
     this.timeoutMs = boundedOption(options.timeoutMs ?? 2000, 1, 60_000, t('таймаут USB'));
-    this.readTimeoutMs = boundedOption(options.readTimeoutMs ?? 2000, 1, 60_000, t('таймаут чтения'));
+    this.readTimeoutMs = boundedOption(
+      options.readTimeoutMs ?? 2000,
+      1,
+      60_000,
+      t('таймаут чтения'),
+    );
     this.maxReadBytes = boundedOption(
       options.maxReadBytes ?? MAX_READ_BYTES,
       1,
@@ -303,7 +308,10 @@ export class FtdiWebUsbTransport {
       );
       if (result.status !== 'ok' || result.bytesWritten !== bytes.length)
         throw new Error(
-          t('Неполная запись USB ({result}/{bytes}); повтор команды запрещён.', { result: result.bytesWritten, bytes: bytes.length }),
+          t('Неполная запись USB ({result}/{bytes}); повтор команды запрещён.', {
+            result: result.bytesWritten,
+            bytes: bytes.length,
+          }),
         );
     }
   }
@@ -318,7 +326,9 @@ export class FtdiWebUsbTransport {
     while (copied < length) {
       const remaining = deadline - Date.now();
       if (remaining <= 0 || ++transfers > 4096)
-        throw new Error(t('Истекло время чтения USB ({copied}/{length} байт).', { copied, length }));
+        throw new Error(
+          t('Истекло время чтения USB ({copied}/{length} байт).', { copied, length }),
+        );
       const packetSize = this.endpoints.packetSize;
       const requested = Math.min(
         MAX_TRANSFER,
@@ -384,7 +394,10 @@ export class FtdiWebUsbTransport {
         }
         reject(
           new Error(
-            t('Истекло время операции «{label}». Переподключите плату; повтор USB-команды запрещён.', { label }),
+            t(
+              'Истекло время операции «{label}». Переподключите плату; повтор USB-команды запрещён.',
+              { label },
+            ),
           ),
         );
       }, timeout);

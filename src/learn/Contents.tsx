@@ -52,7 +52,11 @@ export function Contents({
                 onClick={() => onPickBook(item.id)}
               >
                 <b>{item.title}</b>
-                <small>{item.available ? t('{done} из {total} заданий', { done: item.done, total: item.total }) : t('скоро')}</small>
+                <small>
+                  {item.available
+                    ? t('{done} из {total} заданий', { done: item.done, total: item.total })
+                    : t('скоро')}
+                </small>
                 <i
                   style={{
                     width: item.total ? `${Math.round((100 * item.done) / item.total)}%` : '0%',

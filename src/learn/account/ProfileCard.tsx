@@ -29,7 +29,10 @@ export function ProfileCard() {
       account.setUser((await api.rename(name)).user);
       setNameMsg({ text: t('Имя сохранено.'), bad: false });
     } catch (error) {
-      setNameMsg({ text: error instanceof ApiError ? error.message : t('Не получилось.'), bad: true });
+      setNameMsg({
+        text: error instanceof ApiError ? error.message : t('Не получилось.'),
+        bad: true,
+      });
     }
   };
   const change = async (event: FormEvent) => {
@@ -45,7 +48,10 @@ export function ProfileCard() {
       setRepeat('');
       setPwMsg({ text: t('Пароль изменён. Другие входы в этот аккаунт закрыты.'), bad: false });
     } catch (error) {
-      setPwMsg({ text: error instanceof ApiError ? error.message : t('Не получилось.'), bad: true });
+      setPwMsg({
+        text: error instanceof ApiError ? error.message : t('Не получилось.'),
+        bad: true,
+      });
     }
   };
   return (

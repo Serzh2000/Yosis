@@ -89,7 +89,10 @@ export function projectFromFolder(files: FolderFile[], which?: string): Project 
   }));
   if (named.length > MAX_FILES)
     throw new Error(
-      t('В проекте {named} файлов, а Logra принимает не больше {MAX_FILES}. Уберите из папки лишнее.', { named: named.length, MAX_FILES }),
+      t(
+        'В проекте {named} файлов, а Logra принимает не больше {MAX_FILES}. Уберите из папки лишнее.',
+        { named: named.length, MAX_FILES },
+      ),
     );
   const config = normal.find((file) => file.path === `${base}impl/project_process_config.json`);
   let top: string | undefined;

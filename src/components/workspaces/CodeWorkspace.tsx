@@ -16,7 +16,10 @@ function generatedVerilog(project: Project): { name: string; text: string } | { 
     );
     return file ? { name: file.name, text: file.content } : { message: t('В проекте нет схемы.') };
   } catch (cause) {
-    return { message: cause instanceof Error ? cause.message : t('Схему пока нельзя превратить в Verilog.') };
+    return {
+      message:
+        cause instanceof Error ? cause.message : t('Схему пока нельзя превратить в Verilog.'),
+    };
   }
 }
 
@@ -34,7 +37,10 @@ export function CodeWorkspace({
   editor: EditorBindings;
   onOpenDesigner: () => void;
 }) {
-  const generated = useMemo(() => (hdlSource ? null : generatedVerilog(project)), [hdlSource, project]);
+  const generated = useMemo(
+    () => (hdlSource ? null : generatedVerilog(project)),
+    [hdlSource, project],
+  );
   const [copied, setCopied] = useState(false);
   return (
     <div id="panel-code" role="tabpanel" aria-labelledby="tab-code" className="code-workspace">
@@ -51,7 +57,9 @@ export function CodeWorkspace({
                 <div>
                   <h2>{t('Verilog из вашей схемы')}</h2>
                   <p>
-                    {t('Только для чтения: он пересобирается при каждом изменении схемы. Чтобы изменить логику, правьте схему в конструкторе.')}
+                    {t(
+                      'Только для чтения: он пересобирается при каждом изменении схемы. Чтобы изменить логику, правьте схему в конструкторе.',
+                    )}
                   </p>
                 </div>
                 <div className="generated-verilog-actions">
@@ -75,7 +83,10 @@ export function CodeWorkspace({
                 </div>
               </div>
               {generated && 'text' in generated ? (
-                <pre className="generated-verilog-text" aria-label={`Сгенерированный ${generated.name}`}>
+                <pre
+                  className="generated-verilog-text"
+                  aria-label={`Сгенерированный ${generated.name}`}
+                >
                   {generated.text}
                 </pre>
               ) : (

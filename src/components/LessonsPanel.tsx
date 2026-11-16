@@ -118,7 +118,9 @@ export function LessonsPanel({
         <div>
           <span>{t('От первого вентиля к своей схеме')}</span>
           <h2>{t('Маленькие задания')}</h2>
-          <p>{t('Предскажите результат, опишите устройство на Verilog и проверьте его симулятором.')}</p>
+          <p>
+            {t('Предскажите результат, опишите устройство на Verilog и проверьте его симулятором.')}
+          </p>
         </div>
         <div className="lessons-progress">
           <strong>
@@ -268,7 +270,9 @@ export function LessonsPanel({
               </div>
             )}
             {stale && (
-              <p className="lesson-stale">{t('Код изменён после проверки. Запустите проверку снова.')}</p>
+              <p className="lesson-stale">
+                {t('Код изменён после проверки. Запустите проверку снова.')}
+              </p>
             )}
             {verdicts && (
               <div className={`lesson-verdict ${passed ? 'passed' : 'failed'}`} role="status">
@@ -278,7 +282,10 @@ export function LessonsPanel({
                     {passed ? t('Устройство работает как задумано') : t('Есть над чем поработать')}
                   </strong>
                   <span>
-                    {t('{n} из {total} проверок прошли', { n: verdicts.filter((item) => item.passed).length, total: verdicts.length })}
+                    {t('{n} из {total} проверок прошли', {
+                      n: verdicts.filter((item) => item.passed).length,
+                      total: verdicts.length,
+                    })}
                     {passed ? t('. Можно идти дальше.') : t('. Сравните входы и выходы в таблице.')}
                   </span>
                 </div>
@@ -337,7 +344,9 @@ export function LessonsPanel({
           </section>
           {result && (
             <footer className="lesson-simulation-footnote">
-              <span>{t('Проверка реальной RTL симуляцией · {engine}', { engine: result.engine })}</span>
+              <span>
+                {t('Проверка реальной RTL симуляцией · {engine}', { engine: result.engine })}
+              </span>
               <button onClick={() => setShowLog(!showLog)}>
                 {showLog ? t('Скрыть журнал') : t('Журнал')}
               </button>

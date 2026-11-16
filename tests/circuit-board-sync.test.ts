@@ -3,7 +3,12 @@ import assert from 'node:assert/strict';
 import { assignSchematicPins, syncBoardConstraints } from '../src/lib/circuit-board';
 import { createWizardProject } from '../src/lib/project-wizard';
 import { readCst } from '../src/lib/pin-planner';
-import { newCircuitNode, parseCircuit, removeCircuitNodes, starterCircuit } from '../shared/schematic';
+import {
+  newCircuitNode,
+  parseCircuit,
+  removeCircuitNodes,
+  starterCircuit,
+} from '../shared/schematic';
 import { genericStarter } from './circuit-fixtures';
 
 /** The wizard starts empty; these tests need the board's button and LED, so they are placed here. */

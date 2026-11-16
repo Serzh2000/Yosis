@@ -34,7 +34,8 @@ export function HelpTrigger({
   const [open, setOpen] = useState(false);
   const article = useMemo(() => getHelpArticle(topic), [topic]);
   const close = useCallback(() => setOpen(false), []);
-  const label = ariaLabel ?? props['aria-label'] ?? t('Справка: {subtitle}', { subtitle: article.subtitle });
+  const label =
+    ariaLabel ?? props['aria-label'] ?? t('Справка: {subtitle}', { subtitle: article.subtitle });
   return (
     <>
       <button
@@ -308,7 +309,12 @@ export function HelpCard({ article, onClose }: { article: HelpArticle; onClose: 
           <code className="help-card-subtitle">{article.subtitle}</code>
           <h2 id={titleId}>{article.title}</h2>
         </div>
-        <button className="help-close" type="button" onClick={onClose} aria-label={t('Закрыть справку')}>
+        <button
+          className="help-close"
+          type="button"
+          onClick={onClose}
+          aria-label={t('Закрыть справку')}
+        >
           <X size={18} />
         </button>
       </header>

@@ -52,7 +52,9 @@ export async function request<T>(
   if (!response.ok)
     throw new ApiError(
       response.status,
-      typeof data?.error === 'string' ? translateServerMessage(data.error) : t('Сервер ответил с ошибкой. Попробуй позже.'),
+      typeof data?.error === 'string'
+        ? translateServerMessage(data.error)
+        : t('Сервер ответил с ошибкой. Попробуй позже.'),
     );
   return data as T;
 }

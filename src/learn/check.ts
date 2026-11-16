@@ -24,5 +24,11 @@ export async function checkExercise(
 /** The first failed check in words, for the teacher's view of an attempt. */
 export function failureDetail(verdicts: LessonVerdict[]): string {
   const failed = verdicts.find((item) => !item.passed);
-  return failed ? t('{title}: ждали {expected}, получили {actual}', { title: failed.title, expected: failed.expected, actual: failed.actual }) : '';
+  return failed
+    ? t('{title}: ждали {expected}, получили {actual}', {
+        title: failed.title,
+        expected: failed.expected,
+        actual: failed.actual,
+      })
+    : '';
 }

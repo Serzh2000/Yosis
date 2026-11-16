@@ -70,7 +70,9 @@ export async function probeBl616Rom(
     )
   )
     throw new Error(
-      t('Нужен порт загрузчика Bouffalo. Обычные USB Debugger COM9/COM11 относятся к FTDI, а не ROM.'),
+      t(
+        'Нужен порт загрузчика Bouffalo. Обычные USB Debugger COM9/COM11 относятся к FTDI, а не ROM.',
+      ),
     );
   const usbId = `${usb.usbVendorId!.toString(16).padStart(4, '0')}:${usb.usbProductId!.toString(16).padStart(4, '0')}`;
   let opened = false;
@@ -92,7 +94,11 @@ export async function probeBl616Rom(
           timer = setTimeout(
             () =>
               reject(
-                new Error(t('Нет ответа ROM: {stage}. Проверьте режим UPDATE и переподключите USB.', { stage })),
+                new Error(
+                  t('Нет ответа ROM: {stage}. Проверьте режим UPDATE и переподключите USB.', {
+                    stage,
+                  }),
+                ),
               ),
             timeoutMs,
           );
@@ -184,7 +190,8 @@ export async function probeBl616Rom(
     // After an earlier session the ROM is already in command mode and answers FL to the 0x55 run.
     const hello = await readExact(2);
     if (hello[0] === 0x46 && hello[1] === 0x4c) await readExact(2);
-    else if (hello[0] !== 0x4f || hello[1] !== 0x4b) throw new Error(t('Не получен ответ OK от ROM.'));
+    else if (hello[0] !== 0x4f || hello[1] !== 0x4b)
+      throw new Error(t('Не получен ответ OK от ROM.'));
     await drainHandshake();
     options.onStage?.(t('Читаем BootInfo…'));
     await send(new Uint8Array([0x10, 0, 0, 0]));
@@ -196,7 +203,8 @@ export async function probeBl616Rom(
       size = await readExact(2);
     }
     const length = size[0] | (size[1] << 8);
-    if (length < 20 || length > 64) throw new Error(t('Неожиданная длина BootInfo: {length}.', { length }));
+    if (length < 20 || length > 64)
+      throw new Error(t('Неожиданная длина BootInfo: {length}.', { length }));
     bootInfo = decodeBl616BootInfo(await readExact(length), usbId);
   } catch (cause) {
     failure = cause;

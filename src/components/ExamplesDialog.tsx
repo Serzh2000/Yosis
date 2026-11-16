@@ -173,7 +173,9 @@ export function ExamplesDialog({
                 onClick={() => setSelectedId(example.id)}
               >
                 <div className="example-card-heading">
-                  <span className="example-level-badge">{t('Уровень {level}', { level: metadata.level })}</span>
+                  <span className="example-level-badge">
+                    {t('Уровень {level}', { level: metadata.level })}
+                  </span>
                   <span>{curriculumTopics.find((item) => item.id === metadata.topic)?.title}</span>
                   {selected?.id === example.id && <Check size={13} />}
                 </div>
@@ -247,7 +249,9 @@ export function ExamplesDialog({
       </div>
       <footer className="examples-footer">
         {t(
-          t('Уровень определяется нужными знаниями. Переходы к предыдущим примерам помогут заполнить пробелы.'),
+          t(
+            'Уровень определяется нужными знаниями. Переходы к предыдущим примерам помогут заполнить пробелы.',
+          ),
         )}
       </footer>
     </Dialog>

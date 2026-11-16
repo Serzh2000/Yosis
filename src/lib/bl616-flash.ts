@@ -151,7 +151,9 @@ export class Bl616FlashSession {
         const hello = bytesHex(await session.exact(2));
         if (hello === '464c')
           options.transcript?.note(
-            t('ROM уже в командном режиме (FL 0x{bytesHex}); handshake не требуется', { bytesHex: bytesHex((await session.exact(2)).reverse()) }),
+            t('ROM уже в командном режиме (FL 0x{bytesHex}); handshake не требуется', {
+              bytesHex: bytesHex((await session.exact(2)).reverse()),
+            }),
           );
         else if (hello !== '4f4b') throw new Error(t('BL616 не подтвердил команду.'));
       } catch (error) {
@@ -169,7 +171,9 @@ export class Bl616FlashSession {
       // Other ROM/protection combinations need their own compatibility check.
       if (boot.version !== '0x06160001' || boot.signing !== 0 || boot.encryption !== 1)
         throw new Error(
-          t('Эта ревизия или режим защиты BL616 пока не проверены для данного пакета. Запись не началась.'),
+          t(
+            'Эта ревизия или режим защиты BL616 пока не проверены для данного пакета. Запись не началась.',
+          ),
         );
       // Official native-ROM flash path. CDC ignores the physical UART baud rate.
       await session.command(0x22, words(1, 115200));
@@ -204,7 +208,9 @@ export class Bl616FlashSession {
           bytesHex(repeated.subarray(0, 3)) !== id ||
           ![0, 0x80].includes(repeated[3])
         )
-          throw new Error(t('Идентификатор flash изменился после настройки SDK. Запись запрещена.'));
+          throw new Error(
+            t('Идентификатор flash изменился после настройки SDK. Запись запрещена.'),
+          );
         parameterSource = 'Bouffalo SDK · c86016';
       }
       // ROM's 0x80 flag says that its flash parameter table recognized this JEDEC.
@@ -216,19 +222,35 @@ export class Bl616FlashSession {
         jedec[2] > 24
       )
         throw new Error(
-          t('ROM не подтвердил параметры flash (JEDEC: {bytesHex}, pin: {pin}). Запись не началась.', { bytesHex: bytesHex(jedec), pin }),
+          t(
+            'ROM не подтвердил параметры flash (JEDEC: {bytesHex}, pin: {pin}). Запись не началась.',
+            { bytesHex: bytesHex(jedec), pin },
+          ),
         );
       const size = 2 ** jedec[2];
       if (size > MAX_DEBUGGER_FLASH || size <= FIRMWARE_ADDRESS)
         throw new Error(t('Неподдерживаемая ёмкость flash BL616.'));
       session.flash = { boot, jedec: id, size, parameterSource };
       options.transcript?.note(
-        t('ROM {boot} sign={boot2} encrypt={boot3} chip={boot4} jedec={bytesHex} pin={pin} параметры: {parameterSource}', { boot: boot.version, boot2: boot.signing, boot3: boot.encryption, boot4: boot.chipId, bytesHex: bytesHex(jedec), pin, parameterSource }),
+        t(
+          'ROM {boot} sign={boot2} encrypt={boot3} chip={boot4} jedec={bytesHex} pin={pin} параметры: {parameterSource}',
+          {
+            boot: boot.version,
+            boot2: boot.signing,
+            boot3: boot.encryption,
+            boot4: boot.chipId,
+            bytesHex: bytesHex(jedec),
+            pin,
+            parameterSource,
+          },
+        ),
       );
       return session;
     } catch (error) {
       options.transcript?.note(
-        t('Сессия не открыта: {error}', { error: error instanceof Error ? error.message : String(error) }),
+        t('Сессия не открыта: {error}', {
+          error: error instanceof Error ? error.message : String(error),
+        }),
       );
       await session.close();
       throw error;
@@ -253,7 +275,9 @@ export class Bl616FlashSession {
             this.failed = true;
             reject(
               new Error(
-                t('BL616 не ответил вовремя. Команда не повторяется; для восстановления переподключи плату в BOOT.'),
+                t(
+                  'BL616 не ответил вовремя. Команда не повторяется; для восстановления переподключи плату в BOOT.',
+                ),
               ),
             );
           }, milliseconds);
@@ -308,7 +332,9 @@ export class Bl616FlashSession {
       if (result === '464c') {
         const code = await this.exact(2);
         throw new Error(
-          t('BL616 вернул FL 0x{bytesHex}. Запись остановлена.', { bytesHex: bytesHex(code.slice().reverse()) }),
+          t('BL616 вернул FL 0x{bytesHex}. Запись остановлена.', {
+            bytesHex: bytesHex(code.slice().reverse()),
+          }),
         );
       }
       if (result !== '5044' || !allowPending) throw new Error(t('BL616 не подтвердил команду.'));

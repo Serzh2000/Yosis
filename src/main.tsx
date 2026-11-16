@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './lib/i18n';
-import App from './App';
+import { loadLanguage } from './lib/i18n';
 import { isLearnPath } from './learn/routes';
 import { canonicalLocalUrl } from './lib/canonical-origin';
 import '@fontsource-variable/golos-text/index.css';
@@ -17,15 +16,20 @@ const canonical = canonicalLocalUrl(window.location);
 if (canonical) {
   window.location.replace(canonical);
 } else {
-  ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
-      {isLearnPath(window.location.pathname) ? (
-        <React.Suspense fallback={null}>
-          <LearnApp />
-        </React.Suspense>
-      ) : (
-        <App />
-      )}
-    </React.StrictMode>,
-  );
+  // Английские словари грузятся до приложения: тексты собираются при загрузке его модулей.
+  void loadLanguage().then(async () => {
+    const learn = isLearnPath(window.location.pathname);
+    const App = learn ? null : (await import('./App')).default;
+    ReactDOM.createRoot(document.getElementById('root')!).render(
+      <React.StrictMode>
+        {App ? (
+          <App />
+        ) : (
+          <React.Suspense fallback={null}>
+            <LearnApp />
+          </React.Suspense>
+        )}
+      </React.StrictMode>,
+    );
+  });
 }

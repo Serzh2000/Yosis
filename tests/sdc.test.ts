@@ -277,5 +277,8 @@ test('rPLL: parameters of any binary width, the library default of FCLKIN, bypas
   // Bypass passes the input through.
   assert.equal(period({ FCLKIN: '27', FBDIV_SEL: '11', CLKOUT_BYPASS: 'true' }), '37.037');
   // Dividers that a port sets at run time are unknown: no clock is claimed.
-  assert.equal(pllClockConstraints(flat({ FCLKIN: '27', DYN_FBDIV_SEL: 'true' }), 'top', new Set()), '');
+  assert.equal(
+    pllClockConstraints(flat({ FCLKIN: '27', DYN_FBDIV_SEL: 'true' }), 'top', new Set()),
+    '',
+  );
 });

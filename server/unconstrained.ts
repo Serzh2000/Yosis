@@ -61,7 +61,8 @@ export function canonicalCst(cst: string): string {
       const match = /^(IO_LOC|IO_PORT|CLOCK_LOC|INS_LOC)\s+"([^"\n]+)"\s+(\S[\s\S]*)$/i.exec(
         piece.trim(),
       );
-      if (match) out.push(`${match[1].toUpperCase()} "${match[2]}" ${match[3].replace(/\s+/g, ' ')};`);
+      if (match)
+        out.push(`${match[1].toUpperCase()} "${match[2]}" ${match[3].replace(/\s+/g, ' ')};`);
     }
   return out.join('\n');
 }

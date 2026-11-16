@@ -65,7 +65,9 @@ export function SimulationChecks({
                   }
                 >
                   {!ports[entry.signal] && (
-                    <option value={entry.signal}>{t('{name} · отсутствует', { name: entry.signal })}</option>
+                    <option value={entry.signal}>
+                      {t('{name} · отсутствует', { name: entry.signal })}
+                    </option>
                   )}
                   {names.map((name) => (
                     <option key={name} value={name}>

@@ -972,7 +972,8 @@ export const designer: Record<string, string> = {
   'Открываем конструктор…': 'Opening the designer…',
   'В этом проекте нет схемы': 'This project has no schematic',
   'Добавить схему в этот проект': 'Add a schematic to this project',
-  'Безопасный выбор — новый проект из логических элементов: текущий проект останется в библиотеке без изменений.': 'The safe choice is a new project from logic elements: the current project stays in the library unchanged.',
+  'Безопасный выбор — новый проект из логических элементов: текущий проект останется в библиотеке без изменений.':
+    'The safe choice is a new project from logic elements: the current project stays in the library unchanged.',
   'Новый проект из элементов': 'New project from elements',
   'Логическое выражение': 'Logic expression',
   'AND + OR: от выражения к таблице LUT.': 'AND + OR: from an expression to a LUT table.',

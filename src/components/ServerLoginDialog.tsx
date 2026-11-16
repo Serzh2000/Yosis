@@ -13,10 +13,17 @@ export function ServerLoginDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   return (
-    <Dialog title={t('Подключиться к мастерской')} onClose={onClose} closeDisabled={busy} busy={busy}>
+    <Dialog
+      title={t('Подключиться к мастерской')}
+      onClose={onClose}
+      closeDisabled={busy}
+      busy={busy}
+    >
       <p>
         {t(
-          t('Введите код доступа, который выдал преподаватель. На сервере будут доступны ваши сборки, проекты и прогресс курса.'),
+          t(
+            'Введите код доступа, который выдал преподаватель. На сервере будут доступны ваши сборки, проекты и прогресс курса.',
+          ),
         )}
       </p>
       <form

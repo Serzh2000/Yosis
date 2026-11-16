@@ -205,10 +205,12 @@ export default function App() {
     setSelectedCell(null);
     clearHighlight();
     setWorkTab('rtl');
-    setInfo(t('Сигнал {name}: подсвечены связи и элементы модуля {module}.', {
+    setInfo(
+      t('Сигнал {name}: подсвечены связи и элементы модуля {module}.', {
         name: link.name,
         module: link.module,
-      }));
+      }),
+    );
   };
   const openServer = () => (server.session ? setSyncOpen(true) : setLoginOpen(true));
   const synthesize = () => void startBuild();

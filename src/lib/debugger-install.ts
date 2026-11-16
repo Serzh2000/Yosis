@@ -42,10 +42,8 @@ export async function loadDebuggerPackage(): Promise<FirmwareImage[]> {
   for (const image of manifest.images) {
     if (!['bootloader.bin', 'dirtyjtag.bin'].includes(image.name))
       throw new Error(t('Неизвестный образ прошивки.'));
-    const bytes = await download(
-      `/firmware/dirtyjtag/${image.name}`,
-      undefined,
-      (status) => t('Пакет прошивки недоступен ({status}).', { status }),
+    const bytes = await download(`/firmware/dirtyjtag/${image.name}`, undefined, (status) =>
+      t('Пакет прошивки недоступен ({status}).', { status }),
     );
     if (bytes.length !== image.size || (await firmwareHash(bytes)) !== image.sha256)
       throw new Error(t('SHA-256 пакета прошивки не совпал. Установка запрещена.'));
@@ -78,7 +76,9 @@ export async function readBackupFile(name: string, bytes: Uint8Array): Promise<B
   const match = name.toLowerCase().match(/bl616-([a-f0-9]{12})-([a-f0-9]{64})/);
   if (!match)
     throw new Error(
-      t('Имя файла должно сохранить вид bl616-<плата>-<SHA-256>.bin: по нему проверяется содержимое.'),
+      t(
+        'Имя файла должно сохранить вид bl616-<плата>-<SHA-256>.bin: по нему проверяется содержимое.',
+      ),
     );
   if (bytes.length < 2 ** 19 || bytes.length > MAX_DEBUGGER_FLASH || bytes.length % FLASH_SECTOR)
     throw new Error(t('Размер файла не соответствует flash BL616.'));
@@ -109,7 +109,12 @@ export async function prepareDebuggerInstall(
     if (mode === 'restore' && extra.restoreFile) {
       const file = extra.restoreFile;
       if (file.chipId !== flash.boot.chipId)
-        throw new Error(t('Файл относится к плате {file}, подключена {flash}.', { file: file.chipId, flash: flash.boot.chipId }));
+        throw new Error(
+          t('Файл относится к плате {file}, подключена {flash}.', {
+            file: file.chipId,
+            flash: flash.boot.chipId,
+          }),
+        );
       if (file.bytes.length !== flash.size)
         throw new Error(t('Размер файла отличается от flash этой платы.'));
       // Stored before the current state: in a fresh browser profile the file stays the earliest copy.
@@ -144,7 +149,8 @@ export async function applyDebuggerInstall(
   onProgress: Progress,
   transcript?: RomTranscript,
 ): Promise<{ chipId: string; sectors: number }> {
-  if (!['install', 'restore'].includes(plan.mode)) throw new Error(t('Неизвестный режим установки.'));
+  if (!['install', 'restore'].includes(plan.mode))
+    throw new Error(t('Неизвестный режим установки.'));
   const backup = await storedDebuggerBackup((await validateDebuggerBackup(plan.backup)).key);
   const original =
     plan.mode === 'restore'
@@ -180,7 +186,10 @@ export async function applyDebuggerInstall(
     );
     for (let index = 0; index < sectors.length; index++) {
       onProgress({
-        stage: plan.mode === 'install' ? t('Установка DirtyJTAG') : t('Восстановление исходной прошивки'),
+        stage:
+          plan.mode === 'install'
+            ? t('Установка DirtyJTAG')
+            : t('Восстановление исходной прошивки'),
         done: index,
         total: sectors.length,
       });

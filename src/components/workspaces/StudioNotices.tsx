@@ -57,7 +57,9 @@ export function StudioNotices({
               (healthError
                 ? t('Сервис сборки недоступен: {error}', { error: healthError })
                 : pollError
-                  ? t('Связь со сборкой прервана: {error} Повторяем подключение…', { error: pollError })
+                  ? t('Связь со сборкой прервана: {error} Повторяем подключение…', {
+                      error: pollError,
+                    })
                   : storageError || t('Не удалось сохранить проект в браузере.'))}
           </span>
           {healthError && (
@@ -67,7 +69,11 @@ export function StudioNotices({
             </button>
           )}
           {error && (
-            <button className="notice-close" aria-label={t('Закрыть сообщение')} onClick={onCloseError}>
+            <button
+              className="notice-close"
+              aria-label={t('Закрыть сообщение')}
+              onClick={onCloseError}
+            >
               <X size={14} />
             </button>
           )}
@@ -76,7 +82,11 @@ export function StudioNotices({
       {info && (
         <div className="notice" role="status">
           <span>{info}</span>
-          <button className="notice-close" aria-label={t('Закрыть сообщение')} onClick={onCloseInfo}>
+          <button
+            className="notice-close"
+            aria-label={t('Закрыть сообщение')}
+            onClick={onCloseInfo}
+          >
             <X size={14} />
           </button>
         </div>
@@ -85,7 +95,9 @@ export function StudioNotices({
         <div className="notice" role="status" data-testid="stale-example-notice">
           <span>
             {t(
-              t('{prefix} примера «{title}», а в библиотеке пример с тех пор исправлен. Ваш проект не изменён.'),
+              t(
+                '{prefix} примера «{title}», а в библиотеке пример с тех пор исправлен. Ваш проект не изменён.',
+              ),
               {
                 prefix:
                   staleExample.certainty === 'guess' ? t('Похоже, это копия') : t('Это копия'),

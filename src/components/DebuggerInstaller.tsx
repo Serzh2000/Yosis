@@ -209,15 +209,19 @@ export function DebuggerInstaller({ disabled, closeUart, onBusy, onInstalled, on
     const selectedPlan = plan;
     const transcript = journal.current ?? new RomTranscript();
     journal.current = transcript;
-    transcript.note(t('Запись · {mode} · {time}', {
+    transcript.note(
+      t('Запись · {mode} · {time}', {
         mode: selectedPlan.mode,
         time: new Date().toISOString(),
-      }));
+      }),
+    );
     try {
       const result = await applyDebuggerInstall(port.current, selectedPlan, report, transcript);
-      transcript.note(t('Запись завершена: секторов {sectors}, SHA-256 всей flash совпал', {
+      transcript.note(
+        t('Запись завершена: секторов {sectors}, SHA-256 всей flash совпал', {
           sectors: result.sectors,
-        }));
+        }),
+      );
       if (mounted.current) {
         setDone(selectedPlan.mode);
         setPlan(null);
@@ -250,24 +254,32 @@ export function DebuggerInstaller({ disabled, closeUart, onBusy, onInstalled, on
       </div>
       <p>
         {t(
-          t('DirtyJTAG заменяет FTDI-эмуляцию в отладчике платы. Пакет содержит загрузчик Sipeed и JTAG с дескрипторами для WinUSB; UART остаётся отдельным портом. Инструменты на компьютере ученика не требуются.'),
+          t(
+            'DirtyJTAG заменяет FTDI-эмуляцию в отладчике платы. Пакет содержит загрузчик Sipeed и JTAG с дескрипторами для WinUSB; UART остаётся отдельным портом. Инструменты на компьютере ученика не требуются.',
+          ),
         )}
       </p>
       {!done && (
         <ol>
           <li>
             {t(
-              t('Отключи USB. Зажми UPDATE (BOOT) за HDMI, подключи USB и отпусти кнопку. LED могут продолжать бегущий огонь: режим загрузчика определяется появлением Bouffalo CDC.'),
+              t(
+                'Отключи USB. Зажми UPDATE (BOOT) за HDMI, подключи USB и отпусти кнопку. LED могут продолжать бегущий огонь: режим загрузчика определяется появлением Bouffalo CDC.',
+              ),
             )}
           </li>
           <li>
             {t(
-              t('Выбери Bouffalo CDC. Приложение прочитает flash BL616, сохранит копии в браузере и на сервере и проверит их SHA-256.'),
+              t(
+                'Выбери Bouffalo CDC. Приложение прочитает flash BL616, сохранит копии в браузере и на сервере и проверит их SHA-256.',
+              ),
             )}
           </li>
           <li>
             {t(
-              t('Проверь сведения о плате, затем запусти установку. После записи переподключи USB без UPDATE.'),
+              t(
+                'Проверь сведения о плате, затем запусти установку. После записи переподключи USB без UPDATE.',
+              ),
             )}
           </li>
         </ol>
@@ -324,7 +336,9 @@ export function DebuggerInstaller({ disabled, closeUart, onBusy, onInstalled, on
             <dt>BL616</dt>
             <dd>{restoreFile.chipId}</dd>
             <dt>SHA-256</dt>
-            <dd title={restoreFile.hash}>{t('{hash}… · совпал с именем', { hash: restoreFile.hash.slice(0, 20) })}</dd>
+            <dd title={restoreFile.hash}>
+              {t('{hash}… · совпал с именем', { hash: restoreFile.hash.slice(0, 20) })}
+            </dd>
             <dt>{t('Размер')}</dt>
             <dd>{t('{size} МБ', { size: restoreFile.bytes.length / 1024 / 1024 })}</dd>
           </dl>
@@ -370,7 +384,9 @@ export function DebuggerInstaller({ disabled, closeUart, onBusy, onInstalled, on
           </dl>
           <p>
             {t(
-              t('Изменится прошивка USB-отладчика BL616. Во время записи сохрани питание. Проверенная копия также сохранена на сервере в твоём профиле. Скачивание дополнительной копии доступно по желанию.'),
+              t(
+                'Изменится прошивка USB-отладчика BL616. Во время записи сохрани питание. Проверенная копия также сохранена на сервере в твоём профиле. Скачивание дополнительной копии доступно по желанию.',
+              ),
             )}
           </p>
           <div className="debugger-installer-actions">
@@ -482,7 +498,9 @@ export function DebuggerInstaller({ disabled, closeUart, onBusy, onInstalled, on
         <summary>{t('Пакет и границы проверки')}</summary>
         <p>
           {t(
-            t('Сборка из закреплённых исходников DirtyJTAG и Bouffalo SDK. Установка ещё проходит испытания на реальной плате. Протокол проверяет ROM, параметры flash, резервную копию и каждый записанный сектор; при несовместимости останавливается до стирания. eFuse и конфигурация FPGA этим мастером не записываются.'),
+            t(
+              'Сборка из закреплённых исходников DirtyJTAG и Bouffalo SDK. Установка ещё проходит испытания на реальной плате. Протокол проверяет ROM, параметры flash, резервную копию и каждый записанный сектор; при несовместимости останавливается до стирания. eFuse и конфигурация FPGA этим мастером не записываются.',
+            ),
           )}
         </p>
         <a href="https://github.com/pepijndevos/bl616_dirtyjtag" target="_blank" rel="noreferrer">

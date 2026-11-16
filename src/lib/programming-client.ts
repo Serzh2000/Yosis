@@ -38,7 +38,9 @@ export function helperOrigin(input: string): string {
   const port = match?.[2] ? Number(match[2]) : 3211;
   if (!match || port < 1 || port > 65535)
     throw new Error(
-      t('Помощник должен работать на http://127.0.0.1:3211 или http://localhost с локальным портом.'),
+      t(
+        'Помощник должен работать на http://127.0.0.1:3211 или http://localhost с локальным портом.',
+      ),
     );
   return `http://${match[1].toLowerCase()}:${port}`;
 }
@@ -184,7 +186,9 @@ export class ProgrammingClient {
     } catch {
       if (signal?.aborted) throw new DOMException(t('Запрос отменён.'), 'AbortError');
       throw new Error(
-        t('Локальный помощник недоступен. Проверьте его запуск, разрешённый адрес приложения и доступ браузера к локальной сети.'),
+        t(
+          'Локальный помощник недоступен. Проверьте его запуск, разрешённый адрес приложения и доступ браузера к локальной сети.',
+        ),
       );
     }
     let data: unknown;
@@ -192,7 +196,10 @@ export class ProgrammingClient {
       data = await response.json();
     } catch {
       if (!response.ok)
-        throw new ProgrammingHttpError(t('Ошибка помощника: {response}', { response: response.status }), response.status);
+        throw new ProgrammingHttpError(
+          t('Ошибка помощника: {response}', { response: response.status }),
+          response.status,
+        );
       throw new Error(t('Помощник вернул некорректный ответ.'));
     }
     if (!response.ok) {
@@ -241,7 +248,8 @@ export class ProgrammingClient {
   }
   async start(input: ProgrammingRequest, signal?: AbortSignal): Promise<ProgrammingJob> {
     validateBitstreamText(input.bitstream);
-    if (!input.deviceId || !input.projectName.trim()) throw new Error(t('Выберите плату и битстрим.'));
+    if (!input.deviceId || !input.projectName.trim())
+      throw new Error(t('Выберите плату и битстрим.'));
     if (
       !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
         input.requestId,

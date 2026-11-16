@@ -75,7 +75,8 @@ export function VerilogTask({
         : null,
     [exercise, code],
   );
-  if (!exercise || !project) return <p className="learn-note">{t('Для этого задания нет проверки.')}</p>;
+  if (!exercise || !project)
+    return <p className="learn-note">{t('Для этого задания нет проверки.')}</p>;
 
   const edit = (value: string) => {
     reset();
@@ -118,7 +119,9 @@ export function VerilogTask({
         >
           {t('Вернуть заготовку')}
         </button>
-        {solved && !run.verdicts ? <span className="learn-ok">{t('Задание уже выполнено')}</span> : null}
+        {solved && !run.verdicts ? (
+          <span className="learn-ok">{t('Задание уже выполнено')}</span>
+        ) : null}
       </div>
       <Verdicts verdicts={run.verdicts} error={run.error} />
     </div>
