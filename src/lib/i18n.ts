@@ -7,7 +7,7 @@ import {
 } from '../../shared/i18n';
 import { localStore, STORAGE_KEYS } from './storage';
 
-export { t, language } from '../../shared/i18n';
+export { t, tx, language } from '../../shared/i18n';
 
 /** Выбранный язык: сохранённый выбор, иначе язык браузера. */
 export function readLanguage(): Language {

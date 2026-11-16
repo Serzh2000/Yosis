@@ -199,4 +199,9 @@ export const shell: Record<string, string> = {
   'Вернуться к схеме': 'Back to the schematic',
   'Только для чтения: он пересобирается при каждом изменении схемы. Чтобы изменить логику, правьте схему в конструкторе.':
     'Read-only: it is rebuilt on every change to the schematic. To change the logic, edit the schematic in the designer.',
+  Готово: 'Done',
+  Ошибка: 'Error',
+  'Нужна новая сборка': 'Needs a new build',
+  Выполняется: 'Running',
+  с: 's',
 };

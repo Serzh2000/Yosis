@@ -1,4 +1,4 @@
-import { t } from '../../lib/i18n';
+import { t, tx } from '../../lib/i18n';
 import { useId, useState, type FormEvent } from 'react';
 import { ApiError } from './api';
 import { Modal } from './Modal';
@@ -63,7 +63,7 @@ export function AuthDialog({
   };
   const register = mode === 'register';
   return (
-    <Modal title={register ? t('Регистрация') : t('Вход')} onClose={onClose}>
+    <Modal title={register ? t('Регистрация') : tx('вход в аккаунт', 'Вход')} onClose={onClose}>
       <div className="acct-tabs" role="tablist" aria-label={t('Что сделать')}>
         {(['login', 'register'] as const).map((item) => (
           <button

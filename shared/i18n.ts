@@ -32,6 +32,19 @@ export function t(text: string, values?: Record<string, string | number>): strin
     : translated;
 }
 
+/**
+ * Фраза с уточнением смысла: одно русское слово бывает разным по-английски («Вход» — Input и
+ * Sign in). Словарь ищет `контекст|фраза`, затем просто `фраза`; по-русски контекст не виден.
+ */
+export function tx(
+  context: string,
+  text: string,
+  values?: Record<string, string | number>,
+): string {
+  const specific = current === 'en' ? english.get(`${context}|${text}`) : undefined;
+  return specific === undefined ? t(text, values) : t(specific, values);
+}
+
 /** Русская фраза без перевода на английский: для проверки полноты словаря. */
 export const hasEnglish = (text: string): boolean => english.has(text);
 

@@ -1,13 +1,31 @@
 import { test, expect, type Page } from '@playwright/test';
 
+/** A fresh launch shows the projects window; tests that work in the editor close it first. */
+async function dismissProjects(page: Page) {
+  const dialog = page.getByRole('dialog', { name: 'Проекты' });
+  await dialog.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => undefined);
+  if (await dialog.isVisible()) {
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible();
+  }
+}
+
 /** The app starts on the projects window; tests close it and open it from the header like a pupil. */
 async function openProjects(page: Page) {
   const dialog = page.getByRole('dialog', { name: 'Проекты' });
+  // On a fresh launch the window is loaded lazily: let it appear before deciding what to do.
+  await dialog.waitFor({ state: 'visible', timeout: 3000 }).catch(() => undefined);
   if (await dialog.isVisible()) {
     await page.keyboard.press('Escape');
     await expect(dialog).not.toBeVisible();
   }
   await page.getByRole('button', { name: 'Создать проект', exact: true }).click();
+}
+
+/** The tabs of the real board sit in a collapsed group of the menu: open it if it is closed. */
+async function openRealBoardTabs(page: Page) {
+  const chip = page.getByRole('tab', { name: /^Кристалл/ });
+  if (!(await chip.isVisible())) await page.locator('.sh-tab-group-toggle').click();
 }
 
 test('create project, inspect RTL, simulate, place and reload the same workspace', async ({
@@ -66,6 +84,7 @@ test('create project, inspect RTL, simulate, place and reload the same workspace
   await expect(page.locator('.pin-text-editor .view-lines')).toContainText(/IO_LOC\s+"led"\s+16;/);
   await page.getByRole('button', { name: /^Синтезировать/ }).click();
   await expect(page.getByRole('tab', { name: /^RTL · Готово/ })).toBeVisible({ timeout: 90_000 });
+  await openRealBoardTabs(page);
   await page.getByRole('tab', { name: /^Кристалл/ }).click();
   const place = page.getByRole('button', { name: 'Разместить и собрать', exact: true });
   await expect(place).toBeEnabled({ timeout: 90_000 });
@@ -106,6 +125,7 @@ test('create project, inspect RTL, simulate, place and reload the same workspace
 
 test('editor checks changed Verilog before a full synthesis', async ({ page }) => {
   await page.goto('/?tab=code');
+  await dismissProjects(page);
   const editor = page.getByRole('textbox', { name: 'Editor content', exact: true });
   await editor.press('Control+Home');
   await page.keyboard.type('.');
@@ -122,9 +142,12 @@ for (const width of [1024, 1366]) {
   test(`navigation and dialogs stay usable at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 768 });
     await page.goto('/?tab=lessons');
+    await dismissProjects(page);
     // The file panel is hidden on most tabs, but the tab bar must not shift when switching.
     const firstTab = page.getByRole('tab', { name: /^Код/ });
     const before = await firstTab.boundingBox();
+    // The tabs of the real board sit in a collapsed group.
+    await page.locator('.sh-tab-group-toggle').click();
     await page.getByRole('tab', { name: /^Подключение/ }).click();
     expect((await firstTab.boundingBox())?.x).toBe(before?.x);
     await page.getByRole('tab', { name: /^Код/ }).click();
@@ -147,7 +170,7 @@ for (const width of [1024, 1366]) {
     expect(grid?.height).toBeGreaterThan(768 / 2);
     await expect(dialog.getByRole('button', { name: 'Выбрать этот пример' })).toBeInViewport();
     await dialog.getByRole('button', { name: /^Все уровни/ }).click();
-    await expect(dialog.locator('.example-card')).toHaveCount(243);
+    await expect(dialog.locator('.example-card')).toHaveCount(275);
     await dialog.getByRole('button', { name: 'К выбору начала', exact: true }).click();
     await expect(dialog.getByRole('button', { name: /^Из логических элементов/ })).toBeVisible();
     await page.keyboard.press('Shift+Tab');
@@ -179,18 +202,23 @@ test('graphical source is editable, reloadable and follows the real synthesis, s
     'aria-selected',
     'true',
   );
-  // Стартовая схема: button → invert → led_n. Новый элемент без связей — это проблема на схеме.
+  // Новый проект начинается с пустого поля; готовая схема открывается из «Примеров».
   const editor = page.getByRole('tabpanel');
-  await expect(editor.getByText(/3 элементов · 2 проводов/)).toBeVisible();
+  await expect(editor.getByText(/0 элементов · 0 проводов/).first()).toBeVisible();
+  await editor.getByRole('button', { name: 'Примеры', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Открыть', exact: true }).first().click();
+  await expect(editor.getByText(/2 элементов · 1 проводов/).first()).toBeVisible();
+  // Свойства и проблемы лежат на холсте карточкой и по умолчанию закрыты.
+  await editor.getByRole('button', { name: 'Свойства и проблемы' }).click();
   await expect(editor.getByText('Схема готова к сборке', { exact: true })).toBeVisible();
   await editor.getByRole('button', { name: 'И (AND)', exact: true }).click();
-  await expect(editor.getByText(/4 элементов · 2 проводов/)).toBeVisible();
+  await expect(editor.getByText(/3 элементов · 1 проводов/).first()).toBeVisible();
   await expect(editor.getByText('Схема готова к сборке', { exact: true })).toHaveCount(0);
   await editor.getByRole('button', { name: 'Отменить (Ctrl+Z)' }).click();
-  await expect(editor.getByText(/3 элементов · 2 проводов/)).toBeVisible();
+  await expect(editor.getByText(/2 элементов · 1 проводов/).first()).toBeVisible();
   await expect(editor.getByText('Схема готова к сборке', { exact: true })).toBeVisible();
   await editor.getByRole('button', { name: 'Повторить (Ctrl+Y)' }).click();
-  await expect(editor.getByText(/4 элементов · 2 проводов/)).toBeVisible();
+  await expect(editor.getByText(/3 элементов · 1 проводов/).first()).toBeVisible();
   await editor.getByRole('button', { name: 'Отменить (Ctrl+Z)' }).click();
   await editor.getByRole('button', { name: 'Verilog', exact: true }).click();
   await expect(page.getByLabel('Verilog из схемы')).toContainText('module top');
@@ -202,7 +230,7 @@ test('graphical source is editable, reloadable and follows the real synthesis, s
   await editor.getByRole('button', { name: 'Показать всю схему (F)' }).click();
   await expect(page.getByText('Изменения сохранены в браузере', { exact: true })).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel(/^Элемент invert:/)).toBeVisible();
+  await expect(page.getByLabel(/^Элемент led0:/)).toBeVisible();
   await page.getByRole('button', { name: /^Синтезировать/ }).click();
   await expect(page.getByRole('tab', { name: /^RTL · Готово/ })).toBeVisible({ timeout: 90000 });
   await page.getByRole('tab', { name: /^Диаграммы/ }).click();
@@ -212,6 +240,7 @@ test('graphical source is editable, reloadable and follows the real synthesis, s
   const pinZoom = page.getByRole('group', { name: /^Масштаб: Назначение портов/ });
   await pinZoom.getByRole('button', { name: 'Увеличить масштаб' }).click();
   await expect(pinZoom.getByLabel('Текущий масштаб')).toHaveText('125%');
+  await openRealBoardTabs(page);
   await page.getByRole('tab', { name: /^Кристалл/ }).click();
   const place = page.getByRole('button', { name: 'Разместить и собрать', exact: true });
   await expect(place).toBeEnabled({ timeout: 90000 });
@@ -228,6 +257,7 @@ test('constructor tab of a Verilog project explains the conflict and opens the e
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/?tab=design');
+  await dismissProjects(page);
   const empty = page.getByTestId('no-schematic');
   await expect(empty.getByRole('heading', { name: 'В этом проекте нет схемы' })).toBeVisible();
   await expect(empty).toContainText('уже есть файл top.v');
@@ -251,9 +281,10 @@ test('laboratory runs the design, puts a part on a breadboard and edits it', asy
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/?tab=virtual');
+  await dismissProjects(page);
   const lab = page.getByRole('region', { name: 'Лаборатория' }).last();
   // The starter project is combinational: it runs without a clock on pin 4.
-  await expect(lab.getByRole('status').first()).toContainText('на плате прошло', {
+  await expect(lab.getByRole('status').first()).toContainText('Время на плате', {
     timeout: 60_000,
   });
   // The bench is one WebGL scene, so parts are worked with through the list and the side panel.
@@ -283,7 +314,7 @@ test('laboratory runs the design, puts a part on a breadboard and edits it', asy
     .getByRole('dialog', { name: 'Убрать всё со стола?' })
     .getByRole('button', { name: 'Убрать всё' })
     .click();
-  await expect(lab.getByText(/Добавьте макетную плату/)).toBeVisible();
+  await expect(lab.getByText(/встанет на макетную плату/)).toBeVisible();
   expect(errors).toEqual([]);
 });
 

@@ -47,10 +47,10 @@ const groups: { label: string; tabs: WorkTab[]; collapsible?: boolean }[] = [
 ];
 const savedOpen = () => localStore.getItem(STORAGE_KEYS.realBoardTabs) === '1';
 const statuses = {
-  success: { label: 'Готово' },
-  error: { label: 'Ошибка' },
-  stale: { label: 'Нужна новая сборка' },
-  busy: { label: 'Выполняется' },
+  success: { label: t('Готово') },
+  error: { label: t('Ошибка') },
+  stale: { label: t('Нужна новая сборка') },
+  busy: { label: t('Выполняется') },
 } as const;
 
 export interface StudioNavigationProps {

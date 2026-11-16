@@ -104,7 +104,7 @@ export const learn: Record<string, string> = {
   'Пароли не совпадают.': 'The passwords do not match.',
   'Не получилось. Попробуй ещё раз.': 'That did not work. Please try again.',
   Регистрация: 'Sign up',
-  Вход: 'Sign in',
+  'вход в аккаунт|Вход': 'Sign in',
   'Что сделать': 'What to do',
   'Создать аккаунт': 'Create account',
   Логин: 'Username',

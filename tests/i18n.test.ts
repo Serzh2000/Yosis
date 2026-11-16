@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { languageFor, registerEnglish, setLanguage, t } from '../shared/i18n';
+import { languageFor, registerEnglish, setLanguage, t, tx } from '../shared/i18n';
 import { english } from '../src/i18n/en';
 
 test('Russian is the source text; English is looked up and falls back to Russian', () => {
@@ -30,4 +30,14 @@ test('the English dictionary is clean: translated, no Cyrillic left, placeholder
       ru,
     );
   }
+});
+
+test('a context picks the meaning of an ambiguous word, Russian is unaffected', () => {
+  registerEnglish({ Вход: 'Input', 'вход в аккаунт|Вход': 'Sign in' });
+  setLanguage('en');
+  assert.equal(t('Вход'), 'Input');
+  assert.equal(tx('вход в аккаунт', 'Вход'), 'Sign in');
+  assert.equal(tx('другой контекст', 'Вход'), 'Input');
+  setLanguage('ru');
+  assert.equal(tx('вход в аккаунт', 'Вход'), 'Вход');
 });

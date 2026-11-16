@@ -21,7 +21,7 @@ const statusLabels = {
 };
 function formatDuration(ms: number) {
   const seconds = ms / 1000;
-  return `${seconds.toFixed(seconds < 10 ? 1 : 0)} с`;
+  return `${seconds.toFixed(seconds < 10 ? 1 : 0)} ${t('с')}`;
 }
 export function BuildLogs({
   build,
