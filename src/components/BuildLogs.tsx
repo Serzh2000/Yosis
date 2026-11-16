@@ -92,8 +92,8 @@ export function BuildLogs({
           <button
             className="icon-button"
             disabled={!build}
-            aria-label="Скачать журнал"
-            title="Скачать журнал"
+            aria-label={t('Скачать журнал')}
+            title={t('Скачать журнал')}
             onClick={() => downloadText('logs.txt', build?.logs || '', 'text/plain')}
           >
             <ArrowDownToLine size={14} />

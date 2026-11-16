@@ -44,17 +44,17 @@ export interface ProjectWizardProps {
 const steps = [t('Начало'), t('Проект и плата'), t('Проверка')];
 const beginnerIds = ['button', 'logic', 'counter', 'blank'];
 const pinLabels: Record<string, string> = {
-  '4': 'Генератор 27 МГц',
-  '87': 'Кнопка на выводе 87 · нажата = 1',
-  '88': 'Кнопка на выводе 88 · нажата = 1',
-  '70': 'UART_RX от USB-UART',
+  '4': t('Генератор 27 МГц'),
+  '87': t('Кнопка на выводе 87 · нажата = 1'),
+  '88': t('Кнопка на выводе 88 · нажата = 1'),
+  '70': t('UART_RX от USB-UART'),
 };
 function pinLabel(pin: string): string {
   return (
     pinLabels[pin] ||
     (Number(pin) >= 15 && Number(pin) <= 20
-      ? `LED${Number(pin) - 15} · светится при 0`
-      : 'Вывод FPGA')
+      ? t('LED{n} · светится при 0', { n: Number(pin) - 15 })
+      : t('Вывод FPGA'))
   );
 }
 
@@ -160,12 +160,12 @@ export function ProjectWizard({
           </div>
           <div>
             <h2 id="wizard-title">{t('Новый проект')}</h2>
-            <p id="wizard-intro">От идеи к схеме и выводам платы</p>
+            <p id="wizard-intro">{t('От идеи к схеме и выводам платы')}</p>
           </div>
           <button
             type="button"
             className="icon-button"
-            aria-label="Закрыть мастер проекта"
+            aria-label={t('Закрыть мастер проекта')}
             onClick={onClose}
             disabled={submitting}
           >
@@ -200,10 +200,11 @@ export function ProjectWizard({
           {step === 0 && (
             <>
               <p className="wizard-description">
-                Выберите небольшую схему с объяснениями или заготовку для своей идеи. Каждый вариант
-                содержит Verilog и файл выводов .cst.
+                {t(
+                  'Выберите небольшую схему с объяснениями или заготовку для своей идеи. Каждый вариант содержит Verilog и файл выводов .cst.',
+                )}
               </p>
-              <div className="wizard-starts" role="group" aria-label="Начальная схема">
+              <div className="wizard-starts" role="group" aria-label={t('Начальная схема')}>
                 {beginnerIds.map((id) => {
                   const item = wizardStartingPoints.find((value) => value.id === id)!;
                   const Icon =
@@ -242,7 +243,7 @@ export function ProjectWizard({
                   if (event.target.value) setStart(event.target.value);
                 }}
               >
-                <option value="">Выберите пример по уровню сложности…</option>
+                <option value="">{t('Выберите пример по уровню сложности…')}</option>
                 {curriculumLevels.map((level) => (
                   <optgroup key={level.id} label={`${level.id}. ${level.title}`}>
                     {wizardStartingPoints
@@ -263,7 +264,7 @@ export function ProjectWizard({
               <div className="wizard-choice-note">
                 <Check size={15} />
                 <span>
-                  Выбрано: <strong>{selected.title}</strong>
+                  {t('Выбрано:')} <strong>{selected.title}</strong>
                 </span>
               </div>
             </>
@@ -271,8 +272,9 @@ export function ProjectWizard({
           {step === 1 && (
             <>
               <p className="wizard-description">
-                Название видно в списке проектов. Верхний модуль — точка входа вашей схемы; обычно
-                его называют top.
+                {t(
+                  'Название видно в списке проектов. Верхний модуль — точка входа вашей схемы; обычно его называют top.',
+                )}
               </p>
               <div className="wizard-cards">
                 <section className="wizard-card" aria-labelledby="wizard-card-project">
@@ -282,7 +284,7 @@ export function ProjectWizard({
                     </span>
                     <div>
                       <h4 id="wizard-card-project">{t('Проект')}</h4>
-                      <p>Как он называется и с какого модуля начинается схема</p>
+                      <p>{t('Как он называется и с какого модуля начинается схема')}</p>
                     </div>
                   </header>
                   <div className="wizard-fields">
@@ -301,7 +303,7 @@ export function ProjectWizard({
                         }}
                       />
                       <small id="wizard-name-hint">
-                        Любое понятное название, например «Светофор».
+                        {t('Любое понятное название, например «Светофор».')}
                       </small>
                       {fieldErrors.name && (
                         <span id="wizard-name-error" className="wizard-field-error" role="alert">
@@ -327,7 +329,7 @@ export function ProjectWizard({
                         }}
                       />
                       <small id="wizard-top-hint">
-                        Имя модуля устройства. Оно используется при сборке схемы.
+                        {t('Имя модуля устройства. Оно используется при сборке схемы.')}
                       </small>
                       {fieldErrors.top && (
                         <span id="wizard-top-error" className="wizard-field-error" role="alert">
@@ -344,7 +346,7 @@ export function ProjectWizard({
                     </span>
                     <div>
                       <h4 id="wizard-card-board">{t('Плата')}</h4>
-                      <p>Для неё готовы выводы и параметры сборки</p>
+                      <p>{t('Для неё готовы выводы и параметры сборки')}</p>
                     </div>
                   </header>
                   <label className="wizard-field-label" htmlFor="wizard-board">
@@ -396,7 +398,7 @@ export function ProjectWizard({
                             <small>
                               {file.name.endsWith('.cst')
                                 ? t('Выводы и электрические уровни')
-                                : 'Схема с комментариями'}
+                                : t('Схема с комментариями')}
                             </small>
                           </li>
                         ))}
@@ -405,12 +407,14 @@ export function ProjectWizard({
                     <div className="wizard-clock-note">
                       <Activity size={19} />
                       <strong>
-                        {hasClock ? 'Такт 27 МГц → clk' : 'Схема без тактового сигнала'}
+                        {hasClock ? t('Такт 27 МГц → clk') : t('Схема без тактового сигнала')}
                       </strong>
                       <p>
                         {hasClock
-                          ? 'Генератор платы подключён к выводу 4. В .cst задан глобальный буфер BUFG.'
-                          : 'Выход меняется вслед за входами. Такт для этого примера не нужен.'}
+                          ? t(
+                              'Генератор платы подключён к выводу 4. В .cst задан глобальный буфер BUFG.',
+                            )
+                          : t('Выход меняется вслед за входами. Такт для этого примера не нужен.')}
                       </p>
                       <small>{t('Уровни LVCMOS33 · 3,3 В')}</small>
                     </div>
@@ -418,8 +422,9 @@ export function ProjectWizard({
                   <section className="wizard-card wizard-ports-card">
                     <h4>{t('Порты → физические выводы')}</h4>
                     <p className="wizard-pin-help">
-                      Номера ниже относятся к корпусу FPGA. Мастер уже включит эти назначения в
-                      .cst.
+                      {t(
+                        'Номера ниже относятся к корпусу FPGA. Мастер уже включит эти назначения в .cst.',
+                      )}
                     </p>
                     <div className="wizard-pin-table-wrap">
                       <table className="wizard-pin-table">
@@ -445,8 +450,13 @@ export function ProjectWizard({
                     </div>
                   </section>
                   <p className="wizard-final-note">
-                    После создания откроется {start === 'schematic' ? 'конструктор' : 'код'}. Затем
-                    можно синтезировать схему, запустить диаграммы или виртуальную плату.
+                    {start === 'schematic'
+                      ? t(
+                          'После создания откроется конструктор. Затем можно синтезировать схему, запустить диаграммы или виртуальную плату.',
+                        )
+                      : t(
+                          'После создания откроется код. Затем можно синтезировать схему, запустить диаграммы или виртуальную плату.',
+                        )}
                   </p>
                 </>
               ) : (
@@ -464,7 +474,10 @@ export function ProjectWizard({
         )}
         <footer className="wizard-footer">
           <span>
-            Шаг {step - initialStep + 1} из {steps.length - initialStep}
+            {t('Шаг {n} из {total}', {
+              n: step - initialStep + 1,
+              total: steps.length - initialStep,
+            })}
           </span>
           <div>
             <button

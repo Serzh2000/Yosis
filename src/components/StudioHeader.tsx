@@ -152,7 +152,7 @@ export function StudioHeader({
               onClick={onSynthesize}
               data-tour="synthesize"
               aria-label={t('Синтезировать')}
-              title="Запустить Yosys · Ctrl+Enter"
+              title={t('Запустить Yosys · Ctrl+Enter')}
               disabled={!synthesisAvailable || healthLoading}
             >
               <Play size={14} fill="currentColor" />

@@ -93,7 +93,7 @@ function FileBranch({
         className="file-select"
         style={{ paddingLeft: 10 + depth * 12 }}
         title={`${file.name} · ${isConstraints ? t('открыть назначения выводов') : file.name.endsWith('.ysch') ? t('открыть конструктор') : t('открыть код')}`}
-        aria-label={`Открыть ${file.name}`}
+        aria-label={t('Открыть {name}', { name: file.name })}
         aria-current={selected ? 'true' : undefined}
         onClick={() => props.onOpen(file)}
       >
@@ -104,7 +104,7 @@ function FileBranch({
         <button
           className="mini-button"
           title={t('Переименовать')}
-          aria-label={`Переименовать ${file.name}`}
+          aria-label={t('Переименовать {name}', { name: file.name })}
           onClick={() => props.onRename(file)}
         >
           <Pencil size={12} />
@@ -112,7 +112,7 @@ function FileBranch({
         <button
           className="mini-button"
           title={t('Удалить')}
-          aria-label={`Удалить ${file.name}`}
+          aria-label={t('Удалить {name}', { name: file.name })}
           disabled={lastSource}
           onClick={() => props.onDelete(file)}
         >
@@ -132,15 +132,15 @@ export function ProjectFiles(props: ProjectFilesProps) {
         <span>{t('Файлы проекта')}</span>
         <button
           className="mini-button"
-          aria-label="Добавить файл"
-          title="Добавить файл"
+          aria-label={t('Добавить файл')}
+          title={t('Добавить файл')}
           onClick={props.onAdd}
         >
           <Plus size={16} />
         </button>
         <button
           className="mini-button files-close"
-          aria-label="Скрыть файлы проекта"
+          aria-label={t('Скрыть файлы проекта')}
           onClick={props.onClose}
         >
           <X size={15} />
@@ -169,7 +169,9 @@ export function ProjectFiles(props: ProjectFilesProps) {
         <Cpu size={21} />
         <strong>Tang Nano 20K</strong>
         <code>GW2A-18C</code>
-        <p>.v и .sv — код, .ysch — конструктор, .cst — выводы. Проект сохраняется в браузере.</p>
+        <p>
+          {t('.v и .sv — код, .ysch — конструктор, .cst — выводы. Проект сохраняется в браузере.')}
+        </p>
       </div>
     </aside>
   );

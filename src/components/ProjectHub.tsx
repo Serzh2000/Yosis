@@ -233,8 +233,8 @@ export function ProjectHub(props: ProjectHubProps) {
           <section className="project-hub-current">
             <h3>{props.project.name}</h3>
             <p>
-              {props.project.files.length} файлов · верхний модуль <code>{props.project.top}</code>{' '}
-              · Tang Nano 20K
+              {t('{count} файлов · верхний модуль', { count: props.project.files.length })}{' '}
+              <code>{props.project.top}</code> · Tang Nano 20K
             </p>
             <form
               onSubmit={(event) => {
@@ -279,7 +279,7 @@ export function ProjectHub(props: ProjectHubProps) {
                 onClick={() =>
                   void run(
                     () => navigator.clipboard.writeText(window.location.href),
-                    'Ссылка скопирована. Для передачи исходников используйте экспорт проекта.',
+                    t('Ссылка скопирована. Для передачи исходников используйте экспорт проекта.'),
                   )
                 }
               >
@@ -306,8 +306,9 @@ export function ProjectHub(props: ProjectHubProps) {
               </button>
             </div>
             <p>
-              Изменения сохраняются автоматически. Проекты этого браузера доступны в разделе «Мои
-              проекты».
+              {t(
+                'Изменения сохраняются автоматически. Проекты этого браузера доступны в разделе «Мои проекты».',
+              )}
             </p>
           </section>
         )}

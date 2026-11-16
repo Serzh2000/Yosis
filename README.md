@@ -35,6 +35,10 @@ Yosys, nextpnr, Project Apicula and Icarus Verilog.
     <td><img src="docs/images/pins-en.png" alt="Pin planner"></td>
     <td><img src="docs/images/waveforms-en.png" alt="Waveforms"></td>
   </tr>
+  <tr>
+    <td><img src="docs/images/chip-en.png" alt="Placement on the chip"></td>
+    <td><img src="docs/images/board-en.png" alt="Connecting a real board"></td>
+  </tr>
 </table>
 
 ## Two languages, phone and desktop
@@ -88,7 +92,7 @@ slower.
 The lab takes the pin map from the project `.cst` file, so the desk and the pin planner always
 agree.
 
-![Lab: an OLED screen connected over I²C](docs/images/lab-oled.png)
+![The lab: the board on a breadboard with parts](docs/images/lab-en.png)
 
 ## Examples
 
@@ -101,7 +105,7 @@ the goal, what to watch and what to try changing.
   assembled (the board on a breadboard, the part next to it, jumpers and power rails): press
   Start.
 
-![The example library](docs/images/examples.png)
+![The example library](docs/images/examples-en.png)
 
 ## Textbook
 

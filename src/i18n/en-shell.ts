@@ -204,4 +204,106 @@ export const shell: Record<string, string> = {
   'Нужна новая сборка': 'Needs a new build',
   Выполняется: 'Running',
   с: 's',
+  'Открыть {name}': 'Open {name}',
+  'Переименовать {name}': 'Rename {name}',
+  'Удалить {name}': 'Delete {name}',
+  'Добавить файл': 'Add a file',
+  'Скрыть файлы проекта': 'Hide the project files',
+  '.v и .sv — код, .ysch — конструктор, .cst — выводы. Проект сохраняется в браузере.':
+    '.v and .sv are code, .ysch is the designer, .cst is pins. The project is saved in the browser.',
+  'Скачать журнал': 'Download the log',
+  'Запустить Yosys · Ctrl+Enter': 'Run Yosys · Ctrl+Enter',
+  '{count} файлов ограничений': '{count} constraint files',
+  '{count} файлов · верхний модуль': '{count} files · top module',
+  '{count} файлов': '{count} files',
+  'Ссылка скопирована. Для передачи исходников используйте экспорт проекта.':
+    'The link is copied. To pass the sources on, use the project export.',
+  'Изменения сохраняются автоматически. Проекты этого браузера доступны в разделе «Мои проекты».':
+    'Changes are saved automatically. The projects of this browser are in the "My projects" section.',
+  'Каждый проект сохраняется отдельно в этом браузере. Название можно менять, не теряя исходники.':
+    'Every project is saved separately in this browser. You can rename it without losing the sources.',
+  'Удалить «{name}»?': 'Delete "{name}"?',
+  'Создать копию проекта': 'Duplicate the project',
+  '{name} — копия': '{name} (copy)',
+  'Генератор 27 МГц': '27 MHz clock',
+  'Кнопка на выводе 87 · нажата = 1': 'Button on pin 87 · pressed = 1',
+  'Кнопка на выводе 88 · нажата = 1': 'Button on pin 88 · pressed = 1',
+  'UART_RX от USB-UART': 'UART_RX from the USB-UART',
+  'LED{n} · светится при 0': 'LED{n} · lit at 0',
+  'Вывод FPGA': 'FPGA pin',
+  'От идеи к схеме и выводам платы': 'From an idea to a schematic and board pins',
+  'Закрыть мастер проекта': 'Close the project wizard',
+  'Выберите небольшую схему с объяснениями или заготовку для своей идеи. Каждый вариант содержит Verilog и файл выводов .cst.':
+    'Pick a small schematic with explanations or a starter for your own idea. Every option contains Verilog and a .cst pin file.',
+  'Начальная схема': 'Starting design',
+  'Выберите пример по уровню сложности…': 'Choose an example by difficulty…',
+  'Выбрано:': 'Selected:',
+  'Название видно в списке проектов. Верхний модуль — точка входа вашей схемы; обычно его называют top.':
+    'The name is shown in the project list. The top module is the entry point of your design; it is usually called top.',
+  'Как он называется и с какого модуля начинается схема':
+    'What it is called and which module the design starts from',
+  'Любое понятное название, например «Светофор».': 'Any clear name, for example "Traffic light".',
+  'Имя модуля устройства. Оно используется при сборке схемы.':
+    'The name of the device module. It is used when the design is built.',
+  'Для неё готовы выводы и параметры сборки': 'Its pins and build settings are ready',
+  'Схема с комментариями': 'Schematic with comments',
+  'Такт 27 МГц → clk': '27 MHz clock → clk',
+  'Схема без тактового сигнала': 'A design without a clock',
+  'Генератор платы подключён к выводу 4. В .cst задан глобальный буфер BUFG.':
+    'The board oscillator is on pin 4. The .cst sets a global BUFG buffer.',
+  'Выход меняется вслед за входами. Такт для этого примера не нужен.':
+    'The output follows the inputs. This example needs no clock.',
+  'Номера ниже относятся к корпусу FPGA. Мастер уже включит эти назначения в .cst.':
+    'The numbers below refer to the FPGA package. The wizard will put these assignments into the .cst.',
+  'После создания откроется конструктор. Затем можно синтезировать схему, запустить диаграммы или виртуальную плату.':
+    'After creation the designer opens. Then you can synthesize the design, run waveforms or the virtual board.',
+  'После создания откроется код. Затем можно синтезировать схему, запустить диаграммы или виртуальную плату.':
+    'After creation the code opens. Then you can synthesize the design, run waveforms or the virtual board.',
+  'Шаг {n} из {total}': 'Step {n} of {total}',
+  'Генератор платы: 27 МГц.': 'The board oscillator: 27 MHz.',
+  'Кнопка S1 на выводе 88: нажата = 1, отпущена = 0.':
+    'Button S1 on pin 88: pressed = 1, released = 0.',
+  'LED{bit}: 0 включает свет, 1 выключает.': 'LED{bit}: 0 turns it on, 1 turns it off.',
+  'Заготовка для своего устройства на Tang Nano 20K.':
+    'A starter for your own device on the Tang Nano 20K.',
+  'Порты — договор между схемой и платой. Их выводы заданы в board.cst.':
+    'The ports are the contract between the design and the board. Their pins are set in board.cst.',
+  'clk: генератор 27 МГц; reset: кнопка сброса S1, нажата = 1.':
+    'clk: the 27 MHz oscillator; reset: the S1 button, pressed = 1.',
+  'led_n[5:0]: шесть LED. Уровень 0 включает свет, 1 выключает.':
+    'led_n[5:0]: six LEDs. Level 0 turns them on, 1 turns them off.',
+  'Начните с комбинационной связи assign или добавьте регистр с always.':
+    'Start with a combinational assign or add a register with always.',
+  'Пока своей логики нет, все LED выключены.': 'There is no logic yet, so all LEDs are off.',
+  'Например, assign led_n = {6{~reset}}; включит их при нажатии кнопки.':
+    'For example, assign led_n = {6{~reset}}; turns them on while the button is pressed.',
+  'Выводы своей схемы для Tang Nano 20K (GW2AR-LV18QN88C8/I7).':
+    'Pins of your design for the Tang Nano 20K (GW2AR-LV18QN88C8/I7).',
+  'Эти имена соответствуют портам заготовки top.v. Если измените порты, обновите .cst.':
+    'These names match the ports of the starter top.v. If you change the ports, update the .cst.',
+  'IO_LOC указывает номер вывода корпуса FPGA, а не контакт разъёма платы.':
+    'IO_LOC gives the pin number of the FPGA package, not a board header contact.',
+  'IO_PORT задаёт стандарт LVCMOS33: логические уровни 3,3 В.':
+    'IO_PORT sets the LVCMOS33 standard: 3.3 V logic levels.',
+  'Каждый бит led_n имеет отдельное назначение физическому LED.':
+    'Every bit of led_n is assigned to its own physical LED.',
+  'Глобальный буфер такта уменьшает разницу задержек между регистрами.':
+    'A global clock buffer reduces the delay difference between registers.',
+  'Конструктор логических элементов': 'Logic element designer',
+  'Чистое поле: берите элементы из библиотеки и соединяйте их без ручного Verilog.':
+    'A clean canvas: take elements from the library and connect them without hand-written Verilog.',
+  'Выводы платы для элементов схемы назначает Конструктор: правьте их во вкладке «Выводы».':
+    'The designer assigns board pins to the schematic elements: edit them on the Pins tab.',
+  'Своя схема': 'Your own design',
+  'Заготовка с тактом, сбросом и шестью LED.': 'A starter with a clock, a reset and six LEDs.',
+  'Выберите заготовку или встроенный пример.': 'Choose a starter or a built-in example.',
+  'Введите название от 1 до 100 символов.': 'Enter a name of 1 to 100 characters.',
+  'Проект «{name}» уже есть. Выберите другое название.':
+    'A project "{name}" already exists. Choose another name.',
+  'Используйте латинские буквы, цифры и _. Начните с буквы или _. Имя не должно быть словом Verilog.':
+    'Use Latin letters, digits and _. Start with a letter or _. The name must not be a Verilog keyword.',
+  'Модуль «{top}» уже есть внутри примера. Выберите другое имя верхнего модуля.':
+    'A module "{top}" already exists inside the example. Choose another top module name.',
+  'В заготовке должен быть один верхний модуль. Выберите другой пример.':
+    'The starter must have exactly one top module. Choose another example.',
 };

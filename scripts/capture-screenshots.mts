@@ -55,6 +55,12 @@ const names = {
     query: 'счётчик',
     open: 'Открыть',
     library: 'Библиотека элементов',
+    lab: /^Лаборатория/,
+    learn: /^Обучение/,
+    chip: /^Кристалл/,
+    connect: /^Подключение/,
+    place: 'Разместить и собрать',
+    heat: 'Тепловая карта размещённых элементов FPGA',
   },
   en: {
     example: 'From an example',
@@ -75,6 +81,12 @@ const names = {
     query: 'counter',
     open: 'Open',
     library: 'Element library',
+    lab: /^Lab/,
+    learn: /^Learn/,
+    chip: /^Chip/,
+    connect: /^Connect/,
+    place: 'Place and build',
+    heat: 'Heat map of the placed FPGA elements',
   },
 } as const;
 
@@ -90,6 +102,8 @@ async function desktop(lang: 'ru' | 'en') {
 
   // Пример → проект
   await dialog.getByRole('button', { name: n.example, exact: false }).click();
+  await page.waitForTimeout(800);
+  await shot(page, `examples${suffix}`);
   await dialog.getByLabel(n.search).fill(n.query);
   await dialog.locator('.examples-grid button').first().click();
   await dialog.getByRole('button', { name: n.choose }).click();
@@ -115,6 +129,23 @@ async function desktop(lang: 'ru' | 'en') {
   await page.getByRole('tab', { name: n.pins }).click();
   await page.waitForTimeout(1200);
   await shot(page, `pins${suffix}`);
+
+  // Подключение и кристалл: вкладки группы «Настоящая плата»
+  await page.locator('.sh-tab-group-toggle').click();
+  await page.getByRole('tab', { name: n.connect }).click();
+  await page.waitForTimeout(1200);
+  await shot(page, `board${suffix}`);
+  await page.getByRole('tab', { name: n.chip }).click();
+  await page.getByRole('button', { name: n.place, exact: true }).click();
+  await page.getByRole('img', { name: n.heat }).waitFor({ timeout: 300_000 });
+  await page.waitForTimeout(1000);
+  await shot(page, `chip${suffix}`);
+  await page.getByRole('tab', { name: n.lab }).click();
+  await page.waitForTimeout(5000);
+  await shot(page, `lab${suffix}`);
+  await page.getByRole('tab', { name: n.learn }).click();
+  await page.waitForTimeout(2000);
+  await shot(page, `learning${suffix}`);
 
   // Конструктор с готовой схемой из примеров
   await page

@@ -37,7 +37,7 @@
   </tr>
   <tr>
     <td><img src="docs/images/chip.png" alt="Карта кристалла"></td>
-    <td><img src="docs/images/lab-display.png" alt="Индикатор в лаборатории"></td>
+    <td><img src="docs/images/board.png" alt="Подключение настоящей платы"></td>
   </tr>
 </table>
 
@@ -91,7 +91,7 @@
 Что на каком контакте, лаборатория берёт из файла `.cst` проекта, поэтому стол и планировщик
 выводов всегда согласованы.
 
-![Лаборатория: OLED-экран подключён к плате по I²C](docs/images/lab-oled.png)
+![Лаборатория: плата на макетке с деталями](docs/images/lab.png)
 
 ## Примеры
 

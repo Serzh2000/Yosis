@@ -73,8 +73,9 @@ export function ProjectLibraryDialog({
         </button>
       </div>
       <p>
-        Каждый проект сохраняется отдельно в этом браузере. Название можно менять, не теряя
-        исходники.
+        {t(
+          'Каждый проект сохраняется отдельно в этом браузере. Название можно менять, не теряя исходники.',
+        )}
       </p>
       {action ? (
         <form
@@ -91,10 +92,10 @@ export function ProjectLibraryDialog({
         >
           <h3>
             {action.kind === 'delete'
-              ? `Удалить «${action.project.name}»?`
+              ? t('Удалить «{name}»?', { name: action.project.name })
               : action.kind === 'rename'
                 ? t('Переименовать проект')
-                : 'Создать копию проекта'}
+                : t('Создать копию проекта')}
           </h3>
           {action.kind === 'delete' ? (
             <p>{t('Исходники этого проекта будут удалены из библиотеки браузера.')}</p>
@@ -141,7 +142,7 @@ export function ProjectLibraryDialog({
                 <span>
                   <strong>{saved.name}</strong>
                   <small>
-                    {saved.fileCount} файлов · {saved.top}
+                    {t('{count} файлов', { count: saved.fileCount })} · {saved.top}
                   </small>
                 </span>
                 {saved.id === currentId && <Check size={17} />}
@@ -163,7 +164,9 @@ export function ProjectLibraryDialog({
                     onClick={() => {
                       setAction({ kind, project: saved });
                       setName(
-                        kind === 'duplicate' ? `${saved.name} — копия`.slice(0, 100) : saved.name,
+                        kind === 'duplicate'
+                          ? t('{name} — копия', { name: saved.name }).slice(0, 100)
+                          : saved.name,
                       );
                       setError('');
                     }}

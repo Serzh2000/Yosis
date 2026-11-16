@@ -284,7 +284,9 @@ export function StudioNavigation({
                     <item.icon size={17} aria-hidden="true" />
                     <span>{item.label}</span>
                     {id === 'constraints' && constraintsCount > 0 && (
-                      <small aria-label={`${constraintsCount} файлов ограничений`}>
+                      <small
+                        aria-label={t('{count} файлов ограничений', { count: constraintsCount })}
+                      >
                         {constraintsCount}
                       </small>
                     )}
