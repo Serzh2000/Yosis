@@ -8,7 +8,7 @@
 уровней и двоичной системы, а заодно научит читать временные диаграммы.
 
 \begin{infobox}[Сквозной проект «Охранная панель»]
-Всю часть I мы будем растить одно устройство: охранную панель с датчиком
+Всю книгу мы будем растить одно устройство: охранную панель с датчиком
 двери, датчиком окна, ночным режимом, ключом охраны, кодовым замком, сиреной
 и индикатором. Каждая глава добавляет к нему новый узел, и после каждой
 главы панель остаётся рабочей. Первый шаг --- самый маленький: датчик двери
@@ -133,8 +133,7 @@
 Какое напряжение считать нулём, а какое --- единицей, определяет
 \term{стандарт логических уровней}. Микросхема на учебной плате Tang Nano 20K
 использует стандарт \textbf{LVCMOS33} (питание 3,3~В). \lookahead{на плате
-стоит программируемая микросхема (ПЛИС), которой посвящена вторая часть
-книги.} Параметры стандарта:
+стоит программируемая микросхема (ПЛИС), которой посвящены главы~\ref{ch:fpga}--\ref{ch:flow}.} Параметры стандарта:
 
 \begin{table}[H]
 \centering
@@ -163,11 +162,11 @@ $U_\text{OH,min}$ & 2,4 В & выход выдаёт «1» не ниже это�
   \node[font=\sffamily\small\bfseries] at (6.2,3.65) {Вход};
   \node[font=\sffamily\small] at (1.2,2.85) {«1»}; \node[font=\sffamily\small] at (1.2,0.2) {«0»};
   \node[font=\sffamily\small] at (6.2,2.65) {«1»}; \node[font=\sffamily\small] at (6.2,0.4) {«0»};
-  \node[font=\sffamily\fontsize{6}{7}\selectfont, text=FpgaRed] at (6.2,1.4) {неопределённость};
-  \foreach \v/\l in {0.4/0{,}4, 2.4/2{,}4, 3.3/3{,}3} \node[font=\sffamily\scriptsize, anchor=east] at (0,\v) {\l~В};
-  \foreach \v/\l in {0.8/0{,}8, 2.0/2{,}0} \node[font=\sffamily\scriptsize, anchor=west] at (7.4,\v) {\l~В};
-  \draw[FpgaOrange, <->, thick] (3.7,2.0) -- (3.7,2.4) node[midway, right, font=\sffamily\scriptsize] {запас};
-  \draw[FpgaOrange, <->, thick] (3.7,0.4) -- (3.7,0.8) node[midway, right, font=\sffamily\scriptsize] {запас};
+  \node[font=\sffamily\footnotesize, text=FpgaRed, align=center] at (6.2,1.4) {неопре-\\делённость};
+  \foreach \v/\l in {0.4/0{,}4, 2.4/2{,}4, 3.3/3{,}3} \node[font=\sffamily\footnotesize, anchor=east] at (0,\v) {\l~В};
+  \foreach \v/\l in {0.8/0{,}8, 2.0/2{,}0} \node[font=\sffamily\footnotesize, anchor=west] at (7.4,\v) {\l~В};
+  \draw[FpgaOrange, <->, thick] (3.7,2.0) -- (3.7,2.4) node[midway, right, font=\sffamily\footnotesize] {запас};
+  \draw[FpgaOrange, <->, thick] (3.7,0.4) -- (3.7,0.8) node[midway, right, font=\sffamily\footnotesize] {запас};
   \draw[dashed, FpgaGray] (2.4,2.4) -- (5,2.4); \draw[dashed, FpgaGray] (2.4,2.0) -- (5,2.0);
   \draw[dashed, FpgaGray] (2.4,0.4) -- (5,0.4); \draw[dashed, FpgaGray] (2.4,0.8) -- (5,0.8);
 \end{tikzpicture}
@@ -267,7 +266,7 @@ door${}=0$ погашен.\par
   width=0.75\textwidth, height=5cm, ybar, bar width=6mm,
   xlabel={Число битов $n$}, ylabel={Число комбинаций $2^n$},
   xtick={1,...,8}, ymin=0, ymax=300,
-  nodes near coords, nodes near coords style={font=\sffamily\scriptsize},
+  nodes near coords, nodes near coords style={font=\sffamily\footnotesize},
   label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
   axis lines*=left, grid=major, grid style={FpgaGray!20},
 ]
@@ -313,12 +312,12 @@ door${}=0$ погашен.\par
 \centering
 \begin{tikzpicture}[x=1cm, y=1cm]
   \draw[very thick, FpgaBlue] (0,0) -- (2,0) -- (2.2,1.2) -- (5,1.2) -- (5.2,0) -- (8,0);
-  \draw[-{Stealth}, FpgaGray] (0,-0.5) -- (8.5,-0.5) node[right, font=\sffamily\small] {$t$};
+  \draw[-{Stealth}, FpgaGray] (0,-1.0) -- (8.5,-1.0) node[right, font=\sffamily\small] {$t$};
   \node[font=\sffamily\small, anchor=east] at (0,0) {0};
   \node[font=\sffamily\small, anchor=east] at (0,1.2) {1};
   \draw[FpgaOrange, thick, -{Stealth}] (1.3,1.9) node[above, font=\sffamily\small] {передний фронт ($0\to1$)} -- (2.05,0.8);
   \draw[FpgaOrange, thick, -{Stealth}] (6.3,1.9) node[above, font=\sffamily\small] {задний фронт, спад ($1\to0$)} -- (5.15,0.8);
-  \draw[decorate, decoration={brace, amplitude=5pt, mirror}] (2.2,-0.1) -- (5,-0.1) node[midway, below=5pt, font=\sffamily\scriptsize] {длительность импульса};
+  \draw[decorate, decoration={brace, amplitude=5pt, mirror}] (2.2,-0.1) -- (5,-0.1) node[midway, below=5pt, font=\sffamily\footnotesize] {длительность импульса};
 \end{tikzpicture}
 \caption{Импульс на временной диаграмме}
 \end{figure}
@@ -441,6 +440,202 @@ $D$ --- \term{коэффициент заполнения} (обычно 50\,\%)
 тактовый сигнал задаёт ритм, в котором работает вся схема.
 \end{ideabox}
 
+\section{Примеры на Verilog}
+\label{sec:signals-verilog}
+
+Всё, что мы описывали словами и рисунками, можно записать текстом на языке
+описания схем \term{Verilog}. Подробно язык разобран в главе~\ref{ch:verilog};
+здесь он нужен только как удобная запись: читайте примеры как готовые рецепты, а
+сразу после чтения запускайте их в Logra. Все файлы лежат в папке
+\code{code/b1\_signals/}, рядом с каждым модулем стоит тестбенч \code{tb\_*.v}.
+
+\begin{infobox}[Verilog за минуту]
+\begin{itemize}
+  \item \code{module имя (порты); ... endmodule} --- «коробка» схемы с входами
+    (\code{input}) и выходами (\code{output}).
+  \item \code{[5:0]} --- шина из шести проводов, разряды 5, 4, \ldots, 0
+    (разряд 0 младший). Без скобок --- один провод.
+  \item \code{assign y = выражение;} --- провод с логикой: \code{y} всегда равен
+    выражению и пересчитывается при любом изменении входов. Знаки:
+    \code{\textasciitilde} (НЕ), \code{\&} (И), \code{|} (ИЛИ), \code{\^{}} (исключающее ИЛИ).
+  \item \code{always @(posedge clk) q <= d;} --- по переднему фронту такта
+    значение \code{d} записывается в память \code{q} (регистр, объявленный как
+    \code{reg}). Здесь используется присваивание \code{<=}.
+  \item \code{//} --- комментарий до конца строки.
+\end{itemize}
+\end{infobox}
+
+\paragraph{Как запустить пример в Logra.} (1) Откройте вкладку \emph{Код},
+вставьте модуль целиком вместо текста по умолчанию. (2) Нажмите
+\emph{Синтезировать} (или \code{Ctrl+Enter}) и дождитесь успешной сборки.
+(3) Вкладка \emph{RTL} показывает схему, которую получил синтезатор. (4) Вкладка
+\emph{Диаграммы}: подайте значения на входы и смотрите выходы. Ту же схему можно
+собрать в \emph{Конструкторе} блоками; сравните две записи.
+
+\paragraph{Что делает тестбенч.} \term{Тестбенч} (\code{tb\_*.v}) --- отдельный
+модуль, который подаёт на проверяемый модуль входы, сам сверяет выходы с
+ожидаемыми и печатает \code{OK} или список ошибок. Его запускает симулятор Icarus
+Verilog: \code{iverilog -g2012 -o sim tb\_wire\_led.v wire\_led.v}, затем
+\code{vvp sim}. Если симулятора нет, проделайте тот же перебор входов руками на
+вкладке \emph{Диаграммы}.
+
+\subsection{Пример 1. Провод: \texttt{assign led = sw}}
+
+Самая короткая схема: шесть переключателей соединены прямо с шестью светодиодами.
+
+\vfile{\codepath/b1_signals/wire_led.v}{code/b1\_signals/wire\_led.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{input [5:0] sw} --- шесть входов, объединённых в шину; \code{output [5:0] led} --- шесть выходов.
+  \item \code{assign led = sw;} --- копирует шину целиком: разряд $i$ выхода равен разряду $i$ входа. Никакой логики нет, это просто провода.
+\end{itemize}
+\textbf{Проверка.} \code{tb\_wire\_led.v} перебирает все 64 значения \code{sw} и
+сверяет \code{led}. В Logra подайте на \code{sw} число 37 (\code{100101}):
+горят разряды 5, 2 и 0.
+
+\textbf{Допиши сам.} Сделайте так, чтобы светодиод 0 показывал переключатель~5,
+светодиод 1 --- переключатель~4 и так далее (порядок разрядов обратный).
+
+\textbf{Образец.}
+\begin{vcode}
+module wire_led_rev (
+    input  [5:0] sw,
+    output [5:0] led
+);
+    // конкатенация {...} собирает шину из отдельных разрядов
+    assign led = {sw[0], sw[1], sw[2], sw[3], sw[4], sw[5]};
+endmodule
+\end{vcode}
+
+\subsection{Пример 2. Активный уровень}
+
+Светодиоды платы горят от нуля, а кнопка сброса срабатывает от нуля. В коде это
+видно по суффиксу \code{\_n} и по инверсии.
+
+\vfile{\codepath/b1_signals/active_level.v}{code/b1\_signals/active\_level.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{door} --- сигнал с активным высоким уровнем: 1 означает «дверь открыта».
+  \item \code{assign led\_n = \textasciitilde door;} --- инвертор: при открытой двери на выводе 0, светодиод горит. Это решение задачи «Датчик двери и светодиод тревога».
+  \item \code{reset\_active} --- «перевёрнутый» \code{rst\_n}: внутри схемы удобнее думать, что 1 означает «идёт сброс».
+\end{itemize}
+\textbf{Проверка.} \code{tb\_active\_level.v} проверяет все четыре комбинации.
+В Logra на вкладке \emph{Диаграммы} подайте \code{door} $=0$, затем $1$: \code{led\_n}
+всегда противоположен входу.
+
+\textbf{Допиши сам.} Добавьте выход \code{siren\_n} сирены, которая включается
+\emph{нулём}, когда дверь открыта \emph{и} охрана включена (вход \code{armed}).
+
+\textbf{Образец.}
+\begin{vcode}
+module siren (
+    input  door, armed,
+    output siren_n          // 0 = сирена включена
+);
+    // дверь открыта И охрана включена -> инвертируем, потому что активный уровень низкий
+    assign siren_n = ~(door & armed);
+endmodule
+\end{vcode}
+
+\subsection{Пример 3. Число на шине}
+
+Шесть разрядов числа выводятся на шесть светодиодов. Так как светодиоды горят
+от нуля, все разряды инвертируются сразу, одной операцией.
+
+\vfile{\codepath/b1_signals/number_bus.v}{code/b1\_signals/number\_bus.v}
+
+\textbf{Как читается.} Операция \code{\textasciitilde} над шиной инвертирует
+\emph{каждый} её разряд, поэтому одна строка заменяет шесть инверторов. Число 37
+($100101_2$) даст на выходе \code{011010}: светодиоды 5, 2 и 0 горят.
+
+\textbf{Проверка.} \code{tb\_number\_bus.v} проверяет число 37 и потом все 64
+значения. В Logra: подайте на \code{value} разные числа и сверьте горящие
+разряды с таблицей двоичных чисел из этой главы.
+
+\textbf{Допиши сам.} Выведите на светодиоды число, \emph{на единицу большее}
+введённого (при 63 получится 0).
+
+\textbf{Образец.}
+\begin{vcode}
+module number_plus1 (
+    input  [5:0] value,
+    output [5:0] led_n
+);
+    // value + 6'd1 --- шестиразрядная сумма; переполнение 63 + 1 даёт 0
+    assign led_n = ~(value + 6'd1);
+endmodule
+\end{vcode}
+
+\subsection{Пример 4. Тактовый делитель на 2}
+
+Выход, который меняется по каждому переднему фронту такта, имеет период вдвое
+больше тактового. Это самая простая схема с памятью.
+
+\vfile{\codepath/b1_signals/clk_div2.v}{code/b1\_signals/clk\_div2.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{reg t = 1'b0;} --- один бит памяти с начальным значением 0.
+  \item \code{always @(posedge clk) t <= \textasciitilde t;} --- на каждом переднем фронте \code{clk} бит переворачивается. Фронтов за период такта один, а \code{t} полный период проходит за два фронта: частота вдвое ниже.
+  \item \code{assign q = t;} --- выход повторяет память.
+\end{itemize}
+\textbf{Проверка.} \code{tb\_clk\_div2.v} следит за выходом на восьми фронтах и
+убеждается, что \code{q} меняется на каждом. В Logra на вкладке \emph{Диаграммы}
+подайте тактовый сигнал и сравните периоды \code{clk} и \code{q}. Это решает
+задачу~6 главы.
+
+\textbf{Допиши сам.} Сделайте делитель на 4.
+
+\textbf{Образец.}
+\begin{vcode}
+module clk_div4 (
+    input  clk,
+    output q
+);
+    reg [1:0] c = 2'b00;                 // двухразрядный счётчик
+    always @(posedge clk) c <= c + 2'b01;
+    assign q = c[1];                     // старший разряд меняется вдвое реже младшего
+endmodule
+\end{vcode}
+
+\subsection{Пример 5. Счётчик-делитель и мигающий светодиод}
+
+Чтобы светодиод мигал так, чтобы глаз видел, 27~МГц нужно разделить в миллионы
+раз. Счётчик, который каждый такт прибавляет 1, делит частоту на степень двойки:
+его разряд $N-1$ имеет период $2^N$ тактов.
+
+\vfile{\codepath/b1_signals/blink_div.v}{code/b1\_signals/blink\_div.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{parameter N = 24} --- настраиваемая константа модуля; её меняют при подключении: \code{blink\_div \#(.N(3)) u (\ldots)}.
+  \item \code{reg [N-1:0] cnt} --- счётчик из $N$ бит; \code{cnt <= cnt + 1'b1} прибавляет 1 на каждом такте, а после максимума снова обнуляется.
+  \item \code{assign led = cnt[N-1];} --- старший разряд: единица половину периода, ноль другую половину.
+\end{itemize}
+При 27~МГц и $N=24$ получается $27\,000\,000/2^{24}\approx 1{,}6$~Гц:
+светодиод заметно мигает (сравните с таблицей приставок).
+
+\textbf{Проверка.} \code{tb\_blink\_div.v} берёт $N=3$ (иначе симуляция
+длилась бы вечно): период должен быть ровно 8 тактов. В Logra откройте пример
+\code{blink} и сравните его с этим модулем.
+
+\textbf{Допиши сам.} Подберите разрядность, при которой мигание примерно
+3~Гц (при 27~МГц).
+
+\textbf{Образец.} $27\,000\,000/2^{23}\approx 3{,}2$~Гц, значит $N=23$:
+\begin{vcode}
+module blink_3hz (
+    input  clk,
+    output led
+);
+    reg [22:0] cnt = 0;                   // 23 разряда
+    always @(posedge clk) cnt <= cnt + 1'b1;
+    assign led = cnt[22];
+endmodule
+\end{vcode}
+
 \section{Типичные ошибки}
 
 \begin{warnbox}[Типичные ошибки]
@@ -455,6 +650,17 @@ $D$ --- \term{коэффициент заполнения} (обычно 50\,\%)
     значений, от $0$ до $2^n-1$; десять бит --- это 1024 числа, а не 10.
   \item \textbf{Верить «промежуточному» напряжению.} Сигнал 1,4~В на входе
     3,3~В-логики не определён: схема может прочитать и 0, и 1.
+  \item \textbf{Verilog: перепутать \code{=} и \code{<=}.} Для регистров в
+    \code{always @(posedge clk)} пишут \code{<=} (неблокирующее присваивание), а
+    для \code{assign} и комбинационной логики --- \code{=}. Запись
+    \code{t = \textasciitilde t;} в тактируемом блоке работает в симуляции, но
+    приводит к гонкам, когда регистров несколько.
+  \item \textbf{Verilog: забыть начальное значение.} Регистр \code{reg t;} без
+    \code{= 1'b0} в симуляции содержит неизвестное значение X, и делитель частоты
+    так и останется «неизвестным». Пишите \code{reg t = 1'b0;}.
+  \item \textbf{Verilog: забыть про активный низкий уровень.} \code{assign led =
+    value;} вместо \code{\textasciitilde value} зажжёт светодиоды платы
+    \emph{наоборот}: число 37 погасит разряды 5, 2 и 0, а зажжёт остальные.
 \end{itemize}
 \end{warnbox}
 

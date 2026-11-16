@@ -1,21 +1,21 @@
 \chapter{The Same Blocks in Verilog}
 \label{ch:bridge}
 
-In Part~I you built circuits from blocks: you drew gates in the Designer,
+In the earlier chapters you built circuits from blocks: you drew gates in the Designer,
 assembled an adder, remembered an alarm in a flip-flop, and carried along the running
 ``Security Panel'' project. Now the same things are said in words, in the Verilog language.
 The question of this chapter is: how is each familiar block written in code, and how can you
 make sure that you got exactly the circuit you assembled by hand?
 
 We will look for the answer in one and the same way. We take a block about which we already know
-everything from Part~I, describe it in a few lines, click
+everything from the theory chapters, describe it in a few lines, click
 ``Synthesize'' and compare the RTL tab with our own circuit. The waveforms
 confirm the truth table or the behavior over time. At the end of the chapter all the
 blocks come together in the ``Security Panel'' in Verilog.
 
 \begin{table}[H]
 \centering
-\caption{A block from Part~I and its Verilog form}
+\caption{A block from the theory chapters and its Verilog form}
 \small
 \begin{tabularx}{\textwidth}{l X X}
 \toprule
@@ -32,7 +32,10 @@ State machine & a state register and transition logic & \code{case (state) ... e
 \end{tabularx}
 \end{table}
 
-All the source files are in the folder \code{code/00\_theory/}. Open any file in
+The source files are in the folders \code{code/00\_theory/} (the blocks of this
+chapter) and \code{code/05a\_bridge/} (the final project); the examples of the
+other chapters are in folders named after the chapters (\code{code/b9a\_fsm/},
+\code{code/05\_verilog/}, etc.). Open any file in
 Logra (the ``From scratch'' project, the ``Code'' tab, the ``Create'' group), click
 ``Synthesize (Ctrl+Enter)'' and follow along with the book. Look at the results in
 the tabs of the ``Check'' group: RTL, Waveforms and Lab.
@@ -44,7 +47,7 @@ In Verilog each formula is one \code{assign} line.
 
 \vfile{\codepath/00_theory/full_adder.v}{code/00\_theory/full\_adder.v}
 
-After synthesis the RTL tab shows exactly what we drew in Part~I:
+After synthesis the RTL tab shows exactly what we drew in Chapter~\ref{ch:arith}:
 two XOR elements, two ANDs and an OR (Fig.~\ref{fig:b-adder-rtl}). Each
 gate is labeled with a line number in the source text, and the wires carry the names of
 the signals.
@@ -57,7 +60,7 @@ diagram (Fig.~\ref{fig:y-wave}) you can see how $sum$ and $c_{out}$ respond.
 Compare with the table in the chapter ``Arithmetic Blocks'': $sum$ equals one when
 the number of ones on the inputs is odd, and $c_{out}$ when there are two or three ones.
 
-Now the most interesting part. In Part~I we said that any logic
+Now the most interesting part. In Chapter~\ref{ch:inside} we said that any logic
 gate in an FPGA is replaced by a table---a LUT. Let us open the Gowin tab and click
 the LUT for $c_{out}$.
 
@@ -70,7 +73,7 @@ output). The LUT configuration for $c_{out}$ is the number \code{0xE8}, that is,
 in which at least two of the three input variables equal one.
 
 \begin{ideabox}
-The gates from Part~I and the LUT tables are two ways to write one and the same
+The gates from the theory chapters and the LUT tables are two ways to write one and the same
 Boolean function. On paper we choose gates; in an FPGA the synthesizer computes
 the table itself. For us the result is the same: a truth table.
 \end{ideabox}
@@ -128,7 +131,7 @@ an \code{always @(posedge clk)} block.
 
 \shot{br-latch-rtl}{On the left, a DFF flip-flop that responds to the edge of the clock signal $C$; on the right, a LATCH with an enable input $EN$}{fig:b-latch-rtl}
 
-The difference in the symbols is the same as in the figures of Part~I:
+The difference in the symbols is the same as in the figures of Chapters~\ref{ch:ff}--\ref{ch:regs}:
 the flip-flop has a triangle on its clock input (an edge), while the latch's enable
 input $EN$ acts by level.
 
@@ -141,7 +144,7 @@ warning signal.
 \end{warnbox}
 
 \begin{diybox}[Remember the alarm]
-\textbf{Task.} The alarm must stay on even after the door is closed, until a key switches it off. In Part~I a flip-flop did this; describe it in Verilog.
+\textbf{Task.} The alarm must stay on even after the door is closed, until a key switches it off. In Chapter~\ref{ch:ff} a flip-flop did this; describe it in Verilog.
 
 \textbf{In Logra.} The ``Code'' tab, a new module with the inputs \code{clk}, \code{trig}, \code{key} and the output \code{mem}. The module body: \code{always @(posedge clk) if (key) mem <= 1'b0; else if (trig) mem <= 1'b1;}
 
@@ -186,20 +189,21 @@ reset is active (\code{rst = 1}), then counting goes on the rising clock edges: 
 \stars{1} repeat: run the original \code{counter4} and read the modulus 16 from the diagram. \stars{2} modify: make a modulo-10 counter (0 again after 9). \stars{3} project: the ``Security Panel'' stage---alarm time; acceptance criterion: while \code{state} equals ALARM, the counter grows to 15 and stays at 15, and on reset returns to 0.
 \end{diybox}
 
-\section{The Finite-State Machine: A Traffic Light}
+\section{Machines and the Queue: What Is Covered Where}
+\label{sec:b-fsm-ref}
 
-The finite-state machine from Chapter~\ref{ch:sync} is a
-state register and transition logic. A Moore machine for a traffic light has three
-states. In each of them one lamp is lit, and the transition is determined only by
-the number of elapsed clocks. We are not meeting state machines again: you have
-already built the circuit and the graph from blocks, and here the same structure is written as code.
+A finite-state machine is a state register plus transition logic
+(Chapter~\ref{ch:sync}). The Moore machine for a traffic light has three states;
+in each one lamp is lit, and a transition is determined by the number of clocks
+that have passed. You have already built the graph from blocks, and here the same
+structure is written as code.
 
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[st/.style={circle, draw=FpgaBlue, fill=FpgaLight, minimum size=18mm, font=\sffamily\small, align=center, thick}]
-  \node[st] (g) at (0,0) {GREEN\\{\scriptsize 4 clocks}};
-  \node[st] (y) at (5,0) {YELLOW\\{\scriptsize 2 clocks}};
-  \node[st] (r) at (10,0) {RED\\{\scriptsize 4 clocks}};
+  \node[st] (g) at (0,0) {GREEN\\{\footnotesize 4 clocks}};
+  \node[st] (y) at (5,0) {YELLOW\\{\footnotesize 2 clocks}};
+  \node[st] (r) at (10,0) {RED\\{\footnotesize 4 clocks}};
   \draw[arr] (g) -- node[above, lbl] {$t=3$} (y);
   \draw[arr] (y) -- node[above, lbl] {$t=1$} (r);
   \draw[arr] (r) to[bend left=35] node[below, lbl] {$t=3$} (g);
@@ -209,95 +213,15 @@ already built the circuit and the graph from blocks, and here the same structure
 \label{fig:b-fsm-graph}
 \end{figure}
 
-\vfile{\codepath/00_theory/traffic_fsm.v}{code/00\_theory/traffic\_fsm.v}
-
-In the code the three parts of the machine are clearly visible: the state register
-(\code{state}), the transition logic (the \code{case} statement in the block on the clock
-edge) and the output logic (the second \code{case} block, depending only on
-\code{state}). In the diagram (Fig.~\ref{fig:b-fsm-wave}) you can see what
-a Moore machine is supposed to do: the output \code{lamp} changes exactly when
-\code{state} changes.
-
-\shot{br-fsm-wave}{The traffic light: in each state of the machine one lamp is lit ($0x1$ is green, $0x2$ is yellow, $0x4$ is red)}{fig:b-fsm-wave}
-
-\begin{diybox}[The ``Guard'' machine: three states]
-\textbf{Task.} Following the traffic light example, build a security panel machine with the states OFF, ARMED, ALARM: the button \code{arm} takes OFF to ARMED, a sensor trigger takes ARMED to ALARM, and reset takes it to OFF.
-
-\textbf{In Logra.} The ``Code'' tab. First run \code{traffic\_fsm.v}, then on its basis write a machine with a two-bit \code{state} and three \code{case} branches. Do not forget the \code{default} branch.
-
-\textbf{Expected result.} The traffic light holds the lamps for 4, 2 and 4 clocks in the order green, yellow, red. After \code{arm}, the guard machine stays in the ARMED state until a sensor triggers.
-
-\textbf{How to check.} Waveforms: for the traffic light, \code{lamp} takes the values \code{0x1}, \code{0x2}, \code{0x4} and changes simultaneously with \code{state}. For the panel, apply \code{arm}, then \code{door}, and make sure that \code{state} went through 0, 1, 2. An extra transition you will see at once.
-
-\stars{1} repeat: recount the lamp durations of the traffic light from the diagram. \stars{2} modify: increase green to 6 clocks (the constant in the comparison with \code{t}) and check the diagram. \stars{3} project: the ``Security Panel'' stage---the state machine; acceptance criterion: the three-state graph is drawn, the diagram shows all three states and not a single unintended transition.
-\end{diybox}
-
-\section{The Mealy Machine: A Vending Machine}
-
-In Chapter~\ref{ch:fsmdesign} we drew the graph of a vending machine and checked
-it by hand against a table. Let us write the same machine in Verilog. It has three parts:
-the state register, the transition logic and the output logic, and the output depends on both the
-state and the current coin.
-
-\vfile{\codepath/00_theory/vending.v}{code/00\_theory/vending.v}
-
-Three techniques protect the description from typical mistakes: the default value
-\code{next = state} (so that no latch appears), the \code{default} branch (so that the
-machine does not hang in an unused code) and synchronous reset.
-
-
-Let us check the machine with the same coins as in the table of Chapter~\ref{ch:fsmdesign}.
-The ``Waveforms'' tab, the ``Events'' section, lets you set the coin pulses by
-periods (Fig.~\ref{fig:n-vend-wave}).
-
-\shot{n-vend-wave}{The Mealy machine: \code{vend} rises in the same clock in which the last coin arrives}{fig:n-vend-wave}
-
-The signal \code{vend} rises \emph{within} the clock cycle, as soon as the ``deciding'' coin
-appears on the input, without waiting for the next edge. This is the
-difference between a Mealy machine and a Moore machine. If you need a ``clean'' output, it
-is passed through a flip-flop, and it lags by one clock.
-
-\begin{diybox}[Entering the code 1-0-1 as a Mealy machine]
-\textbf{Task.} The panel lock is released if the bits 1, 0, 1 are entered in a row. Make a sequence detector whose output \code{unlock} rises in the same clock in which the last bit arrives.
-
-\textbf{In Logra.} The ``Code'' tab. The model is \code{vending.v}: the same three parts (state register, \code{next}, output). There are three states: ``nothing'', ``1'', ``10''. Or start with the lesson ``A 101 sequence detector'' on the ``Learn'' tab.
-
-\textbf{Expected result.} The input series \code{1 0 1} raises \code{unlock}; the series \code{1 1 0} and \code{0 1 1} do not; the series \code{1 0 1 0 1} gives two pulses (overlap).
-
-\textbf{How to check.} Waveforms, the ``Events'' section: set the \code{code\_bit} pulses by periods, as in Fig.~\ref{fig:n-vend-wave}. The output changes within the clock, not after it: this is what a Mealy machine looks like.
-
-\stars{1} repeat: run a sequence of coins through \code{vending.v} and find the clock where \code{vend = 1}. \stars{2} modify: make the code 1-1-0 and check that 1-0-1 no longer works. \stars{3} project: the ``Security Panel'' stage---code entry; acceptance criterion: only the exact series 1-0-1 returns the panel to the OFF state.
-\end{diybox}
-
-\section{The FIFO Queue}
-
-The queue from Chapter~\ref{ch:fsmdesign} consists of an array of words, two
-pointers and a word counter. The module \code{fifo8} stores eight words of
-eight bits each.
-
-\vfile{\codepath/00_theory/fifo8.v}{code/00\_theory/fifo8.v}
-
-The synthesizer will place the array \code{mem} in the chip's memory, and the pointers are
-ordinary counters that ``wrap around'' by themselves after seven. Writing and reading are
-allowed only while the queue is not full and not empty.
-
-\shot{n-fifo-wave}{The queue at work: the words \code{0B}, \code{16}, \code{21} are written, then read in the same order}{fig:n-fifo-wave}
-
-In the diagram \code{count} grows with each write and falls with each read,
-\code{empty} is cleared after the first write, and the words come out on \code{dout} in
-the order they were written.
-
-\begin{diybox}[An alarm log in a queue]
-\textbf{Task.} The panel must remember the numbers of the last zones where the alarm went off, and output them on request in the same order.
-
-\textbf{In Logra.} The ``Code'' tab: open \code{fifo8.v}, synthesize. Apply the zone numbers to \code{din} (on the 8-bit bus the low two bits are enough) and the pulses \code{wr}.
-
-\textbf{Expected result.} The written numbers come out on \code{dout} in the order of writing; \code{count} grows on writing and falls on reading, \code{empty} goes low after the first write.
-
-\textbf{How to check.} Waveforms: write three words and read them, as in Fig.~\ref{fig:n-fifo-wave}. Then write 9 words in a row: the ninth must not be accepted (\code{full = 1}). The array \code{mem} on the Gowin tab will take a memory block or cells.
-
-\stars{1} repeat: the example ``Four-word FIFO'' (\code{fifo-four}) from the ``From an example'' card. \stars{2} modify: reduce the depth to four words (pointers of 2 bits, \code{count} up to 4). \stars{3} project: the ``Security Panel'' stage---the log; acceptance criterion: after three triggerings of zones 1, 3, 2 reading returns exactly 1, 3, 2.
-\end{diybox}
+The code of this machine with three blocks (the state register, the transitions,
+the outputs), the vending machine (Mealy), the 1-0-1 sequence detector, three
+ways to encode states, and two FIFO queues with \code{full} and \code{empty}
+flags are covered with testbenches in Chapter~\ref{ch:fsmdesign}, in the section
+``A Three-Block Machine in Verilog''. The source files are in
+\code{code/b9a\_fsm/} and \code{code/00\_theory/} (the earlier traffic-light
+version \code{traffic\_fsm.v} is there too, with a waveform of its operation,
+Figure~\ref{fig:b-fsm-wave}). The mode machine of the panel from
+Chapter~\ref{ch:fsmdesign} is part of this chapter's final project.
 
 \section{The Hamming Code}
 
@@ -325,111 +249,82 @@ time and that the syndrome points to the damaged position.
 \stars{1} repeat: go through all seven positions and write down the syndromes. \stars{2} find the bug: apply \code{err} with two ones, make sure that \code{q} is now wrong, and explain why the code does not cure such a case. \stars{3} project: the ``Security Panel'' stage---code protection; acceptance criterion: for all 16 zone numbers and all seven single errors \code{q} matches \code{d}.
 \end{diybox}
 
-\section{A Three-State Pin}
+\section{Three States, PWM and the ADC: What Is Covered Where}
+\label{sec:b-analog-ref}
 
-In Chapter~\ref{ch:electrical} we found out that an output can be
-\emph{disconnected} (the state $Z$). In Verilog this is written with a conditional
-assignment that outputs the value \code{z} in the disabled state.
-A bidirectional pin (\code{inout}) adds to this the reading of what
-is actually on the wire.
+The blocks at the edge of the chip and the analog blocks have been moved to the
+chapters that cover their theory, together with code, testbenches and tasks. Here
+is an index.
 
-\vfile{\codepath/00_theory/io_pad.v}{code/00\_theory/io\_pad.v}
-
-\shot{n-iopad-rtl}{A bidirectional pin: a tri-state buffer on the output and an ordinary reading of the level on the input}{fig:n-iopad}
-
-\begin{diybox}[A siren on a shared line]
-\textbf{Task.} The siren and the panel indicator share one pin: the line belongs to the siren while the alarm lasts, and the rest of the time it is released ($Z$) and can accept a signal from outside.
-
-\textbf{In Logra.} The ``Code'' tab: open \code{io\_pad.v}, synthesize. Connect \code{oe} to the ``alarm'' flag.
-
-\textbf{Expected result.} At \code{oe = 1} the pin \code{pad} shows \code{to\_pad}; at \code{oe = 0} the pin is not driven by us, and \code{from\_pad} shows what is applied from outside.
-
-\textbf{How to check.} RTL: a tri-state buffer on the output and an ordinary reading of the level (Fig.~\ref{fig:n-iopad}). Waveforms: toggle \code{oe} and watch \code{from\_pad}. Pin assignment is on the ``Pins'' tab.
-
-\stars{1} repeat: go through both modes of \code{oe}. \stars{2} modify: split the pin into two directions by bits (two bits output, two input). \stars{3} project: the ``Security Panel'' stage---the siren on a shared line; acceptance criterion: outside an alarm \code{oe = 0} and the line is free.
-\end{diybox}
-
-\section{A DAC Based on PWM}
-
-The module from Chapter~\ref{ch:analog}: a counter that runs in a circle, and
-a comparison with the required value.
-
-\vfile{\codepath/00_theory/pwm_dac.v}{code/00\_theory/pwm\_dac.v}
-
-The counter \code{cnt} runs from 0 to 255, and the output equals one while
-\code{cnt < level}. At \code{level = 64} the one is held for 64 clocks out of 256.
-
-\shot{n-pwm-wave}{A PWM DAC with the code 64: the output equals one for the first quarter of the counter period}{fig:n-pwm}
-
-\begin{diybox}[Buzzer volume through PWM]
-\textbf{Task.} The panel buzzer's volume is set by the number \code{level}. Get the required fraction of time with a one on the output.
-
-\textbf{In Logra.} The ``Code'' tab: \code{pwm\_dac.v}. Also open the example ``Brightness with PWM'' (the ``From an example'' card) and compare.
-
-\textbf{Expected result.} At \code{level = 64} the output equals 1 for a quarter of the counter period (25\,\%), at \code{level = 192} for three quarters (75\,\%), at 0 it is always 0.
-
-\textbf{How to check.} Waveforms: set \code{level}, set the number of cycles to 512 (two periods) and count how many clocks \code{pwm = 1}. The average voltage equals $D\cdot 3.3$~V: for $D=25\,\%$ you get about 0.8~V.
-
-\stars{1} repeat: \code{level = 64}, a period of 256 clocks, one for the first 64. \stars{2} modify: make the counter 6 bits wide and recompute the fractions. \stars{3} project: the ``Security Panel'' stage---the buzzer; acceptance criterion: in the ALARM state the output \code{pwm} has a duty cycle of 50\,\%, outside an alarm it is 0.
-\end{diybox}
-
-\section{A Successive-Approximation ADC}
-
-The state machine from Chapter~\ref{ch:analog} uses the comparator signal \code{cmp} to find
-the code by bisection. The file has two modules: the machine itself \code{sar\_adc} and
-the teaching wrapper \code{sar\_demo}, where the ``input voltage'' is set by the constant
-179, and the comparator is built from a comparison operator.
-
-\vfile{\codepath/00_theory/sar_adc.v}{code/00\_theory/sar\_adc.v}
-
-\shot{n-sar-wave}{The search for the number 179: the DAC code passes through the values \code{80}, \code{C0}, \code{A0}, \code{B0}, \code{B8}, \code{B4}, \code{B2}, \code{B3}}{fig:n-sar}
-
-In the diagram you can clearly see the binary search that we examined in the table:
-on each clock \code{cmp} decides whether the bit under test stays one, and
-after eight clocks \code{result} becomes \code{0xB3}, that is, 179.
-
-\begin{diybox}[A noise sensor through an ADC]
-\textbf{Task.} The noise level in the panel arrives from a comparator, but you need a number. Find the code by bisection in 8 clocks.
-
-\textbf{In Logra.} The ``Code'' tab: \code{sar\_adc.v}, top-level module \code{sar\_demo}. The ``input voltage'' is set by the constant 179.
-
-\textbf{Expected result.} The DAC code passes through the values \code{0x80}, \code{0xC0}, \code{0xA0}, \code{0xB0}, \code{0xB8}, \code{0xB4}, \code{0xB2}, \code{0xB3}; after 8 clocks \code{done = 1} and \code{result = 0xB3}.
-
-\textbf{How to check.} Waveforms: the signals \code{dac}, \code{cmp}, \code{result}, \code{done}, the number of cycles 20, a \code{start} pulse. Figure~\ref{fig:n-sar} shows the expected picture.
-
-\stars{1} repeat: run \code{sar\_demo} and check all eight steps. \stars{2} modify: set the input value to 100 and predict the steps in advance, \code{result} must become \code{0x64}. \stars{3} project: the ``Security Panel'' stage---noise through the ADC; acceptance criterion: the comparison \code{result[7:4] > 4'd9} gives \code{loud = 1} exactly for results from \code{0xA0} and above (for 179 this is one, for 100 zero).
-\end{diybox}
+\begin{table}[H]
+\centering
+\caption{Blocks at the edge of the chip: where they are covered and which project stage they close}
+\small
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Block} & \textbf{Where} & \textbf{Files and the ``Security Panel'' stage} \\
+\midrule
+A three-state pin, a bus, an open drain & Ch.~\ref{ch:electrical} & \code{b5a\_electrical/tristate.v}, \code{tb\_bus.v}, \code{00\_theory/io\_pad.v}; the siren on a shared line: outside an alarm \code{oe = 0} \\
+A button pull-up & Ch.~\ref{ch:electrical} & \code{b5a\_electrical/btn\_in.v}, \code{PULL\_MODE} in \code{.cst} \\
+A PWM DAC, a buzzer & Ch.~\ref{ch:analog} & \code{00\_theory/pwm\_dac.v}, \code{b9b\_analog/pwm8.v}, \code{buzzer.v}; in an alarm a 2~kHz tone, 25\,\% \\
+Sigma-delta & Ch.~\ref{ch:analog} & \code{b9b\_analog/sigma\_delta.v} \\
+A successive-approximation ADC & Ch.~\ref{ch:analog} & \code{00\_theory/sar\_adc.v}; noise: \code{result[7:4] > 9} gives \code{loud = 1} \\
+A FIFO queue (the alarm log) & Ch.~\ref{ch:fsmdesign} & \code{00\_theory/fifo8.v}, \code{b9a\_fsm/fifo\_ptr.v}; zones 1, 3, 2 are read in the same order \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
 \section{The Security Panel in Verilog}
+\label{sec:b-panel}
 
-Here are all the blocks together. In Part~I the panel grew in stages: a door sensor,
-arming and night mode, the ``2 out of 3'' vote, the noise threshold, remembering the alarm,
-the state machine and code entry. Now each stage corresponds to a few lines of
-Verilog. The module introduces nothing new: it repeats the circuit you assembled
-from blocks.
+Here are all the blocks together. The panel grew in stages: a door sensor,
+arming and night mode, the ``2 out of 3'' vote, a noise threshold, alarm memory,
+a mode machine with code entry, and a beep. Now each stage corresponds to a few
+lines of Verilog. The project has three parts, and all of them lie in one file,
+\code{code/05a\_bridge/panel\_top.v}:
+\begin{itemize}
+  \item the \textbf{core} \code{guard\_panel}: all the logic of the panel; it knows
+        nothing about the board and is fully checked in simulation;
+  \item the \textbf{input filter} \code{in\_filter}: a two-flip-flop synchronizer
+        and contact-bounce suppression (Chapter~\ref{ch:clocks});
+  \item the \textbf{top module} \code{panel\_top}: connects the core to the
+        buttons, switches, LEDs and buzzer of a particular board.
+\end{itemize}
+This split is the main trick of practice: when the logic is separated from the
+board, it can be checked with a testbench, and moving to another board means
+changing only the top module and the constraints file.
+
+\subsection{The Core: All the Logic of the Panel}
+
+The first half of the module is the combinational part. The parameters
+\code{TONE} and \code{GAP} select the counter bits for the beep, so that in
+simulation they can be made smaller.
 
 \begin{vcode}
-module guard_panel (
+module guard_panel #(
+    parameter TONE = 13,         // counter bit for the tone (27 MHz: about 1.6 kHz)
+    parameter GAP  = 22          // bit for the pause between beeps (about 3.2 Hz)
+) (
     input        clk, rst,                     // clock and synchronous reset
     input        door, window, motion,         // sensors, 1 = triggered
     input        night,                        // night mode
     input  [3:0] noise,                        // noise level
-    input        arm_btn,                      // the "arm" button
-    input        code_bit, code_step,          // code entry: the bit and the "accept" pulse
+    input        arm_btn,                      // "arm the panel"
+    input        code_bit, code_step,          // code entry: a bit and the "accept" pulse
     output       alarm_led, armed_led,
     output       siren,
     output reg [1:0] state
 );
     localparam OFF = 2'd0, ARMED = 2'd1, ALARM = 2'd2;
 
-    // Stages 2, 3, 6: the combinational part
+    // Stages 2, 3, 6: combinational part
     wire vote     = (door & window) | (door & motion) | (window & motion);
     wire loud     = noise > 4'd9;
     wire intruder = vote | loud | (door & night);
 
 \end{vcode}
 
-The second half of the module: code entry, the state machine and the siren.
+The second half of the module: code entry, the machine, and the siren.
 
 \begin{vcode}
     // Stage 9: entering the code 1-0-1 and the button edge
@@ -443,7 +338,7 @@ The second half of the module: code entry, the state machine and the siren.
     wire arm_pulse = arm_btn & ~arm_d;
     wire unlock    = code_step & ({hist[1:0], code_bit} == 3'b101);
 
-    // Stages 7 and 9: the state machine OFF -> ARMED -> ALARM (ALARM is remembered)
+    // Stages 7 and 9: the machine OFF -> ARMED -> ALARM (ALARM is remembered until the right code)
     always @(posedge clk) begin
         if (rst) state <= OFF;
         else case (state)
@@ -455,43 +350,228 @@ The second half of the module: code entry, the state machine and the siren.
         endcase
     end
 
-    // Stage 8: the counter for the beeping (tone and pause)
+    // Stage 8: a counter for the beep (tone and pause)
     reg [23:0] cnt;
     always @(posedge clk) cnt <= rst ? 24'd0 : cnt + 24'd1;
 
     assign alarm_led = (state == ALARM);
     assign armed_led = (state == ARMED);
-    assign siren     = alarm_led & cnt[22] & cnt[13];
+    assign siren     = alarm_led & cnt[GAP] & cnt[TONE];
 endmodule
 \end{vcode}
 
-Let us see where everything came from. The lines with \code{wire} are the combinational part;
-in RTL this is an adder-comparator and a few gates. The
-\code{always @(posedge clk)} block with \code{hist} is a shift register
-of three flip-flops that catches the code 1-0-1. The \code{case} statement is a machine of
-three states; the ALARM state is held until the correct code arrives: this is
-the alarm memory. The counter \code{cnt} and two of its bits produce a beep with pauses.
-At a frequency of 27~MHz the bit \code{cnt[13]} has a frequency of about 1.6~kHz (the tone), and
-\code{cnt[22]} about 3.2~Hz (the pause between beeps).
+Let us see where everything came from. The \code{wire} lines are the
+combinational part; on RTL they are a comparator and a few gates. The
+\code{always @(posedge clk)} block with \code{hist} is a shift register of three
+flip-flops that catches the code 1-0-1: the code counts as entered in the clock
+when the third bit arrives (\code{code\_step}). The \code{case} statement is a
+machine of three states; the ALARM state is held until the right code arrives:
+this is the alarm memory. The counter \code{cnt} and two of its bits give a beep
+with pauses: bit \code{k} toggles at the frequency $f/2^{k+1}$, so at 27~MHz
+\code{cnt[13]} gives about 1.6~kHz (the tone) and \code{cnt[22]} about 3.2~Hz
+(the pause between beeps).
+
+\subsection{The Testbench: Acceptance Without Hands}
+
+The testbench goes through all the stages and prints \code{guard\_panel: OK} if
+the panel behaves as intended. The parameters \code{TONE = 1} and \code{GAP = 3}
+shorten the beep to a few clocks; otherwise we would have to wait millions.
+
+\vfile{\codepath/05a_bridge/tb_guard_panel.v}{code/05a\_bridge/tb\_guard\_panel.v}
+
+\textbf{How to read it.} The scenario follows the acceptance items: (1)~in the OFF
+state the sensors and noise have no effect; (2)~the button arms the panel, one
+sensor out of three gives no alarm; (3)~two sensors switch to ALARM, closing the
+door does not clear the alarm, and the siren beeps and pauses; (4)~the wrong
+series \code{1-1-0} does not clear the alarm, the right one \code{1-0-1} does;
+(5)~noise 9 is harmless, noise 10 raises the alarm, and so does the door at
+night. The tasks \code{tick}, \code{press\_arm}, \code{code} turn each of them
+into a single line, so the scenario reads like a description.
+
+To run: \code{iverilog -g2012 -o tb tb\_guard\_panel.v panel\_top.v}, then
+\code{vvp tb}. In Logra the same scenario is built on the Waveforms tab: paste
+\code{panel\_top.v}, make \code{guard\_panel} the top module, set the parameters
+\code{TONE = 1}, \code{GAP = 3}, and apply the inputs by the table below.
+
+\begin{table}[H]
+\centering
+\caption{A scenario on the Waveforms tab (120 cycles)}
+\small
+\begin{tabularx}{\textwidth}{l X l}
+\toprule
+\textbf{Step} & \textbf{What to apply} & \textbf{What must result} \\
+\midrule
+1 & a \code{rst} pulse at the start; \code{door = 1}, \code{window = 1} & \code{state = 0}: in OFF the sensors have no effect \\
+2 & \code{arm\_btn = 1} for one clock & \code{state = 1}, \code{armed\_led} is on \\
+3 & \code{door = 1}, \code{motion = 1} & \code{state = 2}, \code{siren} beeps; close the door---the alarm stays \\
+4 & \code{code\_bit = 1, 0, 1} with \code{code\_step = 1} on each bit & \code{state = 0}, \code{siren = 0} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Binding to the Board}
+
+The Sipeed Tang Nano 20K board (the GW2AR-LV18 FPGA) is the only board the Logra
+projects work with, so the binding is made to it. The board has a 27~MHz crystal,
+two buttons \code{S1}, \code{S2} (pressed~= 1) and six LEDs (lit at 0). There are
+no sensors or buzzer on the board: they are connected to the pins of header J5.
+The code bits are entered with the buttons: \code{S2} is a one, \code{S1} a zero,
+and each press gives the ``accept'' pulse.
+
+\begin{table}[H]
+\centering
+\caption{Binding the ports of \code{panel\_top} to the Tang Nano 20K board}
+\small
+\begin{tabular}{l l l l}
+\toprule
+\textbf{Port} & \textbf{What is connected} & \textbf{Pin} & \textbf{Pull} \\
+\midrule
+\code{clk} & 27 MHz crystal & 4 & --- \\
+\code{btn[0]}, \code{btn[1]} & buttons S1 (bit 0), S2 (bit 1) & 88, 87 & to ground \\
+\code{door\_pin} & door switch & 75 & to supply \\
+\code{window\_pin} & window switch & 80 & to supply \\
+\code{motion\_pin} & motion sensor & 42 & to supply \\
+\code{night\_pin} & night mode & 41 & to supply \\
+\code{arm\_pin} & ``arm the panel'' & 56 & to supply \\
+\code{buzzer} & passive buzzer & 54 & --- \\
+\code{led[0]}\ldots\code{led[5]} & LEDs (0 = lit) & 15--20 & to supply \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The switches short the pin to ground, so the pin shows ``not triggered'' as one
+(a pull-up to the supply), and inside the module the signal is inverted
+(Chapter~\ref{ch:electrical}). The input filter protects the panel from bounce
+and from asynchrony; before the first measurement it outputs ``not triggered'',
+so there is no false alarm at power-on.
+
+\begin{vcode}
+// A button or sensor input: two flip-flops (synchronizer) and a debounce filter.
+module in_filter #(
+    parameter N    = 270_000,    // for how many clocks a value must hold (10 ms at 27 MHz)
+    parameter INIT = 1'b0        // the value "before the first measurement"
+) (
+    input      clk,
+    input      raw,              // the signal from outside, not related to the clock
+    output reg clean = INIT
+);
+    reg s1 = INIT, s2 = INIT;
+    reg [18:0] cnt = 19'd0;
+    always @(posedge clk) begin
+        s1 <= raw;
+        s2 <= s1;
+        if (s2 == clean)          cnt <= 19'd0;
+        else if (cnt == N - 1) begin clean <= s2; cnt <= 19'd0; end
+        else                      cnt <= cnt + 19'd1;
+    end
+endmodule
+
+\end{vcode}
+
+The top module puts everything together: a power-on reset, seven filters, code
+entry with two buttons, and the core. The ports are named the same way as in the
+constraints file.
+
+\begin{vcode}
+module panel_top (
+    input        clk,            // 27 MHz crystal
+    input  [1:0] btn,            // S1 = code bit 0, S2 = code bit 1 (pressed = 1)
+    input        door_pin, window_pin, motion_pin, night_pin, arm_pin,   // switches to ground, header J5
+    output       buzzer,
+    output [5:0] led             // LEDs light at 0
+);
+    // Power-on reset: 16 clocks after power is applied
+    reg [4:0] por = 5'd0;
+    wire rst = ~por[4];
+    always @(posedge clk) if (rst) por <= por + 5'd1;
+
+    // Filters. Switches "to ground": 1 on the pin = not triggered, so INIT = 1 and an inversion.
+    wire door_f, window_f, motion_f, night_f, arm_f, b0_f, b1_f;
+    in_filter #(.INIT(1'b1)) f_door   (.clk(clk), .raw(door_pin),   .clean(door_f));
+    in_filter #(.INIT(1'b1)) f_window (.clk(clk), .raw(window_pin), .clean(window_f));
+    in_filter #(.INIT(1'b1)) f_motion (.clk(clk), .raw(motion_pin), .clean(motion_f));
+    in_filter #(.INIT(1'b1)) f_night  (.clk(clk), .raw(night_pin),  .clean(night_f));
+    in_filter #(.INIT(1'b1)) f_arm    (.clk(clk), .raw(arm_pin),    .clean(arm_f));
+    in_filter                f_b0     (.clk(clk), .raw(btn[0]),     .clean(b0_f));
+    in_filter                f_b1     (.clk(clk), .raw(btn[1]),     .clean(b1_f));
+
+    // Code entry with two buttons: pressing either gives the "accept" pulse, S2 is bit 1, S1 is bit 0
+    reg any_d = 1'b0;
+    always @(posedge clk) any_d <= b0_f | b1_f;
+    wire code_step = (b0_f | b1_f) & ~any_d;
+    wire code_bit  = b1_f;
+
+    wire alarm_led, armed_led, siren;
+    wire [1:0] state;
+    guard_panel panel (
+        .clk(clk), .rst(rst),
+        .door(~door_f), .window(~window_f), .motion(~motion_f), .night(~night_f),
+        .noise(4'd0),                          // there is no noise sensor on the board (see the ADC chapter)
+        .arm_btn(~arm_f),
+        .code_bit(code_bit), .code_step(code_step),
+        .alarm_led(alarm_led), .armed_led(armed_led), .siren(siren), .state(state)
+    );
+
+    assign buzzer = siren;
+    assign led    = ~{3'b000, state == 2'd0, armed_led, alarm_led};   // led[0] = alarm, led[1] = armed, led[2] = off
+endmodule
+\end{vcode}
+
+The constraints file ties the ports of \code{panel\_top} to pins: two lines per
+port, \code{IO\_LOC} (the pin number) and \code{IO\_PORT} (levels, pull,
+current).
+
+\vfile[text]{\codepath/05a_bridge/panel_top.cst}{code/05a\_bridge/panel\_top.cst}
+
+\textbf{Another board.} The core and the testbench do not depend on the board. To
+move the project you need to (1) write out from the board description the pins of
+the crystal, buttons, LEDs and header, and make a new \code{.cst}; (2) check the
+LED polarity (on the Tang Nano 20K they light at 0; if another board lights them
+at 1, remove the inversion in \code{assign led}); (3) recalculate the parameters
+from the crystal frequency $f$: \code{N} $\approx f\cdot 10$~ms (for 50~MHz that is
+500\,000, and the 19-bit counter in \code{in\_filter} is enough up to
+$5.2\cdot 10^5$), and the bits \code{TONE} and \code{GAP} by the formula
+$f/2^{k+1}$ for a tone of about 1.6~kHz and a pause of about 3~Hz. On the Lab tab
+the same ports can be connected to virtual buttons, LEDs and a buzzer before
+programming.
 
 \begin{warnbox}
-The signals of buttons and sensors come from outside and are in no way related to the panel's
-clock. Before use they are passed through two flip-flops and a contact-bounce
-filter (Chapter~\ref{ch:clocks}). In the Logra simulation the signals are ideal, but on a board
-without a synchronizer the panel will occasionally ``make mistakes''.
+The signals of buttons and sensors come from outside and are not related to the
+panel clock. Without a synchronizer on the board the panel will occasionally
+``make mistakes'' (metastability, Chapter~\ref{ch:clocks}), and without a bounce
+filter one press becomes several. That is why in \code{panel\_top} every external
+signal goes through \code{in\_filter}. In Logra simulation and in the testbench
+the signals are ideal, so the core is checked there without filters.
 \end{warnbox}
 
-\begin{diybox}[The Security Panel: the summary of Part I in Verilog]
-\textbf{Task.} Build \code{guard\_panel} from this chapter in Logra, check all the stages and prepare it for the board.
+\begin{diybox}[The Security Panel: A Summary in Verilog and on the Board]
+\textbf{Task.} Build \code{guard\_panel} from this chapter in Logra, check all the stages with the testbench and on a waveform, and prepare the project for the board.
 
-\textbf{In Logra.} The ``From scratch'' project, the ``Code'' tab: paste the module, click ``Synthesize''. For a demonstration in Waveforms replace \code{cnt[22]} and \code{cnt[13]} with \code{cnt[3]} and \code{cnt[1]}, otherwise you would wait millions of clocks for the beep.
+\textbf{In Logra.} The ``From scratch'' project, the ``Code'' tab: paste \code{panel\_top.v}, click ``Synthesize'' (Ctrl+Enter). For waveforms make \code{guard\_panel} the top module and set \code{TONE = 1}, \code{GAP = 3}; otherwise you would wait millions of clocks for the beep. For the board leave \code{panel\_top} on top, on the ``Pins'' tab assign the ports by the table of the chapter (it repeats the file \code{panel\_top.cst}), on the ``Connect'' tab program the board.
 
-\textbf{Expected result.} After \code{arm\_btn} the panel is in the ARMED state. Triggering of two sensors out of three, noise above 9, or the door at night take it to ALARM, and the siren sounds. Closing the door does not cancel the alarm. The series \code{1, 0, 1} on \code{code\_bit} with \code{code\_step} pulses returns OFF.
+\textbf{Expected result.} After \code{arm\_btn} the panel is in the ARMED state. Two sensors out of three, noise above 9, or the door at night switch it to ALARM, and the siren beeps. Closing the door does not clear the alarm. The series \code{1, 0, 1} on \code{code\_bit} with \code{code\_step} pulses returns OFF. The testbench prints \code{guard\_panel: OK}.
 
-\textbf{How to check.} Waveforms: the signals \code{state}, \code{door}, \code{window}, \code{noise}, \code{alarm\_led}, \code{siren}; the number of cycles 120. RTL: find the comparator, the three \code{hist} flip-flops, the state machine. The Gowin tab will show the number of cells. Then on the ``Pins'' tab assign the buttons, LEDs and the buzzer and save the project.
+\textbf{How to check.} Waveforms: the signals \code{state}, \code{door}, \code{window}, \code{noise}, \code{alarm\_led}, \code{siren}; 120 cycles. RTL: find the comparator, the three \code{hist} flip-flops, the machine. The Gowin tab shows the number of cells. For the board: after ``Pins'' make sure the ports of \code{panel\_top} are matched to pins without warnings.
 
-\stars{3} Final acceptance (the ``Security Panel'' stage, board): (1) the panel arms on the button and does not react to sensors in the OFF state; (2) any of the three causes takes it to ALARM, closing the door does not cancel the alarm; (3) the alarm can be cleared only with the code 1-0-1, any other series does not work; (4) on the Tang Nano 20K board the buttons are connected through a synchronizer and debounce, and the buzzer gives a beep with pauses.
+\stars{1} repeat: go through the scenario of the table on a waveform. \stars{2} complete: add an output \code{beep\_count} that counts the number of alarms since power-on (the counter grows at the transition to ALARM). \stars{3} Final acceptance (the ``Security Panel'' stage, board): (1) the panel is armed by the button and does not react to sensors in the OFF state; (2) any of the three causes switches it to ALARM, closing the door does not clear the alarm; (3) the alarm can be cleared only by the code 1-0-1, any other series does not work; (4) on the Tang Nano 20K board the buttons are connected through a synchronizer and a debouncer, the buzzer beeps with pauses.
 \end{diybox}
+
+\textbf{Sample answer to \stars{2}.} The alarms are counted by the edge: the current state is compared with the previous one.
+\begin{vcode}
+module alarm_counter (
+    input        clk, rst,
+    input        alarm_led,        // the signal from guard_panel
+    output reg [3:0] beep_count
+);
+    reg prev;
+    always @(posedge clk) begin
+        prev <= alarm_led;
+        if (rst) beep_count <= 4'd0;
+        else if (alarm_led && !prev) beep_count <= beep_count + 4'd1;
+    end
+endmodule
+\end{vcode}
+
 
 \begin{ideabox}
 The whole ``path from idea to circuit'' repeats every time:

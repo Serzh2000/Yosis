@@ -1,7 +1,8 @@
 \chapter{Electrical Foundations: CMOS, Outputs, and Buses}
 \label{ch:electrical}
 
-We have reached the ``Security Panel'' machine: it waits for a code, watches the
+We have followed the design all the way from text to a bitstream on the board,
+and the ``Security Panel'' machine waits for a code, watches the
 door sensor, and switches on the siren. All this time we talked about zeros and
 ones as if a signal lived in an ideal world. But the door sensor is a button with
 contacts, the siren is an LED or a buzzer, and there are wires between them and the
@@ -231,9 +232,10 @@ $R = (3.3-2.0)/0.008 \approx 163$~$\Omega$. We take the nearest larger
 standard value from the series: 180~$\Omega$. The current is then
 $I = 1.3/180 \approx 7.2$~mA, slightly less than intended, but safe.
 
-\lookahead{in a project the port current limit is set in the constraints file
-with the parameter \code{DRIVE=8}, and the resistor is taken on the board; more about this in
-Chapter~\ref{ch:bridge}.}
+In a project the port current limit is set in the constraints file with the
+parameter \code{DRIVE=8}, and the resistor is taken on the board; an example
+file is at the end of the section ``Pull-Ups and Pull-Downs'' and in
+Chapter~\ref{ch:bridge}.
 
 \begin{diybox}[A Resistor for an LED]
 \textbf{Task.} Choose a resistor for an LED and see that without
@@ -354,10 +356,55 @@ Inside the chip there are no shared wires with several transmitters: every
 signal is driven by exactly one source, and the choice of source is made by
 multiplexers. Three-state elements exist only in the input/output blocks
 on the pins. Therefore inside the circuit shared buses with the state $Z$ are not built:
-multiplexers are used instead. \lookahead{a ready-made example of a three-state pin with a description,
-a schematic, and a check is covered in
-Chapter~\ref{ch:bridge}.}
+multiplexers are used instead.
 \end{infobox}
+
+\subsection{Three States in Verilog}
+
+The state $Z$ is written in Verilog as the value \code{z}. A three-state buffer
+is a conditional assignment \code{assign pin = oe ? d : 1'bz;}: when
+\code{oe = 1} the line repeats \code{d}, when \code{oe = 0} the circuit
+``lets go'' of the wire. Inside the chip there are no shared wires, so a bus of
+several sources is built there on a multiplexer: it chooses exactly one source.
+
+\vfile{\codepath/b5a_electrical/tristate.v}{code/b5a\_electrical/tristate.v}
+
+\textbf{How to read it.} \code{tri\_buf} is one buffer; on RTL it looks like a
+separate element with an enable input. In \code{bus\_mux} a single assignment
+chooses \code{a} or \code{b}: this is how a bus is arranged \emph{inside} the
+chip. Both modules are checked by \code{tb\_tristate.v}.
+
+A shared line with several transmitters, a conflict and an open drain can only
+be \emph{simulated}: Yosys does not accept two sources on one wire, and the
+chip never has such a thing. So the models live in the testbench
+\code{tb\_bus.v} and run in Icarus Verilog. It has three models: a bus of two
+sources with selection by an address, a bus with \emph{independent} enables
+(this must not be done: both can be switched on), and an open-drain output.
+
+\vfile{\codepath/b5a_electrical/tb_bus.v}{code/b5a\_electrical/tb\_bus.v}
+
+\textbf{How to read it.} In \code{bus\_two} two \code{assign} statements drive
+the same wire \code{bus}; this is allowed because at any moment exactly one of
+the conditions selects a value and the other gives \code{z}. In \code{bus\_free}
+the conditions are independent: with \code{en\_a = en\_b = 1} and different data
+the wire becomes \code{x}---in simulation this is exactly a bus conflict. In
+\code{open\_drain2} each participant either pulls the line to zero or releases
+it; the one comes from an external pull-up that is not in the module itself. The
+testbench sets the pull-up with the net \code{tri1 line;}---``a wire with a
+resistor to the supply''; without it a free line would stay in state $Z$ instead
+of becoming one. The result: the line is 0 if \emph{at least one} participant
+pulls down---this is exactly the ``wired AND''.
+
+A bidirectional pin adds reading of what is really on the wire. It is
+described by a separate module:
+
+\vfile{\codepath/00_theory/io_pad.v}{code/00\_theory/io\_pad.v}
+
+\shot{n-iopad-rtl}{A bidirectional pin: a three-state buffer on the output and an ordinary level reading on the input}{fig:n-iopad}
+
+RTL (Figure~\ref{fig:n-iopad}) shows the three-state buffer on the output and an
+ordinary read line. Inside the circuit itself this is not done: the three-state
+stays at the edge of the chip, where there is physically a shared pin.
 
 \begin{diybox}[Three States and a Conflict]
 \textbf{Task.} See the three output states and a conflict on a shared line.\\
@@ -366,18 +413,39 @@ Chapter~\ref{ch:bridge}.}
 \code{assign pin = oe ? d : 1'bz;} --- and in \emph{Waveforms} apply $oe=0$,
 then $oe=1$ with $d=0$ and $d=1$: find the Z state in the waveform.\\
 \stars{2} \emph{Modify.} Add a second buffer to the same line with
-\code{oe2} and data $d_2$; enable both with different data and find the value
-\code{X}.\\
+\code{oe2} and data $d_2$ in the testbench (in Logra two sources on one wire do
+not build: Yosys does not accept it); enable both with different data and find the
+value \code{X}.\\
 \stars{3} \emph{Project.} A device for two door sensors on one line:
 each sensor is connected through its own buffer with an enable; write the condition
 that guarantees that only one is enabled at a time. Acceptance
-criterion: in the waveform, for any combination of enables there is no value \code{X}.\\
+criterion: for any combination of inputs there is no value \code{X} (in the
+testbench for the line model, on a waveform for the multiplexer version).\\
 \textbf{Expected result.} At $oe=0$ the line is disconnected (Z); at $oe=1$ it
 follows $d$; with two buffers enabled with different data you get \code{X}.\\
 \textbf{How to check.} The \emph{Waveforms} tab: three levels (0, 1, Z) on
 one line; the \emph{RTL} tab: a buffer with an enable looks like a separate
-element.
+element.\\
+\textbf{The same as a file.} The \emph{Code} tab: paste \code{tristate.v},
+``Synthesize'', make \code{tri\_buf} the top module, and on Waveforms apply
+$oe = 0$, then $oe = 1$, and find Z. The conflict is shown by the testbench:
+\code{iverilog -g2012 -o tb tb\_bus.v tristate.v}, then \code{vvp tb} prints
+\code{bus: OK}; in it, with \code{en\_a = en\_b = 1} the wire is \code{x}. Sample
+answer to \stars{3}: on the chip the condition ``only one at a time'' holds by
+itself if the source is chosen by a multiplexer and not by two independent
+enables.
 \end{diybox}
+
+\begin{vcode}
+module door_line (
+    input  sel,                 // 0 --- sensor A talks, 1 --- sensor B talks
+    input  door_a, door_b,
+    output line
+);
+    assign line = sel ? door_b : door_a;   // one source at any moment
+endmodule
+\end{vcode}
+
 
 \section{Pull-Ups and Pull-Downs}
 
@@ -396,9 +464,34 @@ button is pressed ($I = U_\text{DD}/R$). For example, for a 100~pF line with a
 10~k$\Omega$ resistor, $\tau = 1$~\textmu s, and the current at a press is $3.3/10\,000 \approx
 0.33$~mA.
 
-\lookahead{in a project the pull is enabled in the constraints file (the parameter
-\code{PULL\_MODE}: \code{UP} for a button to ground, \code{DOWN} for a button to
-the supply); we did this in project~1 of Chapter~\ref{ch:examples}.}
+\subsection{A Pull-Up on the Board: The Constraints File}
+
+There is no pull-up in Verilog itself: the module sees only the level at the
+input. The pull is enabled in the constraints file \code{.cst}, where each port
+is matched with a chip pin and parameters. The parameter \code{PULL\_MODE} takes
+the values \code{UP} (a resistor to the supply), \code{DOWN} (to ground) and
+\code{NONE}. On the Tang Nano 20K board the buttons \code{S1}, \code{S2} are
+already pulled to ground and give 1 when pressed; a button or a switch that
+shorts the pin to ground gets a pull to the supply and is then inverted in the
+module.
+
+\vfile{\codepath/b5a_electrical/btn_in.v}{code/b5a\_electrical/btn\_in.v}
+
+\begin{vcode}[text]
+// A switch to ground: pull-up to the supply, pressed = 0
+IO_LOC  "btn_n" 75;                          // pin 75 of header J5
+IO_PORT "btn_n" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+
+// Board button S1: pressed = 1, pull-down to ground
+IO_LOC  "btn[0]" 88;
+IO_PORT "btn[0]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+\end{vcode}
+
+The combination ``pull-up $+$ inversion in the module'' reads like this: the pin
+is 1 (released), and the module makes a logical one out of the press. The pin
+numbers of the buttons and LEDs are taken from the file
+\code{code/common/tang\_nano\_20k.cst}, which collects the pins of all the ports of
+the book; pin~75 is one of the pins of header J5.
 
 \begin{diybox}[A Button Pull-Up]
 \textbf{Task.} Connect a button to a port and see that without a pull
@@ -418,8 +511,24 @@ Problems~9 and~10).\\
 \textbf{Expected result.} With the button not pressed the input is one, when
 pressed it is zero; the value does not ``wander''.\\
 \textbf{How to check.} The \emph{Pins} tab: the pull column of the chosen
-port; the \emph{Waveforms} tab: a press gives a clean $1\to0$ transition.
+port; the \emph{Waveforms} tab: a press gives a clean $1\to0$ transition.\\
+\textbf{The same in Verilog.} The \emph{Code} tab: paste \code{btn\_in.v},
+``Synthesize''; on the \emph{Pins} tab choose the pull ``to~1'' for the port
+\code{btn\_n}. \stars{2} Complete a module for a button that shorts to the
+supply (pull to~0): what inversion does it need?\\
+\textbf{Sample answer.} A button to the supply gives 1 when pressed, the pull holds
+0, so no inversion is needed:
 \end{diybox}
+
+\begin{vcode}
+module btn_in_vcc (
+    input  btn,                  // 0 = released (pull-down), 1 = pressed
+    output pressed
+);
+    assign pressed = btn;
+endmodule
+\end{vcode}
+
 
 \begin{warnbox}[Common mistakes]
 \begin{itemize}

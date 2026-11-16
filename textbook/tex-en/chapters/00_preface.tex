@@ -25,7 +25,7 @@ Logra is the environment you work in from the first page. It consists of the
 tabs Learn, Code, Designer, Pins, RTL, Waveforms, Lab, Gowin, Chip, and
 Connect. In the sidebar they are collected into the groups ``Learn'',
 ``Create'', ``Check'', and ``Real board''. You can start working with it right
-away: Part I relies only on the Designer, Waveforms, and RTL.
+away: the first chapters rely only on the Designer, Waveforms, and RTL.
 
 \section*{How a Chapter Is Organized}
 
@@ -55,65 +55,64 @@ normal.
 
 \section*{The Running Project ``Security Panel''}
 
-In Part I you build a single device: a security panel with door and window
+Throughout the book you build a single device: a security panel with door and window
 sensors, a night mode, an arming key, a code lock, a siren, and an indicator.
 Each chapter adds a new part to it (a sensor as a bit, the alarm formula,
 sensor voting, zone selection, a noise threshold, the lock code, alarm
 memory, a time counter, the arming state machine), and the panel always
-stays working. By the end of Part I you have a finished device, and in
-Part II it ends up on a board. The stages are collected in
+stays working. By the end of the theory line you have a finished device, and
+in the chapters on the board and the projects it ends up on an FPGA. The stages are collected in
 Appendix~\ref{app:logramap}.
 
-\section*{The Two Parts of the Book}
+\section*{How the Book Is Organized}
+
+The book is a single continuous line, with no division into parts. Theory,
+Verilog, and work in Logra go together: at every step you design, run, and
+observe.
 
 \begin{description}
-  \item[Part I. Combinational and Sequential Logic.] The theoretical core of
-    the course, which you check on screen in Logra. The order of chapters:
-    signals; number systems and codes; logic gates and Boolean algebra;
-    combinational circuits; minimization (Karnaugh maps, the
-    Quine---McCluskey method); decoders and encoders; multiplexers;
-    arithmetic blocks; flip-flops; registers and counters; synchronous
-    circuits and finite-state machines; state machine design and FIFO queues;
-    then the electrical basics of CMOS and buses; the part closes with the
-    link to the analog world: DAC, ADC, and PWM.
-  \item[Part II. FPGAs and the Logra Environment.] Everything we have
-    studied is now assembled ``in hardware''. What an FPGA is and what is
-    inside it; the Sipeed Tang Nano 20K board; the path from text to a
-    working circuit and the Verilog language; a detailed tour of the Logra
-    environment; the blocks of Part I described in Verilog and examined on
-    screen; seven complete projects; simulation; clocking, timing analysis,
-    and clock domain crossing; the UART, SPI, and I$^2$C interfaces; on-chip
-    SDRAM memory; your own processor that runs a program; assignments for
-    independent work.
+  \item[Start.] What an FPGA is and how it differs from a processor; the
+    first launch of Logra: the tabs and the ``design, run, observe'' cycle.
+  \item[Sprints by topic.] Signals; number systems and codes; logic gates and
+    Boolean algebra; the Verilog language; combinational circuits;
+    minimization (Karnaugh maps, the Quine---McCluskey method); decoders and
+    encoders; multiplexers; arithmetic blocks; flip-flops; registers and
+    counters; synchronous circuits and finite-state machines; state machine
+    design and FIFO queues. In every chapter the theory, the Verilog code, and
+    the circuit in Logra are studied together.
+  \item[Board, flow, physics, analog.] What is inside an FPGA (LUTs,
+    flip-flops, routing); the Sipeed Tang Nano 20K board; the path from text
+    to a bitstream; the electrical basics of CMOS and buses; DAC, ADC, and
+    PWM; the bridge from a circuit to Verilog.
+  \item[Projects and systems.] Seven complete projects; simulation and
+    testbenches; clocking, timing analysis, and clock domain crossing; the
+    UART, SPI, and I$^2$C interfaces; SDRAM memory; your own processor that
+    runs a program; assignments for independent work.
 \end{description}
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[node distance=5mm and 7mm, t/.style={block, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize}]
-  \node[t] (a) {Signals};
-  \node[t, right=of a] (b) {Logic\\gates};
-  \node[t, right=of b] (c) {Combinational\\blocks};
+\begin{tikzpicture}[node distance=5mm and 4mm, t/.style={block, minimum width=28mm, minimum height=15mm, font=\sffamily\footnotesize}]
+  \node[t] (a) {Start:\\FPGA and Logra};
+  \node[t, right=of a] (b) {Signals,\\gates};
+  \node[t, right=of b] (c) {Verilog,\\combinational\\blocks};
   \node[t, right=of c] (d) {Flip-flops,\\registers};
-  \node[t, right=of d] (e) {State machines,\\DAC and ADC};
-  \node[hblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, below=9mm of e] (f) {What is\\an FPGA};
-  \node[hblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of f] (g) {Board and\\flow};
-  \node[hblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of g] (h) {Verilog\\and Logra};
-  \node[oblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of h] (i) {Projects,\\interfaces};
-  \node[oblock, minimum width=22mm, minimum height=11mm, font=\sffamily\scriptsize, left=of i] (j) {SDRAM,\\assignments};
+  \node[t, right=of d] (e) {State\\machines};
+  \node[hblock, minimum width=28mm, minimum height=15mm, font=\sffamily\footnotesize, below=9mm of e] (f) {Board,\\flow};
+  \node[hblock, minimum width=28mm, minimum height=15mm, font=\sffamily\footnotesize, left=of f] (g) {Physics,\\analog};
+  \node[hblock, minimum width=28mm, minimum height=15mm, font=\sffamily\footnotesize, left=of g] (h) {Bridge to\\Verilog};
+  \node[oblock, minimum width=28mm, minimum height=15mm, font=\sffamily\footnotesize, left=of h] (i) {Projects,\\UART, clocks};
+  \node[oblock, minimum width=28mm, minimum height=15mm, font=\sffamily\footnotesize, left=of i] (j) {SDRAM, CPU,\\assignments};
   \foreach \u/\v in {a/b, b/c, c/d, d/e, e/f, f/g, g/h, h/i, i/j} \draw[arr] (\u) -- (\v);
-  \begin{scope}[on background layer]
-    \node[draw=FpgaGray, dashed, rounded corners, fit=(a)(e), inner sep=2.5mm, label={[lbl]above:Part I}] {};
-    \node[draw=FpgaGray, dashed, rounded corners, fit=(f)(j), inner sep=2.5mm, label={[lbl]below:Part II}] {};
-  \end{scope}
 \end{tikzpicture}
 \caption{The path we will travel}
 \end{figure}
 
 If you already know logic, flip-flops, and state machines, you can go
-straight to the second part and return to the first as a reference: the
-second part has links to the relevant chapters of the first. The
-correspondence between chapters and Logra lessons and examples is collected
-in Appendix~\ref{app:logramap}.
+straight to the chapters on the board and the projects (starting with
+Chapter~\ref{ch:inside}) and return to the sprint chapters as a reference:
+they are cross-referenced. The correspondence between chapters and Logra
+lessons and examples is collected in Appendix~\ref{app:logramap}.
 
 All the source texts of the examples are stored next to the book, in the
 folder \nolinkurl{textbook/code}. You can open them, copy them, and load them
@@ -127,6 +126,6 @@ onto the board right away.
   \item Green ``Task'' and ``Do it yourself'' boxes suggest something to do
     on your own in Logra.
   \item Light-blue ``Build it first'' boxes give a task before the theory.
-  \item Italic ``Looking ahead'' notes mark rare glimpses into Part II.
+  \item Italic ``Looking ahead'' notes mark rare glimpses into later chapters.
 \end{itemize}
 \end{infobox}

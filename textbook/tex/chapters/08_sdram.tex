@@ -105,14 +105,14 @@ $4 \text{ банка} \times 2048 \text{ строк} \times 256 \text{ стол�
   \foreach \b/\c in {3/FpgaBlue!15, 2/FpgaBlue!25, 1/FpgaBlue!35, 0/FpgaBlue!50} {
     \begin{scope}[shift={(\b*0.45,\b*0.45)}]
       \fill[\c, draw=FpgaBlue] (0,0) rectangle (5,3.2);
-      \node[font=\sffamily\scriptsize, anchor=north east] at (5,3.2) {банк \b};
+      \node[font=\sffamily\footnotesize, anchor=north east] at (5,3.2) {банк \b};
     \end{scope}
   }
   \foreach \y in {0.4,0.8,...,3.0} \draw[FpgaBlue!40] (0,\y) -- (5,\y);
   \foreach \x in {0.5,1.0,...,4.6} \draw[FpgaBlue!40] (\x,0) -- (\x,3.2);
   \fill[FpgaOrange!80] (0,1.6) rectangle (5,2.0);
   \fill[FpgaRed] (2.5,1.6) rectangle (3.0,2.0);
-  \draw[decorate, decoration={brace, amplitude=5pt}, thick] (-0.2,0) -- (-0.2,3.2) node[midway, left=6pt, font=\sffamily\small, align=right] {2048 строк\\\scriptsize адрес A[10:0]};
+  \draw[decorate, decoration={brace, amplitude=5pt}, thick] (-0.2,0) -- (-0.2,3.2) node[midway, left=6pt, font=\sffamily\small, align=right] {2048 строк\\\footnotesize адрес A[10:0]};
   \draw[decorate, decoration={brace, amplitude=5pt, mirror}, thick] (0,-0.2) -- (5,-0.2) node[midway, below=6pt, font=\sffamily\small, align=center] {256 столбцов, адрес A[7:0]};
   \node[font=\sffamily\small, align=left, anchor=west] at (7.4,2.6) {\textcolor{FpgaOrange}{\rule{3mm}{3mm}} открытая строка};
   \node[font=\sffamily\small, align=left, anchor=west] at (7.4,1.9) {\textcolor{FpgaRed}{\rule{3mm}{3mm}} одно 32-битное слово};
@@ -201,8 +201,8 @@ LOAD MODE  & 0 & 0 & 0 & 0 & настройка (CAS latency, длина пак�
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[node distance=24mm]
-  \node[gblock, minimum height=24mm, minimum width=24mm] (user) {Ваша логика\\\scriptsize (видео, звук\ldots)};
-  \node[hblock, right=of user, minimum height=24mm, minimum width=26mm] (ctrl) {Контроллер\\SDRAM\\\scriptsize конечный автомат};
+  \node[gblock, minimum height=24mm, minimum width=24mm] (user) {Ваша логика\\\footnotesize (видео, звук\ldots)};
+  \node[hblock, right=of user, minimum height=24mm, minimum width=26mm] (ctrl) {Контроллер\\SDRAM\\\footnotesize конечный автомат};
   \node[oblock, right=of ctrl, minimum height=24mm, minimum width=20mm] (mem) {SDRAM\\64 Мбит};
   \draw[arr] ([yshift=6mm]user.east) -- node[above, lbl] {addr, wr, rd} ([yshift=6mm]ctrl.west);
   \draw[arr] ([yshift=0mm]user.east) -- node[above, lbl] {din[31:0]} ([yshift=0mm]ctrl.west);

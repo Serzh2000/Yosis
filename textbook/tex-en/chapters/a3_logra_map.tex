@@ -6,13 +6,16 @@ The book is given in parentheses: ``Circuits'' and ``Verilog'' are books of the 
 and which example (the \emph{Code} and \emph{Designer} tabs) correspond to the chapters of this book. The names were checked against the Logra
 source code when this appendix was built.
 
-\section*{Part I}
+\section*{Chapters in Book Order}
 \begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.24\textwidth}>{\raggedright\arraybackslash}p{0.38\textwidth}>{\raggedright\arraybackslash}p{0.26\textwidth}@{}}
 \toprule Chapter & Logra lesson (book) & Example (\code{id}) \\ \midrule \endfirsthead
 \toprule Chapter & Logra lesson (book) & Example (\code{id}) \\ \midrule \endhead
+What Is an FPGA & What we have in hand (Course); 1. A tour of the workshop (Course) & \code{blink} \\
+The Logra Environment & You are in a digital circuit workshop (Course); Where you have come to (Course) & \code{blink} \\
 Signals & A bit: zero and one (Course); A logic gate (Course); A four-bit number (Course) & \code{button}, \code{not}, \code{blink} \\
 Number Systems and Codes & Binary-coded decimal (Circuits); Gray code with a block (Circuits); The parity bit (Verilog) & \code{gray}, \code{parity}, \code{binary-bcd}, \code{hamming-encode} \\
 Logic Gates and Boolean Algebra & NAND from blocks (Circuits); De Morgan's law (Circuits); XOR from four NANDs (Circuits) & \code{gates}, \code{inverse-gates}, \code{demorgan} \\
+Verilog Basics & The first wire (Course); Concatenate bits (Course); Choice by condition (Course); The first memory cell (Course); A module inside a module (Course) & \code{gates}, \code{not} \\
 Combinational Circuits & Two out of three (Circuits); A multiplexer from NOT, AND, OR (Circuits); The ``two out of three'' vote (Verilog) & \code{logic}, \code{majority} \\
 Minimizing Logic Functions & Equality: XNOR (Circuits); OR with three inputs (Circuits) & \code{implication}, \code{consensus} \\
 Decoders and Encoders & Decoder (Circuits); Priority encoder (Circuits); 3-to-8 decoder (Verilog) & \code{decoder}, \code{priority} \\
@@ -22,22 +25,12 @@ Flip-Flops & One bit of memory (Course); SR flip-flop: set and reset (Circuits);
 Registers and Counters & A four-bit register (Circuits); A shift register as a block (Circuits); A counter as one block (Circuits); A counter with pause (Circuits) & \code{shift}, \code{counter}, \code{johnson} \\
 Synchronous Circuits, FSMs and Memory & Synchronizer: tie the button to the clock (Circuits); A divide-by-2 frequency divider (Circuits); A ROM from an array (Verilog) & \code{async-toggle-sync}, \code{button-debounce}, \code{divide-by-three} \\
 FSM Design and FIFO Queues & Build a traffic light (Course); The 101 detector (Circuits); A code lock (Circuits); A Moore output (Circuits) & \code{traffic}, \code{vending-fsm}, \code{sequence-1011}, \code{fifo-four} \\
-Electrical Basics: CMOS, Outputs and Buses & An LED and current limiting (Circuits); A toggle switch (Circuits) & \code{button} \\
-Digital and the Analog World: DAC, ADC, PWM & PWM: brightness by a number (Verilog) & \code{pwm}, \code{breathing-pwm}, \code{sigma-delta} \\
-\bottomrule
-\end{longtable}
-
-\section*{Part II}
-\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.24\textwidth}>{\raggedright\arraybackslash}p{0.38\textwidth}>{\raggedright\arraybackslash}p{0.26\textwidth}@{}}
-\toprule Chapter & Logra lesson (book) & Example (\code{id}) \\ \midrule \endfirsthead
-\toprule Chapter & Logra lesson (book) & Example (\code{id}) \\ \midrule \endhead
-What Is an FPGA & What we have in hand (Course); 1. A tour of the workshop (Course) & \code{blink} \\
 What Is Inside an FPGA & How long is one period? (Course) & \code{logic} \\
 The Sipeed Tang Nano 20K Board & A button on a real board (Course); An LED that lights on zero (Verilog) & \code{button} \\
-The Logra Environment & You are in a digital circuit workshop (Course); Where you have come to (Course) & \code{blink} \\
 From Text to a Working Circuit & Hello! (Course); An LED and a button together (Verilog) & \code{button} \\
-Verilog Basics & The first wire (Course); Concatenate bits (Course); Choice by condition (Course); The first memory cell (Course); A module inside a module (Course) & \code{gates}, \code{not} \\
-From Theory to Verilog: Blocks of Part I & Full adder: accounting for the carry (Verilog); A counter with load (Verilog); Moore and Mealy: when the output reacts (Verilog) & \code{full-adder}, \code{decoder}, \code{traffic}, \code{fifo-four}, \code{hamming-syndrome} \\
+Electrical Basics: CMOS, Outputs and Buses & An LED and current limiting (Circuits); A toggle switch (Circuits) & \code{button} \\
+Digital and the Analog World: DAC, ADC, PWM & PWM: brightness by a number (Verilog) & \code{pwm}, \code{breathing-pwm}, \code{sigma-delta} \\
+From Circuits to Verilog: Blocks of the Theory Chapters & Full adder: accounting for the carry (Verilog); A counter with load (Verilog); Moore and Mealy: when the output reacts (Verilog) & \code{full-adder}, \code{decoder}, \code{traffic}, \code{fifo-four}, \code{hamming-syndrome} \\
 Practice: Seven Projects & A running light (Verilog); Blinking: dividing the frequency by 8 (Verilog); Pressed: toggled (Verilog) & \code{gates}, \code{blink}, \code{chaser}, \code{button-debounce}, \code{traffic}, \code{breathing-pwm}, \code{mux} \\
 Simulation & How long is one period? (Course) & \code{blink} \\
 Clocking and Timing Analysis & A synchronizer of two flip-flops (Verilog); Reset immediately or on the clock (Verilog) & \code{async-toggle-sync}, \code{button-debounce} \\

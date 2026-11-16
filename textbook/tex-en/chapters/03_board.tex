@@ -97,7 +97,7 @@ Built-in SDRAM       & 64 Mbit (8 MB), 32-bit bus---in the same package as the F
 Multipliers          & 48 of $18\times18$ \\
 PLL                  & 2 \\
 Clock oscillator     & crystal, 27\,MHz (plus a programmable MS5351 oscillator) \\
-Flash                & 64 Mbit, SPI interface (Chapter~\ref{ch:uart})---stores the FPGA configuration \\
+Flash                & 64 Mbit, SPI interface---stores the FPGA configuration \\
 Programmer           & BL616: USB-JTAG (loading the circuit) and USB-UART (serial link to the computer) through a single USB-C connector \\
 Peripherals          & HDMI, TF card, 6 LEDs, 2 buttons, WS2812 RGB LED, \\
                      & RGB display connector, audio amplifier \\
@@ -132,16 +132,16 @@ package, so you cannot see them on the board.
     \node[draw=FpgaGray, dashed, rounded corners, fit=(fpga)(sdram), inner sep=2.5mm, label={[lbl]below:QFN88 package}] {};
   \end{scope}
 
-  \node[block, left=30mm of fpga.north west, anchor=north east] (osc) {Oscillator\\27 MHz};
+  \node[block, left=23mm of fpga.north west, anchor=north east] (osc) {Oscillator\\27 MHz};
   \node[block, below=of osc] (bl) {BL616\\USB-JTAG/UART};
   \node[block, below=of bl] (flash) {Flash\\64 Mbit};
-  \node[gblock, left=8mm of bl] (usb) {USB-C};
+  \node[gblock, left=6mm of bl] (usb) {USB-C};
   \draw[arr] (osc.east) -- node[above, lbl] {clk (pin 4)} (osc.east -| fpga.west);
   \draw[arr, <->] (bl.east) -- node[above, lbl] {JTAG, UART} (bl.east -| fpga.west);
   \draw[arr, <->] (flash.east) -- node[above, lbl] {SPI} (flash.east -| fpga.west);
   \draw[arr, <->] (usb) -- (bl);
 
-  \node[block, right=20mm of fpga.north east, anchor=north west] (led) {6 LEDs};
+  \node[block, right=16mm of fpga.north east, anchor=north west] (led) {6 LEDs};
   \node[block, below=of led] (btn) {Buttons S1, S2};
   \node[block, below=of btn] (hdmi) {HDMI};
   \node[block, below=of hdmi] (tf) {TF card};
@@ -190,7 +190,7 @@ examples there is an inversion in front of the output:
 \caption{Connecting an active-low LED}
 \end{figure}
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{FPGA pins used in the examples}
 \label{tab:pins}
@@ -219,7 +219,7 @@ In the examples we assume that a pressed button gives logic 1 on the pin. If on
 your revision of the board it turns out the other way round, it is enough to
 put an inversion at the input:
 \code{wire pressed = \textasciitilde{}btn[0];}. It is easy to check this with
-the first example (Chapter~\ref{ch:examples}).
+the first example from the practice chapters at the end of the book.
 \end{infobox}
 
 \begin{diybox}[Pins and LED inversion]

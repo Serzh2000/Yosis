@@ -46,7 +46,7 @@ digital signals: it has several data inputs, one output, and \term{select}
     \node[font=\sffamily\bfseries] at (0.8,0) {MUX};
     \foreach \i in {0,...,3} {
       \draw[wire] (-1,1.5-\i) node[left] {$x_\i$} -- (0,1.5-\i);
-      \node[font=\sffamily\scriptsize, anchor=west] at (0.05,1.5-\i) {\i};
+      \node[font=\sffamily\footnotesize, anchor=west] at (0.05,1.5-\i) {\i};
     }
     \draw[wire] (1.6,0) -- (2.6,0) node[right] {$y$};
     \draw[wire, FpgaBlue] (0.6,-1.7) -- (0.6,-2.6) node[below] {$s_1$};
@@ -87,18 +87,18 @@ $s = 0$, then $a$ passes to the output; if $s = 1$, then $b$ passes.
 
 \begin{figure}[H]
 \centering
-\begin{minipage}{0.28\textwidth}
+\begin{minipage}{0.24\textwidth}
 \centering
 \begin{tikzpicture}
   \draw[thick, fill=orange!15] (0,1.1) -- (1.1,0.6) -- (1.1,-0.6) -- (0,-1.1) -- cycle;
   \node[font=\sffamily\small] at (0.55,0) {MUX};
-  \draw[wire] (-0.7,0.6) node[left] {$a$} -- (0,0.6); \node[font=\sffamily\scriptsize, anchor=west] at (0.02,0.6) {0};
-  \draw[wire] (-0.7,-0.6) node[left] {$b$} -- (0,-0.6); \node[font=\sffamily\scriptsize, anchor=west] at (0.02,-0.6) {1};
+  \draw[wire] (-0.7,0.6) node[left] {$a$} -- (0,0.6); \node[font=\sffamily\footnotesize, anchor=west] at (0.02,0.6) {0};
+  \draw[wire] (-0.7,-0.6) node[left] {$b$} -- (0,-0.6); \node[font=\sffamily\footnotesize, anchor=west] at (0.02,-0.6) {1};
   \draw[wire] (1.1,0) -- (1.7,0) node[right] {$y$};
   \draw[wire, FpgaBlue] (0.55,-0.85) -- (0.55,-1.5) node[below] {$s$};
 \end{tikzpicture}
 \end{minipage}
-\begin{minipage}{0.27\textwidth}
+\begin{minipage}{0.21\textwidth}
 \centering
 \begin{tabular}{c|c}
 \toprule
@@ -112,21 +112,23 @@ $s$ & $y$ \\
 \medskip
 $y = \overline{s}\,a + s\,b$
 \end{minipage}
-\begin{minipage}{0.43\textwidth}
+\begin{minipage}{0.52\textwidth}
 \centering
 \begin{tikzpicture}
-  \node[gAND, minimum width=10mm, minimum height=7mm] (g1) at (2,0.6) {};
-  \node[gAND, minimum width=10mm, minimum height=7mm] (g2) at (2,-0.6) {};
-  \node[gOR, minimum width=10mm, minimum height=7mm] (o) at (3.7,0) {};
-  \node[gNOT, minimum width=7mm, minimum height=5mm] (n) at (0.9,0.48) {};
-  \draw[wire] (g1.input 1) -- ++(-1.8,0) node[left] {$a$};
-  \draw[wire] (g2.input 2) -- ++(-1.8,0) node[left] {$b$};
-  \draw[wire, FpgaBlue] (0.2,-1.4) node[below] {$s$} -- (0.2,0.48) -- (n.input);
-  \draw[wire, FpgaBlue] (0.2,-0.48) -- (g2.input 1); \fill[FpgaBlue] (0.2,-0.48) circle (1.3pt);
-  \draw[wire] (n.output) -- (g1.input 2);
-  \draw[wire] (g1.output) -- ++(0.15,0) |- (o.input 1);
-  \draw[wire] (g2.output) -- ++(0.15,0) |- (o.input 2);
-  \draw[wire] (o.output) -- ++(0.4,0) node[right] {$y$};
+  \node[gAND] (g1) at (3.7,1.2) {};
+  \node[gAND] (g2) at (3.7,-1.2) {};
+  \node[gOR] (o) at (6.0,0) {};
+  \node[gNOT] (n) at (1.5,0) {};
+  \draw[wire] (g1.input 1) -- (g1.input 1 -| 0,0) node[left] {$a$};
+  \draw[wire] (g2.input 2) -- (g2.input 2 -| 0,0) node[left] {$b$};
+  \draw[wire, FpgaBlue] (0,0) node[left, text=FpgaDark] {$s$} -- (0.5,0) coordinate (sj);
+  \fill[FpgaBlue] (sj) circle (1.3pt);
+  \draw[wire, FpgaBlue] (sj) -- (n.input);
+  \draw[wire, FpgaBlue] (sj) |- (g2.input 1);
+  \draw[wire] (n.output) -| ([xshift=-4mm]g1.input 2) -- (g1.input 2);
+  \draw[wire] (g1.output) -| ([xshift=-4mm]o.input 1) -- (o.input 1);
+  \draw[wire] (g2.output) -| ([xshift=-4mm]o.input 2) -- (o.input 2);
+  \draw[wire] (o.output) -- ++(0.5,0) node[right] {$y$};
 \end{tikzpicture}
 \end{minipage}
 \caption{The 2:1 multiplexer: symbol, table, formula, and gate-level circuit}
@@ -167,22 +169,21 @@ multiplexer consists of an address decoder, four AND gates, and one OR gate.
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}
-  \draw[thick, fill=FpgaLight] (0,-2.6) rectangle (1.6,1.0);
-  \node[font=\sffamily\bfseries] at (0.8,-0.8) {DC};
-  \draw[wire, FpgaBlue] (-0.8,0.2) node[left, text=FpgaDark] {$s_1$} -- (0,0.2);
-  \draw[wire, FpgaBlue] (-0.8,-1.8) node[left, text=FpgaDark] {$s_0$} -- (0,-1.8);
+  \draw[thick, fill=FpgaLight] (0,-5.5) rectangle (1.6,0.8);
+  \node[font=\sffamily\bfseries] at (0.8,-2.35) {DC};
+  \draw[wire, FpgaBlue] (-0.8,-1.5) node[left, text=FpgaDark] {$s_1$} -- (0,-1.5);
+  \draw[wire, FpgaBlue] (-0.8,-3.2) node[left, text=FpgaDark] {$s_0$} -- (0,-3.2);
   \foreach \i in {0,...,3} {
-    \pgfmathsetmacro{\y}{0.6-\i*1.0}
-    \node[gAND, minimum width=10mm, minimum height=7mm] (g\i) at (4.6,\y-0.12) {};
-    \draw[wire] (1.6,\y) -- ++(0.8,0) |- (g\i.input 2);
-    \node[font=\sffamily\scriptsize, anchor=east] at (1.55,\y) {\i};
-    \draw[wire] (g\i.input 1) -- ++(-0.8,0) node[left, font=\small] {$x_\i$};
+    \node[gAND] (g\i) at (5.0,-\i*1.5-0.3) {};
+    \draw[wire] (1.6,0 |- g\i.input 2) -- (g\i.input 2);
+    \node[font=\sffamily\footnotesize, anchor=south east, inner sep=1pt] at (1.6,0 |- g\i.input 2) {\i};
+    \draw[wire] (g\i.input 1) -- ++(-1.8,0) node[left, font=\small] {$x_\i$};
   }
-  \node[gOR, logic gate inputs=nnnn, minimum height=18mm] (o) at (7.2,-0.9) {};
-  \foreach \i in {0,...,3} {
-    \pgfmathtruncatemacro{\j}{\i+1}
-    \draw[wire] (g\i.output) -- ++(0.35,0) |- (o.input \j);
-  }
+  \node[gOR, logic gate inputs=nnnn, minimum height=18mm] (o) at (8.9,-2.55) {}; % fig-ok: 4-input gate, 18 mm
+  \draw[wire] (g0.output) -| ([xshift=-5mm]o.input 1) -- (o.input 1);
+  \draw[wire] (g1.output) -| ([xshift=-10mm]o.input 2) -- (o.input 2);
+  \draw[wire] (g2.output) -| ([xshift=-10mm]o.input 3) -- (o.input 3);
+  \draw[wire] (g3.output) -| ([xshift=-5mm]o.input 4) -- (o.input 4);
   \draw[wire] (o.output) -- ++(0.7,0) node[right] {$y$};
 \end{tikzpicture}
 \caption{The 4:1 multiplexer = address decoder + AND gates + OR gate}
@@ -209,7 +210,7 @@ from a block. \stars{2} Build it again ``as in Fig.~\ref{fig:mux41}'': an
 address decoder, four AND gates, one OR gate.
 
 \textbf{In Logra.} Learn tab, the ``Selection and distribution'' chapter, the
-lesson ``4-to-1 multiplexer''; for the second part, the lesson ``Decoder'' as a
+lesson ``4-to-1 multiplexer''; for the second task, the lesson ``Decoder'' as a
 source of the decoder.
 
 \textbf{Expected result.} Both circuits give the same table: the output equals
@@ -245,8 +246,9 @@ levels, and so on.
   \draw[wire] (m0-o) -- ++(0.4,0) |- (m2-i0);
   \draw[wire] (m1-o) -- ++(0.4,0) |- (m2-i1);
   \draw[wire] (m2-o) -- ++(0.6,0) node[right] {$y$};
-  \draw[wire, FpgaBlue] (m0-s) -- (0.35,0.25) -- (-0.9,0.25) node[left, text=FpgaDark] {$s_0$};
-  \draw[wire, FpgaBlue] (m1-s) -- (0.35,-1.8) -- (-0.4,-1.8) -- (-0.4,0.25); \fill[FpgaBlue] (-0.4,0.25) circle (1.3pt);
+  \draw[wire, FpgaBlue] (m0-s) -- (0.35,-0.575);
+  \fill[FpgaBlue] (0.35,0) circle (1.3pt);
+  \draw[wire, FpgaBlue] (0.35,0) -- (-0.9,0) node[left, text=FpgaDark] {$s_0$};
   \draw[wire, FpgaBlue] (m2-s) -- (2.35,-1.2) node[below, text=FpgaDark] {$s_1$};
   \node[lbl] at (0.35,-2.4) {level 1};
   \node[lbl] at (2.35,-2.4) {level 2};
@@ -288,7 +290,7 @@ a single $2^n$:1 multiplexer.
   \foreach \i/\v/\ab in {0/0/00, 1/1/01, 2/1/10, 3/0/11} {
     \draw[wire] (-0.8,1.5-\i) -- (0,1.5-\i);
     \node[draw=FpgaGreen, fill=green!8, thick, minimum size=6mm, font=\ttfamily] at (-1.1,1.5-\i) {\v};
-    \node[font=\sffamily\scriptsize, anchor=west] at (0.05,1.5-\i) {\i};
+    \node[font=\sffamily\footnotesize, anchor=west] at (0.05,1.5-\i) {\i};
     \node[lbl, anchor=east] at (-1.5,1.5-\i) {$ab=\ab$};
   }
   \draw[wire] (1.6,0) -- (2.6,0) node[right] {$y = a\oplus b$};
@@ -349,7 +351,7 @@ input signal; the other outputs are 0.
   \draw[wire] (-0.8,0) node[left] {$x$} -- (0,0);
   \foreach \i in {0,...,3} {
     \draw[wire] (1.6,1.5-\i) -- (2.4,1.5-\i) node[right] {$y_\i$};
-    \node[font=\sffamily\scriptsize, anchor=east] at (1.55,1.5-\i) {\i};
+    \node[font=\sffamily\footnotesize, anchor=east] at (1.55,1.5-\i) {\i};
   }
   \draw[wire, FpgaBlue] (0.5,-1.45) -- (0.5,-2.6) node[below, text=FpgaDark] {$s_1$};
   \draw[wire, FpgaBlue] (1.0,-1.7) -- (1.0,-2.6) node[below, text=FpgaDark] {$s_0$};
@@ -386,7 +388,7 @@ switches that set the lamp number. \stars{2} Build the same thing from a decoder
 with an enable input $E$, connecting the button to $E$.
 
 \textbf{In Logra.} Learn tab, the ``Selection and distribution'' chapter, the
-lesson ``Demultiplexer''; the example \code{demux-four}; for the second part,
+lesson ``Demultiplexer''; the example \code{demux-four}; for the second task,
 the lesson ``Decoder''.
 
 \textbf{Expected result.} A pressed button lights only one lamp, the one chosen
@@ -411,17 +413,17 @@ sends the signals of all channels over one wire (the PPM and SBUS protocols).
 \centering
 \begin{tikzpicture}
   \draw[thick, fill=orange!15] (0,1.3) -- (1.2,0.7) -- (1.2,-0.7) -- (0,-1.3) -- cycle;
-  \node[font=\sffamily\scriptsize\bfseries] at (0.6,0) {MUX};
+  \node[font=\sffamily\footnotesize\bfseries] at (0.6,0) {MUX};
   \foreach \i/\t in {0/throttle, 1/roll, 2/pitch, 3/yaw}
     \draw[wire] (-0.6,0.9-\i*0.6) node[left, font=\sffamily\small] {\t} -- (0,0.9-\i*0.6);
   \draw[very thick, FpgaOrange] (1.2,0) -- node[above, font=\sffamily\small, text=FpgaDark] {single line} (5.0,0);
   \begin{scope}[xshift=5cm]
   \draw[thick, fill=orange!15] (0,0.7) -- (1.2,1.3) -- (1.2,-1.3) -- (0,-0.7) -- cycle;
-  \node[font=\sffamily\tiny\bfseries] at (0.6,0) {DEMUX};
+  \node[font=\sffamily\footnotesize\bfseries] at (0.6,0) {DEMUX};
   \foreach \i/\t in {0/throttle, 1/roll, 2/pitch, 3/yaw}
     \draw[wire] (1.2,0.9-\i*0.6) -- (1.8,0.9-\i*0.6) node[right, font=\sffamily\small] {\t};
   \end{scope}
-  \node[block, minimum width=20mm, minimum height=7mm] (ctr) at (3.1,-2.1) {Address\\\scriptsize counter};
+  \node[block, minimum width=20mm, minimum height=7mm] (ctr) at (3.1,-2.1) {Address\\\footnotesize counter};
   \draw[arr, FpgaBlue] (ctr.west) -| node[pos=0.25, below, lbl] {$s$} (0.6,-1.05);
   \draw[arr, FpgaBlue] (ctr.east) -| node[pos=0.25, below, lbl] {$s$} (5.6,-1.05);
 \end{tikzpicture}
@@ -468,7 +470,7 @@ buses.
   \draw[bus] (1.1,0) -- (2.4,0) node[right, text=FpgaDark] {$Y$};
   \foreach \x/\y in {-0.8/0.6, -0.8/-0.6, 1.7/0} {
     \draw[thick] (\x-0.1,\y-0.15) -- (\x+0.1,\y+0.15);
-    \node[font=\sffamily\scriptsize, above] at (\x,\y+0.1) {8};
+    \node[font=\sffamily\footnotesize, above] at (\x,\y+0.1) {8};
   }
   \draw[wire, FpgaBlue] (0.55,-0.85) -- (0.55,-1.5) node[below, text=FpgaDark] {$s$};
   \node[font=\sffamily\small, anchor=west] at (4.0,0.3) {$s=0$: \ $Y = A$};
@@ -506,6 +508,186 @@ chosen number in full; RTL: one multiplexer symbol with buses, as in the figure
 above.
 \end{diybox}
 
+\section{Verilog Examples}
+\label{sec:mux-verilog}
+
+In Verilog a multiplexer is one line or a short \code{case}. The five examples
+below are complete modules from the folder \code{code/b5\_mux/}; each has a
+testbench \code{tb\_*.v} that compares the versions with each other and with the
+expected value and prints \code{OK}. Running them in Logra: the \emph{Code} tab
+$\to$ \emph{Synthesize} (\code{Ctrl+Enter}) $\to$ \emph{RTL} $\to$
+\emph{Waveforms} (Section~\ref{sec:signals-verilog}).
+
+\subsection{Example 1. A 2:1 Multiplexer in Three Ways}
+
+One function $y=\overline{s}\,a+s\,b$ is written with the operator \code{?:},
+with \code{case}, and with the gates of Fig.~\ref{fig:mux21}.
+
+\vfile{\codepath/b5_mux/mux2.v}{code/b5\_mux/mux2.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{assign y = s ? b : a;} reads ``if $s$ then $b$, else $a$''. The shortest way.
+  \item \code{always @(*)} + \code{case (s)} is the same through a selection statement. The output is declared \code{reg}, but the circuit stays combinational. \code{default} guarantees that \code{y} gets a value for every $s$.
+  \item \code{mux2\_gates} is the circuit of Fig.~\ref{fig:mux21}: \code{wire ns = \textasciitilde s;} and two ANDs joined by an OR.
+\end{itemize}
+\textbf{Checking.} \code{tb\_mux2.v} connects all three modules to the same
+inputs and sweeps the eight combinations of $s,a,b$: the outputs must agree.
+In Logra synthesize each module and compare the \emph{RTL}: the synthesizer
+may produce similar circuits from the three forms.
+
+\textbf{Finish it yourself.} Add an enable input \code{en}: when \code{en} $=0$
+the output is zero.
+
+\textbf{Sample answer.}
+\begin{vcode}
+module mux2_en (
+    input  a, b, s, en,
+    output y
+);
+    assign y = en ? (s ? b : a) : 1'b0;   // nested ?:
+endmodule
+\end{vcode}
+
+\subsection{Example 2. A 4:1 Multiplexer: case, Index and Tree}
+
+There are three convenient forms for four inputs. The tree repeats
+Fig.~\ref{fig:muxtree}: two multiplexers of the first level and one of the
+second.
+
+\vfile{\codepath/b5_mux/mux4.v}{code/b5\_mux/mux4.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{input [3:0] x} is the four data inputs as one bus, \code{input [1:0] s} is the address.
+  \item \code{x[s]} selects a bus bit by number: a multiplexer by itself.
+  \item \code{mux4\_tree}: \code{m0} chooses within the pair ($x_0,x_1$) by the \emph{low} address bit, \code{m1} within ($x_2,x_3$), and \code{y} chooses between the pairs by the high bit. The order of the address bits matters: swap \code{s[0]} and \code{s[1]} and inputs 1 and 2 trade places.
+\end{itemize}
+\textbf{Checking.} \code{tb\_mux4.v} sweeps all 16 values of \code{x} and all 4
+addresses and compares the three modules with \code{x[s]}. In Logra: set
+\code{x} $=$ \code{0101} and change \code{s}: the output must alternate
+$1,0,1,0$.
+
+\textbf{Finish it yourself.} Build an 8:1 multiplexer (three address bits).
+
+\textbf{Sample answer.}
+\begin{vcode}
+module mux8 (
+    input  [7:0] x,
+    input  [2:0] s,
+    output       y
+);
+    assign y = x[s];     // an index by a three-bit address: 8 inputs
+endmodule
+\end{vcode}
+Also try building it as a tree of two 4:1 multiplexers and one 2:1.
+
+\subsection{Example 3. A 1:4 Demultiplexer}
+
+The data input \code{x} must reach the output with number \code{s}, and the other
+outputs must be zero. The first form uses \code{case}, the second a shift.
+
+\vfile{\codepath/b5_mux/demux4.v}{code/b5\_mux/demux4.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{y = 4'b0000;} at the start of the block is a \emph{default value}: the chosen bit is overwritten afterwards. This way \code{y} is assigned on every path and there is no latch, even if \code{case} does not list all the values.
+  \item \code{y[2] = x;} assigns to a single bit of the bus.
+  \item \code{\{3'b000, x\} << s} shifts the number \code{000x} left by $s$ places: if $x=1$, the one lands in bit $s$. This is a decoder with the enable input $x$.
+\end{itemize}
+\textbf{Checking.} \code{tb\_demux4.v} sweeps $x$ and all addresses and compares
+both modules. In Logra: at \code{s} $=10$ the output \code{y[2]} repeats
+\code{x}, and the others are zero.
+
+\textbf{Finish it yourself.} Add an enable input \code{en}: when \code{en} $=0$
+all outputs are zero.
+
+\textbf{Sample answer.}
+\begin{vcode}
+module demux4_en (
+    input        x, en,
+    input  [1:0] s,
+    output [3:0] y
+);
+    assign y = en ? ({3'b000, x} << s) : 4'b0000;
+endmodule
+\end{vcode}
+
+\subsection{Example 4. A Multiplexer as a Universal Gate}
+
+XOR comes out of a 2:1 multiplexer if $b$ and $\overline{b}$ are applied to the
+data inputs and $a$ is used as the address. Any function of two variables is one
+4:1 multiplexer with four constants; in Verilog the constants are collected in a
+parameter.
+
+\vfile{\codepath/b5_mux/mux_logic.v}{code/b5\_mux/mux\_logic.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{a ? \textasciitilde b : b}: at $a=0$ the output is $b$, at $a=1$ it is $\overline b$: exclusive OR.
+  \item \code{parameter [3:0] TT} is a truth table column as a module parameter; \code{TT[\{a,b\}]} selects a bit by the two-bit address. The same module with \code{TT = 4'b1000} gives AND, with \code{4'b1110} OR, with \code{4'b0110} exclusive OR. This is the LUT of Fig.~\ref{fig:mux_lut}.
+  \item \code{mux\_lut2 \#(.TT(4'b1000)) u (\ldots)} is an instantiation of the module with a given parameter.
+\end{itemize}
+\textbf{Checking.} \code{tb\_mux\_logic.v} checks XOR, AND, OR, and then creates
+16 instances at once with \code{TT} from 0 to 15 and makes sure that for every
+row of the table the output equals the corresponding bit of the parameter. In
+Logra synthesize \code{xor\_on\_mux} and compare the \emph{RTL} with
+Fig.~\ref{fig:mux_lut}.
+
+\textbf{Finish it yourself.} Implement the ``2 out of 3'' function
+$F=ab+ac+bc$ on a single 4:1 multiplexer (the address is $\{a,b\}$, the data
+inputs are constants and $c$).
+
+\textbf{Sample answer.}
+\begin{vcode}
+module maj3_mux (
+    input  a, b, c,
+    output y
+);
+    // d[0] at ab=00 -> 0;  d[1] at 01 -> c;  d[2] at 10 -> c;  d[3] at 11 -> 1
+    wire [3:0] d = {1'b1, c, c, 1'b0};
+    assign y = d[{a, b}];
+endmodule
+\end{vcode}
+
+\subsection{Example 5. Multiplexers on 8-Bit Buses}
+
+Choosing between numbers is written the same way as choosing between bits: the
+width of the buses changes nothing.
+
+\vfile{\codepath/b5_mux/mux_bus8.v}{code/b5\_mux/mux\_bus8.v}
+
+\textbf{How to read it.} \code{y = s ? b : a;} with 8-bit \code{a} and \code{b}
+switches all eight bits at once: the synthesizer places eight multiplexers with
+a common address. The 4:1 version is the same \code{case}, but with a two-bit
+address and buses instead of bits; \code{default} covers $s=3$.
+
+\textbf{Checking.} \code{tb\_mux\_bus8.v} applies the numbers \code{0xA5},
+\code{0x3C}, \code{0xFF}, \code{0x00} and checks that the output repeats the
+chosen number entirely. In Logra set \code{a} $=$ \code{A5}, \code{b} $=$
+\code{3C} and toggle \code{s}; on \emph{RTL} this is one multiplexer symbol with
+buses, as in the figure ``A multiplexer for 8-bit numbers''.
+
+\textbf{Finish it yourself.} Choose one of three 4-bit numbers $a,b,c$ by the
+two-bit code $s$ (at $s=3$ choose $c$), the task from ``Do it yourself''.
+
+\textbf{Sample answer.}
+\begin{vcode}
+module mux3_bus4 (
+    input  [3:0] a, b, c,
+    input  [1:0] s,
+    output reg [3:0] y
+);
+    always @(*) begin
+        case (s)
+            2'd0:    y = a;
+            2'd1:    y = b;
+            default: y = c;    // s = 2 and s = 3
+        endcase
+    end
+endmodule
+\end{vcode}
+
 \section{Common Mistakes}
 
 \begin{warnbox}[Common mistakes]
@@ -514,6 +696,19 @@ above.
   \item \textbf{Thinking there are $2^n$ select inputs.} A $2^n{:}1$ multiplexer has $n$ select inputs: a $4{:}1$ has two, not four, and an $8{:}1$ has three.
   \item \textbf{Expecting a demultiplexer to ``remember'' a value.} It has no memory: unselected outputs are always 0, and when the address changes, the previous output goes dark immediately.
   \item \textbf{Letting the addresses at the transmitter and receiver drift apart.} In single-line transmission the multiplexer and the demultiplexer must receive \emph{the same} address at the same moment; even a one-step shift sends the channels to the wrong outputs.
+  \item \textbf{Verilog: \code{case} without \code{default} (a latch).}
+    \code{always @(*) case (s) 2'd0: y = a; 2'd1: y = b; endcase} leaves $y$
+    undefined at $s=2,3$, and the synthesizer inserts a latch that ``remembers''
+    the previous value. Either add \code{default} or set a default value at the
+    start of the block (\code{y = 1'b0;}).
+  \item \textbf{Verilog: an incomplete sensitivity list.}
+    \code{always @(a or b)} without \code{s} does not react to an address change
+    in simulation, although the synthesized circuit does. Write
+    \code{always @(*)}.
+  \item \textbf{Verilog: \code{<=} in a combinational block.} In
+    \code{always @(*)} use the blocking \code{=}, in the clocked
+    \code{always @(posedge clk)} the non-blocking \code{<=}. Mixing them gives a
+    mismatch between simulation and the board.
 \end{itemize}
 \end{warnbox}
 

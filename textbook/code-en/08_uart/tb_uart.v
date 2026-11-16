@@ -4,13 +4,13 @@ module tb_uart;
     wire tx, rx_valid;
     wire [7:0] rx_data;
     integer got = 0, bad = 0;
-    reg [7:0] expect = "A";
+    reg [7:0] want = "A";
     uart_demo #(.CLKS_PER_BIT(8)) dut (.clk(clk), .tx(tx), .rx_data(rx_data), .rx_valid(rx_valid));
     always #5 clk = ~clk;
 
     always @(posedge clk) if (rx_valid) begin
-        if (rx_data !== expect) begin bad = bad + 1; $display("expected %c, got %c", expect, rx_data); end
-        expect = (expect == "Z") ? "A" : expect + 1;
+        if (rx_data !== want) begin bad = bad + 1; $display("expected %c, got %c", want, rx_data); end
+        want = (want == "Z") ? "A" : want + 1;
         got = got + 1;
     end
 

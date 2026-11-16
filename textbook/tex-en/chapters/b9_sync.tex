@@ -135,6 +135,77 @@ do all modern processors.
 pieces of data are processed at the same time, each in its own stage}
 \end{figure}
 
+\subsection{The Pipeline in Verilog}
+\label{sec:sync-pipe-v}
+
+Take the computation $y=a\cdot b+c$. In the first version the multiplier and the
+adder are in one clock cycle, in the second a register is placed between them:
+
+\vfile{\codepath/b9_sync/nopipe.v}{code/b9\_sync/nopipe.v}
+
+\vfile{\codepath/b9_sync/pipe2.v}{code/b9\_sync/pipe2.v}
+
+\textbf{How to read it.} \code{nopipe} has one line: the result of the
+multiplication and addition is stored in \code{y} in one clock cycle; the path
+through the logic is the longest, so the maximum frequency is lower. \code{pipe2}
+has two stages: in the first the product goes into the register \code{prod}, in
+the second \code{prod + c1} is stored in \code{y}. The third register \code{c1}
+is needed so that the addend $c$ ``travels'' together with its pair $(a,b)$:
+without it the addition would take $c$ from the \emph{next} piece of data. The
+latency of the result is 2 clock cycles, but a new triple $(a,b,c)$ is accepted
+\emph{every} cycle.
+
+The testbench \code{tb\_pipe.v} applies a new triple on every clock cycle
+(\code{a=i+1}, \code{b=i+2}, \code{c=i+3}) and checks: \code{nopipe} answers one
+cycle later, \code{pipe2} two cycles after the input. It confirms the main
+property of a pipeline: the throughput is one result per cycle, although each
+result is two cycles late.
+
+\textbf{How to run it in Logra.} \term{Code} tab, paste \code{pipe2}, Ctrl+Enter,
+\term{RTL}: two register stages between the multiplication and the addition. In
+\term{Waveforms} apply \code{a=3, b=4, c=5} for one clock cycle and find after how
+many cycles \code{y} becomes 17. Then compare the frequency estimates of the two
+versions on the \term{Gowin} tab (it computes the maximum frequency after place
+and route): in \code{pipe2} the path through the logic is shorter, and the
+estimate is usually higher.
+
+\begin{diybox}[The Pipeline in Verilog: Complete the Module]
+\textbf{Task.} \stars{1} Delay a signal by two clock cycles: the output repeats
+the input with a delay of two cycles. \stars{2} Add to \code{pipe2} an output
+\code{valid} equal to 1 when \code{y} already holds a real result (in the first
+cycles after reset it holds garbage). \stars{3} Cut the computation
+$y=a\cdot b+c\cdot d$ into three stages: two multiplications, an addition, an
+output register.\\
+\textbf{Expected result:} \code{valid} rises two clock cycles after the first
+input.
+\end{diybox}
+
+\textbf{Sample answer.}
+\begin{vcode}
+module delay2 (input clk, d, output reg q);
+    reg m = 1'b0;
+    always @(posedge clk) begin
+        m <= d;      // first cycle of delay
+        q <= m;      // second
+    end
+endmodule
+
+module pipe2_valid (
+    input            clk, in_valid,
+    input      [3:0] a, b, c,
+    output reg [8:0] y,
+    output reg       valid
+);
+    reg [7:0] prod;
+    reg [3:0] c1;
+    reg       v1;
+    always @(posedge clk) begin
+        prod <= a * b;  c1 <= c;  v1 <= in_valid;
+        y    <= prod + c1;        valid <= v1;   // the flag travels down the pipeline with the data
+    end
+endmodule
+\end{vcode}
+
 \begin{diybox}[Clock, Critical Path, and Pipeline]
 \textbf{Task.} See that a chain of registers delays the result by a whole
 number of clock cycles but accepts new data every cycle, and relate this to
@@ -252,6 +323,89 @@ Let us check against the table: S0 --(1)$\to$ S1 --(0)$\to$ S2 --(1)$\to$ S3 ($y
 --(0)$\to$ S2 --(1)$\to$ S3 ($y=1$) --(1)$\to$ S1 --(0)$\to$ S2 --(0)$\to$ S0
 --(1)$\to$ S1.
 
+\subsection{A Moore Machine in Verilog}
+\label{sec:sync-fsm-v}
+
+The structure of a state machine (Fig.~\ref{fig:fsm_struct}) is customarily
+carried into code \emph{in three blocks}: the state register, the transition
+logic, the output logic. That way the text immediately shows where the memory is
+and where the combinational logic is.
+
+\vfile{\codepath/b9_sync/fsm101.v}{code/b9\_sync/fsm101.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{localparam} gives the states the names \code{S0}\ldots\code{S3} and
+        binary codes; by changing the numbers you can switch to another encoding
+        (for example, one-hot) without touching the rest of the text.
+  \item The register \code{state} holds the current state, \code{next} the one
+        that will be after the edge. The first block (\code{posedge clk}) only
+        copies \code{next} to \code{state} (with a synchronous reset to
+        \code{S0}), and it uses \code{<=}.
+  \item The second block (\code{always @*}) is the transition table written with a
+        \code{case} statement: for every state and every value of \code{x}. It
+        uses \code{=} because this is combinational logic. The \code{default}
+        branch guards against undescribed state codes. All four codes are used
+        here, but with five states and three bits, without it (and without a
+        default value of \code{next}) a latch would appear.
+  \item The third block is the Moore output: \code{y} is 1 in state \code{S3} and
+        depends only on the state.
+\end{itemize}
+
+\textbf{The same machine as a Mealy machine.} A Mealy machine is built from the
+same template; only the third block changes: the output depends on both the state
+and the input. Three states are enough, the fourth is not needed: instead of it
+we use ``state \code{S2} and a 1 on the input''.
+
+\vfile{\codepath/b9_sync/fsm101_mealy.v}{code/b9\_sync/fsm101\_mealy.v}
+
+The testbench \code{tb\_fsm101.v} applies the input \code{1010110010} to both
+machines and checks two facts: both find exactly two triples \code{101} (with
+overlap), and the Moore output lags the Mealy output by exactly one clock cycle.
+
+\textbf{How to run it in Logra.} \term{Code} tab: paste \code{fsm101}, Ctrl+Enter.
+On the \term{RTL} tab find the state register (two flip-flops), the transition
+logic and the comparison for the output; in \term{Waveforms} apply a reset for
+one clock cycle, then the bits \code{1,0,1,0,1,1,0,0,1,0} one per clock cycle and
+compare with the figure above: \code{y} is 1 after the third and after the fifth
+bit. For the Mealy machine repeat---the one comes one cycle earlier.
+
+\begin{diybox}[The State Machine in Verilog: Complete the Module]
+\textbf{Task.} \stars{1} Change \code{fsm101} so that it looks for \code{110}.
+\stars{2} Make a detector \emph{without} overlap: after a triple is found, the
+machine starts looking from scratch. How do the transition tables differ?
+\stars{3} Switch to one-hot state encoding: four states in four flip-flops. What
+changed on \term{RTL}?\\
+\textbf{Expected result:} for \code{110} a one appears after every triple
+\code{1,1,0}; without overlap the stream \code{10101} gives one triple, and with
+overlap two.
+\end{diybox}
+
+\textbf{Sample answer} (a \code{110} detector with overlap, Moore machine).
+\begin{vcode}
+module fsm110 (input clk, rst, x, output y);
+    localparam S0 = 2'd0,    // nothing
+               S1 = 2'd1,    // "1"
+               S2 = 2'd2,    // "11"
+               S3 = 2'd3;    // "110"
+    reg [1:0] state, next;
+    always @(posedge clk) begin
+        if (rst) state <= S0;
+        else     state <= next;
+    end
+    always @* begin
+        case (state)
+            S0:      next = x ? S1 : S0;
+            S1:      next = x ? S2 : S0;
+            S2:      next = x ? S2 : S3;   // "11" and another 1: stay in "11"
+            S3:      next = x ? S1 : S0;   // after 110 a new triple may start with 1
+            default: next = S0;
+        endcase
+    end
+    assign y = (state == S3);
+endmodule
+\end{vcode}
+
 \subsection{State Encoding}
 
 The states are stored in a register as binary codes. Four states can be
@@ -261,7 +415,7 @@ only one of them (\code{0001}, \code{0010}, \ldots)---this is
 \term{one-hot encoding}. It needs more flip-flops, but the transition logic is
 simpler and faster. Where flip-flops are plentiful, one-hot is usually chosen.
 \lookahead{how to choose an encoding and see its cost in the number of gates we
-will see in chapter~\ref{ch:fsmdesign} and in Part~II.}
+will see in chapter~\ref{ch:fsmdesign} and in Chapter~\ref{ch:inside}.}
 
 \begin{warnbox}[Common mistakes with state machines]
 \begin{itemize}
@@ -274,6 +428,17 @@ will see in chapter~\ref{ch:fsmdesign} and in Part~II.}
   \item \textbf{Mixing up Moore and Mealy.} An output that you wanted in the
         same clock cycle will arrive one cycle later in a Moore machine: it
         depends only on the state.
+  \item \textbf{One \code{always} for everything.} You can mix the state, the
+        transitions and the output in one clocked block, but then the output is
+        computed from the \emph{next} state, and it is easy to shift it by a
+        clock cycle. Three blocks (state, transitions, output) avoid this
+        mistake.
+  \item \textbf{\code{=} instead of \code{<=} in the state register} (and the
+        other way around in the transition block): the machine behaves
+        differently in simulation than after synthesis.
+  \item \textbf{No \code{default} in the transition \code{case}.} For undescribed
+        state codes \code{next} is not assigned, and the synthesizer inserts a
+        latch.
   \item \textbf{A detector without overlap.} In the ``found'' state you must
         not return to the start: after \code{101}, the next 1 may already be the
         beginning of a new triple.
@@ -305,7 +470,7 @@ and the transition logic.
 \label{sec:memory}
 
 \emph{This section can be read later: it is not needed to understand state
-machines, but the data queue of the next chapter and the processor of Part~II
+machines, but the data queue of the next chapter and the processor of Chapter~\ref{ch:cpu}
 are built on it.}
 
 A register of $n$ flip-flops stores one number. To store many numbers we use
@@ -331,30 +496,46 @@ OR gates where the data has a 1.
   \draw[wire] (-0.7,-1.8) node[left] {$a_0$} -- (0,-1.8);
   \foreach \i in {0,...,3} {
     \pgfmathsetmacro{\y}{0.2-\i*0.9}
-    \draw[wire] (1.4,\y) -- (6.4,\y);
+    \draw[wire] (1.4,\y) -- (7.6,\y);
     \node[font=\sffamily\scriptsize, anchor=east] at (1.35,\y) {\i};
   }
-  \foreach \j in {0,...,3} \draw[very thick, FpgaBlue] (2.4+\j*1.1,0.5) -- (2.4+\j*1.1,-3.2);
+  \foreach \j in {0,...,3} \draw[very thick, FpgaBlue] (2.4+\j*1.5,0.5) -- (2.4+\j*1.5,-3.2);
   % data: cell0=1011, 1=0110, 2=1100, 3=0001 (d3..d0)
   \foreach \i/\row in {0/1011, 1/0110, 2/1100, 3/0001} {
     \pgfmathsetmacro{\y}{0.2-\i*0.9}
     \foreach \j in {0,...,3} {
       \StrChar{\row}{\numexpr\j+1\relax}[\bitv]
-      \ifnum\bitv=1 \fill[FpgaRed] (2.4+\j*1.1,\y) circle (2.4pt);\fi
+      \ifnum\bitv=1 \fill[FpgaRed] (2.4+\j*1.5,\y) circle (2.4pt);\fi
     }
-    \node[font=\ttfamily\small, anchor=west] at (6.6,\y) {\row};
+    \node[font=\ttfamily\small, anchor=west] at (7.8,\y) {\row};
   }
   \foreach \j/\n in {0/3,1/2,2/1,3/0} {
-    \node[gOR, rotate=-90, minimum width=9mm, minimum height=6mm] (o\j) at (2.4+\j*1.1,-3.8) {};
+    \node[gOR, rotate=-90] (o\j) at (2.4+\j*1.5,-3.8) {};
     \draw[wire] (o\j.east) -- ++(0,-0.4) node[below] {$d_\n$};
   }
-  \node[lbl, anchor=west] at (6.6,0.75) {contents};
-  \node[lbl, text=FpgaRed, align=left, anchor=west] at (6.6,-3.6) {a dot is a connection\\(this bit is 1)};
+  \node[lbl, anchor=west] at (7.8,0.75) {contents};
+  \node[lbl, text=FpgaRed, align=left, anchor=west] at (7.8,-3.6) {a dot is a connection\\(this bit is 1)};
 \end{tikzpicture}
 \caption{A $4\times4$ ROM: the decoder selects a row, the OR gates collect
 the bits. \lookahead{the same principle---``memory as a truth table''---underlies LUTs}}
 \label{fig:rom}
 \end{figure}
+
+\subsubsection*{The ROM in Verilog}
+
+In Verilog memory is an \emph{array} of words: \code{reg [7:0] mem [0:15]} means
+16 cells of 8 bits. It is filled in an \code{initial} block and read with an
+ordinary index \code{mem[addr]}.
+
+\vfile{\codepath/b9_sync/rom16x8.v}{code/b9\_sync/rom16x8.v}
+
+\textbf{How to read it.} In the \code{initial} block each cell is assigned a word:
+these are the segment codes of a seven-segment display for the digits
+\code{0}\ldots\code{F} (bit 0 is segment $a$, bit 6 is segment $g$). The line
+\code{assign data = mem[addr]} is a combinational read: the address selects a
+word, as in the circuit of Fig.~\ref{fig:rom}. There is no clocked update here:
+the output value changes right after the address changes. The synthesizer turns
+such an array into a truth table (or into an FPGA memory block).
 
 \subsection{RAM: Random-Access Memory}
 
@@ -398,6 +579,29 @@ cells:
         memory used as the main memory in computers.
 \end{itemize}
 
+\subsubsection*{The RAM in Verilog}
+
+The same array, but with a clocked write:
+
+\vfile{\codepath/b9_sync/ram16x8.v}{code/b9\_sync/ram16x8.v}
+
+\textbf{How to read it.} At the edge, if \code{we}, the word \code{din} is stored
+in the cell number \code{addr}. The next line reads the cell into the register
+\code{dout}. Both assignments are non-blocking, so the read sees the contents
+from \emph{before} the edge: if a write happened in the same cycle, the old word
+appears on the output, and the new one in the next cycle. This is how FPGA memory
+blocks work, and that is why ``a read takes one clock cycle''.
+
+The testbench \code{tb\_mem.v} checks the ROM (words 0, 9 and 15), writes four
+words into the RAM and reads them one by one, and then checks that a read during
+a write returns the old word.
+
+\textbf{How to run it in Logra.} \term{Code} tab: paste \code{rom16x8},
+Ctrl+Enter, \term{Waveforms}: apply the addresses from 0 to 15 and compare the
+words with the code table in the module text. For \code{ram16x8}: apply
+\code{we=1}, address 3, \code{din=0x5A} for one clock cycle, then \code{we=0},
+address 3---the word \code{5A} appears on \code{dout} one cycle later.
+
 \begin{diybox}[ROM and RAM by Hand]
 \textbf{Task.} Read a word written in advance at an address, then write a word
 and read it back.\\
@@ -420,6 +624,22 @@ a RAM remembers what was written until a new word is written.\\
 write-enable signal, and the read word; \emph{RTL} tab: compare how a ROM
 (selecting a ready-made word by address) and a RAM (cells that remember) look.
 \end{diybox}
+
+\textbf{Complete the module.} \stars{1} Change the word at address 3 in
+\code{rom16x8} (for example, to \code{8'hFF}): the other addresses must stay the
+same. \stars{2} Make an $8\times7$ ROM with the digits 0--7 and an address
+counter that steps through the words on the clock (the mini-project from the
+chapter problems). \stars{3} Add to the RAM a content clear to 0 on an input
+\code{clr}: how many clock cycles will it take? \emph{Sample for task 2:}
+
+\vfile{\codepath/b9_sync/seg_scan.v}{code/b9\_sync/seg\_scan.v}
+
+The three-bit counter \code{addr} returns from 7 to 0 by itself, the ROM outputs
+the word at the current address; the testbench \code{tb\_seg\_scan.v} checks 16
+clock cycles in a row: the output goes through all 8 words in address order twice.
+In task~3 only one cell can be cleared per clock cycle (a memory block has one
+write port), so with \code{clr=1} an address counter steps through the cells and
+the clear takes 16 clock cycles.
 
 \section{Questions and Problems}
 \label{sec:tasks-sync}

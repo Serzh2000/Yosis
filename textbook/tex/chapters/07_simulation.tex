@@ -50,9 +50,9 @@
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}
-  \node[gblock, minimum width=34mm, minimum height=20mm] (dut) {DUT\\\scriptsize проверяемый модуль\\\scriptsize (gates, blink\ldots)};
-  \node[block, left=18mm of dut, minimum height=20mm] (gen) {Генератор\\воздействий\\\scriptsize clk, кнопки};
-  \node[block, right=18mm of dut, minimum height=20mm] (mon) {Проверка\\\scriptsize \$display,\\\scriptsize VCD-файл};
+  \node[gblock, minimum width=34mm, minimum height=20mm] (dut) {DUT\\\footnotesize проверяемый модуль\\\footnotesize (gates, blink\ldots)};
+  \node[block, left=18mm of dut, minimum height=20mm] (gen) {Генератор\\воздействий\\\footnotesize clk, кнопки};
+  \node[block, right=18mm of dut, minimum height=20mm] (mon) {Проверка\\\footnotesize \$display,\\\footnotesize VCD-файл};
   \draw[arr] (gen) -- node[above, lbl] {входы} (dut);
   \draw[arr] (dut) -- node[above, lbl] {выходы} (mon);
   \node[draw=FpgaBlue, dashed, thick, rounded corners, fit=(gen)(dut)(mon), inner sep=4mm, label={[font=\sffamily\small\bfseries, text=FpgaBlue]above:модуль tb (тестбенч)}] {};
@@ -71,6 +71,12 @@
         \code{.vcd} для просмотра в GTKWave;
   \item \code{\$finish} --- завершить моделирование.
 \end{itemize}
+
+Поэтому файлы \code{tb\_*.v} не предназначены для вкладки «Код» Logra в роли
+верхнего модуля: синтезатор отвергает \code{\$finish} и задержки, и RTL не
+появляется. Тестбенч запускают в терминале через \code{iverilog} и \code{vvp};
+в Logra для проверки служит вкладка «Диаграммы», которая сама строит тестбенч
+вокруг вашего модуля.
 
 \begin{diybox}[Тестбенч без Verilog: сценарии Logra]
 \textbf{Задание.} Сравните тестбенч из книги с тем, что делает вкладка «Диаграммы»: она сама создаёт тестбенч вокруг вашего модуля и подаёт на входы заданные сигналы.
@@ -175,11 +181,11 @@ t =  388.5 нс  cnt =  1  led = 000000
       \node[white, font=\ttfamily\tiny] at (\i*2+1,2.9) {\v};
     }
     \draw[green!80!white, thick] (0,1.6) -- (20,1.6) -- (20.1,1.9) -- (20,2.2) -- (0,2.2);
-    \node[white, font=\ttfamily\tiny] at (10,1.9) {3F};
+    \node[white, font=\ttfamily\footnotesize] at (10,1.9) {3F};
     \draw[green!80!white, thick] (20.1,1.9) -- (20.2,2.2) -- (24,2.2); \draw[green!80!white, thick] (20.2,1.6) -- (24,1.6);
-    \node[white, font=\ttfamily\tiny] at (22,1.9) {00};
+    \node[white, font=\ttfamily\footnotesize] at (22,1.9) {00};
     \draw[yellow, dashed] (20.1,0.3) -- (20.1,4.7);
-    \node[yellow, font=\sffamily\tiny, anchor=west] at (20.2,0.6) {351,5 нс};
+    \node[yellow, font=\sffamily\footnotesize, anchor=west] at (20.2,0.6) {351,5 нс};
   \end{scope}
 \end{tikzpicture}
 \caption{Так выглядит результат симуляции в GTKWave (схематично)}

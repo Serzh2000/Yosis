@@ -179,7 +179,7 @@
   arr/.style={-{Stealth[length=2.5mm]}, thick, color=FpgaDark},
   wire/.style={thick, color=FpgaDark},
   bus/.style={line width=2pt, color=FpgaBlue},
-  lbl/.style={font=\sffamily\scriptsize, color=FpgaDark},
+  lbl/.style={font=\sffamily\footnotesize, color=FpgaDark},
 }
 \tikzset{
   gbase/.style={draw=FpgaDark, thick, fill=FpgaLight, logic gate inputs=nn,
@@ -215,7 +215,7 @@
   \caption{#3}\label{#4}
   \end{figure}}
 
-% --- Элементы «спринта» (часть I) ---
+% --- Элементы «спринта» ---
 % Уровень сложности: \stars{1} ... \stars{3}
 \newcommand{\stars}[1]{\textcolor{FpgaOrange}{\ifcase#1\or$\star$\or$\star\star$\or$\star\star\star$\fi}}
 % «Соберите сначала»: практическое задание в начале темы
@@ -229,9 +229,13 @@
   borderline west={3pt}{0pt}{FpgaGreen}, sharp corners=east, arc=1.5mm, boxrule=0pt,
   colbacktitle=FpgaGreen!14, coltitle=FpgaDark, fonttitle=\sffamily\bfseries,
   title={\IfEnglishTF{Do it yourself}{Сделай сам}\ifstrempty{#1}{}{: #1}}}
-% Осознанный взгляд вперёд (часть II): \lookahead{текст}
+% Осознанный взгляд вперёд (на более поздние главы):\lookahead{текст}
 \newcommand{\lookahead}[1]{\emph{\IfEnglishTF{Looking ahead:}{Заглянем вперёд:}} #1}
 
 % Ширина номера раздела в оглавлении (номера вида 21.11 не слипаются с названием)
 \DeclareTOCStyleEntry[numwidth=3.4em]{tocline}{section}
 \DeclareTOCStyleEntry[numwidth=4.2em]{tocline}{subsection}
+
+% Заголовок листинга не остаётся одиноким внизу страницы
+\usepackage{needspace}
+\tcbset{codestyle/.append style={before=\par\Needspace{6\baselineskip}}}

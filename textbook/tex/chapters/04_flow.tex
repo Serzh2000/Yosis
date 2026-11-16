@@ -1,6 +1,12 @@
 \chapter{От текста до работающей схемы}
 \label{ch:flow}
 
+Мы узнали, что внутри ПЛИС (глава~\ref{ch:inside}) и как выглядит плата
+(глава~\ref{ch:board}). Теперь соединим всё в один маршрут: как текст на Verilog,
+который вы уже писали и запускали в Logra, превращается в файл конфигурации и
+оказывается в кристалле. Для каждого шага мы посмотрим, что он делает и что
+получается на выходе.
+
 \section{Маршрут проектирования}
 
 Для программиста путь от программы до работающей прошивки выглядит так:
@@ -75,19 +81,19 @@ assign y = (a & b) | ~c;
 \centering
 \begin{tikzpicture}
   \begin{scope}
-    \node[gAND] (and) at (1.3,0.9) {};
-    \node[gNOT] (not) at (1.1,-0.5) {};
-    \node[gOR] (or) at (3.0,0.2) {};
+    \node[gAND] (and) at (1.0,1.0) {};
+    \node[gNOT] (not) at (1.0,-0.8) {};
+    \node[gOR] (or) at (3.3,0.1) {};
     \draw[wire] (and.input 1) -- ++(-0.7,0) node[left] {$a$};
     \draw[wire] (and.input 2) -- ++(-0.7,0) node[left] {$b$};
-    \draw[wire] (not.input) -- ++(-0.5,0) node[left] {$c$};
-    \draw[wire] (and.output) -- ++(0.3,0) |- (or.input 1);
-    \draw[wire] (not.output) -- ++(0.5,0) |- (or.input 2);
-    \draw[wire] (or.output) -- ++(0.5,0) node[right] {$y$};
-    \node[lbl] at (1.8,-1.5) {как задумал человек};
+    \draw[wire] (not.input) -- (not.input -| and.input 1) -- ++(-0.5,0) node[left] {$c$};
+    \draw[wire] (and.output) -| ([xshift=-4mm]or.input 1) -- (or.input 1);
+    \draw[wire] (not.output) -| ([xshift=-4mm]or.input 2) -- (or.input 2);
+    \draw[wire] (or.output) -- ++(0.3,0) node[right] {$y$};
+    \node[lbl] at (2.0,-1.5) {как задумал человек};
   \end{scope}
-  \draw[-{Stealth[length=4mm]}, line width=2pt, FpgaOrange] (4.9,0.2) -- (6.1,0.2) node[midway, above=1mm, lbl] {синтез};
-  \begin{scope}[xshift=7cm]
+  \draw[-{Stealth[length=4mm]}, line width=2pt, FpgaOrange] (5.3,0.1) -- (6.5,0.1) node[midway, above=1mm, lbl] {синтез};
+  \begin{scope}[xshift=7.3cm]
     \node[draw=FpgaBlue, fill=FpgaLight, thick, minimum width=18mm, minimum height=20mm, font=\sffamily\small, align=center] (lut) at (1.5,0.2) {LUT3};
     \draw[wire] ([yshift=5mm]lut.west) -- ++(-0.7,0) node[left] {$a$};
     \draw[wire] (lut.west) -- ++(-0.7,0) node[left] {$b$};
@@ -95,12 +101,12 @@ assign y = (a & b) | ~c;
     \draw[wire] (lut.east) -- ++(0.7,0) node[right] {$y$};
     \node[lbl] at (1.5,-1.5) {как это реализует ПЛИС};
   \end{scope}
-  \begin{scope}[xshift=11.2cm, yshift=1.6cm]
+  \begin{scope}[xshift=11.5cm, yshift=2.1cm]
     \matrix[matrix of nodes, nodes={font=\ttfamily\scriptsize, inner sep=1.2pt},
             row 1/.style={nodes={font=\sffamily\bfseries\scriptsize}}] (tt) {
       a & b & c & y \\ 0&0&0&1 \\ 0&0&1&0 \\ 0&1&0&1 \\ 0&1&1&0 \\ 1&0&0&1 \\ 1&0&1&0 \\ 1&1&0&1 \\ 1&1&1&1 \\};
     \draw[FpgaGray] (tt-1-1.south west) -- (tt-1-4.south east);
-    \node[lbl, below=0mm of tt] {память LUT};
+    \node[lbl, above=0mm of tt] {память LUT};
   \end{scope}
 \end{tikzpicture}
 \caption{Синтез: три логических элемента превращаются в один LUT3 с
@@ -261,7 +267,7 @@ Constraints, «физические ограничения») сообщает �
 
 \subsection{Файлы .cst в примерах}
 
-У каждого проекта из главы~\ref{ch:examples} есть свой файл ограничений
+У каждого из проектов практических глав есть свой файл ограничений
 рядом с кодом, например \code{code/02\_blink/blink.cst}. В нём описаны ровно
 те порты, которые есть в модуле, и каждая группа строк прокомментирована.
 Вот полный файл для мигалки:
@@ -308,3 +314,12 @@ create_clock -name clk -period 37.037 [get_ports {clk}]
 \textbf{Ожидаемый результат.} Файл содержит строки \code{IO\_LOC} для \code{clk}, \code{reset} и шести \code{led\_n}; сборка проходит, nextpnr показывает частоту против заданных 27~МГц.\\
 \textbf{Как проверить.} \stars{2} Исправьте в \code{.cst} имя одного порта (например \code{clk} на \code{clock}) и пересоберите: прочитайте сообщение в журнале и сравните с предупреждением «Частые ошибки». Верните имя назад. \stars{2} Поставьте в поле «Частота, МГц» значение 400 и посмотрите, что сообщит отчёт.
 \end{diybox}
+
+\section{Что дальше}
+
+Мы прошли весь маршрут: от текста до прошивки, загруженной в плату. До сих пор
+мы говорили, что ножка выдаёт «0» или «1», но на настоящей плате это токи и
+напряжения: кнопка может «дребезжать», светодиоду нужен резистор, а несколько
+выходов нельзя просто соединить в одну линию. Что на самом деле происходит на
+границе кристалла и что добавить к схеме, чтобы она надёжно работала с внешним
+миром? Этим займётся глава~\ref{ch:electrical}.

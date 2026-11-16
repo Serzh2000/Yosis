@@ -21,8 +21,8 @@
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[node distance=6mm and 32mm]
-  \node[block, minimum width=34mm] (bin) {Двоичный код\\\scriptsize \code{10} (число 2)};
-  \node[oblock, minimum width=34mm, right=of bin] (oh) {Унитарный код\\\scriptsize \code{0100} (единица на 2-м месте)};
+  \node[block, minimum width=34mm] (bin) {Двоичный код\\\footnotesize \code{10} (число 2)};
+  \node[oblock, minimum width=34mm, right=of bin] (oh) {Унитарный код\\\footnotesize \code{0100} (единица на 2-м месте)};
   \draw[arr] ([yshift=2mm]bin.east) -- node[above, font=\sffamily\small] {дешифратор} ([yshift=2mm]oh.west);
   \draw[arr] ([yshift=-2mm]oh.west) -- node[below, font=\sffamily\small] {шифратор} ([yshift=-2mm]bin.east);
 \end{tikzpicture}
@@ -95,30 +95,28 @@ $E$ & $a_1$ & $a_0$ & $y_0$ & $y_1$ & $y_2$ & $y_3$ \\
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}
-  % входы
-  \draw[wire] (-0.4,1.6) node[left] {$a_1$} -- (1.0,1.6);
-  \draw[wire] (-0.4,0.8) node[left] {$a_0$} -- (2.4,0.8);
-  \draw[wire] (-0.4,0.0) node[left] {$E$} -- (3.8,0.0);
-  % инверторы
-  \node[gNOT, minimum width=7mm, minimum height=5mm] (n1) at (1.0,2.4) {};
-  \draw[wire] (0.3,1.6) |- (n1.input); \fill (0.3,1.6) circle (1.3pt);
-  \draw[very thick, FpgaBlue] (n1.output) -| (1.6,-4.8);
-  \node[gNOT, minimum width=7mm, minimum height=5mm] (n0) at (2.4,1.5) {};
-  \draw[wire] (1.95,0.8) |- (n0.input); \fill (1.95,0.8) circle (1.3pt);
-  \draw[very thick, FpgaBlue] (n0.output) -| (3.0,-4.8);
-  % шины
-  \draw[very thick, FpgaBlue] (1.0,1.6) -- (1.0,-4.8);
-  \draw[very thick, FpgaBlue] (2.4,0.8) -- (2.4,-4.8);
-  \draw[very thick, FpgaBlue] (3.8,0.0) -- (3.8,-4.8);
-  \foreach \x/\l in {1.0/a_1, 1.6/\overline{a_1}, 2.4/a_0, 3.0/\overline{a_0}, 3.8/E}
-    \node[below, font=\small] at (\x,-4.8) {$\l$};
+  % входы слева; шины a1, ~a1, a0, ~a0, E идут вниз
+  \draw[wire] (-0.4,0) node[left] {$a_1$} -- (1.0,0);
+  \node[gNOT] (n1) at (2.2,0) {};
+  \draw[wire] (1.0,0) -- (n1.input);
+  \draw[wire] (n1.output) -- (3.4,0);
+  \draw[wire] (-0.4,-1.0) node[left] {$a_0$} -- (4.6,-1.0);
+  \node[gNOT] (n0) at (5.8,-1.0) {};
+  \draw[wire] (4.6,-1.0) -- (n0.input);
+  \draw[wire] (n0.output) -- (7.0,-1.0);
+  \draw[wire] (-0.4,-2.0) node[left] {$E$} -- (8.2,-2.0);
+  \foreach \x/\byy/\l in {1.0/0/a_1, 3.4/0/\overline{a_1}, 4.6/-1.0/a_0, 7.0/-1.0/\overline{a_0}, 8.2/-2.0/E} {
+    \draw[very thick, FpgaBlue] (\x,\byy) -- (\x,-11.3);
+    \node[below, font=\small] at (\x,-11.3) {$\l$};
+  }
+  \foreach \x/\byy in {1.0/0, 4.6/-1.0, 8.2/-2.0} \fill (\x,\byy) circle (1.3pt);
   % элементы И: y0 = ~a1 ~a0, y1 = ~a1 a0, y2 = a1 ~a0, y3 = a1 a0
-  \foreach \i/\x/\z in {0/1.6/3.0, 1/1.6/2.4, 2/1.0/3.0, 3/1.0/2.4} {
-    \pgfmathsetmacro{\y}{-0.9-\i*1.1}
-    \node[gAND, logic gate inputs=nnn, minimum height=9mm] (g\i) at (5.6,\y) {};
-    \draw[wire] (g\i.input 1) -- (\x,0 |- g\i.input 1) node[circle, fill, inner sep=1.1pt] {};
-    \draw[wire] (g\i.input 2) -- (\z,0 |- g\i.input 2) node[circle, fill, inner sep=1.1pt] {};
-    \draw[wire] (g\i.input 3) -- (3.8,0 |- g\i.input 3) node[circle, fill, inner sep=1.1pt] {};
+  \foreach \i/\xp/\xq in {0/3.4/7.0, 1/3.4/4.6, 2/1.0/7.0, 3/1.0/4.6} {
+    \pgfmathsetmacro{\y}{-3.8-\i*2.0}
+    \node[gAND, logic gate inputs=nnn, minimum height=13.5mm] (g\i) at (11.0,\y) {}; % fig-ok: 3-input gate, 13.5 mm
+    \draw[wire] (g\i.input 1) -- (\xp,0 |- g\i.input 1) node[circle, fill, inner sep=1.1pt] {};
+    \draw[wire] (g\i.input 2) -- (\xq,0 |- g\i.input 2) node[circle, fill, inner sep=1.1pt] {};
+    \draw[wire] (g\i.input 3) -- (8.2,0 |- g\i.input 3) node[circle, fill, inner sep=1.1pt] {};
     \draw[wire] (g\i.output) -- ++(0.6,0) node[right] {$y_\i$};
   }
 \end{tikzpicture}
@@ -235,7 +233,7 @@ $0$--$7$; единица должна «бежать» по выходам. Вк
     \segc{#5}\draw[seg, color=\cc] (0,1.8) -- (0,0.2);   % e
     \segc{#6}\draw[seg, color=\cc] (0,3.8) -- (0,2.2);   % f
     \segc{#7}\draw[seg, color=\cc] (0.2,2) -- (1.8,2);   % g
-    \node[font=\sffamily\scriptsize] at (1,-1.1) {#8};
+    \node[font=\sffamily\footnotesize] at (1,-1.1) {#8};
   \end{tikzpicture}}
 
 \begin{figure}[H]
@@ -402,14 +400,14 @@ $x_0$ & $x_1$ & $x_2$ & $x_3$ & $y_1$ & $y_0$ \\
 \begin{tikzpicture}
   \foreach \i in {0,...,3} \draw[very thick, FpgaBlue] (\i*0.7,0.6) node[above, text=FpgaDark] {$x_\i$} -- (\i*0.7,-2.4);
   \node[gOR] (o0) at (4.2,-0.4) {};
-  \node[gOR] (o1) at (4.2,-1.7) {};
+  \node[gOR] (o1) at (4.2,-2.0) {};
   \draw[wire] (o0.input 1) -- (0.7,0 |- o0.input 1) node[circle, fill, inner sep=1.1pt] {};
   \draw[wire] (o0.input 2) -- (2.1,0 |- o0.input 2) node[circle, fill, inner sep=1.1pt] {};
   \draw[wire] (o1.input 1) -- (1.4,0 |- o1.input 1) node[circle, fill, inner sep=1.1pt] {};
   \draw[wire] (o1.input 2) -- (2.1,0 |- o1.input 2) node[circle, fill, inner sep=1.1pt] {};
   \draw[wire] (o0.output) -- ++(0.6,0) node[right] {$y_0$};
   \draw[wire] (o1.output) -- ++(0.6,0) node[right] {$y_1$};
-  \node[lbl, text=FpgaGray] at (0,-2.7) {не используется};
+  \node[lbl, text=FpgaGray] at (0,-3.1) {не используется};
 \end{tikzpicture}
 \caption{Шифратор 4$\to$2 из двух элементов ИЛИ}
 \end{figure}
@@ -514,16 +512,17 @@ $y_1y_0=11$, $V=1$. Простой шифратор на двух единица
 \begin{minipage}{0.5\textwidth}
 \centering
 \begin{tikzpicture}
-  \draw[very thick, FpgaBlue] (0,0) node[left, text=FpgaDark] {$b_2$} -- (3.2,0) node[right, text=FpgaDark] {$g_2$};
-  \node[gXOR, minimum width=10mm, minimum height=7mm] (x1) at (2.2,-1.0) {};
-  \node[gXOR, minimum width=10mm, minimum height=7mm] (x0) at (2.2,-2.2) {};
-  \draw[wire] (x1.input 1) -- (0.6,0 |- x1.input 1) -- (0.6,0); \fill (0.6,0) circle (1.3pt);
+  \draw[very thick, FpgaBlue] (0,0) node[left, text=FpgaDark] {$b_2$} -- (3.4,0) node[right, text=FpgaDark] {$g_2$};
+  \node[gXOR] (x1) at (2.4,-1.0) {};
+  \node[gXOR] (x0) at (2.4,-2.5) {};
+  \fill (0.6,0) circle (1.3pt);
+  \draw[wire] (x1.input 1) -- (0.6,0 |- x1.input 1) -- (0.6,0);
   \draw[wire] (x1.input 2) -- (0,0 |- x1.input 2) node[left] {$b_1$};
   \fill (1.0,0 |- x1.input 2) circle (1.3pt);
   \draw[wire] (x0.input 1) -- (1.0,0 |- x0.input 1) -- (1.0,0 |- x1.input 2);
   \draw[wire] (x0.input 2) -- (0,0 |- x0.input 2) node[left] {$b_0$};
-  \draw[wire] (x1.output) -- ++(0.5,0) node[right] {$g_1$};
-  \draw[wire] (x0.output) -- ++(0.5,0) node[right] {$g_0$};
+  \draw[wire] (x1.output) -- ++(0.6,0) node[right] {$g_1$};
+  \draw[wire] (x0.output) -- ++(0.6,0) node[right] {$g_0$};
 \end{tikzpicture}
 
 \small $g_i = b_{i+1} \oplus b_i$
@@ -560,6 +559,255 @@ $b_{n-1}=g_{n-1}$, $b_i=b_{i+1}\oplus g_i$. Например, код Грея \c
 счётчиком $0$--$7$ и сосчитайте, сколько разрядов Грея меняется на
 каждом шаге; везде должно быть ровно одно изменение.
 \end{diybox}
+
+\section{Те же узлы на Verilog}
+\label{sec:coders-verilog}
+
+Все узлы этой главы удобно описывать не рисунком, а текстом (язык Verilog
+подробно разобран в главе~\ref{ch:verilog}). Правила чтения короткие.
+\code{assign} означает «выход всегда равен этому выражению».
+Блок \code{always @*} с \code{case} или \code{if} читается как «таблица или
+цепочка условий, по которой выбирается одно значение»; в нём пишем
+блокирующее присваивание \code{=} и \emph{в каждой ветке присваиваем
+каждому выходу значение}.
+
+Как запустить любой пример этого раздела в Logra: вкладка \emph{Код},
+вставить модуль (или открыть файл из \code{code/b4\_coders}), нажать
+\emph{Синтезировать} (Ctrl+Enter); вкладка \emph{RTL} показывает полученную
+схему, вкладка \emph{Диаграммы} --- перебор входов. Рядом с каждым модулем лежит тестбенч
+\code{tb\_*.v}: он перебирает входы, сверяет выходы с эталоном и печатает
+\code{OK}.
+
+\subsection{Шифратор $4\to2$ через case}
+
+Таблица шифратора превращается в \code{case} почти буквально: слева
+унитарный код, справа номер линии.
+
+\vfile{\codepath/b4_coders/enc4to2.v}{code/b4\_coders/enc4to2.v}
+
+\textbf{Как читается.} \code{case (x)} сравнивает вход с четырьмя
+образцами сверху вниз; первый совпавший задаёт \code{y}. Ветка
+\code{default} получает всё остальное: ноль единиц и несколько единиц.
+Без неё для этих кодов \code{y} осталось бы «как было», то есть появилась бы
+память (см.\ подраздел об ошибках ниже). Сравним с версией из «вентилей»,
+которую мы рисовали в начале раздела:
+
+\vfile{\codepath/b4_coders/enc4to2_or.v}{code/b4\_coders/enc4to2\_or.v}
+
+На унитарных кодах обе версии одинаковы. На $x=0110$ версия из ИЛИ даёт
+$y=11$ (чужой номер, как мы и предсказывали), а версия через \code{case}
+честно «не знает» и выдаёт $00$: поведение на запрещённых входах теперь
+записано явно, а не получается случайно.
+
+\vfile{\codepath/b4_coders/tb_enc4to2.v}{code/b4\_coders/tb\_enc4to2.v}
+
+\textbf{Сценарий на вкладке «Диаграммы».} Задайте $x$ значениями
+\code{0001, 0010, 0100, 1000}: $y$ должен пройти $0,1,2,3$ у обоих модулей;
+затем $x=0110$ --- и найдите, чем различаются $y$.
+
+\subsection{Приоритетный шифратор: if/else if и casez}
+
+Приоритет в тексте --- это \emph{порядок проверок}. Первая проверка,
+оказавшаяся истинной, побеждает, остальные уже не смотрятся.
+
+\vfile{\codepath/b4_coders/prio4_if.v}{code/b4\_coders/prio4\_if.v}
+
+\textbf{Как читается.} Сначала \code{v = 1} по умолчанию. Затем цепочка:
+«если активен $x_3$, номер 3; иначе, если $x_2$, номер 2; \ldots; иначе
+(ничего нет) номер 0 и $v=0$». Каждая ветка присваивает и \code{y}, и \code{v}:
+иначе получилась бы защёлка. Та же функция через \code{casez}, где знак
+\code{?} означает «здесь может быть что угодно», и это в точности
+$\times$ из таблицы приоритетного шифратора:
+
+\vfile{\codepath/b4_coders/prio4_casez.v}{code/b4\_coders/prio4\_casez.v}
+
+Строки \code{casez} проверяются сверху вниз, как цепочка \code{if}: для
+$x=0110$ первая строка не подходит (старший бит нулевой), вторая
+\code{01??} подходит, и $y=2$. Две записи равнозначны; \code{casez} нагляднее
+повторяет таблицу, \code{if} лучше, когда условия сложнее «маски».
+
+\vfile{\codepath/b4_coders/tb_prio4.v}{code/b4\_coders/tb\_prio4.v}
+
+\textbf{Сценарий на вкладке «Диаграммы».} Входы $x$ счётчиком $0$--$15$:
+при $x=0$ выход $v=0$; при любой единице в $x_3$ всегда $y=3$; на
+$x=0110$ получается $y=2$, и обе версии модуля дают одинаковые графики.
+
+\subsection{Дешифраторы: assign и case}
+
+Дешифратор $2\to4$ можно записать по одному \code{assign} на выход
+(формулы из начала главы) или таблицей \code{case}:
+
+\vfile{\codepath/b4_coders/dec2to4_assign.v}{code/b4\_coders/dec2to4\_assign.v}
+
+\vfile{\codepath/b4_coders/dec2to4_case.v}{code/b4\_coders/dec2to4\_case.v}
+
+\textbf{Как читается.} В первом модуле каждая строка --- произведение
+$E\,\overline{a_1}\,\overline{a_0}$ и т.\,д., знак \code{\textasciitilde} --- НЕ.
+Во втором сначала проверяется разрешение: при \code{en = 0} все выходы нули,
+иначе \code{case (a)} выбирает строку таблицы. Рядом ---
+дешифратор $3\to8$ одной строкой: единица сдвигается влево на \code{a}
+позиций, а при \code{en = 0} выход нулевой; и его же сборка из двух блоков
+$2\to4$ по рисунку~\ref{fig:dc38}.
+
+\vfile{\codepath/b4_coders/dec3to8.v}{code/b4\_coders/dec3to8.v}
+
+\vfile{\codepath/b4_coders/dec3to8_cascade.v}{code/b4\_coders/dec3to8\_cascade.v}
+
+В каскадной версии младшие два бита номера идут в оба блока, а старший
+бит разрешает один из них: \code{en \& \textasciitilde a[2]} включает нижнюю
+половину ($y_0\ldots y_3$), \code{en \& a[2]} --- верхнюю. Это в точности
+схема с рисунка~\ref{fig:dc38}.
+
+\textbf{Сценарий.} Тестбенч \code{tb\_dec.v} сравнивает все четыре
+описания с эталоном на всех 16 комбинациях $(E,a)$. На вкладке
+\emph{Диаграммы} задайте $a$ счётчиком $0$--$7$ при $en=1$: единица
+«бежит» по выходам \code{dec3to8}; у каскада на вкладке \emph{RTL} видно
+два одинаковых блока и элементы \code{\&}, \code{\textasciitilde}.
+
+\subsection{Семисегментный дешифратор}
+
+Таблица~\ref{tab:7seg} превращается в \code{case} буквально строка в
+строку; семь выходов собраны в одну шину \code{seg = \{g,f,e,d,c,b,a\}}
+(младший бит --- сегмент $a$).
+
+\vfile{\codepath/b4_coders/seg7.v}{code/b4\_coders/seg7.v}
+
+\textbf{Как читается.} Для цифры~1 получается \code{7'b0000110}, то есть
+горят $b$ и $c$, как в таблице. Ветка \code{default} закрывает коды
+$10$--$15$ и гасит индикатор. Это то самое решение для безразличных состояний,
+о котором мы говорили выше; вместо нулей можно было бы написать \code{7'bx},
+и оптимизатор выбрал бы значения сам (см.\ главу~\ref{ch:minimize}).
+Тестбенч \code{tb\_seg7.v} проверяет все 16 кодов.
+
+\textbf{Сценарий.} Вкладка \emph{Диаграммы}: вход $x$ счётчиком $0$--$15$;
+на цифрах $0$--$9$ сравните выход с таблицей, на $10$--$15$ он нулевой.
+Вкладка \emph{RTL}: посмотрите, во что превратился этот \code{case}:
+цифры не «разбираются» по семи отдельным схемам, это одна таблица.
+
+\subsection{Преобразователи кодов: код Грея}
+
+Прямое преобразование --- одна строка: каждый бит равен XOR двух соседних
+двоичных бит. Обратное требует цепочки: каждый следующий бит зависит от уже
+полученного.
+
+\vfile{\codepath/b4_coders/bin2gray.v}{code/b4\_coders/bin2gray.v}
+
+\vfile{\codepath/b4_coders/gray2bin.v}{code/b4\_coders/gray2bin.v}
+
+\textbf{Как читается.} \code{b \textasciicircum\ (b >> 1)} сдвигает число на
+бит вправо и складывает с исходным по XOR: $g_2=b_2$, $g_1=b_2\oplus b_1$,
+$g_0=b_1\oplus b_0$. Во втором модуле выход \code{b[1]} зависит от
+\code{b[2]}, то есть цепочка тянется от старшего бита. Тестбенч
+\code{tb\_gray.v} проверяет, что двойное преобразование возвращает число
+и что соседние коды (в том числе $7\to0$) различаются ровно одним битом.
+
+\textbf{Сценарий.} Вкладка \emph{Диаграммы}: $b$ счётчиком $0$--$7$, выход
+\code{g} на каждом шаге меняется ровно одним битом.
+
+\subsection{Типичные ошибки на Verilog}
+
+\textbf{Защёлка из-за неполного if.} Если в комбинационном блоке при
+каких-то условиях выходу ничего не присвоено, схема «запоминает» прошлое
+значение, то есть возникает защёлка (латч): комбинационная схема внезапно
+получает память.
+
+\begin{vcode}
+// ОШИБКА: при a = 2 и a = 3 выходу y ничего не присвоено
+module dec_latch (
+    input      [1:0] a,
+    output reg [3:0] y
+);
+    always @* begin
+        if (a == 2'd0)      y = 4'b0001;
+        else if (a == 2'd1) y = 4'b0010;
+    end
+endmodule
+\end{vcode}
+
+На вкладке \emph{RTL} вместо чистой комбинационной логики появится блок
+защёлки, а в журнале --- предупреждение о ней. Лечение: присвоить значение
+\emph{при любом условии}: добавить завершающий \code{else} или записать
+значение по умолчанию в самом начале блока.
+
+\begin{vcode}
+// ИСПРАВЛЕНО: значение по умолчанию в начале блока
+module dec_fixed (
+    input      [1:0] a,
+    output reg [3:0] y
+);
+    always @* begin
+        y = 4'b0000;                       // по умолчанию все выходы нули
+        if (a == 2'd0)      y = 4'b0001;
+        else if (a == 2'd1) y = 4'b0010;
+    end
+endmodule
+\end{vcode}
+
+\textbf{Нет default в case.} Та же беда с \code{case}: если перечислены не
+все значения селектора и нет \code{default}, для остальных значений выход
+запоминается. Если все значения перечислены (как в $4$ строках для $2$-битного
+\code{a}), \code{default} не обязателен, но писать его всё равно полезно.
+
+\begin{vcode}
+// ОШИБКА: для x, отличного от четырёх унитарных кодов, y запоминается
+module enc_latch (
+    input      [3:0] x,
+    output reg [1:0] y
+);
+    always @* begin
+        case (x)
+            4'b0001: y = 2'd0;
+            4'b0010: y = 2'd1;
+            4'b0100: y = 2'd2;
+            4'b1000: y = 2'd3;
+        endcase
+    end
+endmodule
+\end{vcode}
+
+\textbf{Блокирующее и неблокирующее.} В комбинационном блоке
+\code{always @*} используйте \code{=}. Оператор \code{<=} нужен для
+триггеров (глава~\ref{ch:ff}); в комбинационной схеме он работает, но
+путает читателя и ведёт к странным результатам, когда выход используется
+в том же блоке.
+
+\begin{diybox}[Допиши и измени модуль]
+\textbf{Задание.} \stars{1} \emph{Допиши.} Опишите приоритетный шифратор
+$8\to3$ с выходом $v$ через \code{casez}: достроить восемь строк по образцу
+\code{prio4\_casez}. \stars{2} \emph{Измени.} Добавьте в
+\code{seg7} шестнадцатеричные цифры $A\ldots F$ (строчные \code{b} и
+\code{d}, чтобы не путать с $8$ и $0$). \stars{3} \emph{Этап проекта
+«Охранная панель».} Напишите модуль \code{zone\_display}: четыре датчика зон
+$z$ на входе, семь сегментов на выходе, при $z=0000$ индикатор погашен.
+
+\textbf{В Logra.} Вкладка \emph{Код}: введите свой модуль, нажмите
+\emph{Синтезировать}. Вкладка \emph{Диаграммы}: для \stars{1} задайте $x$
+счётчиком $0$--$255$ (или несколько характерных значений: \code{00000000},
+\code{00000001}, \code{00110000}, \code{10000000}); для \stars{2} --- $x$
+счётчиком $0$--$15$; для \stars{3} --- шесть строк проверочной таблицы.
+
+\textbf{Ожидаемый результат.} \stars{1} $x=00110000$ даёт $y=5$, $v=1$;
+$x=0$ даёт $v=0$. \stars{2} Для $A$ получается \code{1110111}. \stars{3}
+Для зон~1, 2, 3: \code{0000110}, \code{1011011}, \code{1001111}; для двух
+зон показана старшая; при $z=0$ все нули.
+
+\textbf{Как проверить.} Для заранее известных ответов сравните диаграмму с
+ожиданиями выше; в папке \code{code/b4\_coders} лежит тестбенч
+\code{tb\_samples.v}, проверяющий образцы ответов (он печатает \code{OK}).
+
+\end{diybox}
+
+\textbf{Образцы ответов к заданию «Допиши и измени модуль».}
+
+\textbf{Образец ответа к \stars{1}.}
+\vfile{\codepath/b4_coders/prio8_casez.v}{code/b4\_coders/prio8\_casez.v}
+
+\textbf{Образец ответа к \stars{2}} (остальные строки таблицы те же, что в
+\code{seg7}; здесь файл целиком):
+\vfile{\codepath/b4_coders/seg7_hex.v}{code/b4\_coders/seg7\_hex.v}
+
+\textbf{Образец ответа к \stars{3}.}
+\vfile{\codepath/b4_coders/zone_display.v}{code/b4\_coders/zone\_display.v}
 
 \section{Сквозной проект: номер зоны на индикаторе}
 
@@ -644,6 +892,12 @@ $g$): сегменты $a\ldots f$ пропускайте через И с $V$, 
   \item \textbf{Индикатор показывает «негатив».} Общий анод: сегмент
         горит при нуле, а вы подаёте единицу. Нужны инверторы на семи
         выходах.
+  \item \textbf{Неполный \code{if} или \code{case} в Verilog.} Если при
+        каком-то входе выходу ничего не присвоено, получается защёлка.
+        Присваивайте значение по умолчанию в начале блока \code{always @*} или
+        пишите \code{else} и \code{default}.
+  \item \textbf{\code{<=} в комбинационном блоке.} Для комбинационной
+        логики пишите \code{=}; \code{<=} оставьте для триггеров.
 \end{itemize}
 \end{warnbox}
 
@@ -675,6 +929,8 @@ $g$): сегменты $a\ldots f$ пропускайте через И с $V$, 
   \item \stars{3}~\emph{Проект с критерием (этап проекта «Охранная панель», 4а).} Постройте в Конструкторе цепочку «приоритетный шифратор $\to$ склейка $\to$ BCD$\to$7 сегментов» для четырёх датчиков зон. Критерий приёмки: все строки проверочной таблицы (нулевая зона, зоны 1, 2, 3, две зоны одновременно) дают верный код сегментов на вкладке Диаграммы.
   \item \stars{3}~\emph{Проект с критерием.} Соберите дешифратор $3\to8$ из двух $2\to4$ с входом разрешения. Критерий приёмки: при каждом из восьми номеров активна ровно одна линия, при $E=0$ все выходы нулевые.
   \item \stars{3}~\emph{Проект с критерием.} Соберите преобразователь $3$-битного двоичного кода в код Грея и обратно. Критерий приёмки: при двойном преобразовании выход равен входу на всех восьми значениях, а на выходе прямого преобразователя при счёте $0$--$7$ на каждом шаге меняется ровно один бит.
+  \item \stars{2}~\emph{Найдите ошибку (Verilog).} Ученик описал приоритетный шифратор цепочкой \code{if (x[3]) y = 2'd3; else if (x[2]) y = 2'd2; else if (x[1]) y = 2'd1; else if (x[0]) y = 2'd0;} внутри \code{always @*}, без последнего \code{else}. После синтеза на вкладке RTL появился блок защёлки. Почему и как исправить?
+  \item \stars{3}~\emph{Проект с критерием.} Опишите дешифратор $3\to8$ с входом разрешения на Verilog двумя способами: одной строкой со сдвигом и из двух дешифраторов $2\to4$ (как на рисунке~\ref{fig:dc38}). Критерий приёмки: оба модуля совпадают на всех 16 комбинациях $(en,a)$ на вкладке Диаграммы, при $en=0$ выходы нулевые.
 \end{enumerate}
 \end{taskbox}
 

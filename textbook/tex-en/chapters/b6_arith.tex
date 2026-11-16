@@ -88,11 +88,11 @@ $s = a \oplus b, \qquad c = a\cdot b$
 \begin{minipage}{0.55\textwidth}
 \centering
 \begin{tikzpicture}
-  \node[gXOR, minimum height=12mm] (x) at (2,0.8) {};
-  \node[gAND, minimum height=12mm] (g) at (2,-0.8) {};
-  \draw[wire] (x.input 1) -- ++(-2.0,0) node[left] {$a$};
-  \draw[wire] (x.input 2) -- ++(-2.0,0) node[left] {$b$};
-  \coordinate (A) at ($(x.input 1)+(-1.4,0)$); \coordinate (B) at ($(x.input 2)+(-0.9,0)$);
+  \node[gXOR] (x) at (2.4,0.9) {};
+  \node[gAND] (g) at (2.4,-0.9) {};
+  \draw[wire] (x.input 1) -- (x.input 1 -| 0,0) node[left] {$a$};
+  \draw[wire] (x.input 2) -- (x.input 2 -| 0,0) node[left] {$b$};
+  \coordinate (A) at (1.2,0 |- x.input 1); \coordinate (B) at (0.7,0 |- x.input 2);
   \draw[wire] (A) |- (g.input 1); \fill (A) circle (1.3pt);
   \draw[wire] (B) |- (g.input 2); \fill (B) circle (1.3pt);
   \draw[wire] (x.output) -- ++(0.6,0) node[right] {$s$ (sum)};
@@ -159,15 +159,15 @@ Chapter~\ref{ch:comb}! A carry occurs when there are at least two ones.
 \centering
 \begin{tikzpicture}[ha/.style={draw=FpgaBlue, fill=FpgaLight, thick, minimum width=14mm, minimum height=14mm, font=\sffamily\small, align=center}]
   \node[ha] (h1) at (0,0) {HA};
-  \node[ha] (h2) at (2.8,-0.6) {HA};
-  \node[gOR, minimum width=10mm, minimum height=7mm] (o) at (5.4,-1.8) {};
+  \node[ha] (h2) at (3.6,-0.9) {HA};
+  \node[gOR, anchor=input 1] (o) at (6.6,-1.25) {};
   \draw[wire] ([yshift=3.5mm]h1.west) -- ++(-0.8,0) node[left] {$a$};
   \draw[wire] ([yshift=-3.5mm]h1.west) -- ++(-0.8,0) node[left] {$b$};
-  \draw[wire] ([yshift=3.5mm]h1.east) -- node[above, lbl] {$s$} ++(0.4,0) |- ([yshift=3.5mm]h2.west);
-  \draw[wire] (-0.8,-1.4) node[left] {$c_\text{in}$} -- (1.7,-1.4) |- ([yshift=-3.5mm]h2.west);
-  \draw[wire] ([yshift=3.5mm]h2.east) -- ++(3.4,0) node[right] {$s$};
-  \draw[wire] ([yshift=-3.5mm]h1.east) -- node[below, lbl, pos=0.3] {$c$} ++(0.25,0) |- (0.95,-2.2) -- (4.7,-2.2) |- (o.input 2);
-  \draw[wire] ([yshift=-3.5mm]h2.east) -- node[above, lbl] {$c$} ++(0.4,0) |- (o.input 1);
+  \draw[wire] ([yshift=3.5mm]h1.east) -- node[above, lbl, pos=0.3] {$s$} ++(1.1,0) |- ([yshift=3.5mm]h2.west);
+  \draw[wire] (-0.8,-1.25) node[left] {$c_\text{in}$} -- ([yshift=-3.5mm]h2.west);
+  \draw[wire] ([yshift=3.5mm]h2.east) -- ++(3.9,0) node[right] {$s$};
+  \draw[wire] ([yshift=-3.5mm]h1.east) -- ++(0.6,0) |- (5.6,-2.4) node[pos=0.75, below, lbl] {$c$} |- (o.input 2);
+  \draw[wire] ([yshift=-3.5mm]h2.east) -- node[above, lbl] {$c$} (o.input 1);
   \draw[wire] (o.output) -- ++(0.6,0) node[right] {$c_\text{out}$};
 \end{tikzpicture}
 \caption{A full adder made of two half adders and an OR gate}
@@ -293,10 +293,10 @@ weight. For 4 bits the weights of the bit positions are $-8, 4, 2, 1$.
     \node[font=\sffamily\small] at (\ang:2.65) {\v};
   }
   \draw[thick, FpgaGray] (0,0) circle (2.2);
-  \node[font=\ttfamily\scriptsize] at (90:1.75) {0000};
-  \node[font=\ttfamily\scriptsize] at (90-7*22.5:1.75) {0111};
-  \node[font=\ttfamily\scriptsize] at (90-8*22.5:1.75) {1000};
-  \node[font=\ttfamily\scriptsize] at (90-15*22.5:1.75) {1111};
+  \node[font=\ttfamily\footnotesize] at (90:1.75) {0000};
+  \node[font=\ttfamily\footnotesize] at (90-7*22.5:1.75) {0111};
+  \node[font=\ttfamily\footnotesize] at (90-8*22.5:1.75) {1000};
+  \node[font=\ttfamily\footnotesize] at (90-15*22.5:1.75) {1111};
   \draw[-{Stealth}, thick, FpgaGreen] (60:1.2) arc (60:-30:1.2);
   \node[font=\sffamily\small, text=FpgaGreen] at (0,0) {$+1$};
   \node[font=\sffamily\small, align=left, anchor=west] at (3.6,0.8) {\textcolor{FpgaBlue}{$\bullet$} positive: top bit 0};
@@ -320,7 +320,7 @@ of the lowest bit.
 \centering
 \begin{tikzpicture}
   \node[hblock, minimum width=40mm, minimum height=14mm] (add) at (0,0) {4-bit\\adder};
-  \node[block, minimum width=22mm, minimum height=10mm] (xr) at (1.0,2.2) {4 XOR\\\scriptsize gates};
+  \node[block, minimum width=22mm, minimum height=10mm] (xr) at (1.0,2.2) {4 XOR\\\footnotesize gates};
   \draw[bus, -{Stealth}] (1.0,3.6) node[above, text=FpgaDark] {$B$} -- (xr.north);
   \draw[bus, -{Stealth}] (xr.south) -- node[right, lbl] {$B$ or $\overline{B}$} (1.0,0.7);
   \draw[bus, -{Stealth}] (-1.0,3.6) node[above, text=FpgaDark] {$A$} -- (-1.0,0.7);
@@ -439,13 +439,15 @@ and an AND gate combines the results of all the bits.
 \centering
 \begin{tikzpicture}
   \foreach \i in {0,...,3} {
-    \node[gXNOR, minimum width=10mm, minimum height=7mm] (x\i) at (1.5,1.8-\i*1.2) {};
-    \draw[wire] (x\i.input 1) -- ++(-0.6,0) node[left] {$a_\i$};
-    \draw[wire] (x\i.input 2) -- ++(-0.6,0) node[left] {$b_\i$};
+    \node[gXNOR] (x\i) at (2.0,2.7-\i*1.8) {};
+    \draw[wire] (x\i.input 1) -- ++(-0.5,0) -- ++(0,0.4) -- ++(-0.5,0) node[left] {$a_\i$};
+    \draw[wire] (x\i.input 2) -- ++(-0.5,0) -- ++(0,-0.4) -- ++(-0.5,0) node[left] {$b_\i$};
   }
-  \node[gAND, logic gate inputs=nnnn, minimum height=18mm] (g) at (4.2,0) {};
-  \foreach \i [evaluate=\i as \j using int(\i+1)] in {0,...,3}
-    \draw[wire] (x\i.output) -- ++(0.3,0) |- (g.input \j);
+  \node[gAND, logic gate inputs=nnnn, minimum height=18mm] (g) at (6.2,0) {}; % fig-ok: 4-input gate, 18 mm
+  \draw[wire] (x0.output) -| ([xshift=-4mm]g.input 1) -- (g.input 1);
+  \draw[wire] (x1.output) -| ([xshift=-8mm]g.input 2) -- (g.input 2);
+  \draw[wire] (x2.output) -| ([xshift=-8mm]g.input 3) -- (g.input 3);
+  \draw[wire] (x3.output) -| ([xshift=-4mm]g.input 4) -- (g.input 4);
   \draw[wire] (g.output) -- ++(0.6,0) node[right] {$A = B$};
 \end{tikzpicture}
 \caption{An equality comparator for 4-bit numbers}
@@ -564,6 +566,223 @@ results are not used.
 the outputs with the table; RTL: find the multiplexer that selects the result.
 \end{diybox}
 
+\section{Verilog Examples}
+\label{sec:arith-verilog}
+
+Arithmetic in Verilog looks like arithmetic: the signs \code{+}, \code{-},
+\code{>}, and the synthesizer builds adders and comparators from them by
+itself. But to understand what it builds, it helps to write the blocks of the
+chapter ``gate by gate'' too. The six examples below are complete modules from
+the folder \code{code/b6\_arith/}; each has a testbench \code{tb\_*.v} that
+sweeps all the inputs and prints \code{OK}. Running them in Logra: the
+\emph{Code} tab $\to$ \emph{Synthesize} (\code{Ctrl+Enter}) $\to$ \emph{RTL}
+$\to$ \emph{Waveforms} (Section~\ref{sec:signals-verilog}).
+
+\subsection{Example 1. A Half Adder and a Full Adder}
+
+The half adder is an exclusive OR and an AND; the full adder is built from two
+half adders and an OR, as in Fig.~\ref{fig:fa}.
+
+\vfile{\codepath/b6_arith/adders.v}{code/b6\_arith/adders.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{half\_adder}: \code{s = a \^{} b}, \code{c = a \& b} is a direct transcription of the formulas of the chapter.
+  \item \code{full\_adder} creates two instances of \code{half\_adder} (\code{h1}, \code{h2}) and joins them with the wires \code{s1}, \code{c1}, \code{c2} like the figure: the sum of the first goes into the second together with the incoming carry \code{cin}.
+  \item \code{cout = c1 | c2} is the OR gate at the output: the carry comes from one of the two half adders, but never from both at once.
+\end{itemize}
+\textbf{Checking.} \code{tb\_adders.v} checks the half adder on four
+combinations and the full adder on all eight, comparing \code{\{c, s\}} with the
+ordinary addition $a+b+c_\text{in}$. In Logra, on the \emph{Waveforms} tab, set
+$a=b=c_\text{in}=1$: the sum is 1 and the carry is 1.
+
+\textbf{Finish it yourself.} Write the carry of a full adder as ``2 out of 3'',
+without half adders.
+
+\textbf{Sample answer.}
+\begin{vcode}
+module full_adder_maj (
+    input  a, b, cin,
+    output s, cout
+);
+    assign s    = a ^ b ^ cin;
+    assign cout = (a & b) | (a & cin) | (b & cin);   // the majority function
+endmodule
+\end{vcode}
+
+\subsection{Example 2. A Four-Bit Adder: a Loop and \texttt{assign}}
+
+Two forms of the same block. The first repeats the chain of four full adders
+(Fig.~\ref{fig:rca}), the second leaves everything to the synthesizer.
+
+\vfile{\codepath/b6_arith/add4.v}{code/b6\_arith/add4.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{reg [4:0] c} holds the carries: \code{c[i]} goes \emph{into} bit $i$, \code{c[4]} is the output carry.
+  \item The \code{for} loop in the \code{always @(*)} block is \emph{unrolled} by the synthesizer into four identical stages; it is not repetition in time. The loop body: \code{s[i] = a[i] \^{} b[i] \^{} c[i]} and the ``2 out of 3'' carry.
+  \item \code{assign \{cout, s\} = a + b + cin;} is a five-bit sum: the low four bits go to \code{s}, the top bit to \code{cout}. Without \code{cout} the carry would be lost.
+\end{itemize}
+\textbf{Checking.} \code{tb\_add4.v} sweeps all 512 combinations of
+$a,b,c_\text{in}$ and compares both adders with ordinary addition; $7+9=16$
+(the result \code{0000} and carry 1) is checked separately. In Logra set
+$15+1$: the sum is \code{0000}, the carry is 1.
+
+\textbf{Finish it yourself.} Make an adder without a lost carry that has one
+five-bit output instead of the pair (\code{s}, \code{cout}).
+
+\textbf{Sample answer.}
+\begin{vcode}
+module add4_wide (
+    input  [3:0] a, b,
+    output [4:0] sum        // 0..30
+);
+    assign sum = {1'b0, a} + {1'b0, b};   // widen the operands to 5 bits
+endmodule
+\end{vcode}
+
+\subsection{Example 3. Subtraction: \texttt{a + \textasciitilde b + 1}}
+
+The adder-subtractor from the figure of the chapter: four exclusive ORs on the
+$b$ input and a carry $c_0=\text{sub}$.
+
+\vfile{\codepath/b6_arith/addsub4.v}{code/b6\_arith/addsub4.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{b \^{} \{4\{sub\}\}} is bit replication: \code{\{4\{sub\}\}} is four copies of \code{sub}. At \code{sub} $=1$ every bit of $b$ is inverted, at $0$ it is left as it is.
+  \item \code{a + bx + sub}: \code{sub} also enters the low carry; for subtraction this is exactly the ``$+1$'' of $A-B=A+\overline B+1$.
+  \item The carry \code{cout} in subtraction is 1 if $A\ge B$ (no ``borrow'').
+\end{itemize}
+\textbf{Checking.} \code{tb\_addsub4.v}: $7-3=0100$, $3-5=1110$; then all 256
+pairs at \code{sub} $=0$ and $1$ are compared with $a+b$ and $a-b$ modulo 16. In
+Logra set $a=3$, $b=5$, \code{sub} $=1$: the result is \code{1110}, that is
+$-2$.
+
+\textbf{Finish it yourself.} Make a subtractor with a borrow output
+\code{borrow}.
+
+\textbf{Sample answer.}
+\begin{vcode}
+module sub4 (
+    input  [3:0] a, b,
+    output [3:0] d,
+    output       borrow       // 1 if a < b
+);
+    wire [3:0] nb = ~b;                  // inversion of exactly four bits
+    wire       c;
+    assign {c, d} = a + nb + 1'b1;
+    assign borrow = ~c;                  // no carry -- there was a borrow
+endmodule
+\end{vcode}
+
+\subsection{Example 4. A Comparator}
+
+Equality is an XNOR per bit and an AND of all the results
+(Fig.~\ref{fig:cmp}); the synthesizer builds ``greater'' and ``less'' by itself.
+
+\vfile{\codepath/b6_arith/comparator.v}{code/b6\_arith/comparator.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{a \textasciitilde\^{} b} is a bitwise exclusive NOR, four ``are they equal'' bits; \code{\&(\ldots)} is an \emph{AND reduction}: the AND of all four bits.
+  \item \code{a > b}, \code{a < b} compare \emph{unsigned} numbers.
+  \item \code{\$signed(a) < \$signed(b)} is the same, but the numbers are treated as signed: $1111_2$ as $-1$ is less than $0001_2$. The type of the numbers must be known in advance.
+\end{itemize}
+\textbf{Checking.} \code{tb\_comparator.v} sweeps all 256 pairs: exactly one of
+the outputs \code{eq}, \code{gt}, \code{lt} is 1, and they agree with the
+comparison of integers. The pair $1111$ and $0001$ gives \code{gt}$=1$
+(unsigned) and \code{lt\_signed}$=1$ (signed). In Logra check the pairs
+$(3,5)$, $(5,3)$, $(5,5)$.
+
+\textbf{Finish it yourself.} Make the threshold alarm of the ``Security Panel''
+project: the output is on if the noise level is above the threshold.
+
+\textbf{Sample answer.}
+\begin{vcode}
+module alarm_threshold (
+    input  [3:0] level, thr,
+    output       alarm
+);
+    assign alarm = level > thr;   // at thr = 8 it is on for levels 9..15
+endmodule
+\end{vcode}
+
+\subsection{Example 5. An ALU with Flags}
+
+An adder and a subtractor, logic operations, a multiplexer driven by the
+operation code, and the flags $Z$, $N$, $C$, $V$.
+
+\vfile{\codepath/b6_arith/alu4.v}{code/b6\_arith/alu4.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item One adder serves both operations: \code{sub} switches on the inversion of $b$ and the carry $+1$ (as in the previous example).
+  \item \code{case (op)} is a multiplexer driven by the operation code; \code{default} gives zero for the unused codes.
+  \item \code{Z} is \code{y == 0}, \code{N} is the top bit of the result, \code{C} is \code{sum[4]}, and \code{V} $=c_3\oplus c_4$: the carry \emph{into} the top bit (obtained as $a_3\oplus bx_3\oplus sum_3$) and the carry \emph{out of} it.
+\end{itemize}
+\textbf{Checking.} \code{tb\_alu4.v} checks the rows of the flag table of the
+chapter ($5+3$, $7+(-3)$, $(-8)+(-1)$, $3+(-3)$), then $7-3$, $3-5$ and the
+three logic operations, and then for all 256 pairs of signed numbers compares
+$V$ with integer arithmetic, the rule $N\oplus V$ for ``$A<B$'' and $C=0$ as a
+``borrow'' for unsigned numbers. In Logra set $a=0101$, $b=0011$, \code{op}
+$=000$: the result is \code{1000}, $V=1$.
+
+\textbf{Finish it yourself.} Build a four-bit ALU with four operations ($+$,
+$-$, AND, shift left by 1) and the flag $Z$.
+
+\textbf{Sample answer.}
+\begin{vcode}
+module alu_mini (
+    input  [3:0] a, b,
+    input  [1:0] op,
+    output reg [3:0] y,
+    output       z
+);
+    always @(*) begin
+        case (op)
+            2'b00:   y = a + b;
+            2'b01:   y = a - b;
+            2'b10:   y = a & b;
+            default: y = a << 1;
+        endcase
+    end
+    assign z = (y == 4'b0000);
+endmodule
+\end{vcode}
+
+\subsection{Example 6. Signed Overflow and Saturation}
+
+Two ways to deal with overflow: obtain the flag $V=c_3\oplus c_4$, and
+``stop at the boundary'', giving $+7$ or $-8$ instead of a wrong result.
+
+\vfile{\codepath/b6_arith/overflow.v}{code/b6\_arith/overflow.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{add4\_ovf} adds the three low bits with a spare bit: this bit is the carry $c_3$ into the top bit. Then the top bit produces the carry $c_4$ and $V=c_3\oplus c_4$.
+  \item \code{add4\_sat}: overflow is when the operands have equal signs and the result has the other sign (\code{(a[3] == b[3]) \&\& (raw[3] != a[3])}). Then the result is replaced by $+7$ (\code{0111}) for positive operands and by $-8$ (\code{1000}) for negative ones.
+\end{itemize}
+\textbf{Checking.} \code{tb\_overflow.v} sweeps all 256 pairs of signed numbers:
+$V$ and the saturated result are compared with integer arithmetic, and $5+3$
+gives $c_3=1$, $c_4=0$, $V=1$ (the example of the chapter). In Logra set
+$6+5$: \code{1011} and $V=1$; the saturated output is \code{0111} then.
+
+\textbf{Finish it yourself.} Add an overflow flag for signed subtraction $a-b$.
+
+\textbf{Sample answer.}
+\begin{vcode}
+module sub4_ovf (
+    input  [3:0] a, b,
+    output [3:0] d,
+    output       v
+);
+    assign d = a - b;
+    // the operands have different signs and the result's sign differs from that of a
+    assign v = (a[3] != b[3]) && (d[3] != a[3]);
+endmodule
+\end{vcode}
+
 \section{Common Mistakes}
 
 \begin{warnbox}[Common mistakes]
@@ -572,6 +791,20 @@ the outputs with the table; RTL: find the multiplexer that selects the result.
   \item \textbf{Forgetting the ``$+1$'' in subtraction.} $A-B=A+\overline{B}+1$. If you apply only $A+\overline{B}$, the result will be one too small (for example, $6-2$ gives 3). The one is supplied by the carry $c_0$ of the lowest bit.
   \item \textbf{Comparing signed numbers as unsigned.} $1111_2$ as unsigned is 15 and is greater than $0001_2$, but as signed it is $-1$ and is smaller. The type of the numbers must be known before choosing a comparator.
   \item \textbf{Extending a signed number with zeros.} To turn $1101_2=-3$ into eight bits you must append ones ($1111\,1101$), not zeros ($0000\,1101=13$).
+  \item \textbf{Verilog: losing the carry because of the width.}
+    \code{wire [3:0] s = a + b;} discards the fifth bit. A sum is one bit wider
+    than the operands: write \code{assign \{cout, s\} = a + b + cin;} or declare
+    \code{[4:0]}.
+  \item \textbf{Verilog: \code{\textasciitilde b} in a wide expression.} In
+    \code{assign \{c, d\} = a + \textasciitilde b + 1;} the operands are first
+    extended to the width of the result (5 bits), and \code{\textasciitilde b}
+    gets an extra one in the top bit: the low four bits are right, but the carry
+    \code{c} comes out \emph{inverted}. Invert in a separate four-bit
+    \code{wire}.
+  \item \textbf{Verilog: comparing signed numbers as unsigned.}
+    \code{a < b} treats the numbers as unsigned by default: \code{4'b1111 <
+    4'b0001} is false. For signed numbers write \code{\$signed(a) <
+    \$signed(b)} or declare the ports \code{signed}.
 \end{itemize}
 \end{warnbox}
 

@@ -40,8 +40,8 @@
     \draw[wire] (g1.output) -- ++(0.8,0) node[right] {$y=a\cdot b$};
   \end{scope}
   % Стрелка
-  \draw[-{Stealth[length=4mm]}, line width=2pt, FpgaOrange] (4.8,0) -- (6.4,0)
-    node[midway, above=2mm, font=\sffamily\scriptsize, text=FpgaDark, align=center] {новый файл\\конфигурации};
+  \draw[-{Stealth[length=4mm]}, line width=2pt, FpgaOrange] (4.6,0) -- (7.0,0)
+    node[midway, above=2mm, font=\sffamily\footnotesize, text=FpgaDark, align=center] {новый файл\\конфигурации};
   % Вариант 2
   \begin{scope}[xshift=8.6cm]
     \node[font=\sffamily\bfseries\small] at (0.3,1.9) {Конфигурация №2};
@@ -83,7 +83,7 @@
     \fill[FpgaOrange] (\x,0) circle (1.1mm);
     \draw[FpgaGray] (\x,0) -- (\x,\y*0.55);
     \node[font=\sffamily\bfseries\small, text=FpgaDark] at (\x,\y*0.85) {\t};
-    \node[font=\sffamily\scriptsize, align=center, text=FpgaDark, anchor={\ifnum\y>0 south\else north\fi}] at (\x,\y*1.1) {\d};
+    \node[font=\sffamily\footnotesize, align=center, text=FpgaDark, anchor={\ifnum\y>0 south\else north\fi}] at (\x,\y*1.1) {\d};
   }
 \end{tikzpicture}
 \caption{Эволюция программируемой логики}
@@ -120,23 +120,23 @@
     \node[font=\sffamily\bfseries] at (2.6,3.6) {Микроконтроллер};
     \node[hblock, minimum width=16mm] (cpu) at (2.6,2.4) {ЦП};
     \foreach \i/\t in {0/{$a\cdot b$}, 1/{$c+d$}, 2/{$e\oplus f$}, 3/{$g\cdot h$}} {
-      \node[block, minimum width=14mm, minimum height=6mm, font=\sffamily\scriptsize]
+      \node[block, minimum width=14mm, minimum height=6mm, font=\sffamily\footnotesize]
         (t\i) at (2.6, 1.2-\i*0.8) {\t};
     }
     \draw[arr] (cpu) -- (t0);
     \draw[arr] (t0) -- (t1); \draw[arr] (t1) -- (t2); \draw[arr] (t2) -- (t3);
-    \draw[arr, FpgaOrange] (0.9,1.3) -- (0.9,-1.3) node[midway, left, font=\sffamily\scriptsize, align=right] {время\\4 шага};
+    \draw[arr, FpgaOrange] (0.9,1.3) -- (0.9,-1.3) node[midway, left, font=\sffamily\footnotesize, align=right] {время\\4 шага};
   \end{scope}
   % ПЛИС
   \begin{scope}[xshift=7.2cm]
     \node[font=\sffamily\bfseries] at (2.8,3.6) {ПЛИС};
     \foreach \i/\t in {0/{$a\cdot b$}, 1/{$c+d$}, 2/{$e\oplus f$}, 3/{$g\cdot h$}} {
-      \node[gblock, minimum width=12mm, minimum height=6mm, font=\sffamily\scriptsize]
+      \node[gblock, minimum width=12mm, minimum height=6mm, font=\sffamily\footnotesize]
         (p\i) at (\i*1.5+0.5, 1.2) {\t};
       \draw[arr] (\i*1.5+0.5, 2.5) -- (p\i);
       \draw[arr] (p\i) -- (\i*1.5+0.5, 0);
     }
-    \draw[arr, FpgaOrange] (-0.5,1.5) -- (-0.5,0.9) node[midway, left, font=\sffamily\scriptsize, align=right] {1 шаг};
+    \draw[arr, FpgaOrange] (-0.5,1.5) -- (-0.5,0.9) node[midway, left, font=\sffamily\footnotesize, align=right] {1 шаг};
     \node[lbl, align=center] at (2.75,-0.6) {все четыре операции --\\ отдельные схемы, работают \emph{одновременно}};
   \end{scope}
 \end{tikzpicture}
@@ -202,7 +202,7 @@
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
-  app/.style={block, minimum width=34mm, minimum height=13mm, font=\sffamily\scriptsize},
+  app/.style={block, minimum width=48mm, minimum height=14mm, font=\sffamily\footnotesize},
 ]
   \node[hblock, circle, minimum size=24mm, font=\sffamily\bfseries] (c) at (0,0) {ПЛИС};
   \foreach \a/\t/\s in {
@@ -251,3 +251,13 @@
 \textbf{Ожидаемый результат.} Таблица из трёх строк: область применения, название примера, одно предложение о том, что он делает.\\
 \textbf{Как проверить.} Откройте каждый пример, нажмите «Синтезировать» и убедитесь, что RTL строится без ошибок.
 \end{diybox}
+
+\section{Что дальше}
+
+Мы выяснили, что ПЛИС становится схемой, и знаем, где такие схемы применяют.
+Остался практический вопрос: как этой схемой управлять? Для проектирования
+нужен инструмент, который описывает схему, проверяет её и показывает, во что она
+превратилась. Следующая глава~\ref{ch:logra} знакомит с Logra: вы создадите
+первый проект, пройдёте по вкладкам и увидите весь путь от идеи до платы. После
+этого мы начнём разбираться, из чего такие схемы состоят, с самого простого~---
+с сигнала (глава~\ref{ch:signals}).

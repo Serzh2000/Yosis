@@ -27,7 +27,7 @@
   \draw[-{Stealth}] (pc) -- node[above] {адрес} (rom);
   \draw[-{Stealth}] (rom) -- node[above] {команда} (ir);
   \draw[-{Stealth}] (ir) -- (ctl);
-  \draw[-{Stealth}] (ctl.west) -- ++(-1.0,0) |- (acc.east) node[pos=0.25, above, font=\sffamily\scriptsize] {управление};
+  \draw[-{Stealth}] (ctl.west) -- ++(-1.0,0) |- (acc.east) node[pos=0.25, above, font=\sffamily\footnotesize] {управление};
   \draw[-{Stealth}] (acc) -- (alu);
   \draw[-{Stealth}] (ram) -- (alu);
   \draw[-{Stealth}] (alu.west) -- ++(-0.7,0) |- (acc.west);
@@ -174,28 +174,28 @@
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[font=\sffamily\scriptsize,
+\begin{tikzpicture}[font=\sffamily\footnotesize,
   bx/.style={draw=FpgaBlue, thick, rounded corners=2pt, minimum width=24mm, minimum height=11mm, align=center, fill=white},
   reg/.style={bx, fill=FpgaLight},
   mem/.style={bx, fill=orange!12, draw=FpgaOrange},
   ctlb/.style={bx, fill=green!10, draw=FpgaGreen, minimum height=9mm},
   d/.style={-{Stealth[length=2mm]}, thick, FpgaDark},
   c/.style={-{Stealth[length=2mm]}, thick, FpgaGreen!60!black, dashed},
-  t/.style={font=\sffamily\tiny, text=FpgaDark, inner sep=1.5pt}]
+  t/.style={font=\sffamily\footnotesize, text=FpgaDark, inner sep=1.5pt}]
   % верхний ряд: выборка команды
-  \node[reg] (pc)  at (0,0)    {Счётчик команд\\{\ttfamily pc[3:0]}};
-  \node[mem] (rom) at (3.5,0)  {ПЗУ программы\\{\ttfamily rom(pc)}};
-  \node[reg] (ir)  at (7.0,0)  {Регистр команды\\{\ttfamily ir[7:0]}};
+  \node[reg] (pc)  at (0,0)    {Счётчик\\команд\\{\ttfamily pc[3:0]}};
+  \node[mem] (rom) at (4.4,0)  {ПЗУ\\программы\\{\ttfamily rom(pc)}};
+  \node[reg] (ir)  at (8.8,0)  {Регистр\\команды\\{\ttfamily ir[7:0]}};
   \draw[d] (pc) -- node[t, above] {адрес} (rom);
   \draw[d] (rom) -- node[t, above] {команда} (ir);
   % устройство управления
-  \node[ctlb, minimum width=95mm] (ctl) at (3.5,-2.3) {Автомат управления: {\ttfamily phase} (выборка / исполнение), {\ttfamily case (op)}};
+  \node[ctlb, minimum width=100mm] (ctl) at (4.4,-2.6) {Автомат управления: {\ttfamily phase} (выборка / исполнение), {\ttfamily case (op)}};
   \draw[d] (ir.south) -- node[t, right] {{\ttfamily op = ir[7:4]}} (ir.south |- ctl.north);
   \draw[d] (ctl.west) -- ++(-0.6,0) |- node[t, pos=0.25, left] {{\ttfamily pc <= arg} (JMP, JZ)} (pc.west);
   % нижний ряд: тракт данных
-  \node[reg] (acc) at (0,-5.2)  {Аккумулятор\\{\ttfamily acc[7:0]}};
-  \node[bx]  (alu) at (3.5,-5.2) {Сумматор /\\вычитатель};
-  \node[mem] (ram) at (7.0,-5.2) {ОЗУ данных\\{\ttfamily ram[0:15]}};
+  \node[reg] (acc) at (0,-5.6)  {Аккумулятор\\{\ttfamily acc[7:0]}};
+  \node[bx]  (alu) at (4.4,-5.6) {Сумматор /\\вычитатель};
+  \node[mem] (ram) at (8.8,-5.6) {ОЗУ данных\\{\ttfamily ram[0:15]}};
   \draw[c] (acc.north |- ctl.south) -- node[t, right] {загрузка} (acc.north);
   \draw[c] (alu.north |- ctl.south) -- node[t, right] {$+$ или $-$} (alu.north);
   \draw[c] (ram.north |- ctl.south) -- node[t, right] {запись} (ram.north);
@@ -203,7 +203,7 @@
   \draw[d] ([yshift=-2mm]alu.west) -- node[t, below] {итог} ([yshift=-2mm]acc.east);
   \draw[d] (ram.west) -- node[t, above] {ram[arg]} (alu.east);
   % адрес ОЗУ из младших бит команды
-  \draw[d] (ir.east) -- ++(1.0,0) |- node[t, pos=0.25, right] {{\ttfamily arg = ir[3:0]}} (ram.east);
+  \draw[d] (ir.east) -- ++(1.0,0) |- node[t, pos=0.25, right] {{\ttfamily arg}} (ram.east);
   % запись аккумулятора в ОЗУ (STA) и вывод (OUT)
   \draw[d] (acc.south) -- ++(0,-0.9) -| node[t, pos=0.25, below] {acc $\to$ ram (STA)} (ram.south);
   \draw[d] (acc.west) -- ++(-1.0,0) node[t, left] {{\ttfamily out[7:0]} (OUT)};

@@ -21,8 +21,8 @@ of the output $y$ equals one. Later in this chapter we will find out how this
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[node distance=6mm and 32mm]
-  \node[block, minimum width=34mm] (bin) {Binary code\\\scriptsize \code{10} (the number 2)};
-  \node[oblock, minimum width=34mm, right=of bin] (oh) {One-hot code\\\scriptsize \code{0100} (a one in position 2)};
+  \node[block, minimum width=34mm] (bin) {Binary code\\\footnotesize \code{10} (the number 2)};
+  \node[oblock, minimum width=34mm, right=of bin] (oh) {One-hot code\\\footnotesize \code{0100} (a one in position 2)};
   \draw[arr] ([yshift=2mm]bin.east) -- node[above, font=\sffamily\small] {decoder} ([yshift=2mm]oh.west);
   \draw[arr] ([yshift=-2mm]oh.west) -- node[below, font=\sffamily\small] {encoder} ([yshift=-2mm]bin.east);
 \end{tikzpicture}
@@ -95,30 +95,28 @@ that equals one for exactly one combination of inputs:
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}
-  % inputs
-  \draw[wire] (-0.4,1.6) node[left] {$a_1$} -- (1.0,1.6);
-  \draw[wire] (-0.4,0.8) node[left] {$a_0$} -- (2.4,0.8);
-  \draw[wire] (-0.4,0.0) node[left] {$E$} -- (3.8,0.0);
-  % inverters
-  \node[gNOT, minimum width=7mm, minimum height=5mm] (n1) at (1.0,2.4) {};
-  \draw[wire] (0.3,1.6) |- (n1.input); \fill (0.3,1.6) circle (1.3pt);
-  \draw[very thick, FpgaBlue] (n1.output) -| (1.6,-4.8);
-  \node[gNOT, minimum width=7mm, minimum height=5mm] (n0) at (2.4,1.5) {};
-  \draw[wire] (1.95,0.8) |- (n0.input); \fill (1.95,0.8) circle (1.3pt);
-  \draw[very thick, FpgaBlue] (n0.output) -| (3.0,-4.8);
-  % buses
-  \draw[very thick, FpgaBlue] (1.0,1.6) -- (1.0,-4.8);
-  \draw[very thick, FpgaBlue] (2.4,0.8) -- (2.4,-4.8);
-  \draw[very thick, FpgaBlue] (3.8,0.0) -- (3.8,-4.8);
-  \foreach \x/\l in {1.0/a_1, 1.6/\overline{a_1}, 2.4/a_0, 3.0/\overline{a_0}, 3.8/E}
-    \node[below, font=\small] at (\x,-4.8) {$\l$};
+  % inputs on the left; the buses a1, ~a1, a0, ~a0, E run downwards
+  \draw[wire] (-0.4,0) node[left] {$a_1$} -- (1.0,0);
+  \node[gNOT] (n1) at (2.2,0) {};
+  \draw[wire] (1.0,0) -- (n1.input);
+  \draw[wire] (n1.output) -- (3.4,0);
+  \draw[wire] (-0.4,-1.0) node[left] {$a_0$} -- (4.6,-1.0);
+  \node[gNOT] (n0) at (5.8,-1.0) {};
+  \draw[wire] (4.6,-1.0) -- (n0.input);
+  \draw[wire] (n0.output) -- (7.0,-1.0);
+  \draw[wire] (-0.4,-2.0) node[left] {$E$} -- (8.2,-2.0);
+  \foreach \x/\byy/\l in {1.0/0/a_1, 3.4/0/\overline{a_1}, 4.6/-1.0/a_0, 7.0/-1.0/\overline{a_0}, 8.2/-2.0/E} {
+    \draw[very thick, FpgaBlue] (\x,\byy) -- (\x,-11.3);
+    \node[below, font=\small] at (\x,-11.3) {$\l$};
+  }
+  \foreach \x/\byy in {1.0/0, 4.6/-1.0, 8.2/-2.0} \fill (\x,\byy) circle (1.3pt);
   % AND gates: y0 = ~a1 ~a0, y1 = ~a1 a0, y2 = a1 ~a0, y3 = a1 a0
-  \foreach \i/\x/\z in {0/1.6/3.0, 1/1.6/2.4, 2/1.0/3.0, 3/1.0/2.4} {
-    \pgfmathsetmacro{\y}{-0.9-\i*1.1}
-    \node[gAND, logic gate inputs=nnn, minimum height=9mm] (g\i) at (5.6,\y) {};
-    \draw[wire] (g\i.input 1) -- (\x,0 |- g\i.input 1) node[circle, fill, inner sep=1.1pt] {};
-    \draw[wire] (g\i.input 2) -- (\z,0 |- g\i.input 2) node[circle, fill, inner sep=1.1pt] {};
-    \draw[wire] (g\i.input 3) -- (3.8,0 |- g\i.input 3) node[circle, fill, inner sep=1.1pt] {};
+  \foreach \i/\xp/\xq in {0/3.4/7.0, 1/3.4/4.6, 2/1.0/7.0, 3/1.0/4.6} {
+    \pgfmathsetmacro{\y}{-3.8-\i*2.0}
+    \node[gAND, logic gate inputs=nnn, minimum height=13.5mm] (g\i) at (11.0,\y) {}; % fig-ok: 3-input gate, 13.5 mm
+    \draw[wire] (g\i.input 1) -- (\xp,0 |- g\i.input 1) node[circle, fill, inner sep=1.1pt] {};
+    \draw[wire] (g\i.input 2) -- (\xq,0 |- g\i.input 2) node[circle, fill, inner sep=1.1pt] {};
+    \draw[wire] (g\i.input 3) -- (8.2,0 |- g\i.input 3) node[circle, fill, inner sep=1.1pt] {};
     \draw[wire] (g\i.output) -- ++(0.6,0) node[right] {$y_\i$};
   }
 \end{tikzpicture}
@@ -235,7 +233,7 @@ called a decoder (although it does not produce a one-hot code).
     \segc{#5}\draw[seg, color=\cc] (0,1.8) -- (0,0.2);   % e
     \segc{#6}\draw[seg, color=\cc] (0,3.8) -- (0,2.2);   % f
     \segc{#7}\draw[seg, color=\cc] (0.2,2) -- (1.8,2);   % g
-    \node[font=\sffamily\scriptsize] at (1,-1.1) {#8};
+    \node[font=\sffamily\footnotesize] at (1,-1.1) {#8};
   \end{tikzpicture}}
 
 \begin{figure}[H]
@@ -402,14 +400,14 @@ line 2 or 3 is active. So the encoder is built from OR gates alone:
 \begin{tikzpicture}
   \foreach \i in {0,...,3} \draw[very thick, FpgaBlue] (\i*0.7,0.6) node[above, text=FpgaDark] {$x_\i$} -- (\i*0.7,-2.4);
   \node[gOR] (o0) at (4.2,-0.4) {};
-  \node[gOR] (o1) at (4.2,-1.7) {};
+  \node[gOR] (o1) at (4.2,-2.0) {};
   \draw[wire] (o0.input 1) -- (0.7,0 |- o0.input 1) node[circle, fill, inner sep=1.1pt] {};
   \draw[wire] (o0.input 2) -- (2.1,0 |- o0.input 2) node[circle, fill, inner sep=1.1pt] {};
   \draw[wire] (o1.input 1) -- (1.4,0 |- o1.input 1) node[circle, fill, inner sep=1.1pt] {};
   \draw[wire] (o1.input 2) -- (2.1,0 |- o1.input 2) node[circle, fill, inner sep=1.1pt] {};
   \draw[wire] (o0.output) -- ++(0.6,0) node[right] {$y_0$};
   \draw[wire] (o1.output) -- ++(0.6,0) node[right] {$y_1$};
-  \node[lbl, text=FpgaGray] at (0,-2.7) {unused};
+  \node[lbl, text=FpgaGray] at (0,-3.1) {unused};
 \end{tikzpicture}
 \caption{A $4\to2$ encoder from two OR gates}
 \end{figure}
@@ -514,16 +512,17 @@ at different times, and a false value flashes between them.)
 \begin{minipage}{0.5\textwidth}
 \centering
 \begin{tikzpicture}
-  \draw[very thick, FpgaBlue] (0,0) node[left, text=FpgaDark] {$b_2$} -- (3.2,0) node[right, text=FpgaDark] {$g_2$};
-  \node[gXOR, minimum width=10mm, minimum height=7mm] (x1) at (2.2,-1.0) {};
-  \node[gXOR, minimum width=10mm, minimum height=7mm] (x0) at (2.2,-2.2) {};
-  \draw[wire] (x1.input 1) -- (0.6,0 |- x1.input 1) -- (0.6,0); \fill (0.6,0) circle (1.3pt);
+  \draw[very thick, FpgaBlue] (0,0) node[left, text=FpgaDark] {$b_2$} -- (3.4,0) node[right, text=FpgaDark] {$g_2$};
+  \node[gXOR] (x1) at (2.4,-1.0) {};
+  \node[gXOR] (x0) at (2.4,-2.5) {};
+  \fill (0.6,0) circle (1.3pt);
+  \draw[wire] (x1.input 1) -- (0.6,0 |- x1.input 1) -- (0.6,0);
   \draw[wire] (x1.input 2) -- (0,0 |- x1.input 2) node[left] {$b_1$};
   \fill (1.0,0 |- x1.input 2) circle (1.3pt);
   \draw[wire] (x0.input 1) -- (1.0,0 |- x0.input 1) -- (1.0,0 |- x1.input 2);
   \draw[wire] (x0.input 2) -- (0,0 |- x0.input 2) node[left] {$b_0$};
-  \draw[wire] (x1.output) -- ++(0.5,0) node[right] {$g_1$};
-  \draw[wire] (x0.output) -- ++(0.5,0) node[right] {$g_0$};
+  \draw[wire] (x1.output) -- ++(0.6,0) node[right] {$g_1$};
+  \draw[wire] (x0.output) -- ++(0.6,0) node[right] {$g_0$};
 \end{tikzpicture}
 
 \small $g_i = b_{i+1} \oplus b_i$
@@ -560,6 +559,257 @@ returns the number.
 counter $0$--$7$ and count how many Gray bits change on
 each step; there should be exactly one change everywhere.
 \end{diybox}
+
+\section{The same blocks in Verilog}
+\label{sec:coders-verilog}
+
+All the blocks of this chapter are convenient to describe not with a drawing
+but with text (the Verilog language is covered in
+Chapter~\ref{ch:verilog}). The reading rules are short.
+\code{assign} means ``the output is always equal to this expression''.
+An \code{always @*} block with \code{case} or \code{if} reads as ``a table or
+a chain of conditions that selects one value''; inside it we write the
+blocking assignment \code{=} and \emph{assign a value to every output in every
+branch}.
+
+How to run any example of this section in Logra: the \emph{Code} tab, paste
+the module (or open a file from \code{code/b4\_coders}), press
+\emph{Synthesize} (Ctrl+Enter); the \emph{RTL} tab shows the resulting
+circuit, the \emph{Waveforms} tab sweeps the inputs. Next to each module there
+is a testbench \code{tb\_*.v}: it sweeps the inputs, compares the outputs with a
+reference, and prints \code{OK}.
+
+\subsection{The $4\to2$ encoder with case}
+
+The encoder table turns into a \code{case} almost literally: the one-hot
+code on the left, the line number on the right.
+
+\vfile{\codepath/b4_coders/enc4to2.v}{code/b4\_coders/enc4to2.v}
+
+\textbf{How to read it.} \code{case (x)} compares the input with four
+patterns from top to bottom; the first match sets \code{y}. The \code{default}
+branch takes everything else: zero ones and several ones. Without it, for
+those codes \code{y} would stay ``as it was'', that is, memory would appear
+(see the subsection on mistakes below). Compare with the ``gates'' version
+we drew at the beginning of the section:
+
+\vfile{\codepath/b4_coders/enc4to2_or.v}{code/b4\_coders/enc4to2\_or.v}
+
+On one-hot codes the two versions are identical. For $x=0110$ the OR version
+gives $y=11$ (a wrong number, as we predicted), while the \code{case}
+version honestly ``does not know'' and gives $00$: the behaviour on
+forbidden inputs is now written down explicitly instead of coming out by accident.
+
+\vfile{\codepath/b4_coders/tb_enc4to2.v}{code/b4\_coders/tb\_enc4to2.v}
+
+\textbf{Scenario on the Waveforms tab.} Set $x$ to
+\code{0001, 0010, 0100, 1000}: $y$ must go through $0,1,2,3$ in both modules;
+then $x=0110$, and find how the two $y$ differ.
+
+\subsection{The priority encoder: if/else if and casez}
+
+Priority in text is the \emph{order of checks}. The first check that turns out
+true wins, and the rest are not even looked at.
+
+\vfile{\codepath/b4_coders/prio4_if.v}{code/b4\_coders/prio4\_if.v}
+
+\textbf{How to read it.} First \code{v = 1} by default. Then the chain:
+``if $x_3$ is active, number 3; otherwise, if $x_2$, number 2; \ldots;
+otherwise (nothing there) number 0 and $v=0$.'' Every branch assigns both \code{y}
+and \code{v}: otherwise a latch would appear. The same function with
+\code{casez}, where the sign \code{?} means ``anything may be here'', which
+is exactly the $\times$ of the priority encoder table:
+
+\vfile{\codepath/b4_coders/prio4_casez.v}{code/b4\_coders/prio4\_casez.v}
+
+The \code{casez} rows are checked from top to bottom, like an \code{if}
+chain: for $x=0110$ the first row does not match (the top bit is zero), the
+second one, \code{01??}, matches, and $y=2$. The two descriptions are
+equivalent; \code{casez} repeats the table more clearly, \code{if} is better
+when the conditions are more complex than a ``mask''.
+
+\vfile{\codepath/b4_coders/tb_prio4.v}{code/b4\_coders/tb\_prio4.v}
+
+\textbf{Scenario on the Waveforms tab.} Drive $x$ with a counter $0$--$15$:
+for $x=0$ the output $v=0$; for any one in $x_3$ always $y=3$; for
+$x=0110$ you get $y=2$, and both versions of the module give identical plots.
+
+\subsection{Decoders: assign and case}
+
+A $2\to4$ decoder can be written with one \code{assign} per output
+(the formulas from the beginning of the chapter) or as a \code{case} table:
+
+\vfile{\codepath/b4_coders/dec2to4_assign.v}{code/b4\_coders/dec2to4\_assign.v}
+
+\vfile{\codepath/b4_coders/dec2to4_case.v}{code/b4\_coders/dec2to4\_case.v}
+
+\textbf{How to read it.} In the first module each line is a product
+$E\,\overline{a_1}\,\overline{a_0}$ and so on, the sign \code{\textasciitilde} is NOT.
+In the second the enable is checked first: for \code{en = 0} all outputs are
+zero, otherwise \code{case (a)} picks a table row. Next is a $3\to8$ decoder
+in one line: a one is shifted left by \code{a} positions, and for \code{en = 0}
+the output is zero; and the same decoder assembled from two $2\to4$ blocks as
+in Figure~\ref{fig:dc38}.
+
+\vfile{\codepath/b4_coders/dec3to8.v}{code/b4\_coders/dec3to8.v}
+
+\vfile{\codepath/b4_coders/dec3to8_cascade.v}{code/b4\_coders/dec3to8\_cascade.v}
+
+In the cascade version the low two bits of the number go to both blocks and
+the top bit enables one of them: \code{en \& \textasciitilde a[2]} turns on the
+lower half ($y_0\ldots y_3$), \code{en \& a[2]} the upper one. This is exactly
+the circuit of Figure~\ref{fig:dc38}.
+
+\textbf{Scenario.} The testbench \code{tb\_dec.v} compares all four
+descriptions with the reference on all 16 combinations $(E,a)$. On the
+\emph{Waveforms} tab drive $a$ with a counter $0$--$7$ with $en=1$: the one
+``runs'' along the outputs of \code{dec3to8}; for the cascade the \emph{RTL}
+tab shows two identical blocks and the \code{\&}, \code{\textasciitilde} gates.
+
+\subsection{The seven-segment decoder}
+
+Table~\ref{tab:7seg} turns into a \code{case} literally row by row; the seven
+outputs are collected into one bus \code{seg = \{g,f,e,d,c,b,a\}}
+(the least significant bit is segment $a$).
+
+\vfile{\codepath/b4_coders/seg7.v}{code/b4\_coders/seg7.v}
+
+\textbf{How to read it.} For the digit 1 we get \code{7'b0000110}, that is,
+$b$ and $c$ are lit, as in the table. The \code{default} branch covers the
+codes $10$--$15$ and blanks the display. This is the very solution for
+don't-care states we discussed above; instead of zeros one could write \code{7'bx},
+and the optimizer would choose the values itself (see Chapter~\ref{ch:minimize}).
+The testbench \code{tb\_seg7.v} checks all 16 codes.
+
+\textbf{Scenario.} The \emph{Waveforms} tab: drive $x$ with a counter $0$--$15$;
+on the digits $0$--$9$ compare the output with the table, on $10$--$15$ it is zero.
+The \emph{RTL} tab: see what this \code{case} turned into: the digits are
+not ``taken apart'' into seven separate circuits, it is one table.
+
+\subsection{Code converters: Gray code}
+
+The forward conversion is one line: each bit is the XOR of two neighbouring
+binary bits. The inverse needs a chain: each next bit depends on the one
+already obtained.
+
+\vfile{\codepath/b4_coders/bin2gray.v}{code/b4\_coders/bin2gray.v}
+
+\vfile{\codepath/b4_coders/gray2bin.v}{code/b4\_coders/gray2bin.v}
+
+\textbf{How to read it.} \code{b \textasciicircum\ (b >> 1)} shifts the number
+one bit right and XORs it with the original: $g_2=b_2$, $g_1=b_2\oplus b_1$,
+$g_0=b_1\oplus b_0$. In the second module the output \code{b[1]} depends on
+\code{b[2]}, that is, the chain stretches from the top bit. The testbench
+\code{tb\_gray.v} checks that a double conversion returns the number
+and that neighbouring codes (including $7\to0$) differ in exactly one bit.
+
+\textbf{Scenario.} The \emph{Waveforms} tab: $b$ from a counter $0$--$7$, the
+output \code{g} changes in exactly one bit at every step.
+
+\subsection{Typical mistakes in Verilog}
+
+\textbf{A latch from an incomplete if.} If in a combinational block the
+output is left unassigned under some conditions, the circuit ``remembers'' the
+previous value; that is, a latch appears: a combinational circuit suddenly
+gets memory.
+
+\begin{vcode}
+// MISTAKE: for a = 2 and a = 3 nothing is assigned to y
+module dec_latch (
+    input      [1:0] a,
+    output reg [3:0] y
+);
+    always @* begin
+        if (a == 2'd0)      y = 4'b0001;
+        else if (a == 2'd1) y = 4'b0010;
+    end
+endmodule
+\end{vcode}
+
+On the \emph{RTL} tab, instead of clean combinational logic a latch
+block will appear, and the log will contain a warning about it. The cure: assign a
+value \emph{under any condition}: add a final \code{else} or write a
+default value at the very beginning of the block.
+
+\begin{vcode}
+// FIXED: a default value at the start of the block
+module dec_fixed (
+    input      [1:0] a,
+    output reg [3:0] y
+);
+    always @* begin
+        y = 4'b0000;                       // by default all outputs are zero
+        if (a == 2'd0)      y = 4'b0001;
+        else if (a == 2'd1) y = 4'b0010;
+    end
+endmodule
+\end{vcode}
+
+\textbf{No default in case.} The same trouble with \code{case}: if not all
+values of the selector are listed and there is no \code{default}, the output
+is remembered for the rest. If all values are listed (as in $4$ rows for a
+$2$-bit \code{a}), \code{default} is not required, but it is still useful to write it.
+
+\begin{vcode}
+// MISTAKE: for x other than the four one-hot codes, y is remembered
+module enc_latch (
+    input      [3:0] x,
+    output reg [1:0] y
+);
+    always @* begin
+        case (x)
+            4'b0001: y = 2'd0;
+            4'b0010: y = 2'd1;
+            4'b0100: y = 2'd2;
+            4'b1000: y = 2'd3;
+        endcase
+    end
+endmodule
+\end{vcode}
+
+\textbf{Blocking versus non-blocking.} In a combinational \code{always @*}
+block use \code{=}. The operator \code{<=} is for flip-flops
+(Chapter~\ref{ch:ff}); in combinational logic it works, but it
+confuses the reader and leads to strange results when the output is used in
+the same block.
+
+\begin{diybox}[Complete and change a module]
+\textbf{Task.} \stars{1} \emph{Complete it.} Describe an $8\to3$ priority
+encoder with an output $v$ using \code{casez}: add eight rows following the
+pattern of \code{prio4\_casez}. \stars{2} \emph{Change it.} Add the
+hexadecimal digits $A\ldots F$ to \code{seg7} (lower-case \code{b} and
+\code{d}, so they are not mistaken for $8$ and $0$). \stars{3} \emph{A stage of the
+``Security Panel'' project.} Write a module \code{zone\_display}: four zone
+sensors $z$ on the input, seven segments on the output, and for $z=0000$ the
+display is blank.
+
+\textbf{In Logra.} The \emph{Code} tab: type your module, press
+\emph{Synthesize}. The \emph{Waveforms} tab: for \stars{1} drive $x$ with a
+counter $0$--$255$ (or a few typical values: \code{00000000},
+\code{00000001}, \code{00110000}, \code{10000000}); for \stars{2} $x$ with a
+counter $0$--$15$; for \stars{3} the six rows of the check table.
+
+\textbf{Expected result.} \stars{1} $x=00110000$ gives $y=5$, $v=1$;
+$x=0$ gives $v=0$. \stars{2} For $A$ you get \code{1110111}. \stars{3}
+For zones 1, 2, 3: \code{0000110}, \code{1011011}, \code{1001111}; for two
+zones the higher one is shown; for $z=0$ all zeros.
+
+\textbf{How to check.} For known answers compare the waveform with the
+expectations above; the folder \code{code/b4\_coders} contains the testbench
+\code{tb\_samples.v}, which checks the model answers (it prints \code{OK}).
+\end{diybox}
+
+\textbf{Model answers to the task ``Complete and change a module''.}
+
+\textbf{Model answer to \stars{1}.}
+\vfile{\codepath/b4_coders/prio8_casez.v}{code/b4\_coders/prio8\_casez.v}
+
+\textbf{Model answer to \stars{2}} (the other table rows are the same as in
+\code{seg7}; here is the whole file):
+\vfile{\codepath/b4_coders/seg7_hex.v}{code/b4\_coders/seg7\_hex.v}
+
+\textbf{Model answer to \stars{3}.}
+\vfile{\codepath/b4_coders/zone_display.v}{code/b4\_coders/zone\_display.v}
 
 \section{Running project: the zone number on the display}
 
@@ -644,6 +894,12 @@ we teach the circuit to compare numbers.
   \item \textbf{The display shows a ``negative.''} Common anode: a segment
         lights at zero, and you are applying one. You need inverters on all seven
         outputs.
+  \item \textbf{An incomplete \code{if} or \code{case} in Verilog.} If for some
+        input the output is left unassigned, you get a latch. Assign a default
+        value at the beginning of the \code{always @*} block, or write
+        \code{else} and \code{default}.
+  \item \textbf{\code{<=} in a combinational block.} For combinational
+        logic write \code{=}; keep \code{<=} for flip-flops.
 \end{itemize}
 \end{warnbox}
 
@@ -675,6 +931,8 @@ The answers are collected in Appendix~\ref{app:answers}.
   \item \stars{3}~\emph{A project with an acceptance criterion (a stage of the ``Security Panel'' project, 4a).} In the Designer, build the chain ``priority encoder $\to$ concatenation $\to$ BCD$\to$7 segments'' for four zone sensors. Acceptance criterion: all rows of the test table (zone zero, zones 1, 2, 3, two zones at once) give the correct segment code on the Waveforms tab.
   \item \stars{3}~\emph{A project with an acceptance criterion.} Build a $3\to8$ decoder from two $2\to4$ decoders with an enable input. Acceptance criterion: for each of the eight numbers exactly one line is active, and for $E=0$ all outputs are zero.
   \item \stars{3}~\emph{A project with an acceptance criterion.} Build a converter from $3$-bit binary code to Gray code and back. Acceptance criterion: with the double conversion the output equals the input on all eight values, and on the output of the forward converter, while counting $0$--$7$, exactly one bit changes on each step.
+  \item \stars{2}~\emph{Find the error (Verilog).} A student described a priority encoder as the chain \code{if (x[3]) y = 2'd3; else if (x[2]) y = 2'd2; else if (x[1]) y = 2'd1; else if (x[0]) y = 2'd0;} inside \code{always @*}, without a final \code{else}. After synthesis a latch block appeared on the RTL tab. Why, and how to fix it?
+  \item \stars{3}~\emph{A project with a criterion.} Describe a $3\to8$ decoder with an enable input in Verilog in two ways: in one line with a shift, and from two $2\to4$ decoders (as in Figure~\ref{fig:dc38}). Acceptance criterion: the two modules agree on all 16 combinations $(en,a)$ on the Waveforms tab, and for $en=0$ the outputs are zero.
 \end{enumerate}
 \end{taskbox}
 

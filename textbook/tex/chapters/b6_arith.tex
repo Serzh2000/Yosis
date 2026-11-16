@@ -88,11 +88,11 @@ $s = a \oplus b, \qquad c = a\cdot b$
 \begin{minipage}{0.55\textwidth}
 \centering
 \begin{tikzpicture}
-  \node[gXOR, minimum height=12mm] (x) at (2,0.8) {};
-  \node[gAND, minimum height=12mm] (g) at (2,-0.8) {};
-  \draw[wire] (x.input 1) -- ++(-2.0,0) node[left] {$a$};
-  \draw[wire] (x.input 2) -- ++(-2.0,0) node[left] {$b$};
-  \coordinate (A) at ($(x.input 1)+(-1.4,0)$); \coordinate (B) at ($(x.input 2)+(-0.9,0)$);
+  \node[gXOR] (x) at (2.4,0.9) {};
+  \node[gAND] (g) at (2.4,-0.9) {};
+  \draw[wire] (x.input 1) -- (x.input 1 -| 0,0) node[left] {$a$};
+  \draw[wire] (x.input 2) -- (x.input 2 -| 0,0) node[left] {$b$};
+  \coordinate (A) at (1.2,0 |- x.input 1); \coordinate (B) at (0.7,0 |- x.input 2);
   \draw[wire] (A) |- (g.input 1); \fill (A) circle (1.3pt);
   \draw[wire] (B) |- (g.input 2); \fill (B) circle (1.3pt);
   \draw[wire] (x.output) -- ++(0.6,0) node[right] {$s$ (сумма)};
@@ -160,15 +160,15 @@ $a$ & $b$ & $c_\text{in}$ & $c_\text{out}$ & $s$ \\
 \centering
 \begin{tikzpicture}[ha/.style={draw=FpgaBlue, fill=FpgaLight, thick, minimum width=14mm, minimum height=14mm, font=\sffamily\small, align=center}]
   \node[ha] (h1) at (0,0) {HA};
-  \node[ha] (h2) at (2.8,-0.6) {HA};
-  \node[gOR, minimum width=10mm, minimum height=7mm] (o) at (5.4,-1.8) {};
+  \node[ha] (h2) at (3.6,-0.9) {HA};
+  \node[gOR, anchor=input 1] (o) at (6.6,-1.25) {};
   \draw[wire] ([yshift=3.5mm]h1.west) -- ++(-0.8,0) node[left] {$a$};
   \draw[wire] ([yshift=-3.5mm]h1.west) -- ++(-0.8,0) node[left] {$b$};
-  \draw[wire] ([yshift=3.5mm]h1.east) -- node[above, lbl] {$s$} ++(0.4,0) |- ([yshift=3.5mm]h2.west);
-  \draw[wire] (-0.8,-1.4) node[left] {$c_\text{in}$} -- (1.7,-1.4) |- ([yshift=-3.5mm]h2.west);
-  \draw[wire] ([yshift=3.5mm]h2.east) -- ++(3.4,0) node[right] {$s$};
-  \draw[wire] ([yshift=-3.5mm]h1.east) -- node[below, lbl, pos=0.3] {$c$} ++(0.25,0) |- (0.95,-2.2) -- (4.7,-2.2) |- (o.input 2);
-  \draw[wire] ([yshift=-3.5mm]h2.east) -- node[above, lbl] {$c$} ++(0.4,0) |- (o.input 1);
+  \draw[wire] ([yshift=3.5mm]h1.east) -- node[above, lbl, pos=0.3] {$s$} ++(1.1,0) |- ([yshift=3.5mm]h2.west);
+  \draw[wire] (-0.8,-1.25) node[left] {$c_\text{in}$} -- ([yshift=-3.5mm]h2.west);
+  \draw[wire] ([yshift=3.5mm]h2.east) -- ++(3.9,0) node[right] {$s$};
+  \draw[wire] ([yshift=-3.5mm]h1.east) -- ++(0.6,0) |- (5.6,-2.4) node[pos=0.75, below, lbl] {$c$} |- (o.input 2);
+  \draw[wire] ([yshift=-3.5mm]h2.east) -- node[above, lbl] {$c$} (o.input 1);
   \draw[wire] (o.output) -- ++(0.6,0) node[right] {$c_\text{out}$};
 \end{tikzpicture}
 \caption{Полный сумматор из двух полусумматоров и элемента ИЛИ}
@@ -296,10 +296,10 @@ carry adder).
     \node[font=\sffamily\small] at (\ang:2.65) {\v};
   }
   \draw[thick, FpgaGray] (0,0) circle (2.2);
-  \node[font=\ttfamily\scriptsize] at (90:1.75) {0000};
-  \node[font=\ttfamily\scriptsize] at (90-7*22.5:1.75) {0111};
-  \node[font=\ttfamily\scriptsize] at (90-8*22.5:1.75) {1000};
-  \node[font=\ttfamily\scriptsize] at (90-15*22.5:1.75) {1111};
+  \node[font=\ttfamily\footnotesize] at (90:1.75) {0000};
+  \node[font=\ttfamily\footnotesize] at (90-7*22.5:1.75) {0111};
+  \node[font=\ttfamily\footnotesize] at (90-8*22.5:1.75) {1000};
+  \node[font=\ttfamily\footnotesize] at (90-15*22.5:1.75) {1111};
   \draw[-{Stealth}, thick, FpgaGreen] (60:1.2) arc (60:-30:1.2);
   \node[font=\sffamily\small, text=FpgaGreen] at (0,0) {$+1$};
   \node[font=\sffamily\small, align=left, anchor=west] at (3.6,0.8) {\textcolor{FpgaBlue}{$\bullet$} положительные: старший бит 0};
@@ -324,7 +324,7 @@ carry adder).
 \centering
 \begin{tikzpicture}
   \node[hblock, minimum width=40mm, minimum height=14mm] (add) at (0,0) {4-разрядный\\сумматор};
-  \node[block, minimum width=22mm, minimum height=10mm] (xr) at (1.0,2.2) {4 элемента\\\scriptsize Исключающее ИЛИ};
+  \node[block, minimum width=22mm, minimum height=10mm] (xr) at (1.0,2.2) {4 элемента\\\footnotesize Исключающее ИЛИ};
   \draw[bus, -{Stealth}] (1.0,3.6) node[above, text=FpgaDark] {$B$} -- (xr.north);
   \draw[bus, -{Stealth}] (xr.south) -- node[right, lbl] {$B$ или $\overline{B}$} (1.0,0.7);
   \draw[bus, -{Stealth}] (-1.0,3.6) node[above, text=FpgaDark] {$A$} -- (-1.0,0.7);
@@ -442,13 +442,15 @@ $1111\,1101_2=-3$).
 \centering
 \begin{tikzpicture}
   \foreach \i in {0,...,3} {
-    \node[gXNOR, minimum width=10mm, minimum height=7mm] (x\i) at (1.5,1.8-\i*1.2) {};
-    \draw[wire] (x\i.input 1) -- ++(-0.6,0) node[left] {$a_\i$};
-    \draw[wire] (x\i.input 2) -- ++(-0.6,0) node[left] {$b_\i$};
+    \node[gXNOR] (x\i) at (2.0,2.7-\i*1.8) {};
+    \draw[wire] (x\i.input 1) -- ++(-0.5,0) -- ++(0,0.4) -- ++(-0.5,0) node[left] {$a_\i$};
+    \draw[wire] (x\i.input 2) -- ++(-0.5,0) -- ++(0,-0.4) -- ++(-0.5,0) node[left] {$b_\i$};
   }
-  \node[gAND, logic gate inputs=nnnn, minimum height=18mm] (g) at (4.2,0) {};
-  \foreach \i [evaluate=\i as \j using int(\i+1)] in {0,...,3}
-    \draw[wire] (x\i.output) -- ++(0.3,0) |- (g.input \j);
+  \node[gAND, logic gate inputs=nnnn, minimum height=18mm] (g) at (6.2,0) {}; % fig-ok: 4-входовой вентиль 18 мм
+  \draw[wire] (x0.output) -| ([xshift=-4mm]g.input 1) -- (g.input 1);
+  \draw[wire] (x1.output) -| ([xshift=-8mm]g.input 2) -- (g.input 2);
+  \draw[wire] (x2.output) -| ([xshift=-8mm]g.input 3) -- (g.input 3);
+  \draw[wire] (x3.output) -| ([xshift=-4mm]g.input 4) -- (g.input 4);
   \draw[wire] (g.output) -- ++(0.6,0) node[right] {$A = B$};
 \end{tikzpicture}
 \caption{Компаратор равенства 4-разрядных чисел}
@@ -565,6 +567,220 @@ $a,b$ и запишите таблицу результатов. \stars{3} До�
 выходы с таблицей; RTL: найдите мультиплексор, выбирающий результат.
 \end{diybox}
 
+\section{Примеры на Verilog}
+\label{sec:arith-verilog}
+
+Арифметика на Verilog выглядит как арифметика: знаки \code{+}, \code{-},
+\code{>}, а синтезатор сам строит из них сумматоры и компараторы. Но чтобы
+понимать, что он строит, полезно записать узлы главы и «по-вентильному».
+Шесть примеров ниже --- законченные модули из папки \code{code/b6\_arith/};
+у каждого есть тестбенч \code{tb\_*.v}, который перебирает все входы и
+печатает \code{OK}. Запуск в Logra: вкладка \emph{Код} $\to$
+\emph{Синтезировать} (\code{Ctrl+Enter}) $\to$ \emph{RTL} $\to$
+\emph{Диаграммы} (раздел~\ref{sec:signals-verilog}).
+
+\subsection{Пример 1. Полусумматор и полный сумматор}
+
+Полусумматор --- исключающее ИЛИ и И; полный сумматор собран из двух
+полусумматоров и ИЛИ, как на рис.~\ref{fig:fa}.
+
+\vfile{\codepath/b6_arith/adders.v}{code/b6\_arith/adders.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{half\_adder}: \code{s = a \^{} b}, \code{c = a \& b} --- прямая запись формул главы.
+  \item \code{full\_adder} создаёт два экземпляра \code{half\_adder} (\code{h1}, \code{h2}) и соединяет их проводами \code{s1}, \code{c1}, \code{c2}, как рисунок: сумма первого идёт во второй вместе с входным переносом \code{cin}.
+  \item \code{cout = c1 | c2} --- элемент ИЛИ на выходе: перенос возникает в одном из двух полусумматоров, но не в обоих сразу.
+\end{itemize}
+\textbf{Проверка.} \code{tb\_adders.v} проверяет полусумматор на четырёх
+комбинациях, а полный сумматор на всех восьми, сравнивая \code{\{c, s\}} с
+обычным сложением $a+b+c_\text{in}$. В Logra на вкладке \emph{Диаграммы}
+подайте $a=b=c_\text{in}=1$: сумма 1 и перенос 1.
+
+\textbf{Допиши сам.} Запишите перенос полного сумматора как «2 из 3», без
+полусумматоров.
+
+\textbf{Образец.}
+\begin{vcode}
+module full_adder_maj (
+    input  a, b, cin,
+    output s, cout
+);
+    assign s    = a ^ b ^ cin;
+    assign cout = (a & b) | (a & cin) | (b & cin);   // мажоритарная функция
+endmodule
+\end{vcode}
+
+\subsection{Пример 2. Четырёхразрядный сумматор: цикл и \texttt{assign}}
+
+Две записи одного узла. Первая повторяет цепочку из четырёх полных сумматоров
+(рис.~\ref{fig:rca}), вторая отдаёт всё синтезатору.
+
+\vfile{\codepath/b6_arith/add4.v}{code/b6\_arith/add4.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{reg [4:0] c} --- переносы: \code{c[i]} идёт \emph{в} разряд $i$, \code{c[4]} --- выходной перенос.
+  \item Цикл \code{for} в блоке \code{always @(*)} синтезатор \emph{разворачивает} в четыре одинаковых звена; это не повторение во времени. Тело цикла: \code{s[i] = a[i] \^{} b[i] \^{} c[i]} и перенос «2 из 3».
+  \item \code{assign \{cout, s\} = a + b + cin;} --- пятиразрядная сумма: младшие четыре бита идут в \code{s}, старший --- в \code{cout}. Без \code{cout} перенос бы потерялся.
+\end{itemize}
+\textbf{Проверка.} \code{tb\_add4.v} перебирает все 512 комбинаций $a,b,c_\text{in}$
+и сравнивает оба сумматора с обычным сложением; отдельно $7+9=16$ (результат
+\code{0000} и перенос 1). В Logra подайте $15+1$: сумма \code{0000}, перенос 1.
+
+\textbf{Допиши сам.} Сделайте сумматор без потери переноса, у которого вместо
+пары (\code{s}, \code{cout}) один пятиразрядный выход.
+
+\textbf{Образец.}
+\begin{vcode}
+module add4_wide (
+    input  [3:0] a, b,
+    output [4:0] sum        // 0..30
+);
+    assign sum = {1'b0, a} + {1'b0, b};   // расширяем слагаемые до 5 бит
+endmodule
+\end{vcode}
+
+\subsection{Пример 3. Вычитание: \texttt{a + \textasciitilde b + 1}}
+
+Сумматор-вычитатель из рисунка главы: четыре исключающих ИЛИ на входе $b$ и
+перенос $c_0=\text{sub}$.
+
+\vfile{\codepath/b6_arith/addsub4.v}{code/b6\_arith/addsub4.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{b \^{} \{4\{sub\}\}} --- «размножение» бита: \code{\{4\{sub\}\}} это четыре копии \code{sub}. При \code{sub} $=1$ каждый бит $b$ инвертируется, при $0$ остаётся.
+  \item \code{a + bx + sub} --- \code{sub} попадает и в младший перенос; для вычитания это ровно «$+1$» из $A-B=A+\overline B+1$.
+  \item Перенос \code{cout} при вычитании равен 1, если $A\ge B$ (нет «заёма»).
+\end{itemize}
+\textbf{Проверка.} \code{tb\_addsub4.v}: $7-3=0100$, $3-5=1110$; затем все
+256 пар при \code{sub} $=0$ и $1$ сверяются с $a+b$ и $a-b$ по модулю 16.
+В Logra подайте $a=3$, $b=5$, \code{sub} $=1$: результат \code{1110}, то есть $-2$.
+
+\textbf{Допиши сам.} Сделайте вычитатель с выходом заёма \code{borrow}.
+
+\textbf{Образец.}
+\begin{vcode}
+module sub4 (
+    input  [3:0] a, b,
+    output [3:0] d,
+    output       borrow       // 1, если a < b
+);
+    wire [3:0] nb = ~b;                  // инверсия ровно четырёх бит
+    wire       c;
+    assign {c, d} = a + nb + 1'b1;
+    assign borrow = ~c;                  // нет переноса -- был заём
+endmodule
+\end{vcode}
+
+\subsection{Пример 4. Компаратор}
+
+Равенство --- XNOR по разрядам и И всех результатов (рис.~\ref{fig:cmp});
+«больше» и «меньше» синтезатор строит сам.
+
+\vfile{\codepath/b6_arith/comparator.v}{code/b6\_arith/comparator.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{a \textasciitilde\^{} b} --- побитовое исключающее ИЛИ-НЕ, четыре бита «равно ли»; \code{\&(\ldots)} --- \emph{редукция И}: И всех четырёх бит.
+  \item \code{a > b}, \code{a < b} --- сравнения чисел \emph{без знака}.
+  \item \code{\$signed(a) < \$signed(b)} --- то же, но числа считаются знаковыми: $1111_2$ как $-1$ меньше $0001_2$. Тип чисел должен быть известен заранее.
+\end{itemize}
+\textbf{Проверка.} \code{tb\_comparator.v} перебирает все 256 пар: ровно один из
+выходов \code{eq}, \code{gt}, \code{lt} равен 1, и они совпадают с
+сравнением целых. Пара $1111$ и $0001$ даёт \code{gt}$=1$ (без знака) и
+\code{lt\_signed}$=1$ (со знаком). В Logra проверьте пары $(3,5)$, $(5,3)$,
+$(5,5)$.
+
+\textbf{Допиши сам.} Сделайте тревогу по порогу из проекта «Охранная панель»:
+выход горит, если уровень шума больше порога.
+
+\textbf{Образец.}
+\begin{vcode}
+module alarm_threshold (
+    input  [3:0] level, thr,
+    output       alarm
+);
+    assign alarm = level > thr;   // при thr = 8 горит для уровней 9..15
+endmodule
+\end{vcode}
+
+\subsection{Пример 5. АЛУ с флагами}
+
+Сумматор и вычитатель, логические операции, мультиплексор по коду операции и
+флаги $Z$, $N$, $C$, $V$.
+
+\vfile{\codepath/b6_arith/alu4.v}{code/b6\_arith/alu4.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item Один сумматор на двоих: \code{sub} включает инвертирование $b$ и перенос $+1$ (как в предыдущем примере).
+  \item \code{case (op)} --- мультиплексор по коду операции; \code{default} даёт ноль для неиспользуемых кодов.
+  \item \code{Z} --- \code{y == 0}, \code{N} --- старший бит результата, \code{C} --- \code{sum[4]}, а \code{V} $=c_3\oplus c_4$: перенос \emph{в} старший разряд (его получаем как $a_3\oplus bx_3\oplus sum_3$) и перенос \emph{из} него.
+\end{itemize}
+\textbf{Проверка.} \code{tb\_alu4.v} проверяет строки таблицы флагов из главы
+($5+3$, $7+(-3)$, $(-8)+(-1)$, $3+(-3)$), затем $7-3$, $3-5$ и три логические
+операции, а потом для всех 256 пар знаковых чисел сверяет $V$ с целочисленной
+арифметикой, правило $N\oplus V$ для «$A<B$» и $C=0$ как «заём» для беззнаковых. В
+Logra подайте $a=0101$, $b=0011$, \code{op} $=000$: результат \code{1000},
+$V=1$.
+
+\textbf{Допиши сам.} Соберите АЛУ на четыре бита с четырьмя операциями ($+$,
+$-$, И, сдвиг влево на 1) и флагом $Z$.
+
+\textbf{Образец.}
+\begin{vcode}
+module alu_mini (
+    input  [3:0] a, b,
+    input  [1:0] op,
+    output reg [3:0] y,
+    output       z
+);
+    always @(*) begin
+        case (op)
+            2'b00:   y = a + b;
+            2'b01:   y = a - b;
+            2'b10:   y = a & b;
+            default: y = a << 1;
+        endcase
+    end
+    assign z = (y == 4'b0000);
+endmodule
+\end{vcode}
+
+\subsection{Пример 6. Переполнение со знаком и насыщение}
+
+Два способа справиться с переполнением: получить признак $V=c_3\oplus c_4$
+и «упереться в границу» --- вместо неверного результата выдать $+7$ или $-8$.
+
+\vfile{\codepath/b6_arith/overflow.v}{code/b6\_arith/overflow.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{add4\_ovf} считает три младших разряда с запасным битом: этот бит и есть перенос $c_3$ в старший разряд. Затем старший разряд даёт перенос $c_4$ и $V=c_3\oplus c_4$.
+  \item \code{add4\_sat}: переполнение --- когда знаки слагаемых равны, а знак результата другой (\code{(a[3] == b[3]) \&\& (raw[3] != a[3])}). Тогда результат подменяется на $+7$ (\code{0111}) для положительных и на $-8$ (\code{1000}) для отрицательных.
+\end{itemize}
+\textbf{Проверка.} \code{tb\_overflow.v} перебирает все 256 пар знаковых
+чисел: $V$ и насыщенный результат сравниваются с целочисленной арифметикой, а
+$5+3$ даёт $c_3=1$, $c_4=0$, $V=1$ (пример главы). В Logra подайте $6+5$:
+\code{1011} и $V=1$; насыщенный выход при этом равен \code{0111}.
+
+\textbf{Допиши сам.} Добавьте признак переполнения при знаковом вычитании $a-b$.
+
+\textbf{Образец.}
+\begin{vcode}
+module sub4_ovf (
+    input  [3:0] a, b,
+    output [3:0] d,
+    output       v
+);
+    assign d = a - b;
+    // у вычитаемых знаки разные, а знак результата не такой, как у a
+    assign v = (a[3] != b[3]) && (d[3] != a[3]);
+endmodule
+\end{vcode}
+
 \section{Типичные ошибки}
 
 \begin{warnbox}[Типичные ошибки]
@@ -573,6 +789,20 @@ $a,b$ и запишите таблицу результатов. \stars{3} До�
   \item \textbf{Забывают «$+1$» при вычитании.} $A-B=A+\overline{B}+1$. Если подать только $A+\overline{B}$, результат окажется на единицу меньше (например, $6-2$ даст 3). Единицу вносит перенос $c_0$ младшего разряда.
   \item \textbf{Сравнивают знаковые числа как беззнаковые.} $1111_2$ как беззнаковое равно 15 и больше $0001_2$, а как знаковое равно $-1$ и меньше. Тип чисел должен быть известен до выбора компаратора.
   \item \textbf{Расширяют знаковое число нулями.} Чтобы превратить $1101_2=-3$ в восемь бит, нужно дописать единицы ($1111\,1101$), а не нули ($0000\,1101=13$).
+  \item \textbf{Verilog: потерять перенос из-за ширины.}
+    \code{wire [3:0] s = a + b;} отбрасывает пятый бит. Сумма шире слагаемых на
+    один разряд: пишите \code{assign \{cout, s\} = a + b + cin;} или объявляйте
+    \code{[4:0]}.
+  \item \textbf{Verilog: \code{\textasciitilde b} в широком выражении.} В
+    \code{assign \{c, d\} = a + \textasciitilde b + 1;} операнды сначала
+    расширяются до ширины результата (5 бит), и \code{\textasciitilde b} получает
+    лишнюю единицу в старшем разряде: младшие четыре бита верны, а перенос
+    \code{c} выходит \emph{инвертированным}. Инвертируйте в отдельном
+    четырёхбитном \code{wire}.
+  \item \textbf{Verilog: сравнивать знаковые числа как беззнаковые.}
+    \code{a < b} по умолчанию считает числа беззнаковыми: \code{4'b1111 <
+    4'b0001} ложно. Для знаковых пишите \code{\$signed(a) < \$signed(b)} или
+    объявляйте порты \code{signed}.
 \end{itemize}
 \end{warnbox}
 

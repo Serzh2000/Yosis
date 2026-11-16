@@ -9,7 +9,7 @@ signal, logic levels, and the binary system, and along the way you will learn
 to read timing diagrams.
 
 \begin{infobox}[The Running Project ``Security Panel'']
-Throughout Part I we will grow a single device: a security panel with a door
+Throughout the book we will grow a single device: a security panel with a door
 sensor, a window sensor, a night mode, an arming key, a code lock, a siren,
 and an indicator. Each chapter adds a new block to it, and after every
 chapter the panel still works. The first step is the smallest one: the door
@@ -134,7 +134,7 @@ will tell you whether you determined the value of the bit correctly.
 Which voltage counts as zero and which as one is defined by a
 \term{logic level standard}. The chip on the Tang Nano 20K learning board uses
 the \textbf{LVCMOS33} standard (3.3~V supply). \lookahead{the board carries a
-programmable chip (an FPGA), to which the second part of the book is
+programmable chip (an FPGA), to which Chapters~\ref{ch:fpga}--\ref{ch:flow} are
 devoted.} The parameters of the standard:
 
 \begin{table}[H]
@@ -164,11 +164,11 @@ $U_\text{OH,min}$ & 2.4 V & an output gives ``1'' at no less than this voltage \
   \node[font=\sffamily\small\bfseries] at (6.2,3.65) {Input};
   \node[font=\sffamily\small] at (1.2,2.85) {``1''}; \node[font=\sffamily\small] at (1.2,0.2) {``0''};
   \node[font=\sffamily\small] at (6.2,2.65) {``1''}; \node[font=\sffamily\small] at (6.2,0.4) {``0''};
-  \node[font=\sffamily\fontsize{6}{7}\selectfont, text=FpgaRed] at (6.2,1.4) {undefined};
-  \foreach \v/\l in {0.4/0.4, 2.4/2.4, 3.3/3.3} \node[font=\sffamily\scriptsize, anchor=east] at (0,\v) {\l~V};
-  \foreach \v/\l in {0.8/0.8, 2.0/2.0} \node[font=\sffamily\scriptsize, anchor=west] at (7.4,\v) {\l~V};
-  \draw[FpgaOrange, <->, thick] (3.7,2.0) -- (3.7,2.4) node[midway, right, font=\sffamily\scriptsize] {margin};
-  \draw[FpgaOrange, <->, thick] (3.7,0.4) -- (3.7,0.8) node[midway, right, font=\sffamily\scriptsize] {margin};
+  \node[font=\sffamily\footnotesize, text=FpgaRed, align=center] at (6.2,1.4) {undefined};
+  \foreach \v/\l in {0.4/0.4, 2.4/2.4, 3.3/3.3} \node[font=\sffamily\footnotesize, anchor=east] at (0,\v) {\l~V};
+  \foreach \v/\l in {0.8/0.8, 2.0/2.0} \node[font=\sffamily\footnotesize, anchor=west] at (7.4,\v) {\l~V};
+  \draw[FpgaOrange, <->, thick] (3.7,2.0) -- (3.7,2.4) node[midway, right, font=\sffamily\footnotesize] {margin};
+  \draw[FpgaOrange, <->, thick] (3.7,0.4) -- (3.7,0.8) node[midway, right, font=\sffamily\footnotesize] {margin};
   \draw[dashed, FpgaGray] (2.4,2.4) -- (5,2.4); \draw[dashed, FpgaGray] (2.4,2.0) -- (5,2.0);
   \draw[dashed, FpgaGray] (2.4,0.4) -- (5,0.4); \draw[dashed, FpgaGray] (2.4,0.8) -- (5,0.8);
 \end{tikzpicture}
@@ -267,7 +267,7 @@ system: every 4 bits are replaced by one digit from 0 to F.
   width=0.75\textwidth, height=5cm, ybar, bar width=6mm,
   xlabel={Number of bits $n$}, ylabel={Number of combinations $2^n$},
   xtick={1,...,8}, ymin=0, ymax=300,
-  nodes near coords, nodes near coords style={font=\sffamily\scriptsize},
+  nodes near coords, nodes near coords style={font=\sffamily\footnotesize},
   label style={font=\sffamily\small}, tick label style={font=\sffamily\small},
   axis lines*=left, grid=major, grid style={FpgaGray!20},
 ]
@@ -319,7 +319,7 @@ horizontally and the level vertically. A transition from 0 to 1 is called a
   \node[font=\sffamily\small, anchor=east] at (0,1.2) {1};
   \draw[FpgaOrange, thick, -{Stealth}] (1.3,1.9) node[above, font=\sffamily\small] {rising edge ($0\to1$)} -- (2.05,0.8);
   \draw[FpgaOrange, thick, -{Stealth}] (6.3,1.9) node[above, font=\sffamily\small] {falling edge ($1\to0$)} -- (5.15,0.8);
-  \draw[decorate, decoration={brace, amplitude=5pt, mirror}] (2.2,-0.1) -- (5,-0.1) node[midway, below=5pt, font=\sffamily\scriptsize] {pulse width};
+  \draw[decorate, decoration={brace, amplitude=5pt, mirror}] (2.2,-0.1) -- (5,-0.1) node[midway, below=5pt, font=\sffamily\footnotesize] {pulse width};
 \end{tikzpicture}
 \caption{A pulse on a timing diagram}
 \end{figure}
@@ -444,6 +444,207 @@ Changes of signals in time are shown with timing diagrams, and the clock
 signal sets the rhythm at which the whole circuit works.
 \end{ideabox}
 
+\section{Verilog Examples}
+\label{sec:signals-verilog}
+
+Everything we have described in words and pictures can also be written as text
+in the hardware description language \term{Verilog}. The language is covered in
+detail in Chapter~\ref{ch:verilog}; here it is only a convenient notation:
+read the examples as ready-made recipes and run them in Logra right after
+reading. All the files live in the folder \code{code/b1\_signals/}, and every
+module has a testbench \code{tb\_*.v} next to it.
+
+\begin{infobox}[Verilog in a Minute]
+\begin{itemize}
+  \item \code{module name (ports); ... endmodule} is the ``box'' of a circuit
+    with inputs (\code{input}) and outputs (\code{output}).
+  \item \code{[5:0]} is a bus of six wires, bits 5, 4, \ldots, 0 (bit 0 is the
+    least significant). Without brackets it is a single wire.
+  \item \code{assign y = expression;} is a wire with logic: \code{y} always
+    equals the expression and is recomputed whenever an input changes. The
+    operators are \code{\textasciitilde} (NOT), \code{\&} (AND), \code{|} (OR),
+    \code{\^{}} (exclusive OR).
+  \item \code{always @(posedge clk) q <= d;} means that at the rising clock edge
+    the value \code{d} is stored in the memory \code{q} (a register declared as
+    \code{reg}). The assignment used here is \code{<=}.
+  \item \code{//} is a comment to the end of the line.
+\end{itemize}
+\end{infobox}
+
+\paragraph{How to run an example in Logra.} (1) Open the \emph{Code} tab and
+paste the whole module in place of the default text. (2) Press
+\emph{Synthesize} (or \code{Ctrl+Enter}) and wait for a successful build.
+(3) The \emph{RTL} tab shows the circuit the synthesizer produced. (4) On the
+\emph{Waveforms} tab, set values on the inputs and watch the outputs. The same
+circuit can be built from blocks in the \emph{Designer}; compare the two
+descriptions.
+
+\paragraph{What a testbench does.} A \term{testbench} (\code{tb\_*.v}) is a
+separate module that feeds inputs to the module under test, checks the outputs
+against the expected values by itself, and prints \code{OK} or a list of
+errors. It is run by the Icarus Verilog simulator:
+\code{iverilog -g2012 -o sim tb\_wire\_led.v wire\_led.v}, then \code{vvp sim}.
+If you do not have the simulator, repeat the same input sweep by hand on the
+\emph{Waveforms} tab.
+
+\subsection{Example 1. A Wire: \texttt{assign led = sw}}
+
+The shortest circuit: six switches connected straight to six LEDs.
+
+\vfile{\codepath/b1_signals/wire_led.v}{code/b1\_signals/wire\_led.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{input [5:0] sw} is six inputs grouped into a bus; \code{output [5:0] led} is six outputs.
+  \item \code{assign led = sw;} copies the whole bus: bit $i$ of the output equals bit $i$ of the input. There is no logic at all, only wires.
+\end{itemize}
+\textbf{Checking.} \code{tb\_wire\_led.v} tries all 64 values of \code{sw} and
+compares \code{led}. In Logra set \code{sw} to 37 (\code{100101}): bits 5, 2
+and 0 are lit.
+
+\textbf{Finish it yourself.} Make LED~0 show switch~5, LED~1 show switch~4, and
+so on (the bit order is reversed).
+
+\textbf{Sample answer.}
+\begin{vcode}
+module wire_led_rev (
+    input  [5:0] sw,
+    output [5:0] led
+);
+    // concatenation {...} builds a bus out of individual bits
+    assign led = {sw[0], sw[1], sw[2], sw[3], sw[4], sw[5]};
+endmodule
+\end{vcode}
+
+\subsection{Example 2. Active Level}
+
+The board LEDs light at zero, and the reset button acts at zero. In code this
+shows up as the \code{\_n} suffix and an inversion.
+
+\vfile{\codepath/b1_signals/active_level.v}{code/b1\_signals/active\_level.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{door} is an active-high signal: 1 means ``the door is open''.
+  \item \code{assign led\_n = \textasciitilde door;} is an inverter: with the door open the pin is 0 and the LED lights. This solves the ``Door sensor and the alarm LED'' task.
+  \item \code{reset\_active} is \code{rst\_n} turned over: inside the circuit it is more convenient to think that 1 means ``reset is on''.
+\end{itemize}
+\textbf{Checking.} \code{tb\_active\_level.v} checks all four combinations. In
+Logra, on the \emph{Waveforms} tab set \code{door} to $0$ and then $1$:
+\code{led\_n} is always the opposite of the input.
+
+\textbf{Finish it yourself.} Add an output \code{siren\_n} for a siren that is
+switched on by a \emph{zero} when the door is open \emph{and} the arming key is
+on (the input \code{armed}).
+
+\textbf{Sample answer.}
+\begin{vcode}
+module siren (
+    input  door, armed,
+    output siren_n          // 0 = siren on
+);
+    // door open AND armed -> invert, because the active level is low
+    assign siren_n = ~(door & armed);
+endmodule
+\end{vcode}
+
+\subsection{Example 3. A Number on a Bus}
+
+Six bits of a number go to six LEDs. Since the LEDs light at zero, all the bits
+are inverted at once, in a single operation.
+
+\vfile{\codepath/b1_signals/number_bus.v}{code/b1\_signals/number\_bus.v}
+
+\textbf{How to read it.} The operator \code{\textasciitilde} applied to a bus
+inverts \emph{every} bit of it, so one line replaces six inverters. The number
+37 ($100101_2$) gives \code{011010} on the output: LEDs 5, 2 and 0 are lit.
+
+\textbf{Checking.} \code{tb\_number\_bus.v} checks the number 37 and then all
+64 values. In Logra set different numbers on \code{value} and compare the lit
+bits with the table of binary numbers in this chapter.
+
+\textbf{Finish it yourself.} Show on the LEDs the number \emph{one greater}
+than the input (63 gives 0).
+
+\textbf{Sample answer.}
+\begin{vcode}
+module number_plus1 (
+    input  [5:0] value,
+    output [5:0] led_n
+);
+    // value + 6'd1 is a six-bit sum; the overflow 63 + 1 gives 0
+    assign led_n = ~(value + 6'd1);
+endmodule
+\end{vcode}
+
+\subsection{Example 4. Divide-by-2 Clock Divider}
+
+An output that toggles at every rising clock edge has a period twice the clock
+period. This is the simplest circuit with memory.
+
+\vfile{\codepath/b1_signals/clk_div2.v}{code/b1\_signals/clk\_div2.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{reg t = 1'b0;} is one bit of memory with the initial value 0.
+  \item \code{always @(posedge clk) t <= \textasciitilde t;} flips the bit at every rising edge of \code{clk}. There is one edge per clock period, while \code{t} needs two edges for a full period: the frequency is half as high.
+  \item \code{assign q = t;} makes the output repeat the memory.
+\end{itemize}
+\textbf{Checking.} \code{tb\_clk\_div2.v} watches the output at eight edges and
+verifies that \code{q} toggles at every one. In Logra, on the \emph{Waveforms}
+tab, apply a clock and compare the periods of \code{clk} and \code{q}. This
+goes with Problem~6 of the chapter.
+
+\textbf{Finish it yourself.} Make a divide-by-4 divider.
+
+\textbf{Sample answer.}
+\begin{vcode}
+module clk_div4 (
+    input  clk,
+    output q
+);
+    reg [1:0] c = 2'b00;                 // two-bit counter
+    always @(posedge clk) c <= c + 2'b01;
+    assign q = c[1];                     // the top bit changes half as often as the low one
+endmodule
+\end{vcode}
+
+\subsection{Example 5. A Counter Divider and a Blinking LED}
+
+For the eye to see an LED blink, 27~MHz has to be divided by millions. A counter
+that adds 1 on every clock divides the frequency by a power of two: its bit
+$N-1$ has a period of $2^N$ clocks.
+
+\vfile{\codepath/b1_signals/blink_div.v}{code/b1\_signals/blink\_div.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{parameter N = 24} is a configurable constant of the module; it is changed at instantiation: \code{blink\_div \#(.N(3)) u (\ldots)}.
+  \item \code{reg [N-1:0] cnt} is an $N$-bit counter; \code{cnt <= cnt + 1'b1} adds 1 on every clock and wraps to zero after the maximum.
+  \item \code{assign led = cnt[N-1];} is the top bit: one for half of the period and zero for the other half.
+\end{itemize}
+At 27~MHz and $N=24$ we get $27\,000\,000/2^{24}\approx 1.6$~Hz: the LED
+visibly blinks (compare with the table of prefixes).
+
+\textbf{Checking.} \code{tb\_blink\_div.v} takes $N=3$ (otherwise the
+simulation would last forever): the period must be exactly 8 clocks. In Logra
+open the \code{blink} example and compare it with this module.
+
+\textbf{Finish it yourself.} Choose the width that gives a blink of about
+3~Hz (at 27~MHz).
+
+\textbf{Sample answer.} $27\,000\,000/2^{23}\approx 3.2$~Hz, so $N=23$:
+\begin{vcode}
+module blink_3hz (
+    input  clk,
+    output led
+);
+    reg [22:0] cnt = 0;                   // 23 bits
+    always @(posedge clk) cnt <= cnt + 1'b1;
+    assign led = cnt[22];
+endmodule
+\end{vcode}
+
 \section{Common Mistakes}
 
 \begin{warnbox}[Common Mistakes]
@@ -458,6 +659,18 @@ signal sets the rhythm at which the whole circuit works.
     values, from $0$ to $2^n-1$; ten bits are 1024 numbers, not 10.
   \item \textbf{Trusting an ``in-between'' voltage.} A signal of 1.4~V at the
     input of 3.3~V logic is undefined: the circuit may read either 0 or 1.
+  \item \textbf{Verilog: mixing up \code{=} and \code{<=}.} Registers in
+    \code{always @(posedge clk)} take \code{<=} (non-blocking assignment), while
+    \code{assign} and combinational logic use \code{=}. The statement
+    \code{t = \textasciitilde t;} in a clocked block appears to work in
+    simulation but causes races once there are several registers.
+  \item \textbf{Verilog: forgetting the initial value.} A register \code{reg t;}
+    without \code{= 1'b0} holds the unknown value X in simulation, and the
+    divider output stays ``unknown'' forever. Write \code{reg t = 1'b0;}.
+  \item \textbf{Verilog: forgetting the active-low level.} \code{assign led =
+    value;} instead of \code{\textasciitilde value} lights the board LEDs the
+    \emph{other way round}: the number 37 turns off bits 5, 2 and 0 and lights
+    the rest.
 \end{itemize}
 \end{warnbox}
 

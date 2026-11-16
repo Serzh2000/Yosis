@@ -39,8 +39,8 @@ and signals travel along them at the same time, just as in a circuit on a breadb
     \draw[wire] (g1.output) -- ++(0.8,0) node[right] {$y=a\cdot b$};
   \end{scope}
   % Arrow
-  \draw[-{Stealth[length=4mm]}, line width=2pt, FpgaOrange] (4.8,0) -- (6.4,0)
-    node[midway, above=2mm, font=\sffamily\scriptsize, text=FpgaDark, align=center] {new configuration\\file};
+  \draw[-{Stealth[length=4mm]}, line width=2pt, FpgaOrange] (4.6,0) -- (7.0,0)
+    node[midway, above=2mm, font=\sffamily\footnotesize, text=FpgaDark, align=center] {new configuration\\file};
   % Variant 2
   \begin{scope}[xshift=8.6cm]
     \node[font=\sffamily\bfseries\small] at (0.3,1.9) {Configuration 2};
@@ -82,7 +82,7 @@ Modern FPGAs contain millions of logic cells.
     \fill[FpgaOrange] (\x,0) circle (1.1mm);
     \draw[FpgaGray] (\x,0) -- (\x,\y*0.55);
     \node[font=\sffamily\bfseries\small, text=FpgaDark] at (\x,\y*0.85) {\t};
-    \node[font=\sffamily\scriptsize, align=center, text=FpgaDark, anchor={\ifnum\y>0 south\else north\fi}] at (\x,\y*1.1) {\d};
+    \node[font=\sffamily\footnotesize, align=center, text=FpgaDark, anchor={\ifnum\y>0 south\else north\fi}] at (\x,\y*1.1) {\d};
   }
 \end{tikzpicture}
 \caption{The evolution of programmable logic}
@@ -119,23 +119,23 @@ digital device.
     \node[font=\sffamily\bfseries] at (2.6,3.6) {Microcontroller};
     \node[hblock, minimum width=16mm] (cpu) at (2.6,2.4) {CPU};
     \foreach \i/\t in {0/{$a\cdot b$}, 1/{$c+d$}, 2/{$e\oplus f$}, 3/{$g\cdot h$}} {
-      \node[block, minimum width=14mm, minimum height=6mm, font=\sffamily\scriptsize]
+      \node[block, minimum width=14mm, minimum height=6mm, font=\sffamily\footnotesize]
         (t\i) at (2.6, 1.2-\i*0.8) {\t};
     }
     \draw[arr] (cpu) -- (t0);
     \draw[arr] (t0) -- (t1); \draw[arr] (t1) -- (t2); \draw[arr] (t2) -- (t3);
-    \draw[arr, FpgaOrange] (0.9,1.3) -- (0.9,-1.3) node[midway, left, font=\sffamily\scriptsize, align=right] {time\\4 steps};
+    \draw[arr, FpgaOrange] (0.9,1.3) -- (0.9,-1.3) node[midway, left, font=\sffamily\footnotesize, align=right] {time\\4 steps};
   \end{scope}
   % FPGA
   \begin{scope}[xshift=7.2cm]
     \node[font=\sffamily\bfseries] at (2.8,3.6) {FPGA};
     \foreach \i/\t in {0/{$a\cdot b$}, 1/{$c+d$}, 2/{$e\oplus f$}, 3/{$g\cdot h$}} {
-      \node[gblock, minimum width=12mm, minimum height=6mm, font=\sffamily\scriptsize]
+      \node[gblock, minimum width=12mm, minimum height=6mm, font=\sffamily\footnotesize]
         (p\i) at (\i*1.5+0.5, 1.2) {\t};
       \draw[arr] (\i*1.5+0.5, 2.5) -- (p\i);
       \draw[arr] (p\i) -- (\i*1.5+0.5, 0);
     }
-    \draw[arr, FpgaOrange] (-0.5,1.5) -- (-0.5,0.9) node[midway, left, font=\sffamily\scriptsize, align=right] {1 step};
+    \draw[arr, FpgaOrange] (-0.5,1.5) -- (-0.5,0.9) node[midway, left, font=\sffamily\footnotesize, align=right] {1 step};
     \node[lbl, align=center] at (2.75,-0.6) {all four operations are\\ separate circuits that work \emph{at the same time}};
   \end{scope}
 \end{tikzpicture}
@@ -201,7 +201,7 @@ FPGAs are chosen where one of three things is needed: \emph{very high speed},
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
-  app/.style={block, minimum width=34mm, minimum height=13mm, font=\sffamily\scriptsize},
+  app/.style={block, minimum width=48mm, minimum height=14mm, font=\sffamily\footnotesize},
 ]
   \node[hblock, circle, minimum size=24mm, font=\sffamily\bfseries] (c) at (0,0) {FPGA};
   \foreach \a/\t/\s in {
@@ -250,3 +250,13 @@ a minute your circuit is already running in hardware.
 \textbf{Expected result.} A table of three rows: the application area, the name of the example, and one sentence about what it does.\\
 \textbf{How to check.} Open each example, press ``Synthesize'', and make sure that the RTL is built without errors.
 \end{diybox}
+
+\section{What Next}
+
+We have found out that an FPGA becomes a circuit, and we know where such
+circuits are used. A practical question remains: how do we control this
+circuit? Designing needs a tool that describes the circuit, checks it, and
+shows what it turned into. The next chapter, Chapter~\ref{ch:logra}, introduces
+Logra: you will create a first project, walk through the tabs, and see the whole
+path from idea to board. After that we start to work out what such circuits are
+made of, beginning with the simplest thing, the signal (Chapter~\ref{ch:signals}).

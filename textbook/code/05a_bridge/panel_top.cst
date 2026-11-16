@@ -1,0 +1,40 @@
+// Привязка «Охранной панели» к плате Sipeed Tang Nano 20K (GW2AR-LV18QN88C8/I7).
+// Кварц 27 МГц
+IO_LOC  "clk" 4;
+IO_PORT "clk" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+
+// Две кнопки платы S1, S2 (нажата = 1, подтяжка к земле)
+IO_LOC  "btn[0]" 88;
+IO_PORT "btn[0]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+IO_LOC  "btn[1]" 87;
+IO_PORT "btn[1]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+// Пять выключателей на разъёме J5: контакт замыкает ножку на землю, подтяжка к питанию внутри ПЛИС
+IO_LOC  "door_pin"   75;
+IO_PORT "door_pin"   IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC  "window_pin" 80;
+IO_PORT "window_pin" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC  "motion_pin" 42;
+IO_PORT "motion_pin" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC  "night_pin"  41;
+IO_PORT "night_pin"  IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC  "arm_pin"    56;
+IO_PORT "arm_pin"    IO_TYPE=LVCMOS33 PULL_MODE=UP;
+
+// Зуммер на разъёме J5
+IO_LOC  "buzzer" 54;
+IO_PORT "buzzer" IO_TYPE=LVCMOS33 DRIVE=8;
+
+// Шесть светодиодов (горят при 0)
+IO_LOC  "led[0]" 15;
+IO_PORT "led[0]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_LOC  "led[1]" 16;
+IO_PORT "led[1]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_LOC  "led[2]" 17;
+IO_PORT "led[2]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_LOC  "led[3]" 18;
+IO_PORT "led[3]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_LOC  "led[4]" 19;
+IO_PORT "led[4]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_LOC  "led[5]" 20;
+IO_PORT "led[5]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;

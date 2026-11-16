@@ -1,14 +1,17 @@
 \chapter{Your First Sprint in Logra}
 \label{ch:logra}
 
-In Part~I you drew circuits on paper and checked them in your head: you know
-logic gates, multiplexers, adders, flip-flops and counters. Now you will
-\emph{build} these same elements in a working environment. For an FPGA, the path from idea to
+In Chapter~\ref{ch:fpga} we found out that an FPGA does not run a program but
+\emph{becomes a circuit}. To design such a circuit you need a tool, and we will
+learn on it right away. For an FPGA, the path from idea to
 board is too long to walk by hand: you have to describe the circuit in
 text, check it, see what it turned into, and only then
 load it into the chip. One program does all of these steps---\term{Logra}.
 It opens in a browser, needs nothing installed, and shows
-every stage of the path we studied in Chapter~\ref{ch:flow}.
+every stage of the path that is studied in detail in Chapter~\ref{ch:flow}.
+This chapter is a short tour so that you know where everything is. What exactly
+we are building is explained by the following chapters, starting with
+Chapter~\ref{ch:signals}: there every topic is checked in Logra at once.
 
 Open-source tools work inside Logra: Yosys turns text into a circuit,
 nextpnr places it on the chip, Project Apicula packs the bitstream, and
@@ -18,9 +21,9 @@ what they computed.
 \begin{buildbox}[Build it first]
 Open Logra and click ``New project''. Choose ``From an example'',
 find the example ``Running light'' and open it. Without changing anything, click
-``Synthesize'' (Ctrl+Enter) in the top right corner. While the build runs, recall
-the ring register from Part~I: six flip-flops with a single one passed
-around the loop. Later in this chapter we will walk through the tabs and find each part of this circuit.
+``Synthesize'' (Ctrl+Enter) in the top right corner. While the build runs, look
+at the circuit: it contains a ring register, six flip-flops with a single one
+passed around the loop (Chapter~\ref{ch:regs} explains what that is). Later in this chapter we will walk through the tabs and find each part of this circuit.
 \end{buildbox}
 
 \section{A Map of the Environment}
@@ -87,7 +90,8 @@ specify the name of the top module, usually called \code{top}.
 
 The ``From logic elements'' option opens the \term{Designer}: you assemble a circuit
 with the mouse from a library, and Logra writes the Verilog itself. This is the same path as
-on paper in Part~I, only with instant checking. The library is modeled on
+on paper (as we will do in Chapters~\ref{ch:gates}--\ref{ch:arith}), only with
+instant checking. The library is modeled on
 the Quartus graphic editor: gates with three, four and eight
 inputs, flip-flops (D, T, JK, RS), a latch, registers and counters, RAM and ROM,
 multiplexers, decoders and encoders, adders, a comparator, a multiplier and
@@ -145,8 +149,8 @@ Let us click ``Synthesize''. In under a second Yosys reads the text and builds t
 circuit. The RTL tab (register-transfer level: a
 description of a circuit as a set of registers and the logic between them) shows it the way
 it is drawn on paper: rectangles for registers, standard symbols for
-gates, circles with a plus for adders. This is exactly what we studied in
-Part~I, only drawn automatically.
+gates, circles with a plus for adders. This is exactly what we will study in
+the chapters on gates, adders, and flip-flops, only drawn automatically.
 
 \shot{br-adder-rtl}{An RTL diagram, using a full adder as an example (Chapter~\ref{ch:bridge}): XOR, AND and OR gates, labels with code line numbers, and the inspector on the right}{fig:y-rtl}
 
@@ -215,7 +219,7 @@ the Gowin tab; click a LUT.\\
 \textbf{Expected result.} In the ``Inspector'' there is a 3-input table with the
 INIT configuration: for the sum \code{s = a \^{} b \^{} cin}, the ones are in the rows
 with an odd number of ones on the inputs.\\
-\textbf{Check.} Compare the table with the truth table from Part~I and
+\textbf{Check.} Compare the table with the adder truth table (Chapter~\ref{ch:arith}) and
 list the rows where the output equals 1.\\
 \stars{2} From the INIT value, determine which function is stored in the carry LUT.
 \end{diybox}
@@ -269,7 +273,7 @@ the resource counters: for the ``Running light''---15 LUTs, 29 flip-flops, 22 AL
 pins. Next to them is the frequency report: nextpnr shows 338.87~MHz
 against a required 27~MHz, a margin of about twelve times.
 
-\shot{app-chip}{The placement map on the chip and the nextpnr result: 338.87 MHz against 27 MHz}{fig:y-chip}
+\shot[0.82\textwidth]{app-chip}{The placement map on the chip and the nextpnr result: 338.87 MHz against 27 MHz}{fig:y-chip}
 
 After a successful build, the \code{.fs} files (bitstream), \code{JSON} and the log are available.
 
@@ -297,7 +301,7 @@ LEDs, displays, sensors, screens, memory. The circuit runs in the browser
 continuously, and the parts behave like real ones, including the serial
 protocols I$^2$C, SPI and UART (Chapter~\ref{ch:uart}).
 
-\shot{app-lab}{The running light on the virtual board. On the left is a list of 85 parts}{fig:y-lab}
+\shot[0.82\textwidth]{app-lab}{The running light on the virtual board. On the left is a list of 85 parts}{fig:y-lab}
 
 \begin{diybox}[The virtual desk]
 \textbf{Task.} Put an LED on the desk and connect it to the circuit's output.\\
@@ -319,14 +323,14 @@ There are three steps: connect the board, choose a file, click ``Load into SRAM'
 ``UART terminal'' mode, the characters sent by the circuit over the
 serial line arrive in the window, and you can send characters from it into the circuit.
 
-\shot{app-conn}{Loading a bitstream onto the board}{fig:y-conn}
+\shot[0.82\textwidth]{app-conn}{Loading a bitstream onto the board}{fig:y-conn}
 
 And the ``Learn'' tab is a self-contained course, ``Your workshop'', of thirty-one
 lessons for those seeing an FPGA for the first time: from ``what is a bit'' to
 your own circuits with the solutions checked by the simulator. There are modes ``With a mentor''
 and ``Free tasks''.
 
-\shot{app-learn}{The ``Your workshop'' course: lessons with checking}{fig:y-learn}
+\shot[0.82\textwidth]{app-learn}{The ``Your workshop'' course: lessons with checking}{fig:y-learn}
 
 \begin{diybox}[The first lesson and loading]
 \textbf{Task.} Complete the first lesson of the course and find the steps for loading onto the board.\\
@@ -359,3 +363,12 @@ name and save a first version in it (at least one sensor input and one
 indicator LED). Acceptance criterion: synthesis passes without errors, in
 ``Pins'' all ports are assigned, and in the ``Lab'' the LED responds to button S1.
 \end{diybox}
+
+\section{What Next}
+
+Now you have a working environment and a first project, but so far you have
+only pressed buttons: why is the ``Running light'' circuit built this way, what
+signals run through it, and how do you turn an event in the world (the door
+opened) into a zero or a one? That is the question of the next chapter,
+Chapter~\ref{ch:signals}: we start with a signal and a timing diagram, and the
+``Security Panel'' project created here will grow together with the book.

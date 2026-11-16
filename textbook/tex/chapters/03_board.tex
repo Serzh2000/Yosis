@@ -97,7 +97,7 @@ GW2AR-LV18QN88C8/I7}, а также всё необходимое, чтобы с
 Умножители           & 48 штук $18\times18$ \\
 PLL                  & 2 \\
 Тактовый генератор   & кварцевый, 27 МГц (плюс программируемый генератор MS5351) \\
-Flash                & 64 Мбит, интерфейс SPI (глава~\ref{ch:uart}) --- хранит конфигурацию ПЛИС \\
+Flash                & 64 Мбит, интерфейс SPI --- хранит конфигурацию ПЛИС \\
 Программатор         & BL616: USB-JTAG (загрузка схемы) и USB-UART (последовательная связь с компьютером) через один разъём USB-C \\
 Периферия            & HDMI, TF-карта, 6 светодиодов, 2 кнопки, RGB-светодиод WS2812, \\
                      & разъём для RGB-дисплея, усилитель звука \\
@@ -132,16 +132,16 @@ Flash                & 64 Мбит, интерфейс SPI (глава~\ref{ch:u
     \node[draw=FpgaGray, dashed, rounded corners, fit=(fpga)(sdram), inner sep=2.5mm, label={[lbl]below:корпус QFN88}] {};
   \end{scope}
 
-  \node[block, left=30mm of fpga.north west, anchor=north east] (osc) {Генератор\\27 МГц};
+  \node[block, left=23mm of fpga.north west, anchor=north east] (osc) {Генератор\\27 МГц};
   \node[block, below=of osc] (bl) {BL616\\USB-JTAG/UART};
   \node[block, below=of bl] (flash) {Flash\\64 Мбит};
-  \node[gblock, left=8mm of bl] (usb) {USB-C};
+  \node[gblock, left=6mm of bl] (usb) {USB-C};
   \draw[arr] (osc.east) -- node[above, lbl] {clk (вывод 4)} (osc.east -| fpga.west);
   \draw[arr, <->] (bl.east) -- node[above, lbl] {JTAG, UART} (bl.east -| fpga.west);
   \draw[arr, <->] (flash.east) -- node[above, lbl] {SPI} (flash.east -| fpga.west);
   \draw[arr, <->] (usb) -- (bl);
 
-  \node[block, right=20mm of fpga.north east, anchor=north west] (led) {6 светодиодов};
+  \node[block, right=16mm of fpga.north east, anchor=north west] (led) {6 светодиодов};
   \node[block, below=of led] (btn) {Кнопки S1, S2};
   \node[block, below=of btn] (hdmi) {HDMI};
   \node[block, below=of hdmi] (tf) {TF-карта};
@@ -169,7 +169,7 @@ Flash                & 64 Мбит, интерфейс SPI (глава~\ref{ch:u
 \code{.cst} (Constraints). Номера выводов для Tang Nano 20K приведены в
 табл.~\ref{tab:pins}.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Выводы ПЛИС, используемые в примерах}
 \label{tab:pins}
@@ -217,7 +217,7 @@ Flash                & 64 Мбит, интерфейс SPI (глава~\ref{ch:u
 В примерах мы считаем, что нажатая кнопка даёт на выводе логическую 1. Если на вашей
 ревизии платы окажется наоборот, достаточно поставить инверсию на входе:
 \code{wire pressed = \textasciitilde{}btn[0];}. Проверить это легко с помощью первого примера
-(глава~\ref{ch:examples}).
+из практических глав в конце книги.
 \end{infobox}
 
 \begin{diybox}[Выводы и инверсия светодиодов]

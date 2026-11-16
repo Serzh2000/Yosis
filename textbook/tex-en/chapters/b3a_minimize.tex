@@ -16,7 +16,7 @@
     \if 1\kv \def\kfill{FpgaLight}\fi
     \if x\kv \def\kfill{gray!25}\fi
     \node[draw, minimum size=10mm, font=\sffamily\large, fill=\kfill] at (\kc,-\kr) {\if x\kv$\times$\else\kv\fi};
-    \node[font=\sffamily\tiny, text=gray, anchor=south east, inner sep=1pt] at (\kc+0.48,-\kr-0.48) {\ifcase\ki\relax 0\or 1\or 3\or 2\or 4\or 5\or 7\or 6\or 12\or 13\or 15\or 14\or 8\or 9\or 11\else 10\fi};
+    \node[font=\sffamily\footnotesize, text=gray, anchor=south east, inner sep=1pt] at (\kc+0.48,-\kr-0.48) {\ifcase\ki\relax 0\or 1\or 3\or 2\or 4\or 5\or 7\or 6\or 12\or 13\or 15\or 14\or 8\or 9\or 11\else 10\fi};
   }}
 \providecommand{\kgrp}[6]{\draw[very thick, #1, rounded corners=4pt]
   (#2-#6,-#3+#6) rectangle (#4+#6,-#5-#6);}
@@ -369,10 +369,11 @@ neither $A$, nor $B$, nor the pair $CD$, and the circuit gives $0$; on the
 forbidden codes $10$--$15$ it does not matter what it gives.
 
 \begin{infobox}[Don't-care states in hardware description languages]
-\lookahead{when we move on to describing circuits in a language for FPGAs
-(Part~II), there is a special value there for such a ``don't care''. It lets
-the optimizer program choose the suitable variant by itself, and the circuit
-comes out smaller.}
+In Verilog (Chapter~\ref{ch:verilog}) there is a special value \code{x} for
+such a ``don't care'': the branch \code{default: y = 1'bx;} lets the
+optimizer program choose the suitable variant by itself, and the circuit
+comes out no larger and often smaller. An example and a comparison with the
+minimal form are in Section~\ref{sec:min-verilog} below.
 \end{infobox}
 
 \begin{diybox}[Digits only up to nine]
@@ -431,7 +432,7 @@ inputs. Which circuit is ``better'' depends on what is more expensive for
 you: the number of elements or the number of levels.
 
 \begin{infobox}[What the program does with your ``minimal'' form]
-\lookahead{when a circuit turns into a real board (Part~II), the optimizer
+\lookahead{when a circuit turns into a real board (Chapter~\ref{ch:flow}), the optimizer
 program rewrites the function itself: it does not have to repeat your minimal
 form, and looks for a variant that suits the resources of the chip. In such
 chips the logic is stored in small value tables with four inputs (they are
@@ -442,8 +443,8 @@ terms.}
 \end{infobox}
 
 Still, comparing your circuit with ``someone else's'' is useful already now:
-\lookahead{the \emph{RTL} tab in Logra shows what your project turned into
-after processing.}
+the \emph{RTL} tab in Logra shows what your project turned into
+after processing.
 
 \begin{diybox}[Security Panel: stage 3, the minimal form]
 \textbf{Task.} \stars{1} Build ``2 of 3'' with a guard in two variants:
@@ -467,6 +468,121 @@ criterion for stage~3: both circuits produce the same table, and the minimal
 form for four inputs is written in your notebook together with the number of
 groups.
 \end{diybox}
+
+\section{Don't-Care States and the Minimal Form in Verilog}
+\label{sec:min-verilog}
+
+Let us take the functions we minimized on the maps and write each of them in
+two ways: as a \emph{table} (\code{case}) and as a \emph{minimal form}
+(\code{assign}). The reading rules are the same as in
+Section~\ref{sec:comb-verilog}; the only new thing is the value \code{x}.
+
+\textbf{``A BCD digit greater than four'' with don't-care codes.} In the
+table we describe the codes $10$--$15$ with a \code{default} branch and write
+\code{1'bx} in it: ``the value does not matter''.
+
+\vfile{\codepath/b3_comb/gt4_dc.v}{code/b3\_comb/gt4\_dc.v}
+
+\textbf{How to read it.} The first branch lists five values (separated by
+commas) with a zero output, the second five with a one; everything else falls
+into \code{default}, and the output \code{x} tells the synthesizer ``choose
+whatever is convenient''. The minimal form from the Karnaugh map
+(Figure~\ref{fig:karnaugh_dc}) looks like this:
+
+\vfile{\codepath/b3_comb/gt4_min.v}{code/b3\_comb/gt4\_min.v}
+
+\textbf{How to read it.} Here $A=x[3]$, $B=x[2]$, $C=x[1]$, $D=x[0]$, so
+$F=A+BC+BD$ is written with \code{x[3]}, \code{x[2]\&x[1]},
+\code{x[2]\&x[0]}. On the digits $0$--$9$ both forms give the same; on the
+codes $10$--$15$ the simulator shows \code{x} (undefined) for \code{gt4\_dc},
+while the minimal form gives a definite value. If these codes never occur in the
+real circuit, it does not matter.
+
+\textbf{The range $3\ldots9$ in three ways.} The first is as a condition:
+
+\vfile{\codepath/b3_comb/range3to9_cmp.v}{code/b3\_comb/range3to9\_cmp.v}
+
+\textbf{How to read it.} \code{x >= 4'd3} is a comparison with the result 0 or
+1; \code{\&\&} is the logical ``and'' of two conditions. The form reads like
+the original phrase, and the synthesizer itself decides how to build the two
+comparisons. The second is the minimal form $F=A+B+CD$ with the Karnaugh map
+from this chapter:
+
+\vfile{\codepath/b3_comb/range3to9_min.v}{code/b3\_comb/range3to9\_min.v}
+
+The third is a \code{case} table where the range $3\ldots9$ is listed in one
+branch and the codes $10$--$15$ are given to the don't-care \code{x}:
+
+\vfile{\codepath/b3_comb/range3to9_case.v}{code/b3\_comb/range3to9\_case.v}
+
+\textbf{Comparison.} On the digits $0$--$9$ the three modules give the same
+table. On the codes $10$--$15$ they behave differently: the comparisons give
+$0$, the minimal form gives $1$, and \code{case} with \code{x} shows an undefined
+value in the simulator. All three answers are acceptable if these codes are
+impossible; if they are possible, the behaviour must be chosen and written
+explicitly, as in \code{default: y = 1'b0;}. The testbench \code{tb\_range.v}
+checks exactly this: on $0$--$9$ all forms match the reference, and on $10$--$15$
+it records what each of them gives.
+
+\vfile{\codepath/b3_comb/tb_range.v}{code/b3\_comb/tb\_range.v}
+
+\textbf{How to run it in Logra.} The \emph{Code} tab: paste one of the
+modules, \emph{Synthesize} (Ctrl+Enter). The \emph{Waveforms} tab: $x$ from a
+counter $0$--$15$ and the output $y$. For a comparison, put two modules in
+the project and compare their circuits on the \emph{RTL} tab: the form with
+comparisons and the minimal form give different pictures for the same table.
+
+\begin{warnbox}[Mistakes with x and case]
+\begin{itemize}
+  \item \textbf{Treating \code{x} as zero.} It is not a value but ``don't care'':
+        in different tools and in the simulator it may show up differently.
+        If a definite behaviour is needed on forbidden codes, write 0 or 1.
+  \item \textbf{Forgetting \code{default}.} Without it the output is remembered
+        for the unlisted inputs and a latch results; with a \code{default}
+        that assigns \code{x} there is no latch.
+  \item \textbf{Mixing up the bit order.} \code{x[3]} is the most significant
+        ($A$), not the least: with swapped bits you get a different function.
+\end{itemize}
+\end{warnbox}
+
+\begin{diybox}[Complete and change a module]
+\textbf{Task.} \stars{1} \emph{Repeat.} Type \code{range3to9\_min} and go
+through all 16 values of $x$ on the waveform. \stars{2} \emph{Change it.} Do
+the same for the function ``the digit is divisible by three'' (ones at
+$0,3,6,9$, codes $10$--$15$ are don't-care): write it with \code{case} and
+\code{default: y = 1'bx;}. \stars{3} \emph{Compare.} For the range $3\ldots9$
+write one more module without don't-care codes: \code{default: y = 1'b0;},
+and compare the number of blocks on the \emph{RTL} tab with the \code{x} variant.
+
+\textbf{In Logra.} The \emph{Code} tab, \emph{Synthesize}; the \emph{RTL} and
+\emph{Waveforms} tabs.
+
+\textbf{Expected result.} \stars{2} A one at $x=0,3,6,9$ and a zero at the
+other digits. \stars{3} Both modules agree on $0$--$9$; on
+$10$--$15$ the second one honestly gives $0$.
+
+\textbf{How to check.} For \stars{2} compare with the minimal form
+$\overline{A}\,\overline{B}\,\overline{C}\,\overline{D}+\overline{B}CD+BC\overline{D}+AD$:
+it must match on the digits $0$--$9$.
+\end{diybox}
+
+\textbf{Model answer to \stars{2}.}
+
+\begin{vcode}
+// A digit divisible by three: codes 10..15 are don't-care
+module div3_dc (
+    input      [3:0] x,
+    output reg       y
+);
+    always @* begin
+        case (x)
+            4'd0, 4'd3, 4'd6, 4'd9:                 y = 1'b1;
+            4'd1, 4'd2, 4'd4, 4'd5, 4'd7, 4'd8:     y = 1'b0;
+            default:                                y = 1'bx;
+        endcase
+    end
+endmodule
+\end{vcode}
 
 \section{Advanced Sections}
 
@@ -641,6 +757,8 @@ The answers are collected in Appendix~\ref{app:answers}.
   \item \stars{3}~\emph{A project with a criterion.} In the Designer, build the function ``the number lies in the range 3\ldots 9'' in two ways: from two comparators (the lesson ``A number in the range 3\ldots 9'') and from the minimal form with don't-care states. Acceptance criterion: both circuits agree on all the values $0$--$9$; the second way uses fewer blocks.
   \item \stars{3}~\emph{A project with a criterion (a stage of the ``Security Panel'' project).} ``2 of 3'' with a guard: write the minimal form of $y=arm\cdot(ab+ac+bc)$ on a Karnaugh map and build both variants (two levels and with a bracket). Acceptance criterion: the tables agree on all 16 rows, and the number of gates is written down.
   \item \stars{3}~For ``at least two of four'' ($a,b,c,d$) find the minimal form on a Karnaugh map and count the gates. Acceptance criterion: the circuit in the Designer agrees with the map on all 16 rows.
+  \item \stars{2}~\emph{Verilog.} Write the function ``the digit is divisible by three'' (ones at $0,3,6,9$, codes $10$--$15$ are don't-care) with \code{case} and \code{default: y = 1'bx;}, and compare it with the minimal form on the digits $0$--$9$.
+  \item \stars{3}~\emph{A project with a criterion.} Write ``the number lies in the range $3\ldots9$'' in three ways in Verilog: with comparisons, from the minimal form $F=A+B+CD$, and with \code{case}. Acceptance criterion: on the digits $0$--$9$ the three modules agree on the Waveforms tab; for the codes $10$--$15$ it is written down what each of them gives.
 \end{enumerate}
 \end{taskbox}
 

@@ -5,17 +5,17 @@
 сложность: \textcolor{FpgaOrange}{$\star$} --- разминка,
 \textcolor{FpgaOrange}{$\star\star$} --- нужно подумать,
 \textcolor{FpgaOrange}{$\star\star\star$} --- мини-проект. Каждое задание закрепляет
-определённую главу первой части (табл.~\ref{tab:task-map}); итоговое задание
+определённую теоретическую главу (табл.~\ref{tab:task-map}); итоговое задание
 13 собирает все узлы в «Охранную панель» и переносит её на плату.
 
 \begin{table}[H]
 \centering
-\caption{Какую главу первой части закрепляет каждое задание}
+\caption{Какую теоретическую главу закрепляет каждое задание}
 \label{tab:task-map}
 \small
 \begin{tabularx}{\textwidth}{c X X}
 \toprule
-\textbf{№} & \textbf{Задание} & \textbf{Закрепляет главу первой части} \\
+\textbf{№} & \textbf{Задание} & \textbf{Закрепляет главу} \\
 \midrule
 1  & Полусумматор на кнопках & «Арифметические узлы» (гл.~\ref{ch:arith}) \\
 2  & Функции через И-НЕ & «Логические элементы и булева алгебра» (гл.~\ref{ch:gates}) \\
@@ -29,7 +29,7 @@
 10 & Приёмник UART & «Синхронные схемы» (гл.~\ref{ch:sync}), синхронизатор \\
 11 & Игра «Реакция» & «Регистры и счётчики» (гл.~\ref{ch:regs}): сдвиговый регистр с обратной связью \\
 12 & ШИМ для сервопривода & «Цифра и аналоговый мир» (гл.~\ref{ch:analog}) \\
-13 & Охранная панель на плату & все главы первой части (сквозной проект) \\
+13 & Охранная панель на плату & все теоретические главы (сквозной проект) \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -37,12 +37,12 @@
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[node distance=5mm and 7mm,
-  t/.style={block, minimum width=24mm, minimum height=11mm, font=\sffamily\scriptsize}]
+  t/.style={block, minimum width=24mm, minimum height=11mm, font=\sffamily\footnotesize}]
   \node[t] (a) {1--3\\комбинационная\\логика};
   \node[t, right=of a] (b) {4--6\\счётчики\\и регистры};
   \node[t, right=of b] (c) {7--8\\автоматы};
-  \node[oblock, minimum width=24mm, minimum height=11mm, font=\sffamily\scriptsize, right=of c] (d) {9--10\\интерфейсы};
-  \node[hblock, minimum width=24mm, minimum height=11mm, font=\sffamily\scriptsize, right=of d] (e) {11--13\\проекты};
+  \node[oblock, minimum width=24mm, minimum height=11mm, font=\sffamily\footnotesize, right=of c] (d) {9--10\\интерфейсы};
+  \node[hblock, minimum width=24mm, minimum height=11mm, font=\sffamily\footnotesize, right=of d] (e) {11--13\\проекты};
   \draw[arr] (a) -- (b); \draw[arr] (b) -- (c); \draw[arr] (c) -- (d); \draw[arr] (d) -- (e);
 \end{tikzpicture}
 \caption{Карта заданий}
@@ -131,7 +131,7 @@ $27\,000\,000 / 115\,200 \approx 234$ такта. Смотрите резуль�
 \end{taskbox}
 
 \begin{taskbox}[Задание 13 \quad \textcolor{FpgaOrange}{$\star\star\star$}\quad «Охранная панель» на плату]
-\textbf{Итоговое задание.} Соберите на Tang Nano 20K охранную панель, которую вы строили в первой части и описали на Verilog в главе~\ref{ch:bridge}: три датчика (дверь, окно, движение), ночной режим, порог шума, постановка на охрану, запоминание тревоги, ввод кода 1-0-1, сирена (светодиод или зуммер). У платы всего две кнопки S1 и S2, поэтому часть входов вынесите на свободные контакты GPIO с тумблерами (или соберите схему на вкладке «Лаборатория»): S1 --- дверь, S2 --- постановка на охрану и ввод бита кода, остальное на тумблерах.
+\textbf{Итоговое задание.} Соберите на Tang Nano 20K охранную панель, которую вы строили на протяжении книги и описали на Verilog в главе~\ref{ch:bridge}: три датчика (дверь, окно, движение), ночной режим, порог шума, постановка на охрану, запоминание тревоги, ввод кода 1-0-1, сирена (светодиод или зуммер). У платы всего две кнопки S1 и S2, поэтому часть входов вынесите на свободные контакты GPIO с тумблерами (или соберите схему на вкладке «Лаборатория»): S1 --- дверь, S2 --- постановка на охрану и ввод бита кода, остальное на тумблерах.
 
 \textbf{Как делать.}
 \begin{enumerate}

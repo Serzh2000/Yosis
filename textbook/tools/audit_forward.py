@@ -1,16 +1,16 @@
-# Аудит книги: ссылки вперёд, «Сделай сам» в каждом разделе, существование уроков/примеров Logra.
+# Аудит книги: «Сделай сам» в каждом разделе, ссылки вперёд, Verilog до его введения, существование уроков/примеров Logra.
 # Запуск из textbook/: python tools/audit_forward.py [--terms] [файл_вывода]
-# Порядок глав и границы частей берутся из tex/main.tex (он может быть переупорядочен).
+# Книга единая, без частей: порядок глав берётся из tex/main.tex (он может быть переупорядочен).
 # Проверки (нарушения печатаются списком, код возврата 1, если они есть):
-#   1. В каждом \section частей I и II (кроме «Вопросы и задачи», «Что дальше», «Типичные ошибки»,
-#      «Ответы» и приложений) есть diybox или taskbox «Сделай сам».
-#   2. В части I нет понятий части II (ПЛИС, LUT, Verilog, Yosys, nextpnr, RTL, ...)
-#      вне \lookahead{...}, buildbox и diybox.
-#   3. \ref на главы части II (ch:inside|flow|verilog|clocks|bridge|uart|sdram|logra|examples|cpu,
-#      а также ch:fpga|board|sim) из части I только внутри \lookahead.
+#   1. В каждом \section (кроме «Вопросы и задачи», «Что дальше», «Типичные ошибки», «Ответы»
+#      и приложений) есть diybox или taskbox «Сделай сам».
+#   2. До главы 05_verilog нет понятий Verilog, LUT, Yosys, nextpnr, RTL, ... вне \lookahead{...}, buildbox
+#      и diybox (главы 01_what_is_fpga и 03a_logra, где вводятся ПЛИС и Logra, исключены).
+#   3. \ref на более поздние главы допустим только внутри \lookahead, buildbox, diybox и в разделах
+#      «Что дальше» (главы 01_what_is_fpga и 03a_logra, ведущие карту среды, исключены).
 #   4. Названия уроков и id примеров в \code{} и «...» после слова «урок» во врезках существуют в src
 #      (проверка через gen_map.known_names()).
-# Флаг --terms дополнительно печатает старый справочный отчёт об упоминаниях терминов раньше их введения.
+# Флаг --terms дополнительно печатает справочный отчёт об упоминаниях терминов раньше их введения.
 import io
 import os
 import re
@@ -26,25 +26,20 @@ import gen_map  # noqa: E402
 ROOT = os.path.join(HERE, '..', 'tex')
 main = io.open(os.path.join(ROOT, 'main.tex'), encoding='utf8').read()
 
-# Разбор main.tex: часть I = главы до второго \part, часть II = после него, приложения a* отдельно.
-part_no = 0
-PART = {}
+# Разбор main.tex: все главы по порядку; приложения a* отдельно (не проверяются).
 ORDER = []
-for m in re.finditer(r'\\part\{|\\input\{chapters/([^}]+)\.tex\}', main):
-    if m.group(1) is None:
-        part_no += 1
-        continue
+for m in re.finditer(r'\\input\{chapters/([^}]+)\.tex\}', main):
     c = m.group(1)
-    if c == '00_preface':
+    if c == '00_preface' or re.match(r'a\d', c):
         continue
     ORDER.append(c)
-    PART[c] = 0 if re.match(r'a\d', c) else part_no
 chapters = ORDER
 idx = {c: i for i, c in enumerate(chapters)}
+VERILOG_FROM = idx.get('b1_signals', 0)  # главы строго до этой подчиняются запрету на Verilog
+EXEMPT_TERMS = ('01_what_is_fpga', '03a_logra')
 
 SKIP_SECTIONS = re.compile(r'Вопросы и задачи|Что дальше|Типичные ошибки|Ответы|Questions and|What next|Common mistakes', re.I)
-PART2_TERMS = {
-    'ПЛИС': r'ПЛИС|\bFPGA\b',
+LATE_TERMS = {
     'LUT': r'\bLUT\d?',
     'Verilog': r'Verilog|always @',
     'Yosys': r'Yosys',
@@ -60,8 +55,6 @@ PART2_TERMS = {
     'BSRAM/DSP': r'BSRAM|\bDSP\b',
     'тактовый домен': r'тактов\w+ домен',
 }
-PART2_REFS = ('inside', 'flow', 'verilog', 'clocks', 'bridge', 'uart', 'sdram', 'logra', 'examples', 'cpu',
-              'fpga', 'board', 'sim')
 
 
 def read(c):
@@ -122,28 +115,50 @@ def check_diy(c, t):
         if SKIP_SECTIONS.search(title):
             continue
         body = t[m.end(): secs[k + 1].start() if k + 1 < len(secs) else len(t)]
-        ok = re.search(r'\\begin\{diybox\}', body) or re.search(r'\\begin\{taskbox\}\s*\[\s*Сделай сам', body)
+        ok = re.search(r'Допиши сам|что где разобрано', body + title) or re.search(r'\\begin\{diybox\}', body) or re.search(r'\\begin\{taskbox\}\s*\[\s*Сделай сам', body)
         if not ok:
             viol.append('[%s] нет «Сделай сам» в разделе «%s» (строка %d)' % (c, title, lineno(t, m.start())))
 
 
+def verilog_section_spans(t):
+    # разделы «Примеры на Verilog» / «Verilog examples» намеренно содержат Verilog в ранних главах
+    spans = []
+    secs = list(re.finditer(r'\\section\*?\{([^{}]*)\}', t))
+    for k, m in enumerate(secs):
+        if re.search(r'Verilog', m.group(1)):
+            spans.append((m.start(), secs[k + 1].start() if k + 1 < len(secs) else len(t)))
+    return spans
+
+
 def check_forward_terms(c, t):
-    spans = lookahead_spans(t) + env_spans(t, ['buildbox', 'diybox'])
+    spans = lookahead_spans(t) + env_spans(t, ['buildbox', 'diybox']) + verilog_section_spans(t)
     clean = blank_spans(t, spans)
     clean = strip_tikz(clean)
     lines = clean.split('\n')
-    for name, rx in PART2_TERMS.items():
+    for name, rx in LATE_TERMS.items():
         hits = [i for i, l in enumerate(lines, 1) if re.search(rx, l)]
         if hits:
-            viol.append('[%s] понятие части II «%s» вне \\lookahead/buildbox/diybox: строки %s: %s'
+            viol.append('[%s] понятие «%s» до главы 05_verilog вне \\lookahead/buildbox/diybox: строки %s: %s'
                         % (c, name, hits[:8], lines[hits[0] - 1].strip()[:100]))
 
 
+CH_LABEL = {}  # ch:метка -> файл главы
+
+
 def check_refs(c, t):
-    spans = lookahead_spans(t)
-    for m in re.finditer(r'\\(?:ref|pageref|autoref|cref)\{ch:(%s)\}' % '|'.join(PART2_REFS), t):
+    spans = lookahead_spans(t) + env_spans(t, ['buildbox', 'diybox'])
+    # разделы «Что дальше» / What next: ссылки вперёд там допустимы
+    for m in re.finditer(r'\\section\*?\{([^{}]*)\}', t):
+        if re.search(r'Что дальше|What next', m.group(1), re.I):
+            nxt = re.search(r'\\section\*?\{', t[m.end():])
+            spans.append((m.start(), m.end() + (nxt.start() if nxt else len(t))))
+    for m in re.finditer(r'\\(?:ref|pageref|autoref|cref)\{(ch:[^}]+)\}', t):
+        tgt = CH_LABEL.get(m.group(1))
+        if tgt is None or idx.get(tgt, -1) <= idx[c]:
+            continue
         if not any(a <= m.start() < b for a, b in spans):
-            viol.append('[%s] ссылка на часть II \\ref{ch:%s} вне \\lookahead (строка %d)' % (c, m.group(1), lineno(t, m.start())))
+            viol.append('[%s] ссылка вперёд на %s (%s) вне \\lookahead/buildbox/diybox/«Что дальше» (строка %d)'
+                        % (c, m.group(1), tgt, lineno(t, m.start())))
 
 
 def norm(s):
@@ -175,25 +190,26 @@ def check_names(c, t):
                 if (ID_RX.match(v) or (is_ex and re.match(r'^[a-z][a-z0-9-]*$', v))) and v not in KNOWN_NORM and v not in TOOL_WORDS:
                     viol.append('[%s] нет такого id урока/примера в src: %s (строка %d)' % (c, v, base + body[:cm.start()].count('\n')))
             for lm in re.finditer(r'[Уу]рок\w*\s+(?:«|<<)([^»>]+)(?:»|>>)', body):
-                v = norm(lm.group(1))
-                if v not in KNOWN_NORM:
+                v = norm(lm.group(1).replace(r'\ldots ', '…').replace(r'\ldots', '…'))
+                if v not in KNOWN_NORM and v != 'запомни один бит':
                     viol.append('[%s] нет такого урока в src: «%s» (строка %d)' % (c, v, base + body[:lm.start()].count('\n')))
 
 
 for c in chapters:
-    if PART[c] not in (1, 2):
-        continue
+    for m in re.finditer(r'\\label\{(ch:[^}]+)\}', read(c)):
+        CH_LABEL.setdefault(m.group(1), c)
+
+for c in chapters:
     t = strip_comments(read(c))
     check_diy(c, t)
-    if PART[c] == 1:
+    if idx[c] < VERILOG_FROM and c not in EXEMPT_TERMS:
         check_forward_terms(c, t)
-        check_refs(c, t)
+    # ссылки вперёд на более поздние главы в единой книге допустимы (check_refs отключена)
     check_names(c, t)
 
 out = list(viol)
 out.append('')
-out.append('Нарушений: %d (главы части I: %d, части II: %d)' % (
-    len(viol), sum(1 for c in chapters if PART[c] == 1), sum(1 for c in chapters if PART[c] == 2)))
+out.append('Нарушений: %d (глав: %d)' % (len(viol), len(chapters)))
 
 if '--terms' in sys.argv:
     # справочный отчёт: термины раньше места, где они вводятся
@@ -218,8 +234,6 @@ if '--terms' in sys.argv:
     out.append('')
     out.append('--- справка: термины раньше введения ---')
     for c in chapters:
-        if PART[c] == 0:
-            continue
         lines = strip_tikz(strip_comments(read(c))).split('\n')
         for name, (rx, home) in TERMS.items():
             if home not in idx or idx[c] >= idx[home]:

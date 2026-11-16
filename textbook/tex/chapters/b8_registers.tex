@@ -18,8 +18,8 @@
 
 \newcommand{\dff}[3]{% имя, x, y  -- D-триггер 12x14 мм
   \draw[thick, fill=green!8] (#2,#3) rectangle ++(1.2,1.4);
-  \node[font=\sffamily\scriptsize] at (#2+0.22,#3+1.05) {D};
-  \node[font=\sffamily\scriptsize] at (#2+0.98,#3+1.05) {Q};
+  \node[font=\sffamily\footnotesize] at (#2+0.22,#3+1.05) {D};
+  \node[font=\sffamily\footnotesize] at (#2+0.98,#3+1.05) {Q};
   \draw[thick] (#2,#3+0.2) -- (#2+0.18,#3+0.35) -- (#2,#3+0.5);
   \coordinate (#1-d) at (#2,#3+1.05); \coordinate (#1-q) at (#2+1.2,#3+1.05);
   \coordinate (#1-c) at (#2,#3+0.35);}
@@ -35,14 +35,14 @@ $n$-разрядное число до следующего фронта. На �
 \centering
 \begin{tikzpicture}
   \foreach \i in {0,...,3} {
-    \pgfmathsetmacro{\x}{(3-\i)*2.3}
+    \pgfmathsetmacro{\x}{(3-\i)*3.0}
     \dff{r\i}{\x}{0}
     \draw[wire] (r\i-d) -- ++(-0.4,0) |- ($(r\i-d)+(-0.4,1.0)$) node[above] {$d_\i$};
-    \draw[wire] (r\i-q) -- ++(0.35,0) -- ++(0,-1.5) node[below] {$q_\i$};
+    \draw[wire] (r\i-q) -- ++(0.5,0) -- ++(0,1.0) node[above] {$q_\i$};
     \draw[wire, FpgaBlue] (r\i-c) -- ++(-0.3,0) -- ++(0,-0.75);
   }
-  \draw[wire, FpgaBlue] (-1.4,-0.4) node[left, text=FpgaDark] {CLK} -- (6.6,-0.4);
-  \foreach \i in {0,...,3} { \pgfmathsetmacro{\x}{(3-\i)*2.3-0.3} \fill[FpgaBlue] (\x,-0.4) circle (1.3pt); }
+  \draw[wire, FpgaBlue] (-1.4,-0.4) node[left, text=FpgaDark] {CLK} -- (9.0,-0.4);
+  \foreach \i in {0,...,3} { \pgfmathsetmacro{\x}{(3-\i)*3.0-0.3} \fill[FpgaBlue] (\x,-0.4) circle (1.3pt); }
 \end{tikzpicture}
 \caption{Четырёхразрядный регистр: четыре D-триггера с общим тактом}
 \label{fig:reg}
@@ -78,6 +78,55 @@ CLK. Значение 7 продержалось на входе меньше т
 \textbf{Как проверить:} на Диаграммах значение 7 на входе, пришедшее между
 фронтами, не появилось на выходе (как на рис.~\ref{fig:reg_t}).
 \end{diybox}
+
+\subsection{Регистр на Verilog}
+\label{sec:regs-reg-v}
+
+На Verilog регистр --- это \code{reg} шириной в несколько бит и один
+тактируемый блок. Один и тот же код описывает любое число триггеров, ширину
+задаёт параметр \code{W}.
+
+\vfile{\codepath/b8_registers/reg_ce.v}{code/b8\_registers/reg\_ce.v}
+
+\textbf{Как читается.} Заголовок \code{\#(parameter W = 4)} задаёт ширину по
+умолчанию, которую можно изменить при подключении модуля. \code{[W-1:0]} ---
+диапазон битов от старшего к младшему. По фронту: если \code{rst}, записать
+нули (\code{\{W\{1'b0\}\}} --- «повторить \code{1'b0} $W$ раз»), иначе если
+\code{we}, записать \code{d}; иначе регистр хранит. Порядок веток --- это
+приоритет: сброс сильнее записи.
+
+Тестбенч \code{tb\_reg\_ce.v} проверяет пять тактов: сброс; запись \code{A};
+\code{we=0} (регистр хранит \code{A}, хотя на входе \code{5}); запись \code{7};
+одновременные \code{rst} и \code{we} (побеждает сброс). \textbf{Как запустить
+в Logra:} вкладка \term{Код}, вставьте модуль, Ctrl+Enter; \term{RTL} покажет
+четыре триггера с общим тактом и логику выбора перед ними; на \term{Диаграммах}
+подайте на \code{d} значения \code{5, A, 7} между фронтами и убедитесь, что
+между фронтами выход не меняется.
+
+\begin{diybox}[Регистр на Verilog: допиши модуль]
+\textbf{Задание.} \stars{1} Сделайте регистр на 8 бит, не меняя тела модуля:
+только параметр. \stars{2} Добавьте второй выход \code{changed}, который равен 1
+в такте, когда регистр действительно получил новое значение. \stars{3} Сделайте
+регистр, который хранит код замка (4 бита) и только сравнивает: выход
+\code{open} равен 1, если на вход подан тот же код.\\
+\textbf{Ожидаемый результат:} при $W=8$ на \term{RTL} восемь триггеров.
+\end{diybox}
+
+\textbf{Образец ответа.}
+\begin{vcode}
+module code_lock (
+    input        clk,
+    input        we,         // запись нового кода
+    input  [3:0] code_in,
+    output       open        // 1, если code_in совпадает с хранимым кодом
+);
+    reg [3:0] stored = 4'b0000;
+    always @(posedge clk) if (we) stored <= code_in;
+    assign open = (code_in == stored);   // сравнение: комбинационная логика
+endmodule
+\end{vcode}
+Первое задание решается строкой \code{reg\_ce \#(.W(8)) r8 (\ldots);} при
+подключении модуля в верхнем модуле.
 
 \section{Сдвиговый регистр}
 
@@ -119,6 +168,81 @@ CLK. Значение 7 продержалось на входе меньше т
 \caption{Единица, поданная на вход, продвигается по регистру на один разряд
 за такт}
 \end{figure}
+
+\subsection{Сдвиговый регистр на Verilog}
+\label{sec:regs-shift-v}
+
+Цепочка триггеров описывается одной строкой: склейка \code{\{\ldots\}}
+отбрасывает старший бит и дописывает новый справа.
+
+\vfile{\codepath/b8_registers/shift_sipo.v}{code/b8\_registers/shift\_sipo.v}
+
+\textbf{Как читается.} \code{q[W-2:0]} --- все биты, кроме старшего;
+\code{\{q[W-2:0], din\}} дописывает \code{din} в младший разряд. После
+присваивания старый старший бит пропадает, остальные «сдвинулись» на разряд
+влево. Это тот же регистр, что на рис.~\ref{fig:shift}, только разряды
+нумеруются слева направо, а не справа налево.
+
+Обратная задача --- загрузить слово целиком и выдавать по биту:
+
+\vfile{\codepath/b8_registers/shift_piso.v}{code/b8\_registers/shift\_piso.v}
+
+\textbf{Как читается.} Перед каждым триггером стоит мультиплексор «загрузка
+или сдвиг»: при \code{load} в регистр попадает слово \code{d}, иначе
+содержимое сдвигается влево и справа добавляется 0. Выход \code{dout} ---
+старший бит, поэтому слово уходит старшим битом вперёд.
+
+\textbf{Типичная ошибка: «=» вместо «<=».} Посмотрите на два варианта
+сдвига, которые отличаются одним знаком:
+
+\vfile{\codepath/b8_registers/shift_bad.v}{code/b8\_registers/shift\_bad.v}
+
+\vfile{\codepath/b8_registers/shift_ok.v}{code/b8\_registers/shift\_ok.v}
+
+В первом блоке присваивания \emph{блокирующие}: строка \code{q1 = q0} уже
+видит новое значение \code{q0}, а строка \code{q2 = q1} --- новое \code{q1},
+поэтому бит с входа \code{d} попадает во все три выхода за один такт.
+Получился не сдвиговый регистр, а один триггер, подключённый к трём выходам.
+Во втором блоке присваивания \emph{неблокирующие}: все правые части
+вычисляются по значениям, которые были \emph{до} фронта, и триггеры
+обновляются одновременно: бит продвигается на один разряд за такт.
+Тестбенч \code{tb\_shift.v} подаёт единицу на один такт и проверяет оба
+результата: \code{111} у \code{shift\_bad} сразу, а у \code{shift\_ok} ---
+\code{001}, затем \code{010} и \code{100}. Он же собирает слово \code{1011}
+из потока и выдаёт его обратно из \code{shift\_piso}.
+
+\textbf{Как запустить в Logra.} Вкладка \term{Код}: вставьте
+\code{shift\_ok}, Ctrl+Enter, \term{Диаграммы}: подайте \code{d=1} на один
+такт и проследите единицу по \code{q0}, \code{q1}, \code{q2}. Затем замените
+\code{<=} на \code{=} (или вставьте \code{shift\_bad}) и повторите: на
+\term{RTL} вместо цепочки из трёх триггеров будет один триггер с тремя
+выходами.
+
+\begin{diybox}[Сдвиг на Verilog: допиши модуль]
+\textbf{Задание.} \stars{1} Сделайте сдвиг вправо (новый бит входит в старший
+разряд). \stars{2} Добавьте вход разрешения \code{en}: при \code{en=0} регистр
+хранит. \stars{3} Сделайте сдвиговый регистр с задержкой на 5 тактов:
+выход равен входу, пришедшему 5 тактов назад.\\
+\textbf{Ожидаемый результат:} при сдвиге вправо первый пришедший бит
+оказывается в младшем разряде, поэтому слово нужно подавать младшим битом
+вперёд; задержка на 5 тактов использует пять триггеров.
+\end{diybox}
+
+\textbf{Образец ответа.}
+\begin{vcode}
+module shift_right (input clk, rst, en, din, output reg [3:0] q);
+    always @(posedge clk) begin
+        if (rst)     q <= 4'b0000;
+        else if (en) q <= {din, q[3:1]};   // новый бит слева, младший уходит
+    end
+endmodule
+
+module delay5 (input clk, din, output dout);
+    reg [4:0] sr = 5'b00000;
+    always @(posedge clk) sr <= {sr[3:0], din};
+    assign dout = sr[4];                    // вход, задержанный на 5 тактов
+endmodule
+\end{vcode}
 
 \subsection{Зачем сдвигать}
 
@@ -175,11 +299,11 @@ CLK. Значение 7 продержалось на входе меньше т
     \dff{l\i}{\x}{0}
   }
   \draw[wire] (l0-q) -- (l1-d); \draw[wire] (l1-q) -- (l2-d);
-  \node[gXOR, minimum width=9mm, minimum height=7mm, rotate=180] (x) at (2.6,2.3) {};
-  \draw[wire] (l2-q) -- ++(0.4,0) |- (x.input 1);
+  \node[gXOR, rotate=180] (x) at (2.0,2.8) {};
+  \draw[wire] (l2-q) -- ++(0.4,0) |- (x.input 2);
   \fill ($(l1-q)+(0.3,0)$) circle (1.3pt);
-  \draw[wire] ($(l1-q)+(0.3,0)$) |- (x.input 2);
-  \draw[wire] (x.output) -| ($(l0-d)+(-0.4,0)$) -- (l0-d);
+  \draw[wire] ($(l1-q)+(0.3,0)$) |- (x.input 1);
+  \draw[wire] (x.output) -| ($(l0-d)+(-0.5,0)$) -- (l0-d);
   \foreach \i in {0,...,2} \node[lbl, below=1mm] at ($(l\i-c)+(0.6,-0.4)$) {$q_\i$};
 \end{tikzpicture}
 \end{minipage}\hfill
@@ -208,6 +332,61 @@ CLK. Значение 7 продержалось на входе меньше т
 
 Состояние «все нули» у такого регистра запретное: из него $q_1\oplus q_2=0$,
 и регистр навсегда остаётся нулевым.
+
+\subsection{Кольцо и LFSR на Verilog}
+\label{sec:regs-lfsr-v}
+
+Кольцевой регистр --- это сдвиг, в котором выход старшего разряда возвращается
+на вход младшего:
+
+\vfile{\codepath/b8_registers/ring4.v}{code/b8\_registers/ring4.v}
+
+\textbf{Как читается.} При сбросе записывается \code{0001} (одна единица); на
+каждом такте \code{\{q[2:0], q[3]\}} сдвигает всё влево, а старший бит
+дописывается справа. После четырёх тактов единица возвращается на место.
+Если вывести \code{q} на четыре светодиода, получится «бегущий огонь».
+
+LFSR --- тот же сдвиг, в котором новый бит вычисляется как исключающее ИЛИ
+двух разрядов:
+
+\vfile{\codepath/b8_registers/lfsr3.v}{code/b8\_registers/lfsr3.v}
+
+\textbf{Как читается.} Провод \code{fb} --- обратная связь $q_1\oplus q_2$.
+При сбросе записывается \code{001} (только $q_0=1$), а не нуль, поэтому
+регистр не застревает: он проходит все семь ненулевых состояний из таблицы на
+рис.~\ref{fig:lfsr}. Четырёхразрядный вариант отличается только отводами и
+проходит 15 состояний:
+
+\vfile{\codepath/b8_registers/lfsr4.v}{code/b8\_registers/lfsr4.v}
+
+Тестбенч \code{tb\_lfsr\_ring.v} проверяет, что период кольца равен 4, у
+\code{lfsr3} --- 7, у \code{lfsr4} --- 15; что все состояния внутри периода
+различны и ни разу не встретился нуль. \textbf{Как запустить в Logra:}
+вкладка \term{Код}, Ctrl+Enter; на \term{Диаграммах} подайте \code{rst=1} на
+один такт, затем \code{rst=0} и выпишите состояния \code{q}: сверьте с таблицей
+рис.~\ref{fig:lfsr}. Для четырёх светодиодов выведите \code{q} на выводы платы.
+
+\begin{diybox}[Кольцо и LFSR на Verilog: допиши модуль]
+\textbf{Задание.} \stars{1} Сделайте кольцо на 6 разрядов. \stars{2} Сделайте
+счётчик Джонсона: на вход младшего разряда подаётся \emph{инверсия} старшего
+(\code{\{q[2:0], \textasciitilde q[3]\}}); сколько состояний получилось у 4
+разрядов? \stars{3} Что произойдёт с \code{lfsr4}, если убрать сброс и не
+задать начальное значение (регистр стартует с \code{0000})?\\
+\textbf{Ожидаемый результат:} счётчик Джонсона проходит 8 состояний
+(\code{0000, 0001, 0011, 0111, 1111, 1110, 1100, 1000}).
+\end{diybox}
+
+\textbf{Образец ответа.}
+\begin{vcode}
+module johnson4 (input clk, rst, output reg [3:0] q);
+    always @(posedge clk) begin
+        if (rst) q <= 4'b0000;
+        else     q <= {q[2:0], ~q[3]};   // инверсия старшего бита на вход
+    end
+endmodule
+\end{vcode}
+У регистра из третьего задания все разряды равны нулю, и обратная связь
+$q_3\oplus q_2=0$ навсегда держит его в \code{0000}.
 
 \begin{diybox}[Сдвиг, кольцо и LFSR]
 \textbf{Задание.} \stars{1} Урок «Сдвиговый регистр блоком». \stars{2} Уроки
@@ -243,11 +422,11 @@ CLK. Значение 7 продержалось на входе меньше т
   \foreach \i in {0,...,2} {
     \pgfmathsetmacro{\x}{\i*2.8}
     \draw[thick, fill=green!8] (\x,0) rectangle ++(1.2,1.4);
-    \node[font=\sffamily\scriptsize] at (\x+0.22,1.05) {T};
-    \node[font=\sffamily\scriptsize] at (\x+0.98,1.05) {Q};
-    \node[font=\sffamily\scriptsize] at (\x+0.98,0.35) {$\overline{\text{Q}}$};
+    \node[font=\sffamily\footnotesize] at (\x+0.22,1.05) {T};
+    \node[font=\sffamily\footnotesize] at (\x+0.98,1.05) {Q};
+    \node[font=\sffamily\footnotesize] at (\x+0.98,0.35) {$\overline{\text{Q}}$};
     \draw[thick] (\x,0.2) -- (\x+0.18,0.35) -- (\x,0.5);
-    \draw[wire] (\x,1.05) -- ++(-0.3,0) node[left, font=\scriptsize] {1};
+    \draw[wire] (\x,1.05) -- ++(-0.3,0) node[left, font=\footnotesize] {1};
     \draw[wire] (\x+1.2,1.05) -- ++(0.4,0) -- ++(0,0.8) node[above] {$q_\i$};
   }
   \draw[wire, FpgaBlue] (-1.0,0.35) node[left, text=FpgaDark] {CLK} -- (0,0.35);
@@ -290,9 +469,9 @@ $011 \to 100$ на выходе на короткое время появляю�
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}
-  \node[draw=FpgaGreen, fill=green!8, thick, minimum width=27mm, minimum height=18mm, font=\sffamily\small, align=center] (reg) at (4.4,0) {регистр\\\scriptsize $n$ бит};
-  \node[font=\sffamily\scriptsize, anchor=west] at ([xshift=0.5mm]reg.west) {D};
-  \node[font=\sffamily\scriptsize, anchor=east] at ([xshift=-0.5mm]reg.east) {Q};
+  \node[draw=FpgaGreen, fill=green!8, thick, minimum width=27mm, minimum height=18mm, font=\sffamily\small, align=center] (reg) at (4.4,0) {регистр\\\footnotesize $n$ бит};
+  \node[font=\sffamily\footnotesize, anchor=west] at ([xshift=0.5mm]reg.west) {D};
+  \node[font=\sffamily\footnotesize, anchor=east] at ([xshift=-0.5mm]reg.east) {Q};
   \draw[thick] ([xshift=-1.2mm]reg.south) -- ([yshift=1.8mm]reg.south) -- ([xshift=1.2mm]reg.south);
   \draw[wire, FpgaBlue] (reg.south) -- ++(0,-0.8) node[below, text=FpgaDark] {CLK};
   \node[draw=FpgaBlue, fill=FpgaLight, thick, circle, minimum size=12mm, font=\sffamily\bfseries] (add) at (1.4,0) {$+1$};
@@ -319,6 +498,70 @@ $011 \to 100$ на выходе на короткое время появляю�
 рис.~\ref{fig:sync_counter}.
 \end{diybox}
 
+\subsection{Счётчики на Verilog}
+\label{sec:regs-cnt-v}
+
+Синхронный счётчик --- это регистр, в который каждый такт записывается
+$Q+1$ (рис.~\ref{fig:sync_counter}). На Verilog это одна строка:
+
+\vfile{\codepath/b8_registers/cnt_bin.v}{code/b8\_registers/cnt\_bin.v}
+
+\textbf{Как читается.} По фронту: если сброс --- нули; иначе если разрешён
+счёт --- \code{q <= q + 1'b1}. Справа читается \emph{старое} \code{q},
+слева записывается новое, сумматор «+1» синтезатор ставит сам. Переполнения
+нет в смысле ошибки: сумма отбрасывает перенос, и после \code{1111} получается
+\code{0000} (модуль $2^W$). Тестбенч \code{tb\_counters.v} проверяет 16 шагов
+подряд, включая переход $15\to0$.
+
+Часто счётчик должен загружать заданное число. Приоритеты задают порядком
+\code{if}: сначала сброс, затем загрузка, затем счёт.
+
+\vfile{\codepath/b8_registers/cnt_load.v}{code/b8\_registers/cnt\_load.v}
+
+А реверсивный считает в обе стороны, и «ноль минус один» даёт максимальное
+число:
+
+\vfile{\codepath/b8_registers/cnt_updown.v}{code/b8\_registers/cnt\_updown.v}
+
+\textbf{Как читается.} Оператор \code{?:} выбирает между
+\code{q + 1} и \code{q - 1}: перед регистром на \term{RTL} вы увидите
+сумматор, вычитатель и мультиплексор, а не два отдельных счётчика. Тестбенч
+проверяет загрузку (\code{d=9}, потом \code{10}) и переход
+$0\to15$ при счёте вниз.
+
+\textbf{Как запустить в Logra.} Вкладка \term{Код}: вставьте
+\code{cnt\_bin} и нажмите Ctrl+Enter. На \term{Диаграммах} подайте
+\code{rst=1} на один такт, затем \code{en=1} и посмотрите, как каждый следующий
+разряд меняется вдвое реже. Повторите для \code{cnt\_load}: подайте
+\code{load=1} с \code{d=9} на один такт и убедитесь, что дальше счёт идёт с
+девяти.
+
+\begin{diybox}[Счётчик на Verilog: допиши модуль]
+\textbf{Задание.} \stars{1} Сделайте счётчик на 8 бит с выходом \code{full},
+равным 1 на числе 255. \stars{2} Сделайте счётчик, который считает только
+пока \code{en=1} и останавливается (не переходит в 0) на 15. \stars{3}
+Сделайте счётчик с шагом \code{step} (3-битный вход): \code{q <= q + step}.\\
+\textbf{Ожидаемый результат:} счётчик с остановкой замирает на \code{1111} и
+не уходит в 0.
+\end{diybox}
+
+\textbf{Образец ответа.}
+\begin{vcode}
+module cnt_stop (input clk, rst, en, output reg [3:0] q);
+    always @(posedge clk) begin
+        if (rst)                  q <= 4'd0;
+        else if (en && q != 4'd15) q <= q + 4'd1;   // на 15 остаёмся
+    end
+endmodule
+
+module cnt_step (input clk, rst, input [2:0] step, output reg [7:0] q);
+    always @(posedge clk) begin
+        if (rst) q <= 8'd0;
+        else     q <= q + step;       // ширина step расширяется до 8 бит
+    end
+endmodule
+\end{vcode}
+
 \section{Делитель частоты и счётчик по модулю}
 
 Как видно на рис.~\ref{fig:count_t}, каждый разряд счётчика --- это
@@ -336,8 +579,8 @@ $0, 1, \ldots, N-1$ и затем сбрасывается в 0. Для этог
   \node[draw=FpgaGreen, fill=green!8, thick, minimum width=18mm, minimum height=16mm, font=\sffamily\small] (reg) at (5.6,0) {регистр};
   \draw[wire, FpgaBlue] (reg.south) -- ++(0,-0.6) node[right, text=FpgaDark, font=\sffamily\small] {CLK};
   \draw[thick, fill=orange!15] (3.0,0.9) -- (3.8,0.5) -- (3.8,-0.5) -- (3.0,-0.9) -- cycle;
-  \node[font=\sffamily\scriptsize] at (3.4,0) {MUX};
-  \node[font=\tiny, anchor=west] at (3.02,0.5) {0}; \node[font=\tiny, anchor=west] at (3.02,-0.5) {1};
+  \node[font=\sffamily\footnotesize] at (3.4,0) {MUX};
+  \node[font=\footnotesize, anchor=west] at (3.02,0.5) {0}; \node[font=\footnotesize, anchor=west] at (3.02,-0.5) {1};
   \node[draw=FpgaBlue, fill=FpgaLight, thick, circle, minimum size=10mm, font=\sffamily\bfseries\small] (add) at (1.2,0.5) {$+1$};
   \draw[bus, -{Stealth}] (add.east) -- (3.0,0.5);
   \draw[bus, -{Stealth}] (1.8,-0.5) node[left, text=FpgaDark] {0} -- (3.0,-0.5);
@@ -382,6 +625,86 @@ T-триггер, получится меандр 0,5~Гц (один перио�
 меандра ровно 1~Гц берут модуль $13\,500\,000$: импульс приходит каждые полсекунды
 и переключает триггер.
 
+\subsection{Счётчик по модулю $N$ и делитель на Verilog}
+\label{sec:regs-div-v}
+
+Счётчик по модулю $N$ получается из обычного добавлением сравнения с
+$N-1$:
+
+\vfile{\codepath/b8_registers/cnt_mod.v}{code/b8\_registers/cnt\_mod.v}
+
+\textbf{Как читается.} Провод \code{tc} равен 1, пока \code{q} равно $N-1$.
+В тактируемом блоке: если сброс \emph{или} \code{tc} --- обнулить, иначе
+прибавить единицу. Поэтому значение $N$ не появляется ни в какой момент, а
+\code{tc} --- импульс длиной в такт, один раз за $N$ тактов. Параметр
+\code{N} можно переопределить при подключении модуля: тестбенч берёт
+\code{N = 6} и проверяет, что значения не выходят за 5 и что импульс приходит
+ровно 4 раза за 24 такта.
+
+Делитель частоты для платы собирается из таких узлов. Счётчик отсчитывает
+$N$ тактов, импульс переключает выход:
+
+\vfile{\codepath/b8_registers/clk_div.v}{code/b8\_registers/clk\_div.v}
+
+\textbf{Как читается.} Для 27~МГц модуль $N=13\,500\,000$ даёт полпериода
+0,5~с, то есть меандр 1~Гц на \code{out}; \code{tick} --- импульс «прошло полсекунды».
+Счётчик \code{cnt} на 25 разрядов хватает до $2^{25}=33\,554\,432$. Запись
+\code{13\_500\_000} (подчёркивания в числе допустимы) удобна для чтения.
+Тестбенч \code{tb\_clk\_div.v} подставляет \code{N = 4}: иначе
+моделирование потребовало бы 13,5 млн тактов. Он проверяет, что \code{tick}
+приходит каждые 4 такта и что период \code{out} равен 8 тактам.
+
+\textbf{Как запустить в Logra.} Вкладка \term{Код}: вставьте \code{cnt\_mod},
+Ctrl+Enter, на \term{Диаграммах} подайте сброс на один такт и убедитесь, что
+\code{q} проходит $0,\ldots,9$ и возвращается в 0, а \code{tc} поднимается на
+девятке. Для \code{clk\_div} задайте параметр \code{N = 4} (в тексте модуля
+или в верхнем модуле) --- иначе на Диаграммах 27 миллионов тактов не уместятся
+в окно просмотра; настоящее \code{N} оставьте для платы.
+
+\begin{diybox}[Модуль и делитель на Verilog: допиши модуль]
+\textbf{Задание.} \stars{1} Сделайте \code{cnt\_mod} с модулем 60 (секунды):
+какой минимальной ширины \code{W} хватит? \stars{2} Сделайте делитель, у
+которого \code{out} имеет коэффициент заполнения 25\,\% (единица держится четверть
+периода). \stars{3} Каскадируйте два \code{cnt\_mod}: единицы секунд (модуль
+10) и десятки (модуль 6) с переносом от первого ко второму.\\
+\textbf{Ожидаемый результат:} 60 состояний, ширина 6 бит.
+\end{diybox}
+
+\textbf{Образец ответа.}
+\begin{vcode}
+module sec60 (
+    input        clk, rst,
+    output [3:0] ones,     // единицы секунд 0..9
+    output [2:0] tens,     // десятки 0..5
+    output       carry     // раз в 60 тактов
+);
+    reg [3:0] o = 4'd0;
+    reg [2:0] t = 3'd0;
+    wire o_end = (o == 4'd9);
+    wire t_end = (t == 3'd5);
+    always @(posedge clk) begin
+        if (rst) begin o <= 4'd0; t <= 3'd0; end
+        else if (o_end) begin
+            o <= 4'd0;
+            t <= t_end ? 3'd0 : t + 3'd1;    // десятки меняются, когда единицы закончились
+        end else o <= o + 4'd1;
+    end
+    assign ones  = o;
+    assign tens  = t;
+    assign carry = o_end & t_end;
+endmodule
+
+module duty25 #(parameter N = 4) (input clk, output reg out = 1'b0);
+    reg [7:0] cnt = 8'd0;
+    always @(posedge clk) begin
+        cnt <= (cnt == N - 1) ? 8'd0 : cnt + 8'd1;
+        out <= (cnt == 8'd0);               // единица на один такт из N: заполнение 1/N
+    end
+endmodule
+\end{vcode}
+Для 60 состояний нужны 6 разрядов, так как $2^5=32<60\le 64=2^6$. Для коэффициента заполнения
+25\,\% берут $N=4$.
+
 \begin{diybox}[Модуль $N$ и делитель частоты; этап проекта]
 \textbf{Задание.} \stars{1} Урок «Считаем от 0 до 5» (модуль 6) и «Делитель на 4
 из счётчика». \stars{2} Уроки «Счётчик со сбросом» и «Счётчик с загрузкой»,
@@ -402,6 +725,27 @@ RTL; примеры \code{blink}, \code{countdown}, \code{stopwatch}.\\
 (он равен $N$ тактам), выход тревоги на 9-й секунде не возрастает дальше,
 а при сбросе все счётчики равны нулю в следующем же такте.
 \end{diybox}
+
+\textbf{Этап проекта на Verilog.} Счётчик секунд тревоги получает от делителя
+импульс \code{tick} (из \code{clk\_div} или \code{cnt\_mod}) и сигнал
+\code{alarm} из главы~\ref{ch:ff}:
+
+\vfile{\codepath/b8_registers/alarm_secs.v}{code/b8\_registers/alarm\_secs.v}
+
+\textbf{Как читается.} Одно условие в одной строке: считать, только если
+тревога включена \emph{и} пришёл импульс секунды \emph{и} счёт ещё не дошёл
+до 9. Тестбенч \code{tb\_alarm\_secs.v} --- это четыре проверки критерия
+приёмки: рост до 3; остановка на 9; ключ обнуляет; при снятой тревоге счёт
+не идёт. \textbf{Как запустить в Logra:} вкладка \term{Код}, Ctrl+Enter; на
+\term{Диаграммах} подайте \code{alarm=1}, а на \code{tick} --- импульсы
+раз в несколько тактов: \code{secs} растёт до 9 и замирает. Чтобы
+соединить блоки целиком, сделайте верхний модуль, где \code{alarm\_keep}
+(глава~\ref{ch:ff}) даёт \code{alarm}, а \code{clk\_div} с малым \code{N} ---
+\code{tick}.
+
+\textbf{Допиши.} Добавьте выход \code{beep}, равный младшему биту
+\code{secs}. \emph{Образец:} \code{output beep} и строка
+\code{assign beep = secs[0];} --- зуммер «пищит» на нечётных секундах.
 
 \begin{ideabox}
 \textbf{Регистр} --- группа триггеров с общим тактом, хранит число.
@@ -435,6 +779,16 @@ RTL; примеры \code{blink}, \code{countdown}, \code{stopwatch}.\\
   \item \textbf{Использовать выходы асинхронного счётчика как данные.}
         Из-за «волны» переключения на выходах мелькают ложные числа, и логика,
         прочитавшая их без синхронизации, может сработать лишний раз.
+  \item \textbf{Блокирующее присваивание в тактируемом блоке.} Запись
+        \code{q1 = q0; q2 = q1;} вместо \code{<=} превращает сдвиговый
+        регистр в один триггер: бит «пролетает» все разряды за один такт
+        (см. \code{shift\_bad} в разделе~\ref{sec:regs-shift-v}).
+  \item \textbf{Ширина счётчика.} \code{reg [3:0] cnt} хранит числа только
+        до 15; сравнение \code{cnt == 20} никогда не станет истинным, а
+        делитель на 27 миллионов не поместится в 24 разряда ($2^{24}=16\,777\,216$).
+  \item \textbf{Нет начального значения.} \code{reg} без сброса и без
+        значения при объявлении до первой записи равен \code{X}; счётчик из
+        \code{X} так и останется \code{X}.
 \end{enumerate}
 \end{warnbox}
 

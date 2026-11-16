@@ -58,7 +58,7 @@ $n$ входов в таблице $2^n$ строк.
 
 \newcommand{\gaterow}[5]{%
   \begin{tikzpicture}[baseline=-1mm]
-    \node[#1, minimum width=10mm, minimum height=7mm] (g) at (0,0) {};
+    \node[#1] (g) at (0,0) {};
     \ifstrequal{#1}{gNOT}{\draw[wire] (g.input) -- ++(-0.35,0);}{%
       \draw[wire] (g.input 1) -- ++(-0.35,0); \draw[wire] (g.input 2) -- ++(-0.35,0);}
     \draw[wire] (g.output) -- ++(0.35,0);
@@ -68,7 +68,7 @@ $n$ входов в таблице $2^n$ строк.
     \ifstrequal{#2}{iNOT}{\draw[wire] (h.input) -- ++(-0.35,0);}{%
       \draw[wire] (h.input 1) -- ++(-0.35,0); \draw[wire] (h.input 2) -- ++(-0.35,0);}
     \draw[wire] (h.output) -- ++(0.35,0);
-  \end{tikzpicture} & #3 & #4 & #5 \\[3mm]}
+  \end{tikzpicture} & #3 & #4 & #5 \\[6mm]}
 
 \begin{table}[H]
 \centering
@@ -242,18 +242,18 @@ $C\,U^2$, где $C$ --- ёмкость нагрузки, а $U$ --- питан�
 \centering
 \begin{tikzpicture}
   \node[gNAND] (g1) at (0,0) {};
-  \draw[wire] (g1.input 1) -- ++(-0.6,0) node[left] {$a$};
-  \draw[wire] (g1.input 2) -- ++(-0.6,0) node[left] {$b$};
+  \draw[wire] (g1.input 1) -- ++(-0.5,0) node[left] {$a$};
+  \draw[wire] (g1.input 2) -- ++(-0.5,0) node[left] {$b$};
   \draw[wire] (g1.output) -- ++(0.6,0) node[right] {$\overline{ab}$};
-  \node[font=\Large] at (2.6,0) {$=$};
-  \begin{scope}[xshift=5.2cm]
+  \node[font=\Large] at (3.6,0) {$=$};
+  \begin{scope}[xshift=7.4cm]
     \node[gOR] (g2) at (0,0) {};
-    \node[gNOT, minimum width=6mm, minimum height=4mm] (n1) at (-1.3,0.18) {};
-    \node[gNOT, minimum width=6mm, minimum height=4mm] (n2) at (-1.3,-0.18) {};
-    \draw[wire] (n1.output) -- (g2.input 1);
-    \draw[wire] (n2.output) -- (g2.input 2);
-    \draw[wire] (n1.input) -- ++(-0.4,0) node[left] {$a$};
-    \draw[wire] (n2.input) -- ++(-0.4,0) node[left] {$b$};
+    \node[gNOT] (n1) at (-2.4,0.7) {};
+    \node[gNOT] (n2) at (-2.4,-0.7) {};
+    \draw[wire] (n1.output) -| ([xshift=-4mm]g2.input 1) -- (g2.input 1);
+    \draw[wire] (n2.output) -| ([xshift=-4mm]g2.input 2) -- (g2.input 2);
+    \draw[wire] (n1.input) -- ++(-0.6,0) node[left] {$a$};
+    \draw[wire] (n2.input) -- ++(-0.6,0) node[left] {$b$};
     \draw[wire] (g2.output) -- ++(0.6,0) node[right] {$\overline{a}+\overline{b}$};
   \end{scope}
 \end{tikzpicture}
@@ -301,42 +301,48 @@ $\overline{a\cdot b}$ и $\overline{a}+\overline{b}$, и сравните их �
 
 \begin{figure}[H]
 \centering
+\begin{adjustbox}{max width=\linewidth}
 \begin{tikzpicture}
-  % НЕ
+  % NOT
   \node[font=\sffamily\small\bfseries] at (0.3,1.3) {НЕ};
   \node[gNAND] (a1) at (0.3,0) {};
-  \draw[wire] (a1.input 1) -- ++(-0.35,0) coordinate (t1);
-  \draw[wire] (a1.input 2) -- ++(-0.35,0) coordinate (t2);
-  \draw[wire] (t1) -- (t2); \draw[wire] ($(t1)!0.5!(t2)$) -- ++(-0.5,0) node[left] {$a$};
+  \draw[wire] (a1.input 1) -- ++(-0.4,0) coordinate (t1);
+  \draw[wire] (a1.input 2) -- ++(-0.4,0) coordinate (t2);
+  \draw[wire] (t1) -- (t2); \draw[wire] ($(t1)!0.5!(t2)$) -- ++(-0.6,0) node[left] {$a$};
   \fill ($(t1)!0.5!(t2)$) circle (1.3pt);
-  \draw[wire] (a1.output) -- ++(0.4,0) node[right] {$\overline{a}$};
-  % И
-  \begin{scope}[xshift=4.2cm]
-  \node[font=\sffamily\small\bfseries] at (0.9,1.3) {И};
-  \node[gNAND] (b1) at (0,0) {};
-  \node[gNAND] (b2) at (2.0,0) {};
-  \draw[wire] (b1.input 1) -- ++(-0.4,0) node[left] {$a$};
-  \draw[wire] (b1.input 2) -- ++(-0.4,0) node[left] {$b$};
-  \draw[wire] (b1.output) -- ++(0.2,0) coordinate (m);
-  \draw[wire] (m) |- (b2.input 1); \draw[wire] (m) |- (b2.input 2); \fill (m) circle (1.3pt);
-  \draw[wire] (b2.output) -- ++(0.4,0) node[right] {$ab$};
+  \draw[wire] (a1.output) -- ++(0.5,0) node[right] {$\overline{a}$};
+  % AND
+  \begin{scope}[xshift=4.3cm]
+  \node[font=\sffamily\small\bfseries] at (1.3,1.3) {И};
+  \node[gNAND] (b1) at (0,0.0) {};
+  \node[gNAND] (b2) at (2.6,0) {};
+  \draw[wire] (b1.input 1) -- ++(-0.5,0) node[left] {$a$};
+  \draw[wire] (b1.input 2) -- ++(-0.5,0) node[left] {$b$};
+  \draw[wire] (b2.input 1) -- ++(-0.3,0) coordinate (u1);
+  \draw[wire] (b2.input 2) -- ++(-0.3,0) coordinate (u2);
+  \draw[wire] (u1) -- (u2);
+  \draw[wire] (b1.output) -- ($(u1)!0.5!(u2)$);
+  \fill ($(u1)!0.5!(u2)$) circle (1.3pt);
+  \draw[wire] (b2.output) -- ++(0.5,0) node[right] {$ab$};
   \end{scope}
-  % ИЛИ
-  \begin{scope}[xshift=10cm]
-  \node[font=\sffamily\small\bfseries] at (0.9,1.3) {ИЛИ};
-  \node[gNAND, minimum width=9mm, minimum height=6mm] (c1) at (0,0.45) {};
-  \node[gNAND, minimum width=9mm, minimum height=6mm] (c2) at (0,-0.45) {};
-  \node[gNAND] (c3) at (2.0,0) {};
+  % OR
+  \begin{scope}[xshift=10.6cm]
+  \node[font=\sffamily\small\bfseries] at (1.3,1.6) {ИЛИ};
+  \node[gNAND] (c1) at (0,0.8) {};
+  \node[gNAND] (c2) at (0,-0.8) {};
+  \node[gNAND] (c3) at (2.6,0) {};
   \foreach \c/\n in {c1/a, c2/b} {
-    \draw[wire] (\c.input 1) -- ++(-0.3,0) coordinate (u1);
-    \draw[wire] (\c.input 2) -- ++(-0.3,0) coordinate (u2);
-    \draw[wire] (u1) -- (u2); \draw[wire] ($(u1)!0.5!(u2)$) -- ++(-0.35,0) node[left] {$\n$};
+    \draw[wire] (\c.input 1) -- ++(-0.4,0) coordinate (u1);
+    \draw[wire] (\c.input 2) -- ++(-0.4,0) coordinate (u2);
+    \draw[wire] (u1) -- (u2); \draw[wire] ($(u1)!0.5!(u2)$) -- ++(-0.5,0) node[left] {$\n$};
+    \fill ($(u1)!0.5!(u2)$) circle (1.3pt);
   }
-  \draw[wire] (c1.output) -- ++(0.3,0) |- (c3.input 1);
-  \draw[wire] (c2.output) -- ++(0.3,0) |- (c3.input 2);
-  \draw[wire] (c3.output) -- ++(0.4,0) node[right] {$a+b$};
+  \draw[wire] (c1.output) -| ([xshift=-4mm]c3.input 1) -- (c3.input 1);
+  \draw[wire] (c2.output) -| ([xshift=-4mm]c3.input 2) -- (c3.input 2);
+  \draw[wire] (c3.output) -- ++(0.5,0) node[right] {$a+b$};
   \end{scope}
 \end{tikzpicture}
+\end{adjustbox}
 \caption{НЕ, И и ИЛИ, собранные только из элементов И-НЕ}
 \end{figure}
 
@@ -379,29 +385,29 @@ door, night, armed; выход \code{led\_n} равен 0 (светодиод г
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}
-  \node[font=\sffamily\small\bfseries] at (1.2,1.6) {Цепочка: 3 уровня};
-  \node[gAND, minimum width=9mm, minimum height=6mm] (a1) at (0,0.6) {};
-  \node[gAND, minimum width=9mm, minimum height=6mm] (a2) at (1.3,0.3) {};
-  \node[gAND, minimum width=9mm, minimum height=6mm] (a3) at (2.6,0) {};
-  \draw[wire] (a1.input 1) -- ++(-0.4,0) node[left] {$a$};
-  \draw[wire] (a1.input 2) -- ++(-0.4,0) node[left] {$b$};
-  \draw[wire] (a1.output) -- ++(0.1,0) |- (a2.input 1);
-  \draw[wire] (a2.input 2) -- ++(-1.7,0) node[left] {$c$};
-  \draw[wire] (a2.output) -- ++(0.1,0) |- (a3.input 1);
-  \draw[wire] (a3.input 2) -- ++(-3.0,0) node[left] {$d$};
-  \draw[wire] (a3.output) -- ++(0.4,0) node[right] {$abcd$};
-  \begin{scope}[xshift=7.5cm]
-  \node[font=\sffamily\small\bfseries] at (0.7,1.6) {Дерево: 2 уровня};
-  \node[gAND, minimum width=9mm, minimum height=6mm] (b1) at (0,0.5) {};
-  \node[gAND, minimum width=9mm, minimum height=6mm] (b2) at (0,-0.5) {};
-  \node[gAND, minimum width=9mm, minimum height=6mm] (b3) at (1.5,0) {};
-  \draw[wire] (b1.input 1) -- ++(-0.4,0) node[left] {$a$};
-  \draw[wire] (b1.input 2) -- ++(-0.4,0) node[left] {$b$};
-  \draw[wire] (b2.input 1) -- ++(-0.4,0) node[left] {$c$};
-  \draw[wire] (b2.input 2) -- ++(-0.4,0) node[left] {$d$};
-  \draw[wire] (b1.output) -- ++(0.1,0) |- (b3.input 1);
-  \draw[wire] (b2.output) -- ++(0.1,0) |- (b3.input 2);
-  \draw[wire] (b3.output) -- ++(0.4,0) node[right] {$abcd$};
+  \node[font=\sffamily\small\bfseries] at (2.6,2.6) {Цепочка: 3 уровня};
+  \node[gAND] (a1) at (0,1.7) {};
+  \node[gAND] (a2) at (2.6,0.85) {};
+  \node[gAND] (a3) at (5.2,0) {};
+  \draw[wire] (a1.input 1) -- ++(-0.5,0) node[left] {$a$};
+  \draw[wire] (a1.input 2) -- ++(-0.5,0) node[left] {$b$};
+  \draw[wire] (a1.output) -| ([xshift=-4mm]a2.input 1) -- (a2.input 1);
+  \draw[wire] (a2.input 2) -- (a2.input 2 -| a1.input 1) -- ++(-0.5,0) node[left] {$c$};
+  \draw[wire] (a2.output) -| ([xshift=-4mm]a3.input 1) -- (a3.input 1);
+  \draw[wire] (a3.input 2) -- (a3.input 2 -| a1.input 1) -- ++(-0.5,0) node[left] {$d$};
+  \draw[wire] (a3.output) -- ++(0.5,0) node[right] {$abcd$};
+  \begin{scope}[xshift=9.4cm]
+  \node[font=\sffamily\small\bfseries] at (1.3,2.6) {Дерево: 2 уровня};
+  \node[gAND] (b1) at (0,1.1) {};
+  \node[gAND] (b2) at (0,-1.1) {};
+  \node[gAND] (b3) at (2.6,0) {};
+  \draw[wire] (b1.input 1) -- ++(-0.5,0) node[left] {$a$};
+  \draw[wire] (b1.input 2) -- ++(-0.5,0) node[left] {$b$};
+  \draw[wire] (b2.input 1) -- ++(-0.5,0) node[left] {$c$};
+  \draw[wire] (b2.input 2) -- ++(-0.5,0) node[left] {$d$};
+  \draw[wire] (b1.output) -| ([xshift=-4mm]b3.input 1) -- (b3.input 1);
+  \draw[wire] (b2.output) -| ([xshift=-4mm]b3.input 2) -- (b3.input 2);
+  \draw[wire] (b3.output) -- ++(0.5,0) node[right] {$abcd$};
   \end{scope}
 \end{tikzpicture}
 \caption{Четырёхвходовый элемент И из двухвходовых. Дерево работает быстрее:
@@ -438,6 +444,184 @@ $(\text{door},\text{night},\text{armed})=101,\ 110,\ 111$.\par
 \end{itemize}
 \end{diybox}
 
+\section{Примеры на Verilog}
+\label{sec:gates-verilog}
+
+Логические элементы на Verilog записываются почти так же, как в булевой
+алгебре. Пять примеров ниже --- законченные модули из папки
+\code{code/b2\_gates/}, у каждого есть тестбенч \code{tb\_*.v}, который
+перебирает все комбинации входов и печатает \code{OK}. Запуск в Logra:
+вкладка \emph{Код} $\to$ \emph{Синтезировать} (\code{Ctrl+Enter}) $\to$
+\emph{RTL} (схема из вентилей) $\to$ \emph{Диаграммы} (перебор входов);
+подробности --- в разделе~\ref{sec:signals-verilog}. Язык подробно разобран в
+главе~\ref{ch:verilog}.
+
+\subsection{Пример 1. Все вентили}
+
+Каждому элементу из таблицы~\ref{tab:gates_all} соответствует один оператор
+Verilog.
+
+\vfile{\codepath/b2_gates/all_gates.v}{code/b2\_gates/all\_gates.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item Один модуль с двумя входами и семью выходами; каждая строка \code{assign} --- один вентиль.
+  \item Операторы: \code{\textasciitilde} --- НЕ, \code{\&} --- И, \code{|} --- ИЛИ, \code{\^{}} --- исключающее ИЛИ. НЕ-варианты (И-НЕ, ИЛИ-НЕ, исключающее ИЛИ-НЕ) получаются инверсией результата.
+  \item Порядок вычислений задают скобки: \code{\textasciitilde(a \& b)} --- И-НЕ, а \code{\textasciitilde a \& b} --- совсем другая функция (сначала инверсия, потом И).
+\end{itemize}
+\textbf{Проверка.} \code{tb\_all\_gates.v} печатает таблицу истинности всех
+элементов для $ab=00,01,10,11$ и сверяет её с таблицей главы
+(\code{0001} для И, \code{0111} для ИЛИ и так далее). В Logra на вкладке
+\emph{RTL} посмотрите схему, на вкладке \emph{Диаграммы} --- те же
+таблицы по времени. Попробуйте найти строку, где исключающее ИЛИ отличается от ИЛИ.
+
+\textbf{Допиши сам.} Добавьте элемент «запрет»: выход равен 1, когда $a=1$ и
+$b=0$.
+
+\textbf{Образец.}\par\nopagebreak
+\begin{vcode}
+module inhibit (
+    input  a, b,
+    output y          // a И НЕ b
+);
+    assign y = a & ~b;
+endmodule
+\end{vcode}
+
+\subsection{Пример 2. Универсальность И-НЕ}
+
+Из одних элементов И-НЕ строим НЕ, И, ИЛИ и исключающее ИЛИ. В Verilog это
+видно особенно хорошо: есть один маленький модуль-«кирпич», остальное --- его
+экземпляры.
+
+\vfile{\codepath/b2_gates/nand_universal.v}{code/b2\_gates/nand\_universal.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{module nand\_gate} --- кирпич: \code{y = \textasciitilde(a \& b)}. Всё остальное строится только из его экземпляров.
+  \item \code{nand\_gate g1 (.a(a), .b(a), .y(y));} --- экземпляр модуля с именованными подключениями: порт \code{.a} модуля подключён к проводу \code{a} снаружи. Соединённые вместе входы превращают И-НЕ в НЕ.
+  \item \code{wire n, p, q;} --- внутренние провода между элементами. XOR из четырёх И-НЕ повторяет схему из задачи главы: общий узел \code{n} и три элемента на нём.
+\end{itemize}
+\textbf{Проверка.} \code{tb\_nand\_universal.v} подключает четыре схемы к одним
+входам и сравнивает их с встроенными операторами \code{\textasciitilde},
+\code{\&}, \code{|}, \code{\^{}} на всех четырёх комбинациях. В Logra
+синтезируйте \code{xor\_from\_nand} как верхний модуль и сравните схему на \emph{RTL}
+с записью \code{a \^{} b}.
+
+\textbf{Допиши сам.} Постройте ИЛИ-НЕ только из операции «И-НЕ»
+(\code{\textasciitilde(x \& y)}).
+
+\textbf{Образец.}\par\nopagebreak
+\begin{vcode}
+module nor_from_nand (
+    input  a, b,
+    output y
+);
+    wire na = ~(a & a);        // НЕ a
+    wire nb = ~(b & b);        // НЕ b
+    wire o  = ~(na & nb);      // ИЛИ: a | b
+    assign y = ~(o & o);       // НЕ от ИЛИ: четыре И-НЕ вместо одного ИЛИ-НЕ
+endmodule
+\end{vcode}
+
+\subsection{Пример 3. Закон де Моргана}
+
+Две записи одной функции и выход «несовпадение», который должен быть всегда
+равен нулю.
+
+\vfile{\codepath/b2_gates/demorgan.v}{code/b2\_gates/demorgan.v}
+
+\textbf{Как читается.} Выходы \code{y1} и \code{y2} --- левая и правая части
+первого закона, \code{z1} и \code{z2} --- второго. Исключающее ИЛИ двух равных
+сигналов даёт 0, поэтому \code{mismatch} $=0$ означает, что обе пары совпадают.
+Такой же выход «несовпадения» использует пример \code{demorgan} из библиотеки Logra.
+
+\textbf{Проверка.} \code{tb\_demorgan.v} убеждается, что \code{mismatch} равен
+нулю при всех четырёх комбинациях. В Logra на вкладке \emph{Диаграммы}
+переберите входы: линия \code{mismatch} остаётся нулевой. На вкладке \emph{RTL}
+синтезатор может свести обе записи к одной схеме, и это нормально: функции
+равны.
+
+\textbf{Допиши сам.} Проверьте закон для трёх переменных:
+$\overline{abc}=\overline a+\overline b+\overline c$.
+
+\textbf{Образец.}\par\nopagebreak
+\begin{vcode}
+module demorgan3 (
+    input  a, b, c,
+    output mismatch      // 0 при любых входах
+);
+    wire y1 = ~(a & b & c);
+    wire y2 = ~a | ~b | ~c;
+    assign mismatch = y1 ^ y2;
+endmodule
+\end{vcode}
+
+\subsection{Пример 4. Исключающее ИЛИ в трёх записях}
+
+Исключающее ИЛИ можно записать оператором \code{\^{}}, через «различны» и как
+«хотя бы один, но не оба». Все три записи --- одна функция.
+
+\vfile{\codepath/b2_gates/xor_forms.v}{code/b2\_gates/xor\_forms.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{(a \& \textasciitilde b) | (\textasciitilde a \& b)} --- «a без b или b без a»: стандартная запись через И, ИЛИ, НЕ (задача~5 главы).
+  \item \code{(a | b) \& \textasciitilde(a \& b)} --- ИЛИ без случая «оба».
+  \item \code{same = \textasciitilde(a \^{} b)} --- исключающее ИЛИ-НЕ: равенство двух битов (оно понадобится для компаратора в главе~\ref{ch:arith}).
+\end{itemize}
+\textbf{Проверка.} \code{tb\_xor\_forms.v} сверяет три записи на всех
+комбинациях и отдельно проверяет строку $a=b=1$: исключающее ИЛИ даёт 0, а ИЛИ
+даёт 1 --- то самое отличие, которое советовали найти в «Сделай сам». В Logra
+посмотрите на \emph{RTL}: синтезатор может свести все три записи к одной схеме,
+потому что функции равны.
+
+\textbf{Допиши сам.} Сделайте компаратор равенства двух двухразрядных чисел
+$a$ и $b$ через XNOR.
+
+\textbf{Образец.}\par\nopagebreak
+\begin{vcode}
+module eq2 (
+    input  [1:0] a, b,
+    output       eq
+);
+    // числа равны, если равны оба разряда
+    assign eq = ~(a[0] ^ b[0]) & ~(a[1] ^ b[1]);
+endmodule
+\end{vcode}
+
+\subsection{Пример 5. Правило охранной панели и вентили на три входа}
+
+Правило «дверь открыта \emph{и} (ночь \emph{или} охрана включена)» записывается
+одной строкой; рядом --- другие функции трёх переменных.
+
+\vfile{\codepath/b2_gates/three_inputs.v}{code/b2\_gates/three\_inputs.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{alarm = door \& (night | armed)} --- скобки обязательны: в Verilog, как в алгебре, И связывает сильнее ИЛИ, и без скобок получилось бы $(\text{door}\cdot\text{night}) + \text{armed}$.
+  \item \code{led\_n = \textasciitilde alarm} --- светодиод платы горит от нуля.
+  \item \code{all3}, \code{odd3}, \code{two\_of\_3} --- И, исключающее ИЛИ (нечётное число единиц) и «хотя бы две единицы» на три входа; последняя пригодится для переноса сумматора в главе~\ref{ch:arith}.
+\end{itemize}
+\textbf{Проверка.} \code{tb\_three\_inputs.v} перебирает восемь комбинаций и
+проверяет, что тревога равна 1 ровно в трёх строках (\code{101}, \code{110},
+\code{111}). В Logra на вкладке \emph{Диаграммы} переберите входы; светодиод
+\code{led\_n} гаснет ровно там, где \code{alarm} равна нулю.
+
+\textbf{Допиши сам.} Добавьте кнопку паники \code{panic}: при \code{panic}
+$=1$ тревога горит всегда.
+
+\textbf{Образец.}\par\nopagebreak
+\begin{vcode}
+module alarm_panic (
+    input  door, night, armed, panic,
+    output alarm, led_n
+);
+    assign alarm = panic | (door & (night | armed));
+    assign led_n = ~alarm;
+endmodule
+\end{vcode}
+
 \section{Типичные ошибки}
 
 \begin{warnbox}[Типичные ошибки]
@@ -452,6 +636,16 @@ $(\text{door},\text{night},\text{armed})=101,\ 110,\ 111$.\par
     меняется.} Соединив оба входа, вы получаете не И-НЕ, а НЕ.
   \item \textbf{Приоритет операций.} $A+B\cdot C$ означает $A+(B\cdot C)$, а не
     $(A+B)\cdot C$: И связывает сильнее ИЛИ, как умножение сильнее сложения.
+  \item \textbf{Verilog: забыть скобки.} \code{door \& night | armed} --- это
+    $(\text{door}\cdot\text{night})+\text{armed}$, а не нужное правило. Ставьте
+    скобки всегда, когда смешиваете \code{\&} и \code{|}.
+  \item \textbf{Verilog: \code{\&\&} вместо \code{\&} и \code{!} вместо
+    \code{\textasciitilde}.} Для одиночных битов результат тот же, но на шинах
+    \code{\&\&} и \code{!} дают один бит «не ноль», а \code{\&} и
+    \code{\textasciitilde} работают с каждым разрядом отдельно.
+  \item \textbf{Verilog: два \code{assign} на один провод.} Если один и тот же
+    \code{wire} получает значение от двух выражений, у него два источника;
+    синтезатор сообщит об ошибке (или получится неопределённость \code{x}).
 \end{itemize}
 \end{warnbox}
 
@@ -477,9 +671,11 @@ $(\text{door},\text{night},\text{armed})=101,\ 110,\ 111$.\par
 
 \section{Что дальше}
 
-Мы умеем записывать логические функции и собирать их из элементов, но в
-охранной панели три датчика, а правило пока придумано нами. Как по словесному
-условию систематически получить схему, как узнать, не слишком ли она велика, и
-как отличить схему «без памяти» от схемы с памятью? Этим мы займёмся в
-главе~\ref{ch:comb}, где от таблицы истинности перейдём к схеме и изучим
-минимизацию.
+Мы умеем записывать логические функции и собирать их из элементов на
+бумаге и в Конструкторе Logra. Но схему из десяти элементов ещё можно нарисовать
+мышью, а из сотни уже нельзя. Как записать схему \emph{текстом}, чтобы Logra
+сама превратила её в элементы? Ответ даёт язык Verilog: в
+главе~\ref{ch:verilog} мы опишем на нём те же вентили и сразу запустим результат
+на вкладках RTL и Диаграммы. После этого в главе~\ref{ch:comb} вернёмся к
+охранной панели с тремя датчиками: от словесного условия перейдём к таблице
+истинности и схеме, а заодно изучим минимизацию.

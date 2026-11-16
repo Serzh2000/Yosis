@@ -1,6 +1,12 @@
 \chapter{From Text to a Working Circuit}
 \label{ch:flow}
 
+We have seen what is inside an FPGA (Chapter~\ref{ch:inside}) and what the board
+looks like (Chapter~\ref{ch:board}). Now we join it all into one flow: how the
+Verilog text you have already written and run in Logra turns into a
+configuration file and ends up in the chip. For each step we look at what it
+does and what comes out of it.
+
 \section{The Design Flow}
 
 For a programmer, the path from a program to working firmware looks like this:
@@ -75,19 +81,19 @@ so the synthesizer computes its truth table and writes it into
 \centering
 \begin{tikzpicture}
   \begin{scope}
-    \node[gAND] (and) at (1.3,0.9) {};
-    \node[gNOT] (not) at (1.1,-0.5) {};
-    \node[gOR] (or) at (3.0,0.2) {};
+    \node[gAND] (and) at (1.0,1.0) {};
+    \node[gNOT] (not) at (1.0,-0.8) {};
+    \node[gOR] (or) at (3.3,0.1) {};
     \draw[wire] (and.input 1) -- ++(-0.7,0) node[left] {$a$};
     \draw[wire] (and.input 2) -- ++(-0.7,0) node[left] {$b$};
-    \draw[wire] (not.input) -- ++(-0.5,0) node[left] {$c$};
-    \draw[wire] (and.output) -- ++(0.3,0) |- (or.input 1);
-    \draw[wire] (not.output) -- ++(0.5,0) |- (or.input 2);
-    \draw[wire] (or.output) -- ++(0.5,0) node[right] {$y$};
-    \node[lbl] at (1.8,-1.5) {as the human designed it};
+    \draw[wire] (not.input) -- (not.input -| and.input 1) -- ++(-0.5,0) node[left] {$c$};
+    \draw[wire] (and.output) -| ([xshift=-4mm]or.input 1) -- (or.input 1);
+    \draw[wire] (not.output) -| ([xshift=-4mm]or.input 2) -- (or.input 2);
+    \draw[wire] (or.output) -- ++(0.3,0) node[right] {$y$};
+    \node[lbl] at (2.0,-1.5) {as the human designed it};
   \end{scope}
-  \draw[-{Stealth[length=4mm]}, line width=2pt, FpgaOrange] (4.9,0.2) -- (6.1,0.2) node[midway, above=1mm, lbl] {synthesis};
-  \begin{scope}[xshift=7cm]
+  \draw[-{Stealth[length=4mm]}, line width=2pt, FpgaOrange] (5.3,0.1) -- (6.5,0.1) node[midway, above=1mm, lbl] {synthesis};
+  \begin{scope}[xshift=7.3cm]
     \node[draw=FpgaBlue, fill=FpgaLight, thick, minimum width=18mm, minimum height=20mm, font=\sffamily\small, align=center] (lut) at (1.5,0.2) {LUT3};
     \draw[wire] ([yshift=5mm]lut.west) -- ++(-0.7,0) node[left] {$a$};
     \draw[wire] (lut.west) -- ++(-0.7,0) node[left] {$b$};
@@ -95,7 +101,7 @@ so the synthesizer computes its truth table and writes it into
     \draw[wire] (lut.east) -- ++(0.7,0) node[right] {$y$};
     \node[lbl] at (1.5,-1.5) {how the FPGA implements it};
   \end{scope}
-  \begin{scope}[xshift=11.2cm, yshift=1.6cm]
+  \begin{scope}[xshift=11.5cm, yshift=2.1cm]
     \matrix[matrix of nodes, nodes={font=\ttfamily\scriptsize, inner sep=1.2pt},
             row 1/.style={nodes={font=\sffamily\bfseries\scriptsize}}] (tt) {
       a & b & c & y \\ 0&0&0&1 \\ 0&0&1&0 \\ 0&1&0&1 \\ 0&1&1&0 \\ 1&0&0&1 \\ 1&0&1&0 \\ 1&1&0&1 \\ 1&1&1&1 \\};
@@ -261,7 +267,7 @@ no soldering is needed}
 
 \subsection{.cst Files in the Examples}
 
-Every project from Chapter~\ref{ch:examples} has its own constraints file
+Every project from the practice chapters has its own constraints file
 next to the code, for example \code{code/02\_blink/blink.cst}. It describes exactly
 the ports that the module has, and each group of lines is commented.
 Here is the complete file for the blinker:
@@ -308,3 +314,12 @@ Here 37.037~ns is the period of a 27~MHz signal.
 \textbf{Expected result.} The file contains \code{IO\_LOC} lines for \code{clk}, \code{reset}, and six \code{led\_n}; the build succeeds, and nextpnr shows the frequency against the specified 27~MHz.\\
 \textbf{How to check.} \stars{2} Fix the name of one port in the \code{.cst} (for example \code{clk} to \code{clock}) and rebuild: read the message in the log and compare it with the ``Common mistakes'' warning. Change the name back. \stars{2} Enter 400 in the ``Frequency, MHz'' field and see what the report says.
 \end{diybox}
+
+\section{What Next}
+
+We have gone the whole way: from text to a bitstream loaded onto the board. So
+far we said that a pin outputs ``0'' or ``1'', but on a real board these are
+currents and voltages: a button can ``bounce'', an LED needs a resistor, and
+several outputs cannot simply be tied to one line. What really happens at the
+edge of the chip, and what should be added to a circuit so that it works
+reliably with the outside world? That is the subject of Chapter~\ref{ch:electrical}.

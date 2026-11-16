@@ -151,6 +151,78 @@ a simple $RC$ filter with a time constant of tens of microseconds is enough for
 smoothing. The drawback of the method is its slow response: a new value
 needs at least one period.
 
+\subsection{PWM in Verilog}
+
+The circuit of a counter and a comparator is written in two lines. The first
+version is from the file \code{pwm\_dac.v}: the counter \code{cnt} runs round and
+round, and the output is one while \code{cnt < level}.
+
+\vfile{\codepath/00_theory/pwm_dac.v}{code/00\_theory/pwm\_dac.v}
+
+\shot{n-pwm-wave}{A PWM DAC with code 64: the output is one for the first quarter of the counter period}{fig:n-pwm}
+
+With \code{level = 64} the output is one for 64 clocks out of 256
+(Figure~\ref{fig:n-pwm}). The drawback of the simple circuit: if \code{level} is
+changed in the middle of a period, the pulse comes out ``torn''. The module
+\code{pwm8} accepts a new value only at the start of a period: when the counter
+equals 255, the value is copied into the register \code{lvl}, and the comparison
+is made against it.
+
+\vfile{\codepath/b9b_analog/pwm8.v}{code/b9b\_analog/pwm8.v}
+
+\textbf{How to read it.} Two registers of eight flip-flops: \code{cnt} is the saw,
+\code{lvl} is the current level. The output \code{pwm} is a comparator, so with
+\code{level = 0} it is always zero, and with \code{level = 255} it is one for 255
+clocks out of 256 (such a PWM cannot give a solid one). The testbench
+\code{tb\_pwm8.v} counts the ones over one full period for the levels 0, 1, 64,
+128, 192, 255 and compares with the level.
+
+\subsection{Sigma-Delta: Ones Mixed In}
+
+PWM collects all the ones of a period into one burst. A sigma-delta modulator
+spreads them evenly: on every clock an accumulator adds the level, and the
+accumulator's \emph{overflow} is output as a one. The remainder of the overflow
+stays in the accumulator and is taken into account later, so in $2^W$ clocks
+there will be exactly \code{level} ones: the density of ones is
+$\text{level}/2^W$, as in PWM, but the switching frequency is higher, and a
+filter with a smaller time constant is enough.
+
+\vfile{\codepath/b9b_analog/sigma_delta.v}{code/b9b\_analog/sigma\_delta.v}
+
+\textbf{How to read it.} The register \code{acc} is one bit wider than the level:
+its high bit \code{acc[W]} is the carry of the previous addition and is the
+output; the low \code{W} bits are the remainder. At \code{level = 32} (half scale)
+the output alternates 0, 1, 0, 1: the ones stand every other clock. The testbench
+\code{tb\_sigma\_delta.v} counts the ones in a window of 64 clocks for all 64
+levels (there must be exactly \code{level}) and checks that at half level the ones
+do not come in a row.
+
+\begin{diybox}[PWM and Sigma-Delta]
+\textbf{Task.} Compare two ways to get an average voltage.\\
+\textbf{In Logra.} The Code tab: \code{pwm8.v} and \code{sigma\_delta.v} (one at a
+time), ``Synthesize''; Waveforms: 128 cycles, \code{level = 16} for sigma-delta
+(\code{W = 6}) and \code{level = 64} for PWM; the Examples tab: \code{pwm},
+\code{sigma-delta}.\\
+\textbf{Expected result.} In PWM the ones come in a burst, in sigma-delta they are
+scattered; in a window of 64 clocks sigma-delta has exactly 16 ones.\\
+\textbf{How to check.} The testbenches print \code{pwm8: OK} and
+\code{sigma\_delta: OK}. \stars{2} Complete a 4-bit PWM (16 levels).
+\end{diybox}
+
+\textbf{Sample answer.}
+\begin{vcode}
+module pwm4 (
+    input        clk,
+    input  [3:0] level,
+    output       pwm
+);
+    reg [3:0] cnt = 4'd0;
+    always @(posedge clk) cnt <= cnt + 4'd1;
+    assign pwm = (cnt < level);
+endmodule
+\end{vcode}
+
+
 \subsection{Sound: A Buzzer on PWM}
 
 A passive buzzer reproduces the frequency that is applied to it. So for
@@ -159,6 +231,20 @@ pulses at the tone frequency. To get, for example, a 2~kHz tone from a 27~MHz
 clock, the output must toggle every $27\,000\,000/(2\cdot 2000)
 = 6750$ clock cycles. The duty cycle sets the loudness: at 50\,\% the sound is loudest, and with a
 small fraction of one it is quieter.
+
+The buzzer circuit in Verilog is a counter that counts up to \code{PERIOD-1} and
+resets, and a comparator: the output is one while the counter is less than
+\code{HIGH}. The enable \code{en} (in the project it is the ALARM state) clears
+the counter and the output.
+
+\vfile{\codepath/b9b_analog/buzzer.v}{code/b9b\_analog/buzzer.v}
+
+\textbf{How to read it.} By default \code{PERIOD = 13500} and \code{HIGH = 3375}:
+at 27~MHz this is a 2~kHz tone with a 25\,\% duty cycle. The output \code{out} is
+not stored in a flip-flop but computed from \code{en} and the counter, so when the
+alarm is cleared the sound stops at once. The testbench \code{tb\_buzzer.v} counts
+6750 ones over two periods, measures the distance between the edges (13\,500
+clocks), and makes sure the output is silent when \code{en = 0}.
 
 \begin{diybox}[Project Stage 10: A PWM Buzzer]
 \textbf{Task.} Add an alarm sound to the panel and connect it to the
@@ -183,8 +269,29 @@ is audible.\\
 \textbf{Expected result.} The buzzer sounds exactly in the ALARM state and
 is silent in the others.\\
 \textbf{How to check.} The \emph{Waveforms} tab: the buzzer output and the panel state
-on one time scale; the \emph{Pins} tab: the buzzer port is assigned.
+on one time scale; the \emph{Pins} tab: the buzzer port is assigned.\\
+\textbf{The same in Verilog.} The \emph{Code} tab: paste \code{buzzer.v},
+``Synthesize''; on Waveforms apply \code{en = 1} and count the period. To see
+the period on the screen, set \code{buzzer \#(.PERIOD(20), .HIGH(5))} when you
+create the instance. Sample answer to \stars{3}: the ALARM signal from the panel
+machine goes to \code{en}, and the output to the buzzer port.
 \end{diybox}
+
+\begin{vcode}
+module alarm_sound (
+    input  clk,
+    input  alarm,                // 1 in the ALARM state
+    output buzzer_pin
+);
+    reg [13:0] cnt = 14'd0;
+    always @(posedge clk) begin
+        if (!alarm || cnt == 14'd13499) cnt <= 14'd0;
+        else                            cnt <= cnt + 14'd1;
+    end
+    assign buzzer_pin = alarm && (cnt < 14'd3375);   // 25 % of 13500
+endmodule
+\end{vcode}
+
 
 \section{The ADC: From a Voltage to a Number}
 
@@ -255,13 +362,39 @@ an input voltage that corresponds to the number 179 ($\text{B3}_{16}=10110011_2$
 \end{table}
 
 Eight steps give eight bits of the result: at each step the machine checks
-exactly one bit, starting from the most significant. \lookahead{you will find a text implementation of this machine
-and a waveform of its operation in Chapter~\ref{ch:bridge}.}
+exactly one bit, starting from the most significant.
+
+\subsection{The Successive-Approximation ADC in Verilog}
+
+The machine is written in one module \code{sar\_adc}: the register \code{acc}
+holds the high bits already found, the ``running one'' \code{mask} points to the
+bit being tested, and the signal \code{cmp} from an external comparator decides
+whether this bit stays one. The file also has a teaching wrapper
+\code{sar\_demo}: its ``input voltage'' is the constant 179, and the comparator
+is built from a comparison operator, so the whole system can be checked without
+external parts.
+
+\vfile{\codepath/00_theory/sar_adc.v}{code/00\_theory/sar\_adc.v}
+
+\textbf{How to read it.} The expression \code{acc\_n = cmp ? (acc | mask) : acc} is
+the decision at the current step: if the input is not less than the trial value,
+the bit stays one. When \code{mask[0]} is one, the lowest bit has been tested:
+the machine writes \code{result}, raises \code{done} for one clock, and goes back
+to waiting. Otherwise \code{mask} is shifted right and \code{dac} gets the next
+trial.
+
+\shot{n-sar-wave}{Searching for the number 179: the DAC code runs through the values \code{80}, \code{C0}, \code{A0}, \code{B0}, \code{B8}, \code{B4}, \code{B2}, \code{B3}}{fig:n-sar}
+
+The waveform (Figure~\ref{fig:n-sar}) shows the same binary search as the
+table: after eight clocks \code{result} becomes \code{0xB3}, which is 179. The
+testbench \code{00\_theory/tb\_sar\_adc.v} sweeps the input values from 0 to 255
+in steps of 7 and compares \code{result} with the input each time; it prints
+\code{sar\_adc: OK}.
 
 \begin{infobox}[An ADC and a Digital Chip]
 Many digital chips have no ``slow'' ADC like the one in a microcontroller.
 If you need to measure a voltage, you connect an external ADC chip over a
-serial interface. \lookahead{on the board from Part~II this is exactly how it is done;
+serial interface. \lookahead{on the board this is exactly how it is done;
 the interfaces are covered in Chapter~\ref{ch:uart}.}
 \end{infobox}
 
@@ -279,7 +412,14 @@ count 64 clock cycles: level 16 gives 16 ones, level 48 gives 48.
 Explain how the density of ones is similar to PWM and how it differs.\\
 \textbf{Expected result.} The number of ones in 64 clock cycles equals the level.\\
 \textbf{How to check.} The \emph{Waveforms} tab: count the ones in 64 clock cycles;
-the \emph{RTL} tab: find the accumulator (the remainder register) and its carry.
+the \emph{RTL} tab: find the accumulator (the remainder register) and its carry.\\
+\textbf{The same in Verilog.} The \emph{Code} tab: paste \code{sar\_adc.v}, make
+\code{sar\_demo} the top module, ``Synthesize''; Waveforms: 20 cycles, a
+\code{start} pulse; compare the \code{dac} values with the table of the chapter.
+\stars{2} Measure the number 100. \textbf{Sample answer:} in the line
+\code{localparam [7:0] VIN = 8'd179;} replace 179 with 100; the trial codes are
+\code{0x80, 0x40, 0x60, 0x70, 0x68, 0x64, 0x66, 0x65}, the result is \code{0x64}.
+The testbench \code{00\_theory/tb\_sar\_adc.v} checks 37 input values at once.
 \end{diybox}
 
 \begin{warnbox}[Common mistakes]
@@ -342,18 +482,23 @@ any digital device works: a processor, a drone controller, a graphics card. By
 now you have built the ``Security Panel'': a sensor, alarm logic, memory,
 a timer counter, a mode machine with code entry, an indicator, and a buzzer.
 
-One question remains: how do we turn all this into a real device and not into a
-circuit on a screen? Part~II answers it: all the blocks of Part~I can be assembled
-inside a chip that we will choose, and this is done not with a soldering iron but by describing the
-blocks in text. Below is a ``transition map'': which chip resource
-corresponds to each block and in which Logra task you have already built it.
+What remains is to tie the theory to the FPGA structure and the flow to the
+board that we have already studied: how is each block, assembled from gates,
+written as Verilog code, and which chip resource does it correspond to? That is
+the subject of Chapter~\ref{ch:bridge}. Below is a ``transition map'': which chip
+resource corresponds to each block and in which Logra task you have already built it.
 
-\begin{buildbox}[Transition Map to Part II]
-\small
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.30\linewidth}>{\raggedright\arraybackslash}p{0.30\linewidth}>{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
+{\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.30\linewidth}>{\raggedright\arraybackslash}p{0.30\linewidth}>{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
+\caption*{\textbf{\sffamily Transition Map from Circuits to the FPGA}}\\
 \toprule
-\textbf{Block} & \textbf{FPGA resource (Part II)} & \textbf{Logra task} \\
+\textbf{Block} & \textbf{FPGA resource} & \textbf{Logra task} \\
 \midrule
+\endfirsthead
+\toprule
+\textbf{Block} & \textbf{FPGA resource} & \textbf{Logra task} \\
+\midrule
+\endhead
 Logic gates, decoders, encoders, multiplexers & LUTs & the lesson ``4-to-1 multiplexer''; the example \code{mux-four} \\
 Adders, counters & LUTs + fast carry chains (ALU) & the lesson ``A full adder''; the lesson ``A counter as one block'' \\
 Multipliers & hardware DSP blocks & the example \code{shift-add-multiply}; the example \code{alu} \\
@@ -365,8 +510,7 @@ Clock signal & 27~MHz oscillator, PLL, global clock network & the lesson ``A div
 Three-state outputs and pull-ups & IOBUF input/output blocks & the \emph{Pins} tab; the lesson ``A button controls an LED'' \\
 PWM, DAC, and ADC & counter and comparator + external filter; external ADC chip & the examples \code{pwm}, \code{breathing-pwm}, \code{sigma-delta}; the lesson ``A buzzer'' \\
 \bottomrule
-\end{tabular}
-\end{buildbox}
+\end{longtable}}
 
 \begin{ideabox}
 Combinational logic computes, sequential logic remembers. A synchronous
@@ -374,15 +518,15 @@ circuit is registers and combinational logic between them with one shared clock.
 Its speed is determined by the critical path. A finite-state machine is
 a state register plus transition logic. Memory is an array of cells with an address
 decoder. At the boundary of the chip, currents, thresholds, and pull-ups are at work, and the analog
-world is connected through the DAC and the ADC. In the second part we will assemble all these blocks
-on a real board.
+world is connected through the DAC and the ADC. In the following chapters we will write all these
+blocks in Verilog and assemble them on a real board.
 \end{ideabox}
 
-\begin{buildbox}[The First Step into Part II]
+\begin{buildbox}[The First Step to the Board]
 Open the \emph{Learn} tab, the lesson ``A button on a real board''. This is the shortest
 path from a circuit to a device: connect the board, assign ports
 in the \emph{Pins} tab, and check that the button lights the LED. Then
 return to the ``Security Panel'' project and build it completely on the board.
-\lookahead{connecting the board is Chapter~\ref{ch:board}, the first project is
-Chapter~\ref{ch:examples}.}
+Connecting the board is covered in Chapter~\ref{ch:board}, the first project in
+Chapter~\ref{ch:examples}.
 \end{buildbox}

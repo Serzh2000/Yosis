@@ -47,7 +47,7 @@ $s=1$ повторяет \code{b}. Остальное в этой главе ---
     \node[font=\sffamily\bfseries] at (0.8,0) {MUX};
     \foreach \i in {0,...,3} {
       \draw[wire] (-1,1.5-\i) node[left] {$x_\i$} -- (0,1.5-\i);
-      \node[font=\sffamily\scriptsize, anchor=west] at (0.05,1.5-\i) {\i};
+      \node[font=\sffamily\footnotesize, anchor=west] at (0.05,1.5-\i) {\i};
     }
     \draw[wire] (1.6,0) -- (2.6,0) node[right] {$y$};
     \draw[wire, FpgaBlue] (0.6,-1.7) -- (0.6,-2.6) node[below] {$s_1$};
@@ -88,18 +88,18 @@ $D_2$, $D_3$; номер входа равен двоичному числу н�
 
 \begin{figure}[H]
 \centering
-\begin{minipage}{0.28\textwidth}
+\begin{minipage}{0.24\textwidth}
 \centering
 \begin{tikzpicture}
   \draw[thick, fill=orange!15] (0,1.1) -- (1.1,0.6) -- (1.1,-0.6) -- (0,-1.1) -- cycle;
   \node[font=\sffamily\small] at (0.55,0) {MUX};
-  \draw[wire] (-0.7,0.6) node[left] {$a$} -- (0,0.6); \node[font=\sffamily\scriptsize, anchor=west] at (0.02,0.6) {0};
-  \draw[wire] (-0.7,-0.6) node[left] {$b$} -- (0,-0.6); \node[font=\sffamily\scriptsize, anchor=west] at (0.02,-0.6) {1};
+  \draw[wire] (-0.7,0.6) node[left] {$a$} -- (0,0.6); \node[font=\sffamily\footnotesize, anchor=west] at (0.02,0.6) {0};
+  \draw[wire] (-0.7,-0.6) node[left] {$b$} -- (0,-0.6); \node[font=\sffamily\footnotesize, anchor=west] at (0.02,-0.6) {1};
   \draw[wire] (1.1,0) -- (1.7,0) node[right] {$y$};
   \draw[wire, FpgaBlue] (0.55,-0.85) -- (0.55,-1.5) node[below] {$s$};
 \end{tikzpicture}
 \end{minipage}
-\begin{minipage}{0.27\textwidth}
+\begin{minipage}{0.21\textwidth}
 \centering
 \begin{tabular}{c|c}
 \toprule
@@ -113,21 +113,23 @@ $s$ & $y$ \\
 \medskip
 $y = \overline{s}\,a + s\,b$
 \end{minipage}
-\begin{minipage}{0.43\textwidth}
+\begin{minipage}{0.52\textwidth}
 \centering
 \begin{tikzpicture}
-  \node[gAND, minimum width=10mm, minimum height=7mm] (g1) at (2,0.6) {};
-  \node[gAND, minimum width=10mm, minimum height=7mm] (g2) at (2,-0.6) {};
-  \node[gOR, minimum width=10mm, minimum height=7mm] (o) at (3.7,0) {};
-  \node[gNOT, minimum width=7mm, minimum height=5mm] (n) at (0.9,0.48) {};
-  \draw[wire] (g1.input 1) -- ++(-1.8,0) node[left] {$a$};
-  \draw[wire] (g2.input 2) -- ++(-1.8,0) node[left] {$b$};
-  \draw[wire, FpgaBlue] (0.2,-1.4) node[below] {$s$} -- (0.2,0.48) -- (n.input);
-  \draw[wire, FpgaBlue] (0.2,-0.48) -- (g2.input 1); \fill[FpgaBlue] (0.2,-0.48) circle (1.3pt);
-  \draw[wire] (n.output) -- (g1.input 2);
-  \draw[wire] (g1.output) -- ++(0.15,0) |- (o.input 1);
-  \draw[wire] (g2.output) -- ++(0.15,0) |- (o.input 2);
-  \draw[wire] (o.output) -- ++(0.4,0) node[right] {$y$};
+  \node[gAND] (g1) at (3.7,1.2) {};
+  \node[gAND] (g2) at (3.7,-1.2) {};
+  \node[gOR] (o) at (6.0,0) {};
+  \node[gNOT] (n) at (1.5,0) {};
+  \draw[wire] (g1.input 1) -- (g1.input 1 -| 0,0) node[left] {$a$};
+  \draw[wire] (g2.input 2) -- (g2.input 2 -| 0,0) node[left] {$b$};
+  \draw[wire, FpgaBlue] (0,0) node[left, text=FpgaDark] {$s$} -- (0.5,0) coordinate (sj);
+  \fill[FpgaBlue] (sj) circle (1.3pt);
+  \draw[wire, FpgaBlue] (sj) -- (n.input);
+  \draw[wire, FpgaBlue] (sj) |- (g2.input 1);
+  \draw[wire] (n.output) -| ([xshift=-4mm]g1.input 2) -- (g1.input 2);
+  \draw[wire] (g1.output) -| ([xshift=-4mm]o.input 1) -- (o.input 1);
+  \draw[wire] (g2.output) -| ([xshift=-4mm]o.input 2) -- (o.input 2);
+  \draw[wire] (o.output) -- ++(0.5,0) node[right] {$y$};
 \end{tikzpicture}
 \end{minipage}
 \caption{Мультиплексор 2:1: обозначение, таблица, формула и схема на элементах}
@@ -167,22 +169,21 @@ $y = \overline{s}\,a + s\,b$
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}
-  \draw[thick, fill=FpgaLight] (0,-2.6) rectangle (1.6,1.0);
-  \node[font=\sffamily\bfseries] at (0.8,-0.8) {DC};
-  \draw[wire, FpgaBlue] (-0.8,0.2) node[left, text=FpgaDark] {$s_1$} -- (0,0.2);
-  \draw[wire, FpgaBlue] (-0.8,-1.8) node[left, text=FpgaDark] {$s_0$} -- (0,-1.8);
+  \draw[thick, fill=FpgaLight] (0,-5.5) rectangle (1.6,0.8);
+  \node[font=\sffamily\bfseries] at (0.8,-2.35) {DC};
+  \draw[wire, FpgaBlue] (-0.8,-1.5) node[left, text=FpgaDark] {$s_1$} -- (0,-1.5);
+  \draw[wire, FpgaBlue] (-0.8,-3.2) node[left, text=FpgaDark] {$s_0$} -- (0,-3.2);
   \foreach \i in {0,...,3} {
-    \pgfmathsetmacro{\y}{0.6-\i*1.0}
-    \node[gAND, minimum width=10mm, minimum height=7mm] (g\i) at (4.6,\y-0.12) {};
-    \draw[wire] (1.6,\y) -- ++(0.8,0) |- (g\i.input 2);
-    \node[font=\sffamily\scriptsize, anchor=east] at (1.55,\y) {\i};
-    \draw[wire] (g\i.input 1) -- ++(-0.8,0) node[left, font=\small] {$x_\i$};
+    \node[gAND] (g\i) at (5.0,-\i*1.5-0.3) {};
+    \draw[wire] (1.6,0 |- g\i.input 2) -- (g\i.input 2);
+    \node[font=\sffamily\footnotesize, anchor=south east, inner sep=1pt] at (1.6,0 |- g\i.input 2) {\i};
+    \draw[wire] (g\i.input 1) -- ++(-1.8,0) node[left, font=\small] {$x_\i$};
   }
-  \node[gOR, logic gate inputs=nnnn, minimum height=18mm] (o) at (7.2,-0.9) {};
-  \foreach \i in {0,...,3} {
-    \pgfmathtruncatemacro{\j}{\i+1}
-    \draw[wire] (g\i.output) -- ++(0.35,0) |- (o.input \j);
-  }
+  \node[gOR, logic gate inputs=nnnn, minimum height=18mm] (o) at (8.9,-2.55) {}; % fig-ok: 4-входовой вентиль 18 мм
+  \draw[wire] (g0.output) -| ([xshift=-5mm]o.input 1) -- (o.input 1);
+  \draw[wire] (g1.output) -| ([xshift=-10mm]o.input 2) -- (o.input 2);
+  \draw[wire] (g2.output) -| ([xshift=-10mm]o.input 3) -- (o.input 3);
+  \draw[wire] (g3.output) -| ([xshift=-5mm]o.input 4) -- (o.input 4);
   \draw[wire] (o.output) -- ++(0.7,0) node[right] {$y$};
 \end{tikzpicture}
 \caption{Мультиплексор 4:1 = дешифратор адреса + элементы И + элемент ИЛИ}
@@ -209,7 +210,7 @@ $y = \overline{s}\,a + s\,b$
 адреса, четыре элемента И, один элемент ИЛИ.
 
 \textbf{В Logra.} Вкладка Обучение, глава «Выбор и распределение», урок
-«Мультиплексор 4→1»; для второй части --- урок «Дешифратор» как источник
+«Мультиплексор 4→1»; для второго задания --- урок «Дешифратор» как источник
 дешифратора.
 
 \textbf{Ожидаемый результат.} Обе схемы дают одну и ту же таблицу: выход равен
@@ -245,8 +246,9 @@ $y = \overline{s}\,a + s\,b$
   \draw[wire] (m0-o) -- ++(0.4,0) |- (m2-i0);
   \draw[wire] (m1-o) -- ++(0.4,0) |- (m2-i1);
   \draw[wire] (m2-o) -- ++(0.6,0) node[right] {$y$};
-  \draw[wire, FpgaBlue] (m0-s) -- (0.35,0.25) -- (-0.9,0.25) node[left, text=FpgaDark] {$s_0$};
-  \draw[wire, FpgaBlue] (m1-s) -- (0.35,-1.8) -- (-0.4,-1.8) -- (-0.4,0.25); \fill[FpgaBlue] (-0.4,0.25) circle (1.3pt);
+  \draw[wire, FpgaBlue] (m0-s) -- (0.35,-0.575);
+  \fill[FpgaBlue] (0.35,0) circle (1.3pt);
+  \draw[wire, FpgaBlue] (0.35,0) -- (-0.9,0) node[left, text=FpgaDark] {$s_0$};
   \draw[wire, FpgaBlue] (m2-s) -- (2.35,-1.2) node[below, text=FpgaDark] {$s_1$};
   \node[lbl] at (0.35,-2.4) {уровень 1};
   \node[lbl] at (2.35,-2.4) {уровень 2};
@@ -289,7 +291,7 @@ $0,1,0,1$.
   \foreach \i/\v/\ab in {0/0/00, 1/1/01, 2/1/10, 3/0/11} {
     \draw[wire] (-0.8,1.5-\i) -- (0,1.5-\i);
     \node[draw=FpgaGreen, fill=green!8, thick, minimum size=6mm, font=\ttfamily] at (-1.1,1.5-\i) {\v};
-    \node[font=\sffamily\scriptsize, anchor=west] at (0.05,1.5-\i) {\i};
+    \node[font=\sffamily\footnotesize, anchor=west] at (0.05,1.5-\i) {\i};
     \node[lbl, anchor=east] at (-1.5,1.5-\i) {$ab=\ab$};
   }
   \draw[wire] (1.6,0) -- (2.6,0) node[right] {$y = a\oplus b$};
@@ -349,7 +351,7 @@ $\overline{C}$. \stars{3} Реализуйте на одном блоке «2 и
   \draw[wire] (-0.8,0) node[left] {$x$} -- (0,0);
   \foreach \i in {0,...,3} {
     \draw[wire] (1.6,1.5-\i) -- (2.4,1.5-\i) node[right] {$y_\i$};
-    \node[font=\sffamily\scriptsize, anchor=east] at (1.55,1.5-\i) {\i};
+    \node[font=\sffamily\footnotesize, anchor=east] at (1.55,1.5-\i) {\i};
   }
   \draw[wire, FpgaBlue] (0.5,-1.45) -- (0.5,-2.6) node[below, text=FpgaDark] {$s_1$};
   \draw[wire, FpgaBlue] (1.0,-1.7) -- (1.0,-2.6) node[below, text=FpgaDark] {$s_0$};
@@ -386,7 +388,7 @@ $y_0 = x\,\overline{s_1}\,\overline{s_0}, \ \ y_1 = x\,\overline{s_1}\,s_0, \ \ 
 из дешифратора со входом разрешения $E$, подав кнопку на $E$.
 
 \textbf{В Logra.} Вкладка Обучение, глава «Выбор и распределение», урок
-«Демультиплексор»; пример \code{demux-four}; для второй части --- урок
+«Демультиплексор»; пример \code{demux-four}; для второго задания --- урок
 «Дешифратор».
 
 \textbf{Ожидаемый результат.} Нажатая кнопка зажигает только одну лампу,
@@ -410,17 +412,17 @@ $y_0 = x\,\overline{s_1}\,\overline{s_0}, \ \ y_1 = x\,\overline{s_1}\,s_0, \ \ 
 \centering
 \begin{tikzpicture}
   \draw[thick, fill=orange!15] (0,1.3) -- (1.2,0.7) -- (1.2,-0.7) -- (0,-1.3) -- cycle;
-  \node[font=\sffamily\scriptsize\bfseries] at (0.6,0) {MUX};
+  \node[font=\sffamily\footnotesize\bfseries] at (0.6,0) {MUX};
   \foreach \i/\t in {0/газ, 1/крен, 2/тангаж, 3/рыскание}
     \draw[wire] (-0.6,0.9-\i*0.6) node[left, font=\sffamily\small] {\t} -- (0,0.9-\i*0.6);
   \draw[very thick, FpgaOrange] (1.2,0) -- node[above, font=\sffamily\small, text=FpgaDark] {одна линия} (5.0,0);
   \begin{scope}[xshift=5cm]
   \draw[thick, fill=orange!15] (0,0.7) -- (1.2,1.3) -- (1.2,-1.3) -- (0,-0.7) -- cycle;
-  \node[font=\sffamily\tiny\bfseries] at (0.6,0) {DEMUX};
+  \node[font=\sffamily\footnotesize\bfseries] at (0.6,0) {DEMUX};
   \foreach \i/\t in {0/газ, 1/крен, 2/тангаж, 3/рыскание}
     \draw[wire] (1.2,0.9-\i*0.6) -- (1.8,0.9-\i*0.6) node[right, font=\sffamily\small] {\t};
   \end{scope}
-  \node[block, minimum width=20mm, minimum height=7mm] (ctr) at (3.1,-2.1) {Счётчик\\\scriptsize адреса};
+  \node[block, minimum width=20mm, minimum height=7mm] (ctr) at (3.1,-2.1) {Счётчик\\\footnotesize адреса};
   \draw[arr, FpgaBlue] (ctr.west) -| node[pos=0.25, below, lbl] {$s$} (0.6,-1.05);
   \draw[arr, FpgaBlue] (ctr.east) -| node[pos=0.25, below, lbl] {$s$} (5.6,-1.05);
 \end{tikzpicture}
@@ -466,7 +468,7 @@ $x_0\ldots x_3$ --- датчики зон, адрес $s_1s_0$ задают дв
   \draw[bus] (1.1,0) -- (2.4,0) node[right, text=FpgaDark] {$Y$};
   \foreach \x/\y in {-0.8/0.6, -0.8/-0.6, 1.7/0} {
     \draw[thick] (\x-0.1,\y-0.15) -- (\x+0.1,\y+0.15);
-    \node[font=\sffamily\scriptsize, above] at (\x,\y+0.1) {8};
+    \node[font=\sffamily\footnotesize, above] at (\x,\y+0.1) {8};
   }
   \draw[wire, FpgaBlue] (0.55,-0.85) -- (0.55,-1.5) node[below, text=FpgaDark] {$s$};
   \node[font=\sffamily\small, anchor=west] at (4.0,0.3) {$s=0$: \ $Y = A$};
@@ -502,6 +504,181 @@ $x_0\ldots x_3$ --- датчики зон, адрес $s_1s_0$ задают дв
 число; RTL: один символ мультиплексора с шинами, как на рисунке выше.
 \end{diybox}
 
+\section{Примеры на Verilog}
+\label{sec:mux-verilog}
+
+На Verilog мультиплексор --- это одна строка или короткий \code{case}.
+Пять примеров ниже --- законченные модули из папки \code{code/b5\_mux/}; у
+каждого есть тестбенч \code{tb\_*.v}, который сравнивает варианты друг с другом
+и с ожидаемым значением и печатает \code{OK}. Запуск в Logra: вкладка
+\emph{Код} $\to$ \emph{Синтезировать} (\code{Ctrl+Enter}) $\to$ \emph{RTL}
+$\to$ \emph{Диаграммы} (раздел~\ref{sec:signals-verilog}).
+
+\subsection{Пример 1. Мультиплексор 2:1 тремя способами}
+
+Одна функция $y=\overline{s}\,a+s\,b$ записана оператором \code{?:}, через
+\code{case} и вентилями из рис.~\ref{fig:mux21}.
+
+\vfile{\codepath/b5_mux/mux2.v}{code/b5\_mux/mux2.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{assign y = s ? b : a;} --- «если $s$, то $b$, иначе $a$». Самый короткий способ.
+  \item \code{always @(*)} + \code{case (s)} --- то же через оператор выбора. Выход объявлен \code{reg}, но схема остаётся комбинационной. \code{default} гарантирует, что \code{y} получает значение при любом $s$.
+  \item \code{mux2\_gates} --- схема с рис.~\ref{fig:mux21}: \code{wire ns = \textasciitilde s;} и два И, объединённые ИЛИ.
+\end{itemize}
+\textbf{Проверка.} \code{tb\_mux2.v} подключает все три модуля к одним входам и
+перебирает восемь комбинаций $s,a,b$: выходы должны совпасть. В Logra
+синтезируйте каждый модуль и сравните \emph{RTL}: синтезатор может получить из
+трёх записей близкие схемы.
+
+\textbf{Допиши сам.} Добавьте вход разрешения \code{en}: при \code{en} $=0$ выход
+равен нулю.
+
+\textbf{Образец.}
+\begin{vcode}
+module mux2_en (
+    input  a, b, s, en,
+    output y
+);
+    assign y = en ? (s ? b : a) : 1'b0;   // вложенный ?:
+endmodule
+\end{vcode}
+
+\subsection{Пример 2. Мультиплексор 4:1: case, индекс и дерево}
+
+Для четырёх входов есть три удобные записи. Дерево повторяет
+рис.~\ref{fig:muxtree}: два мультиплексора первого уровня и один второго.
+
+\vfile{\codepath/b5_mux/mux4.v}{code/b5\_mux/mux4.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{input [3:0] x} --- четыре информационных входа как одна шина, \code{input [1:0] s} --- адрес.
+  \item \code{x[s]} --- выбор бита шины по номеру: сам по себе мультиплексор.
+  \item \code{mux4\_tree}: \code{m0} выбирает в паре ($x_0,x_1$) по \emph{младшему} биту адреса, \code{m1} --- в паре ($x_2,x_3$), \code{y} выбирает между парами по старшему. Порядок битов адреса важен: поменяйте \code{s[0]} и \code{s[1]}, и входы 1 и 2 поменяются местами.
+\end{itemize}
+\textbf{Проверка.} \code{tb\_mux4.v} перебирает все 16 значений \code{x} и все
+4 адреса и сверяет три модуля с \code{x[s]}. В Logra: подайте \code{x} $=$
+\code{0101} и меняйте \code{s} --- выход должен чередоваться $1,0,1,0$.
+
+\textbf{Допиши сам.} Постройте мультиплексор 8:1 (три адресных бита).
+
+\textbf{Образец.}
+\begin{vcode}
+module mux8 (
+    input  [7:0] x,
+    input  [2:0] s,
+    output       y
+);
+    assign y = x[s];     // индекс по трёхбитному адресу: 8 входов
+endmodule
+\end{vcode}
+Попробуйте также собрать его деревом из двух мультиплексоров 4:1 и одного 2:1.
+
+\subsection{Пример 3. Демультиплексор 1:4}
+
+Информационный вход \code{x} должен попасть на выход с номером \code{s}, на
+остальных --- ноль. Первая запись --- через \code{case}, вторая --- сдвигом.
+
+\vfile{\codepath/b5_mux/demux4.v}{code/b5\_mux/demux4.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{y = 4'b0000;} в начале блока --- \emph{значение по умолчанию}: дальше выбранный разряд перезаписывается. Так \code{y} присваивается на любой ветке, и защёлки нет, даже если в \code{case} перечислены не все значения.
+  \item \code{y[2] = x;} --- присваивание одному разряду шины.
+  \item \code{\{3'b000, x\} << s} --- число \code{000x} сдвигается влево на $s$ позиций: если $x=1$, единица окажется в разряде $s$. Это дешифратор со входом разрешения $x$.
+\end{itemize}
+\textbf{Проверка.} \code{tb\_demux4.v} перебирает $x$ и все адреса и сверяет оба
+модуля. В Logra: при \code{s} $=10$ выход \code{y[2]} повторяет \code{x},
+остальные равны нулю.
+
+\textbf{Допиши сам.} Добавьте вход разрешения \code{en}: при \code{en} $=0$ все
+выходы равны нулю.
+
+\textbf{Образец.}
+\begin{vcode}
+module demux4_en (
+    input        x, en,
+    input  [1:0] s,
+    output [3:0] y
+);
+    assign y = en ? ({3'b000, x} << s) : 4'b0000;
+endmodule
+\end{vcode}
+
+\subsection{Пример 4. Мультиплексор как универсальный вентиль}
+
+XOR получается из мультиплексора 2:1, если на входы подать $b$ и $\overline{b}$,
+а адресом сделать $a$. Любая функция двух переменных --- один мультиплексор 4:1
+с четырьмя константами; в Verilog константы собирает параметр.
+
+\vfile{\codepath/b5_mux/mux_logic.v}{code/b5\_mux/mux\_logic.v}
+
+\textbf{Как читается.}
+\begin{itemize}
+  \item \code{a ? \textasciitilde b : b} --- при $a=0$ выход равен $b$, при $a=1$ равен $\overline b$: исключающее ИЛИ.
+  \item \code{parameter [3:0] TT} --- столбец таблицы истинности как параметр модуля; \code{TT[\{a,b\}]} выбирает бит по двухбитному адресу. Один и тот же модуль с \code{TT = 4'b1000} даёт И, с \code{4'b1110} --- ИЛИ, с \code{4'b0110} --- исключающее ИЛИ. Это LUT из рис.~\ref{fig:mux_lut}.
+  \item \code{mux\_lut2 \#(.TT(4'b1000)) u (\ldots)} --- подключение модуля с заданным параметром.
+\end{itemize}
+\textbf{Проверка.} \code{tb\_mux\_logic.v} проверяет XOR, И, ИЛИ, а затем создаёт
+сразу 16 экземпляров с \code{TT} от 0 до 15 и убеждается, что для каждой строки
+таблицы выход равен соответствующему биту параметра. В Logra синтезируйте
+\code{xor\_on\_mux} и сравните \emph{RTL} с рис.~\ref{fig:mux_lut}.
+
+\textbf{Допиши сам.} Реализуйте на одном мультиплексоре 4:1 функцию «2 из 3»
+$F=ab+ac+bc$ (адрес $\{a,b\}$, на входах данных --- константы и $c$).
+
+\textbf{Образец.}
+\begin{vcode}
+module maj3_mux (
+    input  a, b, c,
+    output y
+);
+    // d[0] при ab=00 -> 0;  d[1] при 01 -> c;  d[2] при 10 -> c;  d[3] при 11 -> 1
+    wire [3:0] d = {1'b1, c, c, 1'b0};
+    assign y = d[{a, b}];
+endmodule
+\end{vcode}
+
+\subsection{Пример 5. Мультиплексоры 8-разрядных шин}
+
+Выбор между числами записывается так же, как между битами: ширина шин ни на что
+не влияет.
+
+\vfile{\codepath/b5_mux/mux_bus8.v}{code/b5\_mux/mux\_bus8.v}
+
+\textbf{Как читается.} \code{y = s ? b : a;} при 8-разрядных \code{a} и \code{b}
+переключает сразу все восемь разрядов: синтезатор ставит восемь мультиплексоров
+с общим адресом. Версия 4:1 --- тот же \code{case}, но по двухбитному адресу
+и с шинами вместо битов; \code{default} закрывает $s=3$.
+
+\textbf{Проверка.} \code{tb\_mux\_bus8.v} подаёт числа \code{0xA5}, \code{0x3C},
+\code{0xFF}, \code{0x00} и проверяет, что выход целиком повторяет выбранное
+число. В Logra подайте \code{a} $=$ \code{A5}, \code{b} $=$ \code{3C} и
+переключайте \code{s}; на \emph{RTL} это один символ мультиплексора с шинами,
+как на рисунке «Мультиплексор 8-разрядных чисел».
+
+\textbf{Допиши сам.} Выберите одно из трёх 4-разрядных чисел $a,b,c$ по
+двухбитному коду $s$ (при $s=3$ выбирается $c$) --- задание из «Сделай сам».
+
+\textbf{Образец.}
+\begin{vcode}
+module mux3_bus4 (
+    input  [3:0] a, b, c,
+    input  [1:0] s,
+    output reg [3:0] y
+);
+    always @(*) begin
+        case (s)
+            2'd0:    y = a;
+            2'd1:    y = b;
+            default: y = c;    // s = 2 и s = 3
+        endcase
+    end
+endmodule
+\end{vcode}
+
 \section{Типичные ошибки}
 
 \begin{warnbox}[Типичные ошибки]
@@ -510,6 +687,18 @@ $x_0\ldots x_3$ --- датчики зон, адрес $s_1s_0$ задают дв
   \item \textbf{Считают, что адресных входов $2^n$.} Мультиплексор $2^n{:}1$ имеет $n$ адресных входов: у $4{:}1$ их два, а не четыре, у $8{:}1$ --- три.
   \item \textbf{Ждут, что демультиплексор «запомнит» значение.} У него нет памяти: на невыбранных выходах всегда 0, и если адрес меняется, предыдущий выход сразу гаснет.
   \item \textbf{Рассинхронизируют адреса на передатчике и приёмнике.} При передаче по одной линии мультиплексор и демультиплексор должны получать \emph{один и тот же} адрес в один и тот же момент; сдвиг хотя бы на один шаг раскладывает каналы по чужим выходам.
+  \item \textbf{Verilog: \code{case} без \code{default} (защёлка).}
+    \code{always @(*) case (s) 2'd0: y = a; 2'd1: y = b; endcase} не задаёт
+    $y$ при $s=2,3$, и синтезатор вставляет защёлку, которая «помнит» прежнее
+    значение. Либо добавьте \code{default}, либо задайте значение по умолчанию в
+    начале блока (\code{y = 1'b0;}).
+  \item \textbf{Verilog: неполный список чувствительности.}
+    \code{always @(a or b)} без \code{s} в симуляции не реагирует на смену
+    адреса, хотя синтезированная схема реагирует. Пишите \code{always @(*)}.
+  \item \textbf{Verilog: \code{<=} в комбинационном блоке.} В
+    \code{always @(*)} используйте блокирующее \code{=}, в тактируемом
+    \code{always @(posedge clk)} --- неблокирующее \code{<=}. Смешивание даёт
+    расхождение между симуляцией и платой.
 \end{itemize}
 \end{warnbox}
 

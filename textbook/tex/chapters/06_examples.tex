@@ -39,26 +39,26 @@
 
 \begin{figure}[htbp]
 \centering
-\begin{tikzpicture}[yscale=0.95]
+\begin{tikzpicture}
   \coordinate (A) at (0,0); \coordinate (B) at (0,-0.4);
-  \node[left, font=\sffamily\small] at (-0.1,-2.4) {\begin{tabular}{r}S1 $\to a$\\S2 $\to b$\end{tabular}};
-  \draw[very thick, FpgaBlue] (0,0.5) -- (0,-5.4) node[below, lbl] {$a$};
-  \draw[very thick, FpgaRed]  (0.4,0.5) -- (0.4,-5.4) node[below, lbl] {$b$};
+  \node[left, font=\sffamily\small] at (-0.1,-3.0) {\begin{tabular}{r}S1 $\to a$\\S2 $\to b$\end{tabular}};
+  \draw[very thick, FpgaBlue] (0,0.7) -- (0,-6.6) node[below, lbl] {$a$};
+  \draw[very thick, FpgaRed]  (0.4,0.7) -- (0.4,-6.6) node[below, lbl] {$b$};
   \foreach \i/\g/\t in {0/gAND/И, 1/gOR/ИЛИ, 2/gNOT/НЕ, 3/gNAND/И-НЕ, 4/gNOR/ИЛИ-НЕ, 5/gXOR/Искл. ИЛИ} {
-    \pgfmathsetmacro{\y}{-\i*1.0}
+    \pgfmathsetmacro{\y}{-\i*1.25}
     \ifnum\i=2
-      \node[gNOT] (g\i) at (2.4,\y) {};
+      \node[gNOT] (g\i) at (2.6,\y) {};
       \draw[wire] (g\i.input) -- (0,\y); \fill[FpgaBlue] (0,\y) circle (1.5pt);
     \else
-      \node[\g, minimum height=7mm, minimum width=10mm] (g\i) at (2.4,\y) {};
-      \draw[wire] (g\i.input 1) -- (0,{\y+0.12}); \fill[FpgaBlue] (0,{\y+0.12}) circle (1.5pt);
-      \draw[wire] (g\i.input 2) -- (0.4,{\y-0.12}); \fill[FpgaRed] (0.4,{\y-0.12}) circle (1.5pt);
+      \node[\g] (g\i) at (2.6,\y) {};
+      \draw[wire] (g\i.input 1) -- (0,0 |- g\i.input 1); \fill[FpgaBlue] (0,0 |- g\i.input 1) circle (1.5pt);
+      \draw[wire] (g\i.input 2) -- (0.4,0 |- g\i.input 2); \fill[FpgaRed] (0.4,0 |- g\i.input 2) circle (1.5pt);
     \fi
-    \node[gNOT, minimum width=6mm, minimum height=4mm] (n\i) at (4.3,\y) {};
+    \node[gNOT] (n\i) at (4.6,\y) {};
     \draw[wire] (g\i.output) -- (n\i.input);
-    \draw[wire] (n\i.output) -- (5.4,\y) node[right, font=\sffamily\small] {led[\i]\quad (\t)};
+    \draw[wire] (n\i.output) -- (5.6,\y) node[right, font=\sffamily\small] {led[\i]\quad (\t)};
   }
-  \node[lbl, align=center] at (4.3,0.7) {инверсия\\для LED};
+  \node[lbl, align=center] at (4.6,0.8) {инверсия\\для LED};
 \end{tikzpicture}
 \caption{Схема проекта 1}
 \end{figure}
@@ -123,7 +123,7 @@ Yosys сообщает, что схема заняла всего \textbf{5 LUT2
 
 \textbf{Как проверить.} Диаграммы: «Перебрать входы» даёт четыре строки, сверьте с таблицей. RTL: по одному вентилю на каждый бит. Gowin: сколько LUT занято (по отчёту около пяти).
 
-\stars{1} повторите: проверьте все 4 строки таблицы. \stars{2} измените: замените \code{led[5]} мажоритарной функцией от $a$, $b$ и $a\oplus b$ и объясните результат (получится ИЛИ). \stars{3} проект: этап «Охранная панель» --- \code{alarm = door \& (night | armed)} на кнопках S1, S2 и третьем входе; критерий приёмки --- восемь комбинаций совпадают с таблицей истинности из первой части.
+\stars{1} повторите: проверьте все 4 строки таблицы. \stars{2} измените: замените \code{led[5]} мажоритарной функцией от $a$, $b$ и $a\oplus b$ и объясните результат (получится ИЛИ). \stars{3} проект: этап «Охранная панель» --- \code{alarm = door \& (night | armed)} на кнопках S1, S2 и третьем входе; критерий приёмки --- восемь комбинаций совпадают с таблицей истинности из главы~\ref{ch:comb}.
 \end{diybox}
 
 % =============================================================================
@@ -147,9 +147,9 @@ Yosys сообщает, что схема заняла всего \textbf{5 LUT2
 \centering
 \begin{tikzpicture}[node distance=10mm]
   \node[hblock] (clk) {Генератор\\27 МГц};
-  \node[block, right=of clk, minimum width=30mm] (cnt) {Счётчик\\\scriptsize 0 \ldots 13\,499\,999};
-  \node[block, right=of cnt] (cmp) {Сравнение\\\scriptsize cnt == HALF$-$1};
-  \node[gblock, right=of cmp] (tff) {T-триггер\\\scriptsize state};
+  \node[block, right=of clk, minimum width=30mm] (cnt) {Счётчик\\\footnotesize 0 \ldots 13\,499\,999};
+  \node[block, right=of cnt] (cmp) {Сравнение\\\footnotesize cnt == HALF$-$1};
+  \node[gblock, right=of cmp] (tff) {T-триггер\\\footnotesize state};
   \node[oblock, below=8mm of tff] (led) {6 LED};
   \draw[arr] (clk) -- (cnt); \draw[bus, -{Stealth}] (cnt) -- (cmp); \draw[arr] (cmp) -- (tff);
   \draw[arr] (tff) -- node[right, lbl] {\textasciitilde state} (led);
@@ -227,13 +227,13 @@ Yosys сообщает, что схема заняла всего \textbf{5 LUT2
 \centering
 \begin{tikzpicture}[ffn/.style={draw=FpgaGreen, fill=green!8, thick, minimum width=13mm, minimum height=11mm, font=\sffamily\small, align=center}]
   \foreach \i in {0,...,5} {
-    \node[ffn] (r\i) at (\i*2.2,0) {D\enskip Q\\[-1mm]\scriptsize ring[\i]};
-    \draw[wire] (r\i.north) -- ++(0,0.6) node[above, font=\sffamily\scriptsize] {led[\i]};
+    \node[ffn] (r\i) at (\i*2.2,0) {D\enskip Q\\[-1mm]\footnotesize ring[\i]};
+    \draw[wire] (r\i.north) -- ++(0,0.6) node[above, font=\sffamily\footnotesize] {led[\i]};
   }
   \foreach \i [evaluate=\i as \j using int(\i+1)] in {0,...,4}
     \draw[arr] (r\i.east) -- (r\j.west);
   \draw[arr] (r5.east) -- ++(0.4,0) |- ($(r0.south)+(0,-0.7)$) -| ($(r0.west)+(-0.4,0)$) -- (r0.west);
-  \draw[wire, FpgaBlue] ($(r0.south)+(0,-1.3)$) node[left, font=\sffamily\scriptsize] {clk, tick} -- ($(r5.south)+(0,-1.3)$);
+  \draw[wire, FpgaBlue] ($(r0.south)+(0,-1.3)$) node[left, font=\sffamily\footnotesize] {clk, tick} -- ($(r5.south)+(0,-1.3)$);
   \foreach \i in {0,...,5} \draw[wire, FpgaBlue] (r\i.south) -- ++(0,-1.3);
 \end{tikzpicture}
 \caption{Кольцевой сдвиговый регистр из шести D-триггеров}
@@ -335,12 +335,12 @@ Yosys сообщает, что схема заняла всего \textbf{5 LUT2
   \node[font=\sffamily\small] (in) at (0,0) {btn};
   \node[ffn] (f1) at (2.2,0) {D\enskip Q};
   \node[ffn] (f2) at (4.6,0) {D\enskip Q};
-  \node[block] (db) at (7.6,0) {антидребезг\\\scriptsize 10 мс};
+  \node[block] (db) at (7.6,0) {антидребезг\\\footnotesize 10 мс};
   \node[block] (ed) at (10.8,0) {детектор\\фронта};
   \draw[arr] (in) -- (f1); \draw[arr] (f1) -- node[above, lbl] {sync0} (f2);
   \draw[arr] (f2) -- node[above, lbl] {sync1} (db); \draw[arr] (db) -- node[above, lbl] {s1} (ed);
   \draw[arr] (ed) -- ++(1.6,0) node[right, font=\sffamily\small] {press};
-  \draw[wire, FpgaBlue] (1.2,-1.2) node[left, font=\sffamily\scriptsize] {clk} -- (10.8,-1.2);
+  \draw[wire, FpgaBlue] (1.2,-1.2) node[left, font=\sffamily\footnotesize] {clk} -- (10.8,-1.2);
   \foreach \n in {f1,f2,db,ed} \draw[wire, FpgaBlue] (\n.south) -- (\n.south |- 0,-1.2);
 \end{tikzpicture}
 \caption{Цепочка обработки сигнала кнопки}
@@ -400,7 +400,7 @@ Yosys сообщает, что схема заняла всего \textbf{5 LUT2
 \section{Проект 5. Светофор: конечный автомат}
 
 \textbf{Цель:} перенести на плату конечный автомат, который вы разбирали в
-первой части, и увидеть его работу на светодиодах. Принцип прежний: регистр
+главе~\ref{ch:sync}, и увидеть его работу на светодиодах. Принцип прежний: регистр
 состояния, логика переходов, логика выходов. Новое здесь только таймер и
 подключение к реальным ножкам.
 
@@ -414,18 +414,18 @@ Yosys сообщает, что схема заняла всего \textbf{5 LUT2
   st/.style={circle, draw=FpgaDark, very thick, minimum size=22mm, font=\sffamily\small, align=center},
   tr/.style={-{Stealth[length=3mm]}, very thick, FpgaDark},
 ]
-  \node[st, fill=red!20]    (r)  at (0,2.6)  {RED\\\scriptsize 4 с};
-  \node[st, fill=orange!25] (ry) at (5.2,2.6) {RED\_YL\\\scriptsize 1 с};
-  \node[st, fill=green!20]  (g)  at (5.2,-1.6) {GREEN\\\scriptsize 4 с};
-  \node[st, fill=yellow!30] (y)  at (0,-1.6)  {YELLOW\\\scriptsize 1 с};
+  \node[st, fill=red!20]    (r)  at (0,2.6)  {RED\\\footnotesize 4 с};
+  \node[st, fill=orange!25] (ry) at (5.2,2.6) {RED\_YL\\\footnotesize 1 с};
+  \node[st, fill=green!20]  (g)  at (5.2,-1.6) {GREEN\\\footnotesize 4 с};
+  \node[st, fill=yellow!30] (y)  at (0,-1.6)  {YELLOW\\\footnotesize 1 с};
   \draw[tr] (r)  -- node[above, lbl] {таймер истёк} (ry);
-  \draw[tr] (ry) -- node[right, lbl] {таймер истёк} (g);
+  \draw[tr] (ry) -- node[left, lbl] {таймер истёк} (g);
   \draw[tr] (g)  -- node[below, lbl] {таймер истёк} (y);
   \draw[tr] (y)  -- node[left, lbl] {таймер истёк} (r);
   \draw[tr, FpgaRed, dashed] (-2.6,4.2) node[left, lbl, text=FpgaRed] {btn[0] (сброс)} -- (r);
   % Лампы
-  \foreach \s/\cr/\cy/\cg in {r/red/gray!30/gray!30, ry/red/yellow/gray!30, g/gray!30/gray!30/green!70!black, y/gray!30/yellow/gray!30} {
-    \begin{scope}[shift={($(\s)+(1.7,0.5)$)}]
+  \foreach \s/\dx/\dy/\cr/\cy/\cg in {r/-1.7/0/red/gray!30/gray!30, ry/1.7/0.5/red/yellow/gray!30, g/1.7/0.5/gray!30/gray!30/green!70!black, y/-1.7/0/gray!30/yellow/gray!30} {
+    \begin{scope}[shift={($(\s)+(\dx,\dy)$)}]
     \fill[ChipBlack, rounded corners=1pt] (-0.22,-1.0) rectangle (0.22,0.35);
     \fill[\cr] (0,0.15) circle (0.13); \fill[\cy] (0,-0.3) circle (0.13); \fill[\cg] (0,-0.75) circle (0.13);
     \end{scope}
@@ -452,7 +452,7 @@ Yosys сообщает, что схема заняла всего \textbf{5 LUT2
   \draw[arr] (out.east) -- ++(1,0) node[right, font=\sffamily\small] {led};
   \draw[arr] ($(st.east)+(0.5,0)$) -- ++(0,-1.2) -| (next.south);
   \draw[arr] ($(next.west)+(-1.2,0)$) node[left, font=\sffamily\small] {timer, btn} -- (next.west);
-  \draw[wire, FpgaBlue] (st.north) -- ++(0,0.5) node[above, font=\sffamily\scriptsize] {clk};
+  \draw[wire, FpgaBlue] (st.north) -- ++(0,0.5) node[above, font=\sffamily\footnotesize] {clk};
 \end{tikzpicture}
 \caption{Структура автомата Мура: выход зависит только от состояния}
 \end{figure}
@@ -636,21 +636,21 @@ YELLOW. Нарисуйте новый граф переходов перед т�
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}
-  \node[hblock, minimum height=24mm, minimum width=18mm] (cnt) at (0,0) {Счётчик\\\scriptsize 25 бит};
+  \node[hblock, minimum height=24mm, minimum width=18mm] (cnt) at (0,0) {Счётчик\\\footnotesize 25 бит};
   \draw[thick, fill=orange!15] (2.6,1.4) -- (3.6,0.9) -- (3.6,-0.9) -- (2.6,-1.4) -- cycle;
-  \node[font=\sffamily\scriptsize] at (3.1,0) {MUX};
-  \foreach \i in {0,...,3} \draw[wire] (cnt.east |- 0,0.9-\i*0.6) -- node[above, font=\tiny, pos=0.4] {cnt[\the\numexpr21+\i\relax]} (2.6,0.9-\i*0.6);
+  \node[font=\sffamily\footnotesize] at (3.1,0) {MUX};
+  \foreach \i in {0,...,3} \draw[wire] (cnt.east |- 0,0.9-\i*0.6) -- node[above, font=\footnotesize, pos=0.4] {cnt[\the\numexpr21+\i\relax]} (2.6,0.9-\i*0.6);
   \draw[wire] (3.6,0) -- (4.4,0) node[right, font=\sffamily\small] {led[4]};
-  \draw[thick, fill=FpgaLight] (6.4,-3.5) rectangle (7.4,-1.3);
-  \node[font=\sffamily\small\bfseries] at (6.9,-2.4) {DC};
+  \draw[thick, fill=FpgaLight] (6.4,-5.4) rectangle (7.4,-0.6);
+  \node[font=\sffamily\small\bfseries] at (6.9,-3.0) {DC};
   \foreach \i in {0,...,3} {
-    \node[gAND, minimum width=8mm, minimum height=6mm] (g\i) at (8.8,-1.55-\i*0.55) {};
-    \draw[wire] (7.4,-1.48-\i*0.55) -- (g\i.input 1);
+    \node[gAND, anchor=input 1] (g\i) at (9.2,-1.0-\i*1.2) {};
+    \draw[wire] (7.4,-1.0-\i*1.2) -- (g\i.input 1);
     \draw[wire] (g\i.output) -- ++(0.4,0) node[right, font=\sffamily\small] {led[\i]};
   }
-  \draw[wire, FpgaOrange] (cnt.south) -- ++(0,-2.4) node[below, font=\sffamily\scriptsize, text=FpgaDark] {cnt[23]} -| (8.0,-1.2);
-  \foreach \i in {0,...,3} { \draw[wire, FpgaOrange] (8.0,0 |- g\i.input 2) -- (g\i.input 2); \fill[FpgaOrange] (8.0,0 |- g\i.input 2) circle (1.2pt); }
-  \draw[wire, FpgaOrange] (8.0,-1.2) -- (8.0,0 |- g3.input 2);
+  \draw[wire, FpgaOrange] (cnt.south) -- ++(0,-5.0) node[below, font=\sffamily\footnotesize, text=FpgaDark] {cnt[23]} -| (8.1,-1.45);
+  \foreach \i in {0,...,3} { \draw[wire, FpgaOrange] (8.1,0 |- g\i.input 2) -- (g\i.input 2); \fill[FpgaOrange] (8.1,0 |- g\i.input 2) circle (1.2pt); }
+  \draw[wire, FpgaOrange] (8.1,-1.45) -- (8.1,0 |- g3.input 2);
   \draw[wire, FpgaBlue] (4.9,-3.0) node[left, text=FpgaDark] {s = btn} -- (6.4,-3.0);
   \draw[wire, FpgaBlue] (5.4,-3.0) |- (3.1,-2.0) -- (3.1,-1.15); \fill[FpgaBlue] (5.4,-3.0) circle (1.3pt);
   \begin{scope}[on background layer]

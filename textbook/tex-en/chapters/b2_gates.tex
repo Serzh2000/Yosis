@@ -58,7 +58,7 @@ an alarm.
 
 \newcommand{\gaterow}[5]{%
   \begin{tikzpicture}[baseline=-1mm]
-    \node[#1, minimum width=10mm, minimum height=7mm] (g) at (0,0) {};
+    \node[#1] (g) at (0,0) {};
     \ifstrequal{#1}{gNOT}{\draw[wire] (g.input) -- ++(-0.35,0);}{%
       \draw[wire] (g.input 1) -- ++(-0.35,0); \draw[wire] (g.input 2) -- ++(-0.35,0);}
     \draw[wire] (g.output) -- ++(0.35,0);
@@ -68,7 +68,7 @@ an alarm.
     \ifstrequal{#2}{iNOT}{\draw[wire] (h.input) -- ++(-0.35,0);}{%
       \draw[wire] (h.input 1) -- ++(-0.35,0); \draw[wire] (h.input 2) -- ++(-0.35,0);}
     \draw[wire] (h.output) -- ++(0.35,0);
-  \end{tikzpicture} & #3 & #4 & #5 \\[3mm]}
+  \end{tikzpicture} & #3 & #4 & #5 \\[6mm]}
 
 \begin{table}[H]
 \centering
@@ -242,18 +242,18 @@ inversions on its inputs:
 \centering
 \begin{tikzpicture}
   \node[gNAND] (g1) at (0,0) {};
-  \draw[wire] (g1.input 1) -- ++(-0.6,0) node[left] {$a$};
-  \draw[wire] (g1.input 2) -- ++(-0.6,0) node[left] {$b$};
+  \draw[wire] (g1.input 1) -- ++(-0.5,0) node[left] {$a$};
+  \draw[wire] (g1.input 2) -- ++(-0.5,0) node[left] {$b$};
   \draw[wire] (g1.output) -- ++(0.6,0) node[right] {$\overline{ab}$};
-  \node[font=\Large] at (2.6,0) {$=$};
-  \begin{scope}[xshift=5.2cm]
+  \node[font=\Large] at (3.6,0) {$=$};
+  \begin{scope}[xshift=7.4cm]
     \node[gOR] (g2) at (0,0) {};
-    \node[gNOT, minimum width=6mm, minimum height=4mm] (n1) at (-1.3,0.18) {};
-    \node[gNOT, minimum width=6mm, minimum height=4mm] (n2) at (-1.3,-0.18) {};
-    \draw[wire] (n1.output) -- (g2.input 1);
-    \draw[wire] (n2.output) -- (g2.input 2);
-    \draw[wire] (n1.input) -- ++(-0.4,0) node[left] {$a$};
-    \draw[wire] (n2.input) -- ++(-0.4,0) node[left] {$b$};
+    \node[gNOT] (n1) at (-2.4,0.7) {};
+    \node[gNOT] (n2) at (-2.4,-0.7) {};
+    \draw[wire] (n1.output) -| ([xshift=-4mm]g2.input 1) -- (g2.input 1);
+    \draw[wire] (n2.output) -| ([xshift=-4mm]g2.input 2) -- (g2.input 2);
+    \draw[wire] (n1.input) -- ++(-0.6,0) node[left] {$a$};
+    \draw[wire] (n2.input) -- ++(-0.6,0) node[left] {$b$};
     \draw[wire] (g2.output) -- ++(0.6,0) node[right] {$\overline{a}+\overline{b}$};
   \end{scope}
 \end{tikzpicture}
@@ -301,42 +301,48 @@ everything else can be built from them.
 
 \begin{figure}[H]
 \centering
+\begin{adjustbox}{max width=\linewidth}
 \begin{tikzpicture}
   % NOT
   \node[font=\sffamily\small\bfseries] at (0.3,1.3) {NOT};
   \node[gNAND] (a1) at (0.3,0) {};
-  \draw[wire] (a1.input 1) -- ++(-0.35,0) coordinate (t1);
-  \draw[wire] (a1.input 2) -- ++(-0.35,0) coordinate (t2);
-  \draw[wire] (t1) -- (t2); \draw[wire] ($(t1)!0.5!(t2)$) -- ++(-0.5,0) node[left] {$a$};
+  \draw[wire] (a1.input 1) -- ++(-0.4,0) coordinate (t1);
+  \draw[wire] (a1.input 2) -- ++(-0.4,0) coordinate (t2);
+  \draw[wire] (t1) -- (t2); \draw[wire] ($(t1)!0.5!(t2)$) -- ++(-0.6,0) node[left] {$a$};
   \fill ($(t1)!0.5!(t2)$) circle (1.3pt);
-  \draw[wire] (a1.output) -- ++(0.4,0) node[right] {$\overline{a}$};
+  \draw[wire] (a1.output) -- ++(0.5,0) node[right] {$\overline{a}$};
   % AND
-  \begin{scope}[xshift=4.2cm]
-  \node[font=\sffamily\small\bfseries] at (0.9,1.3) {AND};
-  \node[gNAND] (b1) at (0,0) {};
-  \node[gNAND] (b2) at (2.0,0) {};
-  \draw[wire] (b1.input 1) -- ++(-0.4,0) node[left] {$a$};
-  \draw[wire] (b1.input 2) -- ++(-0.4,0) node[left] {$b$};
-  \draw[wire] (b1.output) -- ++(0.2,0) coordinate (m);
-  \draw[wire] (m) |- (b2.input 1); \draw[wire] (m) |- (b2.input 2); \fill (m) circle (1.3pt);
-  \draw[wire] (b2.output) -- ++(0.4,0) node[right] {$ab$};
+  \begin{scope}[xshift=4.3cm]
+  \node[font=\sffamily\small\bfseries] at (1.3,1.3) {AND};
+  \node[gNAND] (b1) at (0,0.0) {};
+  \node[gNAND] (b2) at (2.6,0) {};
+  \draw[wire] (b1.input 1) -- ++(-0.5,0) node[left] {$a$};
+  \draw[wire] (b1.input 2) -- ++(-0.5,0) node[left] {$b$};
+  \draw[wire] (b2.input 1) -- ++(-0.3,0) coordinate (u1);
+  \draw[wire] (b2.input 2) -- ++(-0.3,0) coordinate (u2);
+  \draw[wire] (u1) -- (u2);
+  \draw[wire] (b1.output) -- ($(u1)!0.5!(u2)$);
+  \fill ($(u1)!0.5!(u2)$) circle (1.3pt);
+  \draw[wire] (b2.output) -- ++(0.5,0) node[right] {$ab$};
   \end{scope}
   % OR
-  \begin{scope}[xshift=10cm]
-  \node[font=\sffamily\small\bfseries] at (0.9,1.3) {OR};
-  \node[gNAND, minimum width=9mm, minimum height=6mm] (c1) at (0,0.45) {};
-  \node[gNAND, minimum width=9mm, minimum height=6mm] (c2) at (0,-0.45) {};
-  \node[gNAND] (c3) at (2.0,0) {};
+  \begin{scope}[xshift=10.6cm]
+  \node[font=\sffamily\small\bfseries] at (1.3,1.6) {OR};
+  \node[gNAND] (c1) at (0,0.8) {};
+  \node[gNAND] (c2) at (0,-0.8) {};
+  \node[gNAND] (c3) at (2.6,0) {};
   \foreach \c/\n in {c1/a, c2/b} {
-    \draw[wire] (\c.input 1) -- ++(-0.3,0) coordinate (u1);
-    \draw[wire] (\c.input 2) -- ++(-0.3,0) coordinate (u2);
-    \draw[wire] (u1) -- (u2); \draw[wire] ($(u1)!0.5!(u2)$) -- ++(-0.35,0) node[left] {$\n$};
+    \draw[wire] (\c.input 1) -- ++(-0.4,0) coordinate (u1);
+    \draw[wire] (\c.input 2) -- ++(-0.4,0) coordinate (u2);
+    \draw[wire] (u1) -- (u2); \draw[wire] ($(u1)!0.5!(u2)$) -- ++(-0.5,0) node[left] {$\n$};
+    \fill ($(u1)!0.5!(u2)$) circle (1.3pt);
   }
-  \draw[wire] (c1.output) -- ++(0.3,0) |- (c3.input 1);
-  \draw[wire] (c2.output) -- ++(0.3,0) |- (c3.input 2);
-  \draw[wire] (c3.output) -- ++(0.4,0) node[right] {$a+b$};
+  \draw[wire] (c1.output) -| ([xshift=-4mm]c3.input 1) -- (c3.input 1);
+  \draw[wire] (c2.output) -| ([xshift=-4mm]c3.input 2) -- (c3.input 2);
+  \draw[wire] (c3.output) -- ++(0.5,0) node[right] {$a+b$};
   \end{scope}
 \end{tikzpicture}
+\end{adjustbox}
 \caption{NOT, AND and OR built only from NAND gates}
 \end{figure}
 
@@ -379,29 +385,29 @@ built from two-input gates by connecting them in a ``chain'' or in a ``tree'':
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}
-  \node[font=\sffamily\small\bfseries] at (1.2,2.0) {Chain: 3 levels};
-  \node[gAND, minimum width=9mm, minimum height=10mm] (a1) at (0,1.0) {};
-  \node[gAND, minimum width=9mm, minimum height=10mm] (a2) at (1.3,0) {};
-  \node[gAND, minimum width=9mm, minimum height=10mm] (a3) at (2.6,-1.0) {};
-  \draw[wire] (a1.input 1) -- ++(-0.4,0) node[left, yshift=1.3mm] {$a$};
-  \draw[wire] (a1.input 2) -- ++(-0.4,0) node[left, yshift=-1.3mm] {$b$};
-  \draw[wire] (a1.output) -- ++(0.1,0) |- (a2.input 1);
-  \draw[wire] (a2.input 2) -- ++(-1.7,0) node[left] {$c$};
-  \draw[wire] (a2.output) -- ++(0.1,0) |- (a3.input 1);
-  \draw[wire] (a3.input 2) -- ++(-3.0,0) node[left] {$d$};
-  \draw[wire] (a3.output) -- ++(0.4,0) node[right] {$abcd$};
-  \begin{scope}[xshift=7.5cm]
-  \node[font=\sffamily\small\bfseries] at (0.7,2.0) {Tree: 2 levels};
-  \node[gAND, minimum width=9mm, minimum height=10mm] (b1) at (0,0.8) {};
-  \node[gAND, minimum width=9mm, minimum height=10mm] (b2) at (0,-0.8) {};
-  \node[gAND, minimum width=9mm, minimum height=10mm] (b3) at (1.5,0) {};
-  \draw[wire] (b1.input 1) -- ++(-0.4,0) node[left, yshift=1.3mm] {$a$};
-  \draw[wire] (b1.input 2) -- ++(-0.4,0) node[left, yshift=-1.3mm] {$b$};
-  \draw[wire] (b2.input 1) -- ++(-0.4,0) node[left, yshift=1.3mm] {$c$};
-  \draw[wire] (b2.input 2) -- ++(-0.4,0) node[left, yshift=-1.3mm] {$d$};
-  \draw[wire] (b1.output) -- ++(0.1,0) |- (b3.input 1);
-  \draw[wire] (b2.output) -- ++(0.1,0) |- (b3.input 2);
-  \draw[wire] (b3.output) -- ++(0.4,0) node[right] {$abcd$};
+  \node[font=\sffamily\small\bfseries] at (2.6,2.6) {Chain: 3 levels};
+  \node[gAND] (a1) at (0,1.7) {};
+  \node[gAND] (a2) at (2.6,0.85) {};
+  \node[gAND] (a3) at (5.2,0) {};
+  \draw[wire] (a1.input 1) -- ++(-0.5,0) node[left] {$a$};
+  \draw[wire] (a1.input 2) -- ++(-0.5,0) node[left] {$b$};
+  \draw[wire] (a1.output) -| ([xshift=-4mm]a2.input 1) -- (a2.input 1);
+  \draw[wire] (a2.input 2) -- (a2.input 2 -| a1.input 1) -- ++(-0.5,0) node[left] {$c$};
+  \draw[wire] (a2.output) -| ([xshift=-4mm]a3.input 1) -- (a3.input 1);
+  \draw[wire] (a3.input 2) -- (a3.input 2 -| a1.input 1) -- ++(-0.5,0) node[left] {$d$};
+  \draw[wire] (a3.output) -- ++(0.5,0) node[right] {$abcd$};
+  \begin{scope}[xshift=9.4cm]
+  \node[font=\sffamily\small\bfseries] at (1.3,2.6) {Tree: 2 levels};
+  \node[gAND] (b1) at (0,1.1) {};
+  \node[gAND] (b2) at (0,-1.1) {};
+  \node[gAND] (b3) at (2.6,0) {};
+  \draw[wire] (b1.input 1) -- ++(-0.5,0) node[left] {$a$};
+  \draw[wire] (b1.input 2) -- ++(-0.5,0) node[left] {$b$};
+  \draw[wire] (b2.input 1) -- ++(-0.5,0) node[left] {$c$};
+  \draw[wire] (b2.input 2) -- ++(-0.5,0) node[left] {$d$};
+  \draw[wire] (b1.output) -| ([xshift=-4mm]b3.input 1) -- (b3.input 1);
+  \draw[wire] (b2.output) -| ([xshift=-4mm]b3.input 2) -- (b3.input 2);
+  \draw[wire] (b3.output) -- ++(0.5,0) node[right] {$abcd$};
   \end{scope}
 \end{tikzpicture}
 \caption{A four-input AND gate built from two-input gates. The tree is faster:
@@ -438,6 +444,184 @@ combinations and compare the output with the table from the first section; on th
 \end{itemize}
 \end{diybox}
 
+\section{Verilog Examples}
+\label{sec:gates-verilog}
+
+Logic gates are written in Verilog almost exactly as in Boolean algebra. The
+five examples below are complete modules from the folder
+\code{code/b2\_gates/}; each has a testbench \code{tb\_*.v} that sweeps all the
+input combinations and prints \code{OK}. Running them in Logra: the \emph{Code}
+tab $\to$ \emph{Synthesize} (\code{Ctrl+Enter}) $\to$ \emph{RTL} (the circuit
+of gates) $\to$ \emph{Waveforms} (an input sweep); see
+Section~\ref{sec:signals-verilog} for details. The language itself is covered in
+Chapter~\ref{ch:verilog}.
+
+\subsection{Example 1. All the Gates}
+
+Every element of Table~\ref{tab:gates_all} corresponds to one Verilog operator.
+
+\vfile{\codepath/b2_gates/all_gates.v}{code/b2\_gates/all\_gates.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item One module with two inputs and seven outputs; each \code{assign} line is one gate.
+  \item The operators: \code{\textasciitilde} is NOT, \code{\&} is AND, \code{|} is OR, \code{\^{}} is exclusive OR. The inverting variants (NAND, NOR, XNOR) are obtained by inverting the result.
+  \item Parentheses fix the order of evaluation: \code{\textasciitilde(a \& b)} is NAND, while \code{\textasciitilde a \& b} is a quite different function (invert first, then AND).
+\end{itemize}
+\textbf{Checking.} \code{tb\_all\_gates.v} prints the truth table of all the
+gates for $ab=00,01,10,11$ and compares it with the table of the chapter
+(\code{0001} for AND, \code{0111} for OR, and so on). In Logra look at the
+circuit on the \emph{RTL} tab and at the same tables over time on the
+\emph{Waveforms} tab. Try to find the row where exclusive OR differs from OR.
+
+\textbf{Finish it yourself.} Add an ``inhibit'' gate: the output is 1 when
+$a=1$ and $b=0$.
+
+\textbf{Sample answer.}\par\nopagebreak
+\begin{vcode}
+module inhibit (
+    input  a, b,
+    output y          // a AND NOT b
+);
+    assign y = a & ~b;
+endmodule
+\end{vcode}
+
+\subsection{Example 2. The Universality of NAND}
+
+From NAND gates alone we build NOT, AND, OR and exclusive OR. In Verilog this is
+especially clear: there is one small ``brick'' module, and everything else is
+its instances.
+
+\vfile{\codepath/b2_gates/nand_universal.v}{code/b2\_gates/nand\_universal.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{module nand\_gate} is the brick: \code{y = \textasciitilde(a \& b)}. Everything else is built only from its instances.
+  \item \code{nand\_gate g1 (.a(a), .b(a), .y(y));} is an instance of the module with named connections: the module's port \code{.a} is connected to the outside wire \code{a}. Inputs tied together turn the NAND into a NOT.
+  \item \code{wire n, p, q;} are internal wires between the gates. The XOR of four NANDs repeats the circuit from the chapter's problem: a shared node \code{n} and three gates around it.
+\end{itemize}
+\textbf{Checking.} \code{tb\_nand\_universal.v} connects the four circuits to the
+same inputs and compares them with the built-in operators \code{\textasciitilde},
+\code{\&}, \code{|}, \code{\^{}} on all four combinations. In Logra synthesize
+\code{xor\_from\_nand} as the top module and compare its circuit on \emph{RTL}
+with the expression \code{a \^{} b}.
+
+\textbf{Finish it yourself.} Build a NOR using only the operation ``NAND''
+(\code{\textasciitilde(x \& y)}).
+
+\textbf{Sample answer.}\par\nopagebreak
+\begin{vcode}
+module nor_from_nand (
+    input  a, b,
+    output y
+);
+    wire na = ~(a & a);        // NOT a
+    wire nb = ~(b & b);        // NOT b
+    wire o  = ~(na & nb);      // OR: a | b
+    assign y = ~(o & o);       // NOT of OR: four NANDs instead of one NOR
+endmodule
+\end{vcode}
+
+\subsection{Example 3. De Morgan's Law}
+
+Two forms of one function and a ``mismatch'' output that must always be zero.
+
+\vfile{\codepath/b2_gates/demorgan.v}{code/b2\_gates/demorgan.v}
+
+\textbf{How to read it.} The outputs \code{y1} and \code{y2} are the left and
+right sides of the first law, \code{z1} and \code{z2} of the second. The
+exclusive OR of two equal signals is 0, so \code{mismatch} $=0$ means both
+pairs agree. The \code{demorgan} example from the Logra library uses the same
+``mismatch'' output.
+
+\textbf{Checking.} \code{tb\_demorgan.v} makes sure that \code{mismatch} is zero
+on all four combinations. In Logra, sweep the inputs on the \emph{Waveforms}
+tab: the \code{mismatch} line stays at zero. On the \emph{RTL} tab the
+synthesizer may reduce both forms to one circuit, and that is fine: the
+functions are equal.
+
+\textbf{Finish it yourself.} Check the law for three variables:
+$\overline{abc}=\overline a+\overline b+\overline c$.
+
+\textbf{Sample answer.}\par\nopagebreak
+\begin{vcode}
+module demorgan3 (
+    input  a, b, c,
+    output mismatch      // 0 for all inputs
+);
+    wire y1 = ~(a & b & c);
+    wire y2 = ~a | ~b | ~c;
+    assign mismatch = y1 ^ y2;
+endmodule
+\end{vcode}
+
+\subsection{Example 4. Exclusive OR in Three Forms}
+
+Exclusive OR can be written with the operator \code{\^{}}, as ``different'', and
+as ``at least one, but not both''. All three forms are one function.
+
+\vfile{\codepath/b2_gates/xor_forms.v}{code/b2\_gates/xor\_forms.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{(a \& \textasciitilde b) | (\textasciitilde a \& b)} reads ``a without b, or b without a'': the standard form through AND, OR, NOT (Problem~5 of the chapter).
+  \item \code{(a | b) \& \textasciitilde(a \& b)} is OR without the case ``both''.
+  \item \code{same = \textasciitilde(a \^{} b)} is exclusive NOR: the equality of two bits (it will be needed for the comparator in Chapter~\ref{ch:arith}).
+\end{itemize}
+\textbf{Checking.} \code{tb\_xor\_forms.v} compares the three forms on all
+combinations and separately checks the row $a=b=1$: exclusive OR gives 0 and OR
+gives 1, the very difference that the ``Do it yourself'' task suggested finding.
+In Logra look at \emph{RTL}: the synthesizer may reduce all three forms to one
+circuit, because the functions are equal.
+
+\textbf{Finish it yourself.} Make an equality comparator for two two-bit
+numbers $a$ and $b$ using XNOR.
+
+\textbf{Sample answer.}\par\nopagebreak
+\begin{vcode}
+module eq2 (
+    input  [1:0] a, b,
+    output       eq
+);
+    // the numbers are equal if both bits are equal
+    assign eq = ~(a[0] ^ b[0]) & ~(a[1] ^ b[1]);
+endmodule
+\end{vcode}
+
+\subsection{Example 5. The Security Panel Rule and Three-Input Gates}
+
+The rule ``the door is open \emph{and} (it is night \emph{or} the arming key is
+on)'' is written as one line; next to it are other functions of three
+variables.
+
+\vfile{\codepath/b2_gates/three_inputs.v}{code/b2\_gates/three\_inputs.v}
+
+\textbf{How to read it.}
+\begin{itemize}
+  \item \code{alarm = door \& (night | armed)}: the parentheses are required. In Verilog, as in algebra, AND binds tighter than OR, and without them we would get $(\text{door}\cdot\text{night}) + \text{armed}$.
+  \item \code{led\_n = \textasciitilde alarm}: the board LED lights at zero.
+  \item \code{all3}, \code{odd3}, \code{two\_of\_3} are AND, exclusive OR (an odd number of ones) and ``at least two ones'' on three inputs; the last one will be useful for the carry of the adder in Chapter~\ref{ch:arith}.
+\end{itemize}
+\textbf{Checking.} \code{tb\_three\_inputs.v} sweeps the eight combinations and
+checks that the alarm is 1 in exactly three rows (\code{101}, \code{110},
+\code{111}). In Logra, sweep the inputs on the \emph{Waveforms} tab; the
+\code{led\_n} LED goes out exactly where \code{alarm} is zero.
+
+\textbf{Finish it yourself.} Add a panic button \code{panic}: when \code{panic}
+$=1$ the alarm is always on.
+
+\textbf{Sample answer.}\par\nopagebreak
+\begin{vcode}
+module alarm_panic (
+    input  door, night, armed, panic,
+    output alarm, led_n
+);
+    assign alarm = panic | (door & (night | armed));
+    assign led_n = ~alarm;
+endmodule
+\end{vcode}
+
 \section{Common Mistakes}
 
 \begin{warnbox}[Common mistakes]
@@ -452,6 +636,17 @@ combinations and compare the output with the table from the first section; on th
     By connecting both inputs you get not a NAND but a NOT.
   \item \textbf{Operator precedence.} $A+B\cdot C$ means $A+(B\cdot C)$, not
     $(A+B)\cdot C$: AND binds more strongly than OR, just as multiplication binds more strongly than addition.
+  \item \textbf{Verilog: forgetting the parentheses.} \code{door \& night |
+    armed} is $(\text{door}\cdot\text{night})+\text{armed}$, not the rule you
+    need. Always add parentheses when you mix \code{\&} and \code{|}.
+  \item \textbf{Verilog: \code{\&\&} instead of \code{\&} and \code{!} instead
+    of \code{\textasciitilde}.} For single bits the result is the same, but on
+    buses \code{\&\&} and \code{!} give a single ``not zero'' bit, while
+    \code{\&} and \code{\textasciitilde} work on every bit separately.
+  \item \textbf{Verilog: two \code{assign} statements for one wire.} If the same
+    \code{wire} receives a value from two expressions, it has two sources; the
+    synthesizer reports an error (or the result is the undefined value
+    \code{x}).
 \end{itemize}
 \end{warnbox}
 
@@ -477,9 +672,11 @@ The answers are collected in Appendix~\ref{app:answers}.
 
 \section{What's Next}
 
-We can write logic functions and build them from gates, but the
-security panel has three sensors, and so far we have made up the rule ourselves. How do we systematically obtain a circuit
-from a verbal condition, how do we find out whether it is too large, and
-how do we tell a circuit ``without memory'' from a circuit with memory? We will deal with this in
-Chapter~\ref{ch:comb}, where we go from the truth table to a circuit and study
-minimization.
+We can write logic functions and build them from gates, on paper and in the
+Logra Designer. But a circuit of ten gates can still be drawn with the mouse,
+while one of a hundred cannot. How do we write a circuit as \emph{text}, so that
+Logra turns it into gates by itself? The answer is the Verilog language: in
+Chapter~\ref{ch:verilog} we describe the same gates in it and immediately run
+the result on the RTL and Waveforms tabs. After that, in Chapter~\ref{ch:comb},
+we return to the security panel with three sensors: from a verbal condition we
+go to a truth table and a circuit, and study minimization along the way.

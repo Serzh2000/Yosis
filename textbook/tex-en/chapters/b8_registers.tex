@@ -20,8 +20,8 @@ Below we will see how this works.
 
 \newcommand{\dff}[3]{% name, x, y  -- D flip-flop 12x14 mm
   \draw[thick, fill=green!8] (#2,#3) rectangle ++(1.2,1.4);
-  \node[font=\sffamily\scriptsize] at (#2+0.22,#3+1.05) {D};
-  \node[font=\sffamily\scriptsize] at (#2+0.98,#3+1.05) {Q};
+  \node[font=\sffamily\footnotesize] at (#2+0.22,#3+1.05) {D};
+  \node[font=\sffamily\footnotesize] at (#2+0.98,#3+1.05) {Q};
   \draw[thick] (#2,#3+0.2) -- (#2+0.18,#3+0.35) -- (#2,#3+0.5);
   \coordinate (#1-d) at (#2,#3+1.05); \coordinate (#1-q) at (#2+1.2,#3+1.05);
   \coordinate (#1-c) at (#2,#3+0.35);}
@@ -37,14 +37,14 @@ labeled with the letters RG.
 \centering
 \begin{tikzpicture}
   \foreach \i in {0,...,3} {
-    \pgfmathsetmacro{\x}{(3-\i)*2.3}
+    \pgfmathsetmacro{\x}{(3-\i)*3.0}
     \dff{r\i}{\x}{0}
     \draw[wire] (r\i-d) -- ++(-0.4,0) |- ($(r\i-d)+(-0.4,1.0)$) node[above] {$d_\i$};
-    \draw[wire] (r\i-q) -- ++(0.35,0) -- ++(0,-1.5) node[below] {$q_\i$};
+    \draw[wire] (r\i-q) -- ++(0.5,0) -- ++(0,1.0) node[above] {$q_\i$};
     \draw[wire, FpgaBlue] (r\i-c) -- ++(-0.3,0) -- ++(0,-0.75);
   }
-  \draw[wire, FpgaBlue] (-1.4,-0.4) node[left, text=FpgaDark] {CLK} -- (6.6,-0.4);
-  \foreach \i in {0,...,3} { \pgfmathsetmacro{\x}{(3-\i)*2.3-0.3} \fill[FpgaBlue] (\x,-0.4) circle (1.3pt); }
+  \draw[wire, FpgaBlue] (-1.4,-0.4) node[left, text=FpgaDark] {CLK} -- (9.0,-0.4);
+  \foreach \i in {0,...,3} { \pgfmathsetmacro{\x}{(3-\i)*3.0-0.3} \fill[FpgaBlue] (\x,-0.4) circle (1.3pt); }
 \end{tikzpicture}
 \caption{A four-bit register: four D flip-flops with a common clock}
 \label{fig:reg}
@@ -80,6 +80,55 @@ if writing is enabled.\\
 \textbf{How to check:} in Waveforms the value 7 on the input that arrived between
 edges did not appear at the output (as in Fig.~\ref{fig:reg_t}).
 \end{diybox}
+
+\subsection{The Register in Verilog}
+\label{sec:regs-reg-v}
+
+In Verilog a register is a \code{reg} several bits wide and one clocked block.
+The same code describes any number of flip-flops; the width is set by the
+parameter \code{W}.
+
+\vfile{\codepath/b8_registers/reg_ce.v}{code/b8\_registers/reg\_ce.v}
+
+\textbf{How to read it.} The header \code{\#(parameter W = 4)} sets the default
+width, which can be changed when the module is instantiated. \code{[W-1:0]} is
+the range of bits from the most significant to the least significant. At the
+edge: if \code{rst}, write zeros (\code{\{W\{1'b0\}\}} means ``repeat \code{1'b0}
+$W$ times''), otherwise if \code{we}, write \code{d}; otherwise the register
+holds. The order of the branches is the priority: reset is stronger than write.
+
+The testbench \code{tb\_reg\_ce.v} checks five clock cycles: reset; write
+\code{A}; \code{we=0} (the register holds \code{A} although \code{5} is on the
+input); write \code{7}; simultaneous \code{rst} and \code{we} (reset wins).
+\textbf{How to run it in Logra:} \term{Code} tab, paste the module, Ctrl+Enter;
+\term{RTL} shows four flip-flops with a common clock and the selection logic in
+front of them; in \term{Waveforms} apply the values \code{5, A, 7} to \code{d}
+between edges and make sure the output does not change between edges.
+
+\begin{diybox}[The Register in Verilog: Complete the Module]
+\textbf{Task.} \stars{1} Make an 8-bit register without changing the body of
+the module: only the parameter. \stars{2} Add a second output \code{changed}
+that equals 1 in the cycle when the register actually received a new value.
+\stars{3} Make a register that stores the lock code (4 bits) and only compares:
+the output \code{open} is 1 if the same code is applied to the input.\\
+\textbf{Expected result:} at $W=8$ the \term{RTL} tab shows eight flip-flops.
+\end{diybox}
+
+\textbf{Sample answer.}
+\begin{vcode}
+module code_lock (
+    input        clk,
+    input        we,         // store a new code
+    input  [3:0] code_in,
+    output       open        // 1 if code_in matches the stored code
+);
+    reg [3:0] stored = 4'b0000;
+    always @(posedge clk) if (we) stored <= code_in;
+    assign open = (code_in == stored);   // comparison: combinational logic
+endmodule
+\end{vcode}
+The first task is solved by the line \code{reg\_ce \#(.W(8)) r8 (\ldots);} when
+the module is instantiated in a top-level module.
 
 \section{The Shift Register}
 
@@ -121,6 +170,80 @@ input $D_\text{in}$ is written into the first flip-flop.
 \caption{A one applied to the input advances through the register by one bit
 per clock cycle}
 \end{figure}
+
+\subsection{The Shift Register in Verilog}
+\label{sec:regs-shift-v}
+
+A chain of flip-flops is described by one line: the concatenation
+\code{\{\ldots\}} drops the top bit and appends a new one on the right.
+
+\vfile{\codepath/b8_registers/shift_sipo.v}{code/b8\_registers/shift\_sipo.v}
+
+\textbf{How to read it.} \code{q[W-2:0]} is all the bits except the top one;
+\code{\{q[W-2:0], din\}} appends \code{din} as the least significant bit. After the
+assignment the old top bit is gone, and the rest have ``shifted'' one position
+to the left. This is the same register as in Fig.~\ref{fig:shift}, only the bits
+are numbered from left to right instead of from right to left.
+
+The reverse task is to load a word at once and send it out bit by bit:
+
+\vfile{\codepath/b8_registers/shift_piso.v}{code/b8\_registers/shift\_piso.v}
+
+\textbf{How to read it.} In front of each flip-flop there is a ``load or shift''
+multiplexer: at \code{load} the word \code{d} goes into the register, otherwise
+the contents shift left and a 0 is added on the right. The output \code{dout} is
+the top bit, so the word leaves most significant bit first.
+
+\textbf{A common mistake: ``='' instead of ``<=''.} Look at two versions of the
+shift that differ by one character:
+
+\vfile{\codepath/b8_registers/shift_bad.v}{code/b8\_registers/shift\_bad.v}
+
+\vfile{\codepath/b8_registers/shift_ok.v}{code/b8\_registers/shift\_ok.v}
+
+In the first block the assignments are \emph{blocking}: the line \code{q1 = q0}
+already sees the new value of \code{q0}, and the line \code{q2 = q1} the new
+\code{q1}, so the bit from input \code{d} reaches all three outputs in one clock
+cycle. What you get is not a shift register but one flip-flop connected to three
+outputs. In the second block the assignments are \emph{non-blocking}: all
+right-hand sides are evaluated with the values that were \emph{before} the edge,
+and the flip-flops update simultaneously: a bit advances one position per clock
+cycle. The testbench \code{tb\_shift.v} applies a one for one clock cycle and
+checks both results: \code{111} for \code{shift\_bad} at once, and for
+\code{shift\_ok} \code{001}, then \code{010} and \code{100}. It also assembles the
+word \code{1011} from a stream and sends it back out of \code{shift\_piso}.
+
+\textbf{How to run it in Logra.} \term{Code} tab: paste \code{shift\_ok},
+Ctrl+Enter, \term{Waveforms}: apply \code{d=1} for one clock cycle and follow the
+one through \code{q0}, \code{q1}, \code{q2}. Then replace \code{<=} with \code{=}
+(or paste \code{shift\_bad}) and repeat: on \term{RTL}, instead of a chain of
+three flip-flops there will be one flip-flop with three outputs.
+
+\begin{diybox}[Shift in Verilog: Complete the Module]
+\textbf{Task.} \stars{1} Make a right shift (the new bit enters the most
+significant position). \stars{2} Add an enable input \code{en}: at \code{en=0}
+the register holds. \stars{3} Make a shift register with a delay of 5 clock
+cycles: the output equals the input that arrived 5 cycles ago.\\
+\textbf{Expected result:} with a right shift the first bit that arrives ends up in
+the least significant position, so the word must be applied least significant
+bit first; the 5-cycle delay uses five flip-flops.
+\end{diybox}
+
+\textbf{Sample answer.}
+\begin{vcode}
+module shift_right (input clk, rst, en, din, output reg [3:0] q);
+    always @(posedge clk) begin
+        if (rst)     q <= 4'b0000;
+        else if (en) q <= {din, q[3:1]};   // new bit on the left, the lowest leaves
+    end
+endmodule
+
+module delay5 (input clk, din, output dout);
+    reg [4:0] sr = 5'b00000;
+    always @(posedge clk) sr <= {sr[3:0], din};
+    assign dout = sr[4];                    // the input delayed by 5 clock cycles
+endmodule
+\end{vcode}
 
 \subsection{Why Shift}
 
@@ -177,11 +300,11 @@ error-correcting coding and for encryption.
     \dff{l\i}{\x}{0}
   }
   \draw[wire] (l0-q) -- (l1-d); \draw[wire] (l1-q) -- (l2-d);
-  \node[gXOR, minimum width=9mm, minimum height=7mm, rotate=180] (x) at (2.6,2.3) {};
-  \draw[wire] (l2-q) -- ++(0.4,0) |- (x.input 1);
+  \node[gXOR, rotate=180] (x) at (2.0,2.8) {};
+  \draw[wire] (l2-q) -- ++(0.4,0) |- (x.input 2);
   \fill ($(l1-q)+(0.3,0)$) circle (1.3pt);
-  \draw[wire] ($(l1-q)+(0.3,0)$) |- (x.input 2);
-  \draw[wire] (x.output) -| ($(l0-d)+(-0.4,0)$) -- (l0-d);
+  \draw[wire] ($(l1-q)+(0.3,0)$) |- (x.input 1);
+  \draw[wire] (x.output) -| ($(l0-d)+(-0.5,0)$) -- (l0-d);
   \foreach \i in {0,...,2} \node[lbl, below=1mm] at ($(l\i-c)+(0.6,-0.4)$) {$q_\i$};
 \end{tikzpicture}
 \end{minipage}\hfill
@@ -210,6 +333,61 @@ nonzero states and repeats}
 
 The ``all zeros'' state is forbidden for such a register: from it
 $q_1\oplus q_2=0$, and the register stays zero forever.
+
+\subsection{The Ring and the LFSR in Verilog}
+\label{sec:regs-lfsr-v}
+
+A ring register is a shift in which the output of the top bit returns to the
+input of the bottom bit:
+
+\vfile{\codepath/b8_registers/ring4.v}{code/b8\_registers/ring4.v}
+
+\textbf{How to read it.} At reset \code{0001} is written (a single one); at every
+clock cycle \code{\{q[2:0], q[3]\}} shifts everything left, and the top bit is
+appended on the right. After four clock cycles the one is back in place. If you
+send \code{q} to four LEDs you get a ``running light''.
+
+An LFSR is the same shift in which the new bit is computed as the XOR of two
+bits:
+
+\vfile{\codepath/b8_registers/lfsr3.v}{code/b8\_registers/lfsr3.v}
+
+\textbf{How to read it.} The wire \code{fb} is the feedback $q_1\oplus q_2$. At
+reset \code{001} is written (only $q_0=1$), not zero, so the register does not
+get stuck: it goes through all seven nonzero states of the table in
+Fig.~\ref{fig:lfsr}. The four-bit version differs only in the taps and goes
+through 15 states:
+
+\vfile{\codepath/b8_registers/lfsr4.v}{code/b8\_registers/lfsr4.v}
+
+The testbench \code{tb\_lfsr\_ring.v} checks that the period of the ring is 4,
+of \code{lfsr3} is 7, of \code{lfsr4} is 15; that all states within a period
+are different and zero never appears. \textbf{How to run it in Logra:}
+\term{Code} tab, Ctrl+Enter; in \term{Waveforms} apply \code{rst=1} for one clock
+cycle, then \code{rst=0} and write out the states of \code{q}: compare them with
+the table in Fig.~\ref{fig:lfsr}. For four LEDs, send \code{q} to the board pins.
+
+\begin{diybox}[Ring and LFSR in Verilog: Complete the Module]
+\textbf{Task.} \stars{1} Make a 6-bit ring. \stars{2} Make a Johnson counter:
+the \emph{inversion} of the top bit is fed to the input of the lowest bit
+(\code{\{q[2:0], \textasciitilde q[3]\}}); how many states does it have with 4
+bits? \stars{3} What happens to \code{lfsr4} if you remove the reset and do not
+set an initial value (the register starts at \code{0000})?\\
+\textbf{Expected result:} the Johnson counter goes through 8 states
+(\code{0000, 0001, 0011, 0111, 1111, 1110, 1100, 1000}).
+\end{diybox}
+
+\textbf{Sample answer.}
+\begin{vcode}
+module johnson4 (input clk, rst, output reg [3:0] q);
+    always @(posedge clk) begin
+        if (rst) q <= 4'b0000;
+        else     q <= {q[2:0], ~q[3]};   // inversion of the top bit to the input
+    end
+endmodule
+\end{vcode}
+In the register of the third task all bits are zero, and the feedback
+$q_3\oplus q_2=0$ holds it at \code{0000} forever.
 
 \begin{diybox}[Shift, Ring and LFSR]
 \textbf{Task.} \stars{1} The lesson ``A shift register as a block''. \stars{2} The lessons
@@ -245,11 +423,11 @@ next flip-flop is connected to the \emph{inverted} output of the previous one.
   \foreach \i in {0,...,2} {
     \pgfmathsetmacro{\x}{\i*2.8}
     \draw[thick, fill=green!8] (\x,0) rectangle ++(1.2,1.4);
-    \node[font=\sffamily\scriptsize] at (\x+0.22,1.05) {T};
-    \node[font=\sffamily\scriptsize] at (\x+0.98,1.05) {Q};
-    \node[font=\sffamily\scriptsize] at (\x+0.98,0.35) {$\overline{\text{Q}}$};
+    \node[font=\sffamily\footnotesize] at (\x+0.22,1.05) {T};
+    \node[font=\sffamily\footnotesize] at (\x+0.98,1.05) {Q};
+    \node[font=\sffamily\footnotesize] at (\x+0.98,0.35) {$\overline{\text{Q}}$};
     \draw[thick] (\x,0.2) -- (\x+0.18,0.35) -- (\x,0.5);
-    \draw[wire] (\x,1.05) -- ++(-0.3,0) node[left, font=\scriptsize] {1};
+    \draw[wire] (\x,1.05) -- ++(-0.3,0) node[left, font=\footnotesize] {1};
     \draw[wire] (\x+1.2,1.05) -- ++(0.4,0) -- ++(0,0.8) node[above] {$q_\i$};
   }
   \draw[wire, FpgaBlue] (-1.0,0.35) node[left, text=FpgaDark] {CLK} -- (0,0.35);
@@ -292,9 +470,9 @@ modern digital devices are built.
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}
-  \node[draw=FpgaGreen, fill=green!8, thick, minimum width=27mm, minimum height=18mm, font=\sffamily\small, align=center] (reg) at (4.4,0) {register\\\scriptsize $n$ bits};
-  \node[font=\sffamily\scriptsize, anchor=west] at ([xshift=0.5mm]reg.west) {D};
-  \node[font=\sffamily\scriptsize, anchor=east] at ([xshift=-0.5mm]reg.east) {Q};
+  \node[draw=FpgaGreen, fill=green!8, thick, minimum width=27mm, minimum height=18mm, font=\sffamily\small, align=center] (reg) at (4.4,0) {register\\\footnotesize $n$ bits};
+  \node[font=\sffamily\footnotesize, anchor=west] at ([xshift=0.5mm]reg.west) {D};
+  \node[font=\sffamily\footnotesize, anchor=east] at ([xshift=-0.5mm]reg.east) {Q};
   \draw[thick] ([xshift=-1.2mm]reg.south) -- ([yshift=1.8mm]reg.south) -- ([xshift=1.2mm]reg.south);
   \draw[wire, FpgaBlue] (reg.south) -- ++(0,-0.8) node[below, text=FpgaDark] {CLK};
   \node[draw=FpgaBlue, fill=FpgaLight, thick, circle, minimum size=12mm, font=\sffamily\bfseries] (add) at (1.4,0) {$+1$};
@@ -321,6 +499,69 @@ block. \stars{3} Build a counter that counts only while a button is pressed.\\
 Fig.~\ref{fig:sync_counter}.
 \end{diybox}
 
+\subsection{Counters in Verilog}
+\label{sec:regs-cnt-v}
+
+A synchronous counter is a register into which $Q+1$ is written every clock
+cycle (Fig.~\ref{fig:sync_counter}). In Verilog it is one line:
+
+\vfile{\codepath/b8_registers/cnt_bin.v}{code/b8\_registers/cnt\_bin.v}
+
+\textbf{How to read it.} At the edge: if reset---zeros; otherwise, if counting is
+enabled---\code{q <= q + 1'b1}. On the right the \emph{old} \code{q} is read, on
+the left the new one is written, and the synthesizer inserts the ``+1'' adder
+itself. There is no overflow in the sense of an error: the sum drops the carry,
+and after \code{1111} you get \code{0000} (modulus $2^W$). The testbench
+\code{tb\_counters.v} checks 16 steps in a row, including the transition
+$15\to0$.
+
+Often a counter has to load a given number. The priorities are set by the order
+of the \code{if} branches: first reset, then load, then count.
+
+\vfile{\codepath/b8_registers/cnt_load.v}{code/b8\_registers/cnt\_load.v}
+
+And an up/down counter counts in both directions, and ``zero minus one'' gives
+the maximum number:
+
+\vfile{\codepath/b8_registers/cnt_updown.v}{code/b8\_registers/cnt\_updown.v}
+
+\textbf{How to read it.} The \code{?:} operator chooses between \code{q + 1} and
+\code{q - 1}: in front of the register, \term{RTL} shows an adder, a subtractor
+and a multiplexer, not two separate counters. The testbench checks loading
+(\code{d=9}, then \code{10}) and the transition $0\to15$ when counting down.
+
+\textbf{How to run it in Logra.} \term{Code} tab: paste \code{cnt\_bin} and
+press Ctrl+Enter. In \term{Waveforms} apply \code{rst=1} for one clock cycle,
+then \code{en=1} and see how each next bit changes half as often. Repeat for
+\code{cnt\_load}: apply \code{load=1} with \code{d=9} for one clock cycle and
+make sure counting continues from nine.
+
+\begin{diybox}[The Counter in Verilog: Complete the Module]
+\textbf{Task.} \stars{1} Make an 8-bit counter with an output \code{full} equal
+to 1 at the number 255. \stars{2} Make a counter that counts only while
+\code{en=1} and stops (does not go to 0) at 15. \stars{3} Make a counter with a
+step \code{step} (a 3-bit input): \code{q <= q + step}.\\
+\textbf{Expected result:} the counter with a stop freezes at \code{1111} and does
+not go to 0.
+\end{diybox}
+
+\textbf{Sample answer.}
+\begin{vcode}
+module cnt_stop (input clk, rst, en, output reg [3:0] q);
+    always @(posedge clk) begin
+        if (rst)                  q <= 4'd0;
+        else if (en && q != 4'd15) q <= q + 4'd1;   // stay at 15
+    end
+endmodule
+
+module cnt_step (input clk, rst, input [2:0] step, output reg [7:0] q);
+    always @(posedge clk) begin
+        if (rst) q <= 8'd0;
+        else     q <= q + step;       // the width of step is extended to 8 bits
+    end
+endmodule
+\end{vcode}
+
 \section{The Frequency Divider and the Modulo Counter}
 
 As Fig.~\ref{fig:count_t} shows, each bit of a counter is a frequency divider
@@ -338,8 +579,8 @@ the ``one second has passed'' signal is obtained from fast clock cycles.
   \node[draw=FpgaGreen, fill=green!8, thick, minimum width=18mm, minimum height=16mm, font=\sffamily\small] (reg) at (5.6,0) {register};
   \draw[wire, FpgaBlue] (reg.south) -- ++(0,-0.6) node[right, text=FpgaDark, font=\sffamily\small] {CLK};
   \draw[thick, fill=orange!15] (3.0,0.9) -- (3.8,0.5) -- (3.8,-0.5) -- (3.0,-0.9) -- cycle;
-  \node[font=\sffamily\scriptsize] at (3.4,0) {MUX};
-  \node[font=\tiny, anchor=west] at (3.02,0.5) {0}; \node[font=\tiny, anchor=west] at (3.02,-0.5) {1};
+  \node[font=\sffamily\footnotesize] at (3.4,0) {MUX};
+  \node[font=\footnotesize, anchor=west] at (3.02,0.5) {0}; \node[font=\footnotesize, anchor=west] at (3.02,-0.5) {1};
   \node[draw=FpgaBlue, fill=FpgaLight, thick, circle, minimum size=10mm, font=\sffamily\bfseries\small] (add) at (1.2,0.5) {$+1$};
   \draw[bus, -{Stealth}] (add.east) -- (3.0,0.5);
   \draw[bus, -{Stealth}] (1.8,-0.5) node[left, text=FpgaDark] {0} -- (3.0,-0.5);
@@ -384,6 +625,86 @@ T flip-flop, you get a 0.5~Hz square wave (one period in two seconds). For a
 square wave of exactly 1~Hz, take the modulus $13\,500\,000$: the pulse arrives every
 half second and toggles the flip-flop.
 
+\subsection{The Modulo-$N$ Counter and the Divider in Verilog}
+\label{sec:regs-div-v}
+
+A modulo-$N$ counter is obtained from an ordinary one by adding a comparison with
+$N-1$:
+
+\vfile{\codepath/b8_registers/cnt_mod.v}{code/b8\_registers/cnt\_mod.v}
+
+\textbf{How to read it.} The wire \code{tc} is 1 while \code{q} equals $N-1$. In
+the clocked block: if reset \emph{or} \code{tc}---clear, otherwise add one. So
+the value $N$ never appears, and \code{tc} is a pulse one clock cycle long, once
+per $N$ cycles. The parameter \code{N} can be overridden when the module is
+instantiated: the testbench takes \code{N = 6} and checks that the values do not
+go beyond 5 and that the pulse arrives exactly 4 times in 24 clock cycles.
+
+A frequency divider for the board is built from such nodes. A counter counts $N$
+clock cycles, and the pulse toggles the output:
+
+\vfile{\codepath/b8_registers/clk_div.v}{code/b8\_registers/clk\_div.v}
+
+\textbf{How to read it.} For 27~MHz the modulus $N=13\,500\,000$ gives a half
+period of 0.5~s, that is, a 1~Hz square wave on \code{out}; \code{tick} is the
+pulse ``half a second has passed''. A 25-bit counter \code{cnt} is enough up to
+$2^{25}=33\,554\,432$. The notation \code{13\_500\_000} (underscores in a number
+are allowed) is convenient to read. The testbench \code{tb\_clk\_div.v}
+substitutes \code{N = 4}: otherwise simulation would need 13.5 million clock
+cycles. It checks that \code{tick} arrives every 4 clock cycles and that the
+period of \code{out} is 8 clock cycles.
+
+\textbf{How to run it in Logra.} \term{Code} tab: paste \code{cnt\_mod},
+Ctrl+Enter, and in \term{Waveforms} apply a reset for one clock cycle and make
+sure \code{q} goes through $0,\ldots,9$ and returns to 0, and \code{tc} rises at
+nine. For \code{clk\_div} set the parameter \code{N = 4} (in the module text or
+in a top-level module)---otherwise 27 million clock cycles will not fit in the
+Waveforms viewing window; leave the real \code{N} for the board.
+
+\begin{diybox}[Modulus and Divider in Verilog: Complete the Module]
+\textbf{Task.} \stars{1} Make \code{cnt\_mod} with the modulus 60 (seconds): what
+is the minimal width \code{W} that is enough? \stars{2} Make a divider whose
+\code{out} has a duty cycle of 25\,\% (the one lasts a quarter of the period).
+\stars{3} Cascade two \code{cnt\_mod}: seconds units (modulus 10) and tens
+(modulus 6) with a carry from the first to the second.\\
+\textbf{Expected result:} 60 states, width 6 bits.
+\end{diybox}
+
+\textbf{Sample answer.}
+\begin{vcode}
+module sec60 (
+    input        clk, rst,
+    output [3:0] ones,     // units of seconds 0..9
+    output [2:0] tens,     // tens 0..5
+    output       carry     // once per 60 clock cycles
+);
+    reg [3:0] o = 4'd0;
+    reg [2:0] t = 3'd0;
+    wire o_end = (o == 4'd9);
+    wire t_end = (t == 3'd5);
+    always @(posedge clk) begin
+        if (rst) begin o <= 4'd0; t <= 3'd0; end
+        else if (o_end) begin
+            o <= 4'd0;
+            t <= t_end ? 3'd0 : t + 3'd1;    // tens change when the units have finished
+        end else o <= o + 4'd1;
+    end
+    assign ones  = o;
+    assign tens  = t;
+    assign carry = o_end & t_end;
+endmodule
+
+module duty25 #(parameter N = 4) (input clk, output reg out = 1'b0);
+    reg [7:0] cnt = 8'd0;
+    always @(posedge clk) begin
+        cnt <= (cnt == N - 1) ? 8'd0 : cnt + 8'd1;
+        out <= (cnt == 8'd0);               // a one for one cycle out of N: duty cycle 1/N
+    end
+endmodule
+\end{vcode}
+For 60 states you need 6 bits, since $2^5=32<60\le 64=2^6$. For a 25\,\% duty
+cycle take $N=4$.
+
 \begin{diybox}[Modulus $N$ and the Frequency Divider; Project Stage]
 \textbf{Task.} \stars{1} The lessons ``Counting from 0 to 5'' (modulo 6) and ``A divide-by-4
 from a counter''. \stars{2} The lessons ``A counter with reset'' and ``A counter with load'',
@@ -404,6 +725,26 @@ is cleared.\\
 (it equals $N$ clock cycles), the alarm output does not grow beyond the 9th second,
 and on reset all counters are zero on the very next clock cycle.
 \end{diybox}
+
+\textbf{The project stage in Verilog.} The alarm-seconds counter receives the
+pulse \code{tick} from the divider (from \code{clk\_div} or \code{cnt\_mod}) and
+the signal \code{alarm} from Chapter~\ref{ch:ff}:
+
+\vfile{\codepath/b8_registers/alarm_secs.v}{code/b8\_registers/alarm\_secs.v}
+
+\textbf{How to read it.} One condition in one line: count only if the alarm is on
+\emph{and} the second pulse has arrived \emph{and} the count has not reached 9. The
+testbench \code{tb\_alarm\_secs.v} is the four checks of the acceptance criterion:
+growth to 3; stop at 9; the key clears; no counting when the alarm is cleared.
+\textbf{How to run it in Logra:} \term{Code} tab, Ctrl+Enter; in \term{Waveforms}
+apply \code{alarm=1} and pulses on \code{tick} once every few clock cycles:
+\code{secs} grows to 9 and freezes. To connect the blocks into one design, make a
+top-level module where \code{alarm\_keep} (Chapter~\ref{ch:ff}) provides
+\code{alarm} and \code{clk\_div} with a small \code{N} provides \code{tick}.
+
+\textbf{Complete it.} Add an output \code{beep} equal to the lowest bit of
+\code{secs}. \emph{Sample:} \code{output beep} and the line
+\code{assign beep = secs[0];}---the buzzer ``beeps'' on odd seconds.
 
 \begin{ideabox}
 A \textbf{register} is a group of flip-flops with a common clock; it stores a number.
@@ -437,6 +778,16 @@ by powers of two.
   \item \textbf{Using the outputs of an asynchronous counter as data.}
         Because of the switching ``wave'', false numbers flicker on the outputs, and logic
         that reads them without synchronization may fire an extra time.
+  \item \textbf{A blocking assignment in a clocked block.} Writing
+        \code{q1 = q0; q2 = q1;} instead of \code{<=} turns a shift register into
+        one flip-flop: the bit ``flies through'' all the stages in one clock cycle
+        (see \code{shift\_bad} in Section~\ref{sec:regs-shift-v}).
+  \item \textbf{Counter width.} \code{reg [3:0] cnt} holds numbers only up to 15;
+        the comparison \code{cnt == 20} will never become true, and a divider by
+        27 million will not fit in 24 bits ($2^{24}=16\,777\,216$).
+  \item \textbf{No initial value.} A \code{reg} with no reset and no value in the
+        declaration is \code{X} until the first write; a counter starting from
+        \code{X} stays \code{X}.
 \end{enumerate}
 \end{warnbox}
 

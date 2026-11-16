@@ -158,9 +158,8 @@ techniques protect against typical mistakes.
         no timing problems.
 \end{itemize}
 
-\lookahead{a ready-made text description of this machine, its circuit, and
-a waveform checking it on a sequence of coins you will find in
-chapter~\ref{ch:bridge}.}
+How these three rules look in code, and how this machine is checked on a
+sequence of coins, is shown in Section~\ref{sec:v-fsm3}.
 
 Let us compare the two kinds of machines.
 
@@ -202,19 +201,254 @@ exactly as many events as you set; \emph{RTL} tab: find the register of the
 accumulated sum.
 \end{diybox}
 
+\section{A Three-Block Machine in Verilog}
+\label{sec:v-fsm3}
+
+A state graph and a transition table translate into Verilog almost
+mechanically. A machine is written as three separate parts: each answers its
+own question, and they must not be mixed, or latches and hard-to-find errors
+appear in the circuit.
+
+\begin{table}[H]
+\centering
+\caption{The three blocks of a machine and how they are written}
+\small
+\begin{tabularx}{\textwidth}{l X X}
+\toprule
+\textbf{Block} & \textbf{What it does} & \textbf{How it is written} \\
+\midrule
+1. State register & remembers where we are; reset sets the initial state & \code{always @(posedge clk)}, assignment \code{<=}, reset first \\
+2. Transition logic & computes the next state \code{next} from the state and inputs & \code{always @(*)}, \code{next = state;} at the start, then \code{case (state)} with a \code{default} branch \\
+3. Output logic & Moore: the output depends only on \code{state}. Mealy: on \code{state} and inputs & \code{always @(*)} with \code{case}, or \code{assign}; assignment \code{=} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{A Traffic Light: A Moore Machine}
+
+Three states, in each one lamp is lit; the time in a state is counted by the
+clock counter \code{t}. The durations are parameters, so green can be changed
+from 4 clocks to 6 with a single number.
+
+\vfile{\codepath/b9a_fsm/traffic3.v}{code/b9a\_fsm/traffic3.v}
+
+\textbf{How to read it.} Block~1 is the only place where \code{state} and
+\code{t} change: on the clock edge the state takes the value \code{next}. In
+block~2 the first line \code{next = state} sets ``stay'' as the default, and the
+signal \code{last} (``this is the last clock of the state'') decides whether
+to leave. The \code{default} branch returns the machine to the start if the
+register falls into the unused code \code{3}. Block~3 depends only on
+\code{state}: this is exactly a Moore machine, so the lamp changes exactly
+together with the state.
+
+\shot{br-fsm-wave}{The traffic light on a waveform: one lamp is lit in each state ($0x1$ is green, $0x2$ is yellow, $0x4$ is red); a screenshot of the \code{traffic\_fsm} module from \code{code/00\_theory}, \code{traffic3} gives the same picture}{fig:b-fsm-wave}
+
+The testbench \code{b9a\_fsm/tb\_traffic3.v} checks three rounds by formula:
+green 4 clocks, yellow 2, red 4. It prints \code{traffic3: OK}.
+
+\begin{diybox}[A Traffic Light by Parameters]
+\textbf{Task.} Run the traffic light and change the durations.\\
+\textbf{In Logra.} The Code tab: paste \code{traffic3.v}, ``Synthesize''
+(Ctrl+Enter), the RTL and Waveforms tabs (30 cycles, a \code{rst} pulse at the
+start).\\
+\textbf{Expected result.} \code{lamp} takes the values \code{001}, \code{010},
+\code{100} for 4, 2 and 4 clocks and repeats.\\
+\textbf{How to check.} On RTL find the register \code{state}, the register
+\code{t} and the output multiplexer. In a terminal:
+\code{iverilog -g2012 -o tb tb\_traffic3.v traffic3.v}, then \code{vvp tb}.
+\stars{2} Add a fourth state: before green, red and yellow are lit together for
+1 clock (\code{3'b110}).\\
+\textbf{Sample answer.} You need a new constant, a branch in blocks~2 and~3, and
+a changed transition out of red.
+\end{diybox}
+
+\begin{vcode}
+module traffic4 (
+    input            clk, rst,
+    output reg [2:0] lamp
+);
+    localparam [1:0] RED = 2'd0, RED_YEL = 2'd1, GREEN = 2'd2, YELLOW = 2'd3;
+    reg [1:0] state, next;
+    reg [2:0] t;
+    wire last = (state == RED && t == 3'd3) || (state == RED_YEL && t == 3'd0)
+             || (state == GREEN && t == 3'd3) || (state == YELLOW && t == 3'd1);
+    always @(posedge clk) begin
+        if (rst) begin state <= RED; t <= 3'd0; end
+        else begin state <= next; t <= last ? 3'd0 : t + 3'd1; end
+    end
+    always @(*) begin
+        next = state;
+        if (last) case (state)
+            RED:     next = RED_YEL;
+            RED_YEL: next = GREEN;
+            GREEN:   next = YELLOW;
+            default: next = RED;
+        endcase
+    end
+    always @(*) begin
+        case (state)
+            RED:     lamp = 3'b100;
+            RED_YEL: lamp = 3'b110;
+            GREEN:   lamp = 3'b001;
+            default: lamp = 3'b010;
+        endcase
+    end
+endmodule
+\end{vcode}
+
+
+\subsection{The Vending Machine: A Mealy Machine}
+
+The machine from the beginning of the chapter is written with the same three
+blocks. The only difference is in block~3: the output \code{vend} is computed
+from the state \emph{and from the inputs} \code{c5}, \code{c10}.
+
+\vfile{\codepath/00_theory/vending.v}{code/00\_theory/vending.v}
+
+\textbf{How to read it.} The states are how many rubles have been inserted. In
+block~2 both coins are described for every state, and when there is no coin
+\code{next = state} stays. Block~3 is a single formula: a sale if a ten arrives
+in $S_5$ or any coin arrives in $S_{10}$. All three rules from ``Rules for
+Reliable Description'' are in place: a default value, \code{default}, and a
+synchronous reset.
+
+\shot{n-vend-wave}{A Mealy machine: \code{vend} rises in the same clock in which the last coin arrives}{fig:n-vend-wave}
+
+On the Waveforms tab the coins are set in the ``Events'' section. The signal
+\code{vend} rises inside the clock, as soon as the ``deciding'' coin appears at
+the input, without waiting for the next edge---this is what makes it a Mealy
+machine. If a ``clean'' output is needed, it is passed through a flip-flop and
+lags by one clock. The testbench \code{00\_theory/tb\_vending.v} throws the same
+coins as the trace in the table of the chapter (5+5+5, 10+5, 5+10, 10+10) and
+counts the sales: there must be four.
+
+\begin{diybox}[The Vending Machine in Code]
+\textbf{Task.} Run the machine and teach it a new rule.\\
+\textbf{In Logra.} The Code tab: \code{vending.v}, ``Synthesize'', Waveforms:
+the ``Events'' section, pulses \code{c5} and \code{c10} by clock.\\
+\textbf{Expected result.} For the coins 5, 5, 5, \code{vend = 1} in the clock of
+the third coin; for the coins 10, 5, in the clock of the five.\\
+\textbf{How to check.} Run \code{tb\_vending.v}: \code{vending: OK}.
+\stars{2} Make the price 20 rubles (add a state $S_{15}$).
+\end{diybox}
+
+\textbf{Sample answer.}
+\begin{vcode}
+module vending20 (
+    input  clk, rst, c5, c10,
+    output vend
+);
+    localparam [1:0] S0 = 2'd0, S5 = 2'd1, S10 = 2'd2, S15 = 2'd3;
+    reg [1:0] state, next;
+    always @(posedge clk) begin
+        if (rst) state <= S0;
+        else     state <= next;
+    end
+    always @(*) begin
+        next = state;
+        case (state)
+            S0:  if (c10) next = S10; else if (c5) next = S5;
+            S5:  if (c10) next = S15; else if (c5) next = S10;
+            S10: if (c10) next = S0;  else if (c5) next = S15;
+            S15: if (c10 | c5) next = S0;
+        endcase
+    end
+    assign vend = (state == S10 && c10) || (state == S15 && (c5 | c10));
+endmodule
+\end{vcode}
+
+
+\subsection{The 1-0-1 Sequence Detector}
+
+The detector from Chapter~\ref{ch:sync} and from the panel code is also a Mealy
+machine. The states: \code{S0}---``nothing useful'', \code{S1}---``saw 1'',
+\code{S10}---``saw 10''. The output \code{hit} is one when another one arrives
+in state \code{S10}. A one in any state can start a new sequence, so the
+triples overlap: the stream \code{10101} gives two hits.
+
+\vfile{\codepath/b9a_fsm/seq101.v}{code/b9a\_fsm/seq101.v}
+
+\textbf{How to read it.} Block~2 holds all the ``memory'' of the sequence: from
+\code{S10} on input 1 the machine goes not to \code{S0} but to \code{S1}, because
+the one that has just arrived has already started a new triple. Block~3 is one
+line, a Mealy output.
+
+The testbench \code{tb\_seq101.v} feeds the stream \code{1 0 1 0 1 1 0 1}, which
+has three hits, and the stream \code{1 1 0 0 0 1 1 1}, which has none. The
+bit-feeding task \code{send(b)} looks at \code{hit} \emph{before} the clock edge:
+this is how a Mealy output is checked.
+
+\begin{diybox}[Your Own Detector]
+\textbf{Task.} Run the detector and rebuild it for a different code.\\
+\textbf{In Logra.} The Code tab: \code{seq101.v}; Waveforms: the ``Events''
+section, the signal \code{x} by clock \code{1, 0, 1, 0, 1}. Or the lesson ``Code
+lock'' (the Learn tab, the Verilog book).\\
+\textbf{Expected result.} Two \code{hit} pulses on the stream \code{10101}; none
+on \code{110} and \code{011}.\\
+\textbf{How to check.} \code{tb\_seq101.v} prints \code{seq101: OK}.
+\stars{2} Rebuild the detector for the code \code{1-1-0}.\\
+\textbf{Sample answer.} The transitions and the output change: ``saw 1'', ``saw
+11'', and a hit on a zero after two ones.
+\end{diybox}
+
+\begin{vcode}
+module seq110 (
+    input  clk, rst, x,
+    output hit
+);
+    localparam [1:0] S0 = 2'd0, S1 = 2'd1, S11 = 2'd2;
+    reg [1:0] state, next;
+    always @(posedge clk) begin
+        if (rst) state <= S0;
+        else     state <= next;
+    end
+    always @(*) begin
+        next = state;
+        case (state)
+            S0:      next = x ? S1 : S0;
+            S1:      next = x ? S11 : S0;
+            S11:     next = x ? S11 : S0;   // 1-1-1 still contains 1-1
+            default: next = S0;
+        endcase
+    end
+    assign hit = (state == S11) && !x;
+endmodule
+\end{vcode}
+
+
 \section{State Encoding and Reduction}
 
 Three states need two flip-flops with binary encoding
 (\code{00}, \code{01}, \code{10}) and three with one-hot encoding. The choice
-of encoding can change the size and speed of the circuit. \lookahead{the
-synthesizer in Part~II can re-encode a machine by itself if you describe it
-using a template with named states.}
+of encoding can change the size and speed of the circuit. The
+synthesizer (Chapter~\ref{ch:flow}) can usually re-encode a machine by itself
+if you describe it using a template with named states; still, it is useful to
+be able to choose the encoding by hand.
 
 Sometimes two states behave identically: for any inputs they give the same
 outputs and move to the same states. Such states can be merged into one, and
 the machine becomes simpler. The test is simple: if all rows of the transition
 table of two states coincide (up to the names of these same states), they can
 be merged.
+
+Let us show three encodings on one machine. Four states \code{A}, \code{B},
+\code{C}, \code{D} go round in a circle, the transition is made on the signal
+\code{go}, and the output \code{y} is one in states \code{C} and \code{D}. In
+binary code they are written as the numbers 0--3, in Gray code neighbouring
+states differ in one bit (\code{00, 01, 11, 10}), in one-hot code every state
+has its own flip-flop and exactly one is set.
+
+\vfile{\codepath/b9a_fsm/state_enc.v}{code/b9a\_fsm/state\_enc.v}
+
+\textbf{How to read it.} The first two modules have an identical \code{case};
+only the constants \code{A\ldots D} differ: the choice of code changes nothing in
+the text of the machine. But in Gray code the output turned out to be simply the
+high bit \code{st[1]}, and the output logic disappeared. The one-hot module has
+no \code{case}: a transition is a shift of the one to the neighbouring
+flip-flop, and the output is an OR of two flip-flops. The price is 4
+flip-flops instead of 2; the gain is almost no logic between flip-flops. The
+testbench \code{tb\_state\_enc.v} feeds the same \code{go} to all three modules
+and checks that the outputs match on every clock.
 
 \begin{diybox}[Binary and One-Hot Encoding]
 \textbf{Task.} Build the same machine in two ways and compare the cost of
@@ -231,8 +465,30 @@ the \emph{RTL} and \emph{Gowin} tabs; write your conclusion in one line.\\
 \textbf{Expected result.} The one-hot version uses more flip-flops and less
 logic per transition.\\
 \textbf{How to check.} \emph{Waveforms} tab: the outputs of both versions are
-identical in all clock cycles; \emph{RTL} tab: count the flip-flops.
+identical in all clock cycles; \emph{RTL} tab: count the flip-flops.\\
+\textbf{The same in Verilog.} The \emph{Code} tab: paste \code{state\_enc.v},
+``Synthesize'', make \code{ring\_bin}, \code{ring\_gray}, \code{ring\_onehot} the
+top module in turn and compare the number of registers on RTL (2, 2 and 4).
+\stars{2} Complete a one-hot ring for the three traffic-light states.
 \end{diybox}
+
+\textbf{Sample answer.}
+\begin{vcode}
+module ring3_onehot (
+    input      clk, rst, go,
+    output     green, yellow, red
+);
+    reg [2:0] st;                       // st[0] = green, st[1] = yellow, st[2] = red
+    always @(posedge clk) begin
+        if (rst)     st <= 3'b001;
+        else if (go) st <= {st[1:0], st[2]};
+    end
+    assign green  = st[0];
+    assign yellow = st[1];
+    assign red    = st[2];
+endmodule
+\end{vcode}
+
 
 \section{Running Project: The ``Security Panel'' Machine}
 \label{sec:panel-fsm}
@@ -294,6 +550,22 @@ ALARM    & ALARM & DISARMED & ALARM & DISARMED & 1 \\
 \end{tabular}
 \end{table}
 
+Now let us write both machines in Verilog. The code detector is the same
+\code{seq101} (in the file it is renamed \code{code\_detector} so that the file
+is self-contained). The mode machine has three blocks: the register
+\code{mode}, the transitions from the table above, and the Moore output
+\code{siren}. The top module \code{panel\_fsm} only connects them with the
+signal \code{c}.
+
+\vfile{\codepath/b9a_fsm/panel_fsm.v}{code/b9a\_fsm/panel\_fsm.v}
+
+\textbf{How to read it.} In the transition block the \code{ARMED} branch checks
+\code{c} first and only then \code{d}: this way in the cell $d{=}1,c{=}1$ the
+code wins, as the table requires. The \code{ALARM} state is left only by the
+code: the alarm does not stop by itself, even if the door is closed. The
+testbench \code{tb\_panel\_fsm.v} goes through the four items of the acceptance
+criterion from ``Do it yourself'' below and prints \code{panel\_fsm: OK}.
+
 \begin{diybox}[Project Stage 9: The Mode Machine]
 \textbf{Task.} Build the ``Security Panel'' machine with entry of the code
 \code{1-0-1} and a siren.\\
@@ -319,7 +591,12 @@ entering \code{101} in the ALARM state turns the siren off.\\
 waveform, and the transition table has no empty cells.\\
 \textbf{How to check.} \emph{Waveforms} tab: in turn, feed the code,
 open the door, and enter the code again; \emph{RTL} tab: find the state
-register and the two logic blocks (transitions and output).
+register and the two logic blocks (transitions and output).\\
+\textbf{The same in Verilog.} The \emph{Code} tab: paste \code{panel\_fsm.v},
+``Synthesize'', on Waveforms feed \code{code\_bit} on the clocks \code{1, 0, 1},
+then \code{d = 1}. The sample answer to \stars{3} is the file
+\code{panel\_fsm.v} itself; the testbench \code{tb\_panel\_fsm.v} checks
+items (a)--(d).
 \end{diybox}
 
 \section{The FIFO Queue}
@@ -431,12 +708,71 @@ counter \code{used} limits access. On the \emph{Waveforms} tab follow how the
 pointers ``wrap around''.
 \end{buildbox}
 
-\lookahead{a text description of the queue and its waveform you will find in
-chapter~\ref{ch:bridge}. In large projects a queue can be huge and
-keep its words in the block memory of the chip; there is also a
-\emph{dual-clock} queue, where writing runs on one clock signal and reading on
-another---then the pointers are passed between domains in Gray code
-(chapter~\ref{ch:clocks}).}
+\subsection{The Queue in Verilog: A Word Counter}
+
+The same buffer for eight words of eight bits. The array \code{mem} is the
+memory, \code{wp} and \code{rp} are the write and read pointers, and
+\code{count} is the word counter from which the flags are taken.
+
+\vfile{\codepath/00_theory/fifo8.v}{code/00\_theory/fifo8.v}
+
+\textbf{How to read it.} The conditions \code{do\_wr} and \code{do\_rd} switch on
+the protection: a write to a full queue and a read from an empty one change
+nothing. The three-bit \code{wp} and \code{rp} ``wrap around'' by themselves
+after seven, so no separate check for the end of memory is needed. The line
+\code{count <= count + do\_wr - do\_rd} handles a simultaneous write and read:
+the counter does not change. The synthesizer puts the array \code{mem} in
+the chip's memory or in cells.
+
+\shot{n-fifo-wave}{The queue at work: the words \code{0B}, \code{16}, \code{21} are written, then read in the same order}{fig:n-fifo-wave}
+
+On the waveform \code{count} grows with each write and falls with each read,
+\code{empty} is cleared after the first write, and the words come out on
+\code{dout} in the order of writing. The testbench \code{00\_theory/tb\_fifo8.v}
+writes ten words (the last two do not fit), checks that \code{full = 1}, reads
+eight words in order, and makes sure the queue is empty.
+
+\subsection{The Queue in Verilog: An Extra Pointer Bit}
+
+The word counter can be left out. If the pointers are made \emph{one bit wider}
+than the address, the high bit counts ``laps'': the queue is empty when the
+pointers are equal as a whole, and full when the low bits (the address) are
+equal but the high bits differ (the writer has gone exactly one lap ahead of
+the reader). This is how queues with parameters are written: depth
+$2^{\text{AW}}$, word width \code{DW}.
+
+\vfile{\codepath/b9a_fsm/fifo_ptr.v}{code/b9a\_fsm/fifo\_ptr.v}
+
+\textbf{How to read it.} The memory address is taken from \code{wp[AW-1:0]} and
+\code{rp[AW-1:0]}, and the flags from the full pointers. The word \code{dout}
+is shown at once (without waiting for a clock): it is always equal to the oldest
+word while the queue is not empty. The testbench \code{tb\_fifo\_ptr.v} compares
+the queue with a simple model (an array and two integer indices) on 12 writes in
+a row, 12 reads, and 400 random clocks: \code{full}, \code{empty} and the order
+of words are all checked.
+
+\begin{diybox}[The Queue in Code]
+\textbf{Task.} Run the queue and catch an overflow.\\
+\textbf{In Logra.} The Code tab: \code{fifo\_ptr.v} (or \code{fifo8.v}),
+``Synthesize'', Waveforms: the ``Events'' section, \code{wr} pulses by clock
+with \code{din}, then \code{rd}.\\
+\textbf{Expected result.} After eight writes \code{full = 1}, the ninth write
+changes nothing; the words come out in the order of writing; after the last
+read \code{empty = 1}.\\
+\textbf{How to check.} \code{tb\_fifo\_ptr.v} prints \code{fifo\_ptr: OK}.
+\stars{2} Make a queue of 4 words of 4 bits without changing the module text.\\
+\textbf{Sample answer.} The parameters are changed when the instance is created:
+\code{fifo\_ptr \#(.DW(4), .AW(2)) u (.clk(clk), .rst(rst), .wr(wr), .rd(rd),
+.din(din), .dout(dout), .empty(empty), .full(full));}. The module text itself
+stays the same; with \code{.AW(2)} the flag \code{full} comes after four writes
+(to check this with the testbench, replace the number \code{8} with \code{4} in
+\code{tb\_fifo\_ptr.v} in the check and in the model).
+\end{diybox}
+
+\lookahead{in large projects a queue can be huge and keep its words in the block
+memory of the chip; there is also a \emph{dual-clock} queue, where writing runs on
+one clock signal and reading on another---then the pointers are passed between
+domains in Gray code (chapter~\ref{ch:clocks}).}
 
 \begin{warnbox}[Common mistakes]
 \begin{itemize}
@@ -521,9 +857,10 @@ The answers are collected in Appendix~\ref{app:answers}.
 \section{What's Next}
 
 We have learned to describe the behavior of a device with a state machine and to
-store data in a queue, that is, to work in a world of clock cycles where signals
-are only 0 and 1. But the panel in our project must connect to the real world:
-a button at the door, an LED and a buzzer on the case. What really happens on
-the pin of a chip when we ``output a 1''? How much current can an output
-supply, why are resistors needed, and how do several devices share one line?
-This is the business of chapter~\ref{ch:electrical}---``the chip boundary''.
+store data in a queue, that is, to design a circuit of any complexity and check
+it in Logra. But what is such a circuit made of inside the chip? An FPGA has no
+separate gates: combinational logic is replaced by lookup tables, a state
+machine and a queue are built from flip-flops and memory blocks, and the wires
+between them are switched when the configuration is loaded. That is the subject
+of Chapter~\ref{ch:inside}: we look inside the chip, and then go through the
+board and the flow from text to a bitstream.

@@ -1,6 +1,12 @@
 \chapter{What Is Inside an FPGA}
 \label{ch:inside}
 
+We have learned to design combinational circuits, flip-flops, registers, and
+state machines and to check them in Logra. One question remains: what is such a
+circuit made of inside the chip? An FPGA has no separate gates and no wires you
+could re-solder. This chapter opens up the chip and shows how the blocks we drew
+and described in Verilog fit into its resources.
+
 If you took the lid off an FPGA and looked at the chip under a microscope,
 you would see a neat ``chessboard'': identical logic blocks surrounded by
 a network of wires, and input/output blocks along the edges. Let us go
@@ -8,7 +14,7 @@ through these parts one by one.
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[scale=0.92]
+\begin{tikzpicture}[scale=0.87]
   % Chip
   \fill[ChipBlack!8] (-0.6,-0.6) rectangle (12.6,8.6);
   \draw[very thick, FpgaDark] (-0.6,-0.6) rectangle (12.6,8.6);

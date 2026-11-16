@@ -53,14 +53,14 @@ circuit has two stable states---it is \term{bistable} and can store one bit.
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}
-  \node[gNOT, minimum width=12mm, minimum height=8mm] (n1) at (0,0.8) {};
-  \node[gNOT, minimum width=12mm, minimum height=8mm, rotate=180] (n2) at (0,-0.8) {};
-  \draw[wire] (n1.output) -- ++(0.6,0) |- (n2.input);
+  \node[gNOT] (n1) at (0,0.9) {};
+  \node[gNOT, rotate=180] (n2) at (0,-0.9) {};
+  \draw[wire] (n1.output) -- ++(0.6,0) |- (n2.input); % fig-ok: feedback loop, entry segment 6 mm, rotated inverter
   \draw[wire] (n2.output) -- ++(-0.6,0) |- (n1.input);
-  \node[font=\sffamily\small, text=FpgaRed] at (1.4,1.15) {1};
-  \node[font=\sffamily\small, text=FpgaBlue] at (-1.75,-0.45) {0};
-  \fill ($(n1.output)+(0.6,-0.8)$) circle (1.3pt);
-  \draw[wire] ($(n1.output)+(0.6,-0.8)$) -- ++(0.6,0) node[right] {$Q$};
+  \node[font=\sffamily\small, text=FpgaRed] at (1.4,1.25) {1};
+  \node[font=\sffamily\small, text=FpgaBlue] at (-1.75,-0.55) {0};
+  \fill ($(n1.output)+(0.6,-0.9)$) circle (1.3pt);
+  \draw[wire] ($(n1.output)+(0.6,-0.9)$) -- ++(0.6,0) node[right] {$Q$};
   \node[font=\sffamily\small, align=left, anchor=west] at (3.4,0.3) {The state sustains itself,};
   \node[font=\sffamily\small, align=left, anchor=west] at (3.4,-0.3) {but there is no way to change it yet.};
 \end{tikzpicture}
@@ -95,15 +95,15 @@ use their second inputs. The result is the \term{RS flip-flop}
 \begin{minipage}{0.48\textwidth}
 \centering
 \begin{tikzpicture}
-  \node[gNOR, minimum height=10mm] (g1) at (0,1) {};
-  \node[gNOR, minimum height=10mm] (g2) at (0,-1) {};
+  \node[gNOR] (g1) at (0,1.3) {};
+  \node[gNOR] (g2) at (0,-1.3) {};
   \draw[wire] (g1.input 1) -- ++(-1.2,0) node[left] {$R$};
   \draw[wire] (g2.input 2) -- ++(-1.2,0) node[left] {$S$};
-  \draw[wire] (g1.output) -- ++(1.2,0) node[right] {$Q$};
-  \draw[wire] (g2.output) -- ++(1.2,0) node[right] {$\overline{Q}$};
-  \draw[wire] ($(g1.output)+(0.4,0)$) -- ++(0,-0.6) -- ($(g2.input 1)+(-0.4,0.8)$) -- ($(g2.input 1)+(-0.4,0)$) -- (g2.input 1);
-  \draw[wire] ($(g2.output)+(0.4,0)$) -- ++(0,0.6) -- ($(g1.input 2)+(-0.4,-0.8)$) -- ($(g1.input 2)+(-0.4,0)$) -- (g1.input 2);
-  \fill ($(g1.output)+(0.4,0)$) circle (1.3pt); \fill ($(g2.output)+(0.4,0)$) circle (1.3pt);
+  \draw[wire] (g1.output) -- ++(1.4,0) node[right] {$Q$};
+  \draw[wire] (g2.output) -- ++(1.4,0) node[right] {$\overline{Q}$};
+  \draw[wire] ($(g1.output)+(0.5,0)$) |- (0,0.4) -| ($(g2.input 1)+(-0.45,0)$) -- (g2.input 1);
+  \draw[wire] ($(g2.output)+(0.9,0)$) |- (0,-0.4) -| ($(g1.input 2)+(-0.85,0)$) -- (g1.input 2);
+  \fill ($(g1.output)+(0.5,0)$) circle (1.3pt); \fill ($(g2.output)+(0.9,0)$) circle (1.3pt);
 \end{tikzpicture}
 \end{minipage}\hfill
 \begin{minipage}{0.48\textwidth}
@@ -174,6 +174,60 @@ on after release; pressing both at once gives an ambiguous result.\\
 $R$, pause and compare with Fig.~\ref{fig:rs}.
 \end{diybox}
 
+\subsection{The RS Flip-Flop in Verilog}
+\label{sec:ff-sr-v}
+
+The same circuit can be described in Verilog without drawing anything with the
+mouse: each NOR gate becomes one \code{assign} line. The output of each gate
+depends on the output of the other one---this is the feedback loop.
+
+\vfile{\codepath/b7_flipflops/sr_latch.v}{code/b7\_flipflops/sr\_latch.v}
+
+\textbf{How to read it.} The first \code{assign} is the upper NOR gate:
+$Q=\overline{R+\overline{Q}}$. The second is the lower one:
+$\overline{Q}=\overline{S+Q}$. The keyword \code{assign} describes \emph{wires
+and gates}, not a sequence of actions, so the order of the lines does not
+matter, and the fact that \code{q} and \code{qn} refer to each other is exactly
+what gives memory. The testbench \code{tb\_sr\_latch.v} (next to the module in
+the folder \code{code-en/b7\_flipflops}) makes four steps: $S=1$, then $S=0$
+(holding the one), $R=1$, then $R=0$ (holding the zero). A value has to be
+written first ($S=1$ first): until the flip-flop has stored something, its
+output is unknown (\code{X}), and that is normal.
+
+\textbf{How to run it in Logra.} Open the \term{Code} tab, paste the module and
+press \term{Synthesize} (Ctrl+Enter). Logra warns that a logic loop was found
+in the module: for memory built from gates this is expected, whereas in an
+ordinary combinational circuit such a warning would mean a mistake. On the
+\term{RTL} tab you will see two NOR gates closed in a ring; in \term{Waveforms}
+apply the sequence $S$, pause, $R$, pause and compare with
+Fig.~\ref{fig:rs}.
+
+\begin{diybox}[RS in Verilog: Complete the Module]
+\textbf{Task.} \stars{2} Describe an RS flip-flop made of NAND gates (the inputs
+are active-low: \code{sn} sets, \code{rn} resets). \stars{3} Find out in
+Waveforms what happens at \code{sn = rn = 0}, and then when both go to
+\code{1} at once (this is forbidden for NOR, but not in this circuit!). How do
+the forbidden combinations of the two versions differ?\\
+\textbf{Expected result:} \code{sn = 0} gives \code{q = 1}, \code{rn = 0} gives
+\code{q = 0}, and at \code{sn = rn = 1} the circuit holds.
+\end{diybox}
+
+\textbf{Sample answer.}
+\begin{vcode}
+module sr_latch_n (
+    input  sn,       // set, active level 0
+    input  rn,       // reset, active level 0
+    output q,
+    output qn
+);
+    assign q  = ~(sn & qn);   // NAND
+    assign qn = ~(rn & q);    // NAND
+endmodule
+\end{vcode}
+At \code{sn = rn = 0} both outputs become ones (the forbidden combination of
+this version); after both signals are released at the same time the state is
+unknown.
+
 \section{The D Latch}
 
 The RS flip-flop has two inconveniences: there is a forbidden input combination,
@@ -190,22 +244,28 @@ a data input $D$ and an enable input $C$ (clock). The result is the
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}
-  \node[gAND, minimum height=9mm] (a1) at (1.6,1) {};
-  \node[gAND, minimum height=9mm] (a2) at (1.6,-1) {};
-  \node[draw=FpgaGreen, fill=green!8, thick, minimum width=18mm, minimum height=30mm, font=\sffamily\small, align=center] (rs) at (4.4,0) {RS\\flip-flop};
-  \node[font=\sffamily\scriptsize] at ($(rs.west)+(0.25,1)$) {R};
-  \node[font=\sffamily\scriptsize] at ($(rs.west)+(0.25,-1)$) {S};
-  \node[gNOT, minimum width=7mm, minimum height=5mm] (n) at (-0.2,1.12) {};
-  \draw[wire] (-1.6,-0.88) node[left] {$D$} -- (a2.input 1);
-  \draw[wire] (-0.9,-0.88) |- (n.input); \fill (-0.9,-0.88) circle (1.3pt);
+  \node[gAND] (a1) at (3,1.2) {};
+  \node[gAND] (a2) at (3,-1.2) {};
+  \node[draw=FpgaGreen, fill=green!8, thick, minimum width=18mm, minimum height=36mm, font=\sffamily\small, align=center] (rs) at (6.6,0) {RS\\flip-flop};
+  \node[font=\sffamily\footnotesize] at ($(rs.west)+(0.25,1.2)$) {R};
+  \node[font=\sffamily\footnotesize] at ($(rs.west)+(0.25,-1.2)$) {S};
+  \node[gNOT, anchor=output] (n) at ($(a1.input 1)+(-0.9,0)$) {};
+  \coordinate (Dp) at ($(a2.input 2)+(-3.0,0)$);
+  \coordinate (Dt) at ($(Dp)+(0.5,0)$);
+  \draw[wire] (Dp) node[left] {$D$} -- (a2.input 2);
+  \fill (Dt) circle (1.3pt);
+  \draw[wire] (Dt) -- (Dt |- n.input) -- (n.input);
   \draw[wire] (n.output) -- (a1.input 1);
-  \draw[wire, FpgaBlue] (-1.6,0) node[left, text=FpgaDark] {$C$} -- (0.4,0);
-  \draw[wire, FpgaBlue] (0.4,0) |- (a1.input 2); \draw[wire, FpgaBlue] (0.4,0) |- (a2.input 2);
-  \fill[FpgaBlue] (0.4,0) circle (1.3pt);
-  \draw[wire] (a1.output) -- ($(rs.west)+(0,1)$);
-  \draw[wire] (a2.output) -- ($(rs.west)+(0,-1)$);
-  \draw[wire] ($(rs.east)+(0,1)$) -- ++(0.8,0) node[right] {$Q$};
-  \draw[wire] ($(rs.east)+(0,-1)$) -- ++(0.8,0) node[right] {$\overline{Q}$};
+  \coordinate (cb1) at ($(a1.input 2)+(-0.4,0)$);
+  \coordinate (cb2) at ($(a2.input 1)+(-0.4,0)$);
+  \draw[wire, FpgaBlue] ($(Dp |- 0,0)$) node[left, text=FpgaDark] {$C$} -- (cb1 |- 0,0);
+  \draw[wire, FpgaBlue] (cb1 |- 0,0) -- (cb1) -- (a1.input 2);
+  \draw[wire, FpgaBlue] (cb1 |- 0,0) -- (cb2) -- (a2.input 1);
+  \fill[FpgaBlue] (cb1 |- 0,0) circle (1.3pt);
+  \draw[wire] (a1.output) -- ($(rs.west)+(0,1.2)$);
+  \draw[wire] (a2.output) -- ($(rs.west)+(0,-1.2)$);
+  \draw[wire] ($(rs.east)+(0,1.2)$) -- ++(0.8,0) node[right] {$Q$};
+  \draw[wire] ($(rs.east)+(0,-1.2)$) -- ++(0.8,0) node[right] {$\overline{Q}$};
 \end{tikzpicture}
 \caption{The D latch: the forbidden combination $S=R=1$ is now impossible,
 because $S$ and $R$ receive $D$ and $\overline{D}$}
@@ -242,6 +302,51 @@ changes), and at $C=0$ the value is frozen.\\
 Save the circuit: you will need it in the next section.
 \end{diybox}
 
+\subsection{The Latch in Verilog: \code{always @*}}
+\label{sec:ff-latch-v}
+
+In Verilog a latch is described by an \code{always @*} process: a combinational
+block that ``wakes up'' whenever any of the inputs it reads changes. If not all
+branches of the block assign a value to the output, the synthesizer concludes
+that under the remaining conditions the output must be \emph{remembered}, and
+inserts a latch.
+
+\vfile{\codepath/b7_flipflops/d_latch.v}{code/b7\_flipflops/d\_latch.v}
+
+\textbf{How to read it.} ``Whenever \code{c} or \code{d} changes: if \code{c} is
+1, then \code{q} equals \code{d}.'' There is no \code{else} branch: at
+\code{c = 0} nothing is assigned to the output, which means it holds the old
+value. That is how memory appears. Here the latch is intended, and its
+assignment is \emph{blocking} (\code{=}), as is customary in combinational
+blocks.
+
+\textbf{How to run it in Logra.} \term{Code} tab, Ctrl+Enter. Logra warns about
+an inferred latch (in the Yosys log: \emph{Latch inferred}). In a teaching
+module this confirms that you got what you wanted; in a working project such a
+message is a reason to check whether you forgot an \code{else} branch. On the
+\term{RTL} tab find the latch block; in \term{Waveforms} apply $D$ as fast
+pulses during a long $C=1$ and watch $Q$ follow $D$.
+
+\begin{diybox}[The Latch in Verilog: Change the Module]
+\textbf{Task.} \stars{1} Change the latch so that it is transparent at $c=0$
+rather than $c=1$. \stars{2} Remove the condition from the module and write
+\code{q = d} unconditionally: what has the circuit turned into, and what does
+Logra say now?\\
+\textbf{Expected result:} the latch warning disappears, and the circuit is just a
+wire from \code{d} to \code{q}.
+\end{diybox}
+
+\textbf{Sample answer.}
+\begin{vcode}
+module d_latch_low (input c, d, output reg q);
+    always @* begin
+        if (!c) q = d;       // transparent at c = 0
+    end
+endmodule
+\end{vcode}
+Without the condition we get \code{always @* q = d;}: this is a combinational
+circuit without memory, and the latch warning goes away.
+
 \section{The D Flip-Flop}
 
 The transparency of a latch is both an advantage and a drawback. If the output
@@ -257,21 +362,22 @@ signals. Such a circuit is called \term{master--slave}:
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[lt/.style={draw=FpgaGreen, fill=green!8, thick, minimum width=24mm, minimum height=16mm, font=\sffamily\small, align=center}]
+\begin{tikzpicture}[lt/.style={draw=FpgaGreen, fill=green!8, thick, minimum width=24mm, minimum height=18mm, font=\sffamily\small, align=center}]
   \node[lt] (m) at (0,0) {\quad master\\\quad latch};
   \node[lt] (s) at (4.2,0) {\quad slave\\\quad latch};
-  \node[font=\sffamily\scriptsize] at ($(m.west)+(0.2,0.45)$) {D};
-  \node[font=\sffamily\scriptsize] at ($(m.west)+(0.2,-0.45)$) {C};
-  \node[font=\sffamily\scriptsize] at ($(s.west)+(0.2,0.45)$) {D};
-  \node[font=\sffamily\scriptsize] at ($(s.west)+(0.2,-0.45)$) {C};
+  \node[font=\sffamily\footnotesize] at ($(m.west)+(0.2,0.45)$) {D};
+  \node[font=\sffamily\footnotesize] at ($(m.west)+(0.2,-0.45)$) {C};
+  \node[font=\sffamily\footnotesize] at ($(s.west)+(0.2,0.45)$) {D};
+  \node[font=\sffamily\footnotesize] at ($(s.west)+(0.2,-0.45)$) {C};
   \draw[wire] ($(m.west)+(-1.2,0.45)$) node[left] {$D$} -- ($(m.west)+(0,0.45)$);
   \draw[wire] ($(m.east)+(0,0.45)$) -- node[above, lbl] {$Q_m$} ($(s.west)+(0,0.45)$);
   \draw[wire] ($(s.east)+(0,0.45)$) -- ++(1,0) node[right] {$Q$};
-  \node[gNOT, minimum width=7mm, minimum height=5mm] (n) at (-2.1,-1.3) {};
-  \draw[wire, FpgaBlue] (-3.4,-1.3) node[left, text=FpgaDark] {CLK} -- (n.input);
-  \draw[wire, FpgaBlue] (n.output) -- ++(0.2,0) |- ($(m.west)+(0,-0.45)$);
-  \draw[wire, FpgaBlue] (-2.9,-1.3) |- (2.5,-1.9) |- ($(s.west)+(0,-0.45)$);
-  \fill[FpgaBlue] (-2.9,-1.3) circle (1.3pt);
+  \node[gNOT, anchor=output] (n) at ($(m.west)+(-0.5,-0.45)$) {};
+  \coordinate (ck) at ($(n.input)+(-0.5,0)$);
+  \draw[wire, FpgaBlue] ($(ck)+(-0.4,0)$) node[left, text=FpgaDark] {CLK} -- (n.input);
+  \draw[wire, FpgaBlue] (n.output) -- ($(m.west)+(0,-0.45)$);
+  \draw[wire, FpgaBlue] (ck) |- (2.4,-1.9) |- ($(s.west)+(0,-0.45)$);
+  \fill[FpgaBlue] (ck) circle (1.3pt);
   \node[font=\sffamily\small, align=left, anchor=north west] at (-2.4,-2.2) {CLK $=0$: master transparent, slave holds;\\
   CLK $=1$: master holds, slave transparent;\\ $\Rightarrow$ $Q$ changes only when CLK goes from 0 to 1.};
 \end{tikzpicture}
@@ -335,6 +441,62 @@ alternation).\\
 \textbf{How to check:} Waveforms; compare with Fig.~\ref{fig:latch_vs_ff}.
 \end{diybox}
 
+\subsection{The Flip-Flop in Verilog: \code{always @(posedge clk)}}
+\label{sec:ff-dff-v}
+
+A D flip-flop is described by a process that wakes up \emph{only at the rising
+edge} of the clock signal. Compare it with the latch: only one line changes, but
+the behavior is fundamentally different.
+
+\vfile{\codepath/b7_flipflops/d_ff.v}{code/b7\_flipflops/d\_ff.v}
+
+\textbf{How to read it.} ``At every rising edge of \code{clk}, store in \code{q}
+what is on \code{d} right now.'' The assignment here is \emph{non-blocking}
+(\code{<=}): all flip-flops of the circuit take the old values at the same time
+and update them at the same time. A rule that will save you from half of all
+mistakes: in \code{always @(posedge ...)} use only \code{<=}, in \code{always @*}
+use only \code{=}. We will see why in Chapter~\ref{ch:regs}, where a bit ``flies''
+through the whole shift register in one clock cycle if the rule is broken.
+
+The testbench \code{tb\_latch\_ff.v} applies the same signal $D$ to the latch
+and to the flip-flop:
+
+\vfile{\codepath/b7_flipflops/tb_latch_ff.v}{code/b7\_flipflops/tb\_latch\_ff.v}
+
+\textbf{How to read the testbench.} The task \code{chk} waits 1~ns after a change
+and compares both outputs with the expected ones; the operator \code{!==} counts
+an unknown \code{X} as a difference, not as a match. At the end the testbench
+prints \code{OK} or the number of errors.
+
+\textbf{How to run it in Logra.} \term{Code} tab: paste \code{d\_ff} (and
+\code{d\_latch} separately) and press Ctrl+Enter. A ready-made pair ``latch and
+flip-flop in one module'' with common inputs is the module \code{dff\_vs\_latch}
+of Chapter~\ref{ch:bridge}. In \term{Waveforms} apply a long pulse to
+\code{clk} and change \code{d} inside it. The latch output changes together with
+\code{d}, the flip-flop output only at the edge
+(Fig.~\ref{fig:latch_vs_ff}).
+
+\begin{diybox}[The Flip-Flop in Verilog: Change the Module]
+\textbf{Task.} \stars{1} Make a flip-flop that acts on the \emph{falling} edge
+(from 1 to 0). \stars{2} Add a second output \code{qn} that is always
+$\overline{Q}$. \stars{3} Build a master--slave flip-flop from two such modules
+(Fig.~\ref{fig:ms}) and compare it with \code{d\_ff}.\\
+\textbf{Expected result:} the output changes at the falling edge of \code{clk}.
+\end{diybox}
+
+\textbf{Sample answer.}
+\begin{vcode}
+module d_ff_neg (
+    input      clk,
+    input      d,
+    output reg q,
+    output     qn
+);
+    always @(negedge clk) q <= d;   // negedge: falling edge
+    assign qn = ~q;
+endmodule
+\end{vcode}
+
 \section{Flip-Flop Timing Parameters}
 
 For a flip-flop to store a value reliably, the input $D$ must stay unchanged for
@@ -354,7 +516,7 @@ some time before the edge and after it:
   \draw[very thick] (0,1.1) -- (1.5,1.1) -- (1.7,1.5) -- (6,1.5) -- (6.2,1.1) -- (8,1.1);
   \draw[very thick] (0,1.5) -- (1.5,1.5) -- (1.7,1.1) -- (6,1.1) -- (6.2,1.5) -- (8,1.5);
   \node[font=\sffamily\small, anchor=east] at (-0.1,1.3) {$D$};
-  \node[font=\sffamily\scriptsize] at (3.9,1.3) {stable};
+  \node[font=\sffamily\footnotesize] at (3.9,1.3) {stable};
   \draw[very thick, FpgaGreen] (0,0) -- (4.8,0) -- (4.9,0.4) -- (8,0.4);
   \node[font=\sffamily\small, anchor=east] at (-0.1,0.2) {$Q$};
   \fill[FpgaRed, opacity=0.15] (2.6,0.9) rectangle (4.05,1.7);
@@ -392,6 +554,80 @@ however many cycles the button is held.\\
 one pulse.
 \end{diybox}
 
+\subsection{Synchronizer and Edge Detector in Verilog}
+\label{sec:ff-sync-v}
+
+A synchronizer is exactly two flip-flops in a row, and in Verilog it takes three
+lines:
+
+\vfile{\codepath/b7_flipflops/sync2.v}{code/b7\_flipflops/sync2.v}
+
+\textbf{How to read it.} Both assignments are in one block and both are
+non-blocking: at one edge \code{ff1} gets the input value, while \code{ff2} gets
+the \emph{old} value of \code{ff1}. So the value passes through both flip-flops
+in two clock cycles, not one. Metastability can occur only in \code{ff1}, and it
+has a whole clock cycle to die out before \code{ff2}.
+
+An edge detector remembers the previous value of the signal and compares it with
+the current one:
+
+\vfile{\codepath/b7_flipflops/edge_det.v}{code/b7\_flipflops/edge\_det.v}
+
+\textbf{How to read it.} \code{prev} is the value of \code{in} in the previous
+clock cycle. The expression \code{in \& \textasciitilde prev} is true when it is
+1 now and was 0 before: one clock cycle per press. This is a \emph{combinational}
+output, so it is written with \code{assign}, not in a clocked block.
+
+The chain ``button $\to$ synchronizer $\to$ edge detector'' is collected in one
+module:
+
+\vfile{\codepath/b7_flipflops/button_pulse.v}{code/b7\_flipflops/button\_pulse.v}
+
+The testbench \code{tb\_button\_pulse.v} presses the button \emph{away from the
+clock edge}, holds it for 10 cycles, releases it and counts the pulses: there
+must be exactly one. It also checks that \code{sync2} answers not in one clock
+cycle but in two.
+
+\textbf{How to run it in Logra.} \term{Code} tab: paste \code{button\_pulse},
+Ctrl+Enter, \term{RTL}: three flip-flops and one AND gate with an inverted
+input. In \term{Waveforms} apply a long pulse of 10 cycles to \code{btn} and
+see that \code{pulse} lasts one clock cycle and lags the button by two. For the
+board the button is connected to a pin in \term{Pins}; do not forget that a
+mechanical button also bounces (Chapter~\ref{ch:examples}).
+
+\begin{diybox}[Edge Detector: Change the Module]
+\textbf{Task.} \stars{1} Make a detector of the \emph{falling} edge (button
+release). \stars{2} Make a detector of \emph{any} change of the signal (both
+edges). \stars{3} Build a chain: a button press toggles an LED (synchronizer,
+edge detector, T flip-flop).\\
+\textbf{Expected result:} one pulse per release; two pulses per press and
+release; the LED changes only on the press.
+\end{diybox}
+
+\textbf{Sample answer.}
+\begin{vcode}
+module edge_fall (input clk, in, output pulse);
+    reg prev = 1'b0;
+    always @(posedge clk) prev <= in;
+    assign pulse = ~in & prev;       // 0 now, 1 before
+endmodule
+
+module edge_any (input clk, in, output pulse);
+    reg prev = 1'b0;
+    always @(posedge clk) prev <= in;
+    assign pulse = in ^ prev;        // changed in either direction
+endmodule
+
+module button_toggle (input clk, btn, output reg led);
+    reg ff1 = 1'b0, ff2 = 1'b0, ff3 = 1'b0;
+    initial led = 1'b0;
+    always @(posedge clk) begin
+        ff1 <= btn; ff2 <= ff1; ff3 <= ff2;
+        if (ff2 & ~ff3) led <= ~led;   // the pulse toggles the T flip-flop
+    end
+endmodule
+\end{vcode}
+
 \section{The Enable Input}
 
 Often we need a flip-flop to update not on every edge, but only on command. For
@@ -403,8 +639,8 @@ to its input---the flip-flop rewrites itself and does not change.
 \centering
 \begin{tikzpicture}
   \draw[thick, fill=orange!15] (0,0.9) -- (0.9,0.5) -- (0.9,-0.5) -- (0,-0.9) -- cycle;
-  \node[font=\sffamily\scriptsize] at (0.45,0) {MUX};
-  \node[font=\tiny, anchor=west] at (0.02,0.5) {0}; \node[font=\tiny, anchor=west] at (0.02,-0.5) {1};
+  \node[font=\sffamily\footnotesize] at (0.45,0) {MUX};
+  \node[font=\footnotesize, anchor=west] at (0.02,0.5) {0}; \node[font=\footnotesize, anchor=west] at (0.02,-0.5) {1};
   \draw[thick, fill=green!8] (1.8,-0.8) rectangle (3.2,0.8);
   \node[font=\sffamily\small] at (2.05,0) {D}; \node[font=\sffamily\small] at (2.95,0) {Q};
   \draw[thick] (2.3,-0.8) -- (2.5,-0.6) -- (2.7,-0.8);
@@ -432,6 +668,96 @@ $D$ changes.\\
 will show the same multiplexer in front of the flip-flop.
 \end{diybox}
 
+\subsection{Enable and Reset in Verilog}
+\label{sec:ff-en-rst-v}
+
+In Verilog the enable input is simply an \code{if} inside a clocked block. The
+synthesizer builds the multiplexer with feedback (Fig.~\ref{fig:ce}) by itself.
+
+\vfile{\codepath/b7_flipflops/dff_en.v}{code/b7\_flipflops/dff\_en.v}
+
+\textbf{How to read it.} ``At the edge: if \code{en} is 1, store \code{d}.''
+There is no \code{else} branch, and that is \emph{correct}: in a clocked block
+the absence of an assignment means ``\code{q} stays as it was'', that is, the
+flip-flop rewrites itself. The declaration \code{output reg q = 1'b0} sets the
+initial value after power-up.
+
+The testbench \code{tb\_dff\_en.v} checks three clock cycles: \code{en=0}---the
+value does not change; \code{en=1}---it is stored; \code{en=0} again---it is
+held. In Logra: the \term{Code} tab, Ctrl+Enter, \term{RTL} (a multiplexer in
+front of the flip-flop), \term{Waveforms}: keep \code{en=0} and change \code{d},
+then apply a pulse to \code{en}.
+
+Now the \term{reset}. It comes in two kinds, and the difference is visible
+already in the first line of the block:
+
+\vfile{\codepath/b7_flipflops/dff_rst_sync.v}{code/b7\_flipflops/dff\_rst\_sync.v}
+
+\vfile{\codepath/b7_flipflops/dff_rst_async.v}{code/b7\_flipflops/dff\_rst\_async.v}
+
+\textbf{How to read it.} The \emph{synchronous} reset has only \code{posedge clk}
+in its sensitivity list: \code{rst} is checked inside the block, that is, only at
+the moment of the edge, and it acts like an ordinary data input (the flip-flop
+gets an extra gate at its input \code{d}). The \emph{asynchronous} one has
+\code{or posedge rst} in the list: the flip-flop is cleared immediately when
+\code{rst} rises, without waiting for the clock. An FPGA flip-flop has a
+separate asynchronous reset input (like RST on the symbol above), so no extra
+logic is added on \code{d}. The order of the branches
+\code{if (rst) \ldots\ else \ldots} matters: the reset is written first, so it
+is stronger than the write.
+
+\vfile{\codepath/b7_flipflops/tb_dff_rst.v}{code/b7\_flipflops/tb\_dff\_rst.v}
+
+The testbench applies the reset \emph{between} edges: the synchronous
+flip-flop does not notice it until the next edge, the asynchronous one is
+cleared at once. In Logra repeat it in \term{Waveforms}: build both modules,
+keep \code{d=1}, raise \code{rst} between edges and compare the moments when the
+output fell to 0.
+
+\begin{diybox}[Reset and Enable: Complete the Module]
+\textbf{Task.} \stars{1} Add to \code{dff\_en} a synchronous reset that is
+stronger than the write. \stars{2} Make an asynchronous \emph{set} to 1
+(\code{set}) instead of a reset. \stars{3} Make an asynchronous reset with
+active level 0 (input \code{rst\_n}): the sensitivity list will need
+\code{negedge}.\\
+\textbf{Expected result:} at \code{rst = 1} and \code{en = 1} the output is 0.
+\end{diybox}
+
+\textbf{Sample answer.}
+\begin{vcode}
+module dff_en_rst (
+    input      clk, rst, en, d,
+    output reg q
+);
+    always @(posedge clk) begin
+        if (rst)     q <= 1'b0;    // reset first: it is stronger
+        else if (en) q <= d;
+    end
+endmodule
+
+module dff_aset (
+    input      clk, set, d,
+    output reg q
+);
+    always @(posedge clk or posedge set) begin
+        if (set) q <= 1'b1;        // asynchronous set to 1
+        else     q <= d;
+    end
+endmodule
+
+module dff_arst_n (
+    input      clk, rst_n, d,
+    output reg q
+);
+    always @(posedge clk or negedge rst_n) begin   // reset at the fall of rst_n
+        if (!rst_n) q <= 1'b0;                      // active level 0
+        else        q <= d;
+    end
+endmodule
+\end{vcode}
+The entry in the list and the check inside the block must agree: \code{negedge
+rst\_n} in the list means \code{if (!rst\_n)} inside.
+
 \section{The T Flip-Flop and the JK Flip-Flop}
 
 The \term{T flip-flop} (toggle) changes its state to the opposite one at every
@@ -443,15 +769,15 @@ flip-flop and an XOR gate: $D = T \oplus Q$.
 \begin{minipage}{0.5\textwidth}
 \centering
 \begin{tikzpicture}
-  \node[gXOR, minimum width=10mm, minimum height=8mm] (x) at (0,0) {};
-  \draw[thick, fill=green!8] (1.2,-0.8) rectangle (2.6,0.8);
-  \node[font=\sffamily\small] at (1.45,0) {D}; \node[font=\sffamily\small] at (2.35,0) {Q};
-  \draw[thick] (1.7,-0.8) -- (1.9,-0.6) -- (2.1,-0.8);
-  \draw[wire] (x.output) -- (1.2,0);
-  \draw[wire] (2.6,0) -- (3.6,0) node[right] {$Q$};
-  \draw[wire] (3.1,0) -- (3.1,1.3) -| (-1.0,0 |- x.input 1) -- (x.input 1); \fill (3.1,0) circle (1.3pt);
+  \node[gXOR] (x) at (0,0) {};
+  \draw[thick, fill=green!8] (1.8,-0.8) rectangle (3.2,0.8);
+  \node[font=\sffamily\small] at (2.05,0) {D}; \node[font=\sffamily\small] at (2.95,0) {Q};
+  \draw[thick] (2.3,-0.8) -- (2.5,-0.6) -- (2.7,-0.8);
+  \draw[wire] (x.output) -- (1.8,0);
+  \draw[wire] (3.2,0) -- (4.1,0) node[right] {$Q$};
+  \draw[wire] (3.65,0) -- (3.65,1.4) -| ($(x.input 1)+(-0.5,0)$) -- (x.input 1); \fill (3.65,0) circle (1.3pt);
   \draw[wire] (x.input 2) -- ++(-0.9,0) node[left] {$T$};
-  \draw[wire, FpgaBlue] (1.9,-0.8) -- (1.9,-1.3) node[below, text=FpgaDark] {CLK};
+  \draw[wire, FpgaBlue] (2.5,-0.8) -- (2.5,-1.3) node[below, text=FpgaDark] {CLK};
 \end{tikzpicture}
 \end{minipage}\hfill
 \begin{minipage}{0.45\textwidth}
@@ -480,6 +806,42 @@ at its output is \emph{half} the clock frequency. This is the simplest
 \end{tikztimingtable}
 \caption{A T flip-flop with $T=1$ divides the frequency by 2}
 \end{figure}
+
+\textbf{The T flip-flop in Verilog.} The condition ``if $T=1$, toggle'' is one
+\code{if} and an inversion:
+
+\vfile{\codepath/b7_flipflops/t_ff.v}{code/b7\_flipflops/t\_ff.v}
+
+\textbf{How to read it.} At the edge: if reset, write 0; otherwise, if \code{t} is
+1, write the \emph{inversion} of itself (\code{~q}). The statement
+\code{q <= ~q} reads the old value of \code{q} and writes the new one, so it is
+not a contradiction but exactly ``$D=T\oplus Q$''. If you leave \code{t = 1},
+you get a divide-by-2 frequency divider. The testbench \code{tb\_t\_ff.v} checks
+that at $t=0$ the value is held and at $t=1$ it changes at every edge. In Logra:
+\term{Code} tab, Ctrl+Enter; in \term{Waveforms} keep \code{t=1} and make sure
+the period of \code{q} is twice the period of \code{clk} (as in the figure
+above); then \code{t=0}---the output freezes.
+
+\begin{diybox}[T and JK in Verilog: Complete the Module]
+\textbf{Task.} \stars{2} Describe a JK flip-flop: $J=1,K=0$ is set,
+$J=0,K=1$ is reset, $J=K=1$ is toggle, $J=K=0$ is hold. \stars{3} Obtain a T
+flip-flop from your JK flip-flop by connecting $J=K=T$.\\
+\textbf{Expected result:} at $J=K=1$ the output changes at every edge.
+\end{diybox}
+
+\textbf{Sample answer.}
+\begin{vcode}
+module jk_ff (input clk, j, k, output reg q);
+    always @(posedge clk) begin
+        case ({j, k})                 // concatenation of two bits into one number
+            2'b00: q <= q;            // hold
+            2'b01: q <= 1'b0;         // reset
+            2'b10: q <= 1'b1;         // set
+            2'b11: q <= ~q;           // toggle
+        endcase
+    end
+endmodule
+\end{vcode}
 
 The \term{JK flip-flop} combines the abilities of the RS and T flip-flops: $J$ is
 set, $K$ is reset, $J = K = 1$ is toggle (there is no forbidden combination). In
@@ -530,6 +892,24 @@ shows a ``step'' of the output that does not disappear after the door closes; RT
 shows one flip-flop and one OR gate in the feedback path.
 \end{diybox}
 
+\textbf{The project stage in Verilog.} The same node as a module:
+
+\vfile{\codepath/b7_flipflops/alarm_keep.v}{code/b7\_flipflops/alarm\_keep.v}
+
+\textbf{How to read it.} Two branches in order of priority: the key resets,
+otherwise the sensor sets; if neither arrives, \code{alarm} holds its previous
+value (there is no \code{else} branch). The testbench \code{tb\_alarm\_keep.v}
+goes through seven steps: quiet; the door opened; closed (the alarm is
+remembered); the key reset it; key and sensor together (the key is stronger);
+the sensor again. \textbf{How to run it in Logra:} \term{Code} tab, paste the
+module, Ctrl+Enter, then in \term{Waveforms} apply \code{sensor} for one clock
+cycle: \code{alarm} must stay at one until a \code{key} pulse.
+
+\textbf{Complete it.} Add an input \code{mute} that silences the siren but does
+not clear the alarm. \emph{Sample:} add a port \code{output siren} and the line
+\code{assign siren = alarm \& \textasciitilde mute;}---the flip-flop itself does
+not change.
+
 \section{Common Mistakes}
 
 \begin{warnbox}[Common Mistakes]
@@ -555,6 +935,56 @@ shows one flip-flop and one OR gate in the feedback path.
         rather than fly straight through.
 \end{enumerate}
 \end{warnbox}
+
+\subsection{Common Mistakes in Verilog}
+
+While flip-flops were circuits, mistakes were visible in the picture. When they
+become code, new ones appear, and all of them come from one feature:
+\emph{in the text, a combinational block and a block with memory look alike}.
+
+\begin{warnbox}[Mistakes in Describing Memory]
+\begin{enumerate}
+  \item \textbf{An accidental latch from an incomplete \code{if}.} If in
+        \code{always @*} the output is not assigned in all branches, the
+        synthesizer inserts a latch, and Logra warns: \emph{Latch inferred}.
+  \item \textbf{No \code{default}.} In a \code{case} without a \code{default}
+        branch (and without a default assignment at the start of the block), the
+        output holds its previous value for undescribed combinations: also a
+        latch.
+  \item \textbf{Blocking \code{=} in a clocked block and non-blocking \code{<=} in
+        a combinational one.} In \code{always @(posedge clk)} write \code{<=}; in
+        \code{always @*} write \code{=}. Breaking the rule gives a shift that
+        ``flies through'' in one clock cycle (see
+        Section~\ref{sec:regs-shift-v} in Chapter~\ref{ch:regs}).
+  \item \textbf{No initial value after power-up.} A \code{reg} is unknown
+        (\code{X}) until its first write; counters and state machines need a reset
+        or an initial value in the declaration (\code{reg q = 0}).
+  \item \textbf{An inconsistent reset.} \code{posedge clk or posedge rst} in the
+        sensitivity list and \code{if (!rst)} inside the block: the list and the
+        check must correspond to each other.
+\end{enumerate}
+\end{warnbox}
+
+The first mistake is easy to see with your own eyes:
+
+\begin{vcode}
+module oops (input sel, a, output reg y);
+    always @* begin
+        if (sel) y = a;      // no else: y holds its value, we got a latch!
+    end
+endmodule
+\end{vcode}
+
+The fix is to add a branch or to assign a default value before the \code{if}:
+
+\begin{vcode}
+module oops_fixed (input sel, a, output reg y);
+    always @* begin
+        y = 1'b0;            // default value
+        if (sel) y = a;
+    end
+endmodule
+\end{vcode}
 
 \section{Questions and Problems}
 \label{sec:tasks-ff}
