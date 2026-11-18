@@ -12,16 +12,29 @@ export function CanvasViewport({
   children,
   className = '',
   bounds,
+  focus,
 }: {
   label: string;
   width: number;
   height: number;
   className?: string;
   bounds?: CanvasBounds;
+  /** Centres the view on a point at a zoom whenever `key` changes (and once on mount). */
+  focus?: { x: number; y: number; scale: number; key: string | number };
   children: (point: (clientX: number, clientY: number) => { x: number; y: number }) => ReactNode;
 }) {
   const [view, setView] = useState(() => fitCanvas(width, height, bounds));
   const svg = useRef<SVGSVGElement>(null);
+  const focusKey = focus?.key;
+  useEffect(() => {
+    if (!focus) return;
+    setView({
+      scale: focus.scale,
+      x: width / 2 - focus.x * focus.scale,
+      y: height / 2 - focus.y * focus.scale,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only a new key moves the view
+  }, [focusKey]);
   const pan = useRef<{
     id: number;
     x: number;
@@ -31,6 +44,7 @@ export function CanvasViewport({
     moved: boolean;
   } | null>(null);
   const suppressClick = useRef(false);
+  const lastTap = useRef<{ t: number; x: number; y: number } | null>(null);
   function localPoint(clientX: number, clientY: number) {
     const matrix = svg.current?.getScreenCTM();
     if (!matrix) return { x: 0, y: 0 };
@@ -142,6 +156,19 @@ export function CanvasViewport({
             }));
         }}
         onPointerUp={(event) => {
+          // A quick second tap on bare canvas shows everything (a finger has no double click).
+          if (event.pointerType === 'touch' && !pan.current?.moved) {
+            const now = performance.now(),
+              last = lastTap.current;
+            if (
+              last &&
+              now - last.t < 320 &&
+              Math.hypot(event.clientX - last.x, event.clientY - last.y) < 24
+            ) {
+              setView(fitCanvas(width, height, bounds));
+              lastTap.current = null;
+            } else lastTap.current = { t: now, x: event.clientX, y: event.clientY };
+          }
           suppressClick.current = !!pan.current?.moved;
           pan.current = null;
           if (event.currentTarget.hasPointerCapture(event.pointerId))

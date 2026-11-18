@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
-/** The single mobile breakpoint; src/mobile.css repeats it in its @media rules. */
-export const MOBILE_QUERY = '(max-width: 768px)';
+/** The single mobile breakpoint (narrow window, or a phone held sideways); mobile.css repeats it. */
+export const MOBILE_QUERY = '(max-width: 768px), (max-height: 500px) and (pointer: coarse)';
 
 function subscribe(onChange: () => void) {
   if (typeof window === 'undefined' || !window.matchMedia) return () => {};

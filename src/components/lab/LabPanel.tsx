@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Info, MoreHorizontal, Plus, X } from 'lucide-react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import {
   Maximize2,
   Pause,
@@ -134,6 +136,10 @@ export function LabPanel({
     items: MenuItem[];
   } | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  // Phones: the library and the details are sheets over the bench, opened by hand.
+  const mobile = useIsMobile();
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [sheet, setSheet] = useState<'' | 'library' | 'details'>('');
   const [popover, setPopover] = useState('');
   const [notice, setNotice] = useState('');
   const scene = useRef<SceneHandle>(null);
@@ -635,7 +641,7 @@ export function LabPanel({
 
   return (
     <section className="lab-workspace" aria-label={t('Лаборатория')}>
-      <header className="lab-toolbar">
+      <header className={`lab-toolbar ${toolsOpen ? 'more-open' : ''}`}>
         <div className="lab-run" role="group" aria-label={t('Ход времени')}>
           <button
             type="button"
@@ -644,7 +650,7 @@ export function LabPanel({
             onClick={() => setRunning((value) => !value)}
           >
             {running ? <Pause size={15} /> : <Play size={15} />}
-            {running ? t('Пауза') : t('Пуск')}
+            <span className="lbl">{running ? t('Пауза') : t('Пуск')}</span>
           </button>
           <button
             type="button"
@@ -657,7 +663,7 @@ export function LabPanel({
             }}
           >
             <StepForward size={15} />
-            {t('Такт')}
+            <span className="lbl">{t('Такт')}</span>
           </button>
           <button
             type="button"
@@ -667,7 +673,7 @@ export function LabPanel({
             onClick={() => setRestart((value) => value + 1)}
           >
             <RotateCcw size={15} />
-            {t('Сброс')}
+            <span className="lbl">{t('Сброс')}</span>
           </button>
         </div>
         <label className="lab-speed">
@@ -722,7 +728,7 @@ export function LabPanel({
           </button>
           <button
             type="button"
-            className="button subtle"
+            className="button subtle lab-fit"
             title={t('Показать весь стол (клавиша 0)')}
             onClick={() => scene.current?.fit()}
           >
@@ -730,6 +736,17 @@ export function LabPanel({
             {t('Показать всё')}
           </button>
         </div>
+        {mobile && (
+          <button
+            type="button"
+            className="icon-button lab-more"
+            aria-label={t('Ещё')}
+            aria-expanded={toolsOpen}
+            onClick={() => setToolsOpen((value) => !value)}
+          >
+            <MoreHorizontal size={20} aria-hidden="true" />
+          </button>
+        )}
         <div className="lab-clock">
           <p
             className="lab-status"
@@ -795,8 +812,19 @@ export function LabPanel({
           </button>
         </div>
       )}
-      <div className={'lab-columns' + (sceneOnly ? ' scene-only' : '')}>
-        {sceneOnly ? null : <Library onAdd={onAdd} allowed={allowedParts} />}
+      <div
+        className={'lab-columns' + (sceneOnly ? ' scene-only' : '')}
+        data-sheet={mobile ? sheet || undefined : undefined}
+      >
+        {sceneOnly ? null : (
+          <Library
+            onAdd={(id) => {
+              onAdd(id);
+              if (mobile) setSheet('');
+            }}
+            allowed={allowedParts}
+          />
+        )}
         <LabScene
           handle={scene}
           project={scenery}
@@ -847,6 +875,36 @@ export function LabPanel({
             />
           )}
         </LabScene>
+        {mobile && !sceneOnly && (
+          <div className="lab-fabs">
+            <button
+              type="button"
+              className="lab-fab primary"
+              aria-expanded={sheet === 'library'}
+              onClick={() => setSheet(sheet === 'library' ? '' : 'library')}
+            >
+              {sheet === 'library' ? (
+                <X size={18} aria-hidden="true" />
+              ) : (
+                <Plus size={18} aria-hidden="true" />
+              )}
+              {sheet === 'library' ? t('Закрыть') : t('Деталь')}
+            </button>
+            <button
+              type="button"
+              className={'lab-fab icon' + (selectedId ? ' marked' : '')}
+              aria-label={sheet === 'details' ? t('Закрыть') : t('Детали стола')}
+              aria-expanded={sheet === 'details'}
+              onClick={() => setSheet(sheet === 'details' ? '' : 'details')}
+            >
+              {sheet === 'details' ? (
+                <X size={20} aria-hidden="true" />
+              ) : (
+                <Info size={20} aria-hidden="true" />
+              )}
+            </button>
+          </div>
+        )}
         {sceneOnly && allowedParts ? (
           <PartsShelf parts={allowedParts.filter((id) => id !== 'breadboard')} onAdd={onAdd} />
         ) : null}

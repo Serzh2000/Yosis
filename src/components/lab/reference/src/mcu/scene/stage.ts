@@ -299,6 +299,17 @@ export class Stage {
   private knobHolders = new Map<string, THREE.Object3D[]>();
   private knobMark: { key: string; mesh: THREE.Mesh } | null = null;
   private wheelBuffer = 0;
+  /** Fingers on the glass: two of them pinch the bench instead of acting on what they touch. */
+  private touches = new Map<number, { x: number; y: number }>();
+  private pinch: {
+    distance: number;
+    zoom: number;
+    mid: { x: number; y: number };
+    target: THREE.Vector3;
+  } | null = null;
+  /** The last press came from a finger: pins are caught from further away. */
+  private coarse = false;
+  private longPress = 0;
   private toolLayer = new THREE.Group();
   private preview: ReturnType<typeof previewWire> | null = null;
   /** The jumper whose end is being re-plugged is hidden while its preview follows the pointer. */
@@ -709,7 +720,7 @@ export class Stage {
         if (normal.dot(direction) > -0.1) continue;
         const screen = this.project(holder.localToWorld(new THREE.Vector3(0, 0, 2.5))),
           distance = Math.hypot(screen.x - point.x, screen.y - point.y);
-        if (distance < spec.radius * this.zoom + 9 && distance < nearest) {
+        if (distance < spec.radius * this.zoom + (this.coarse ? 20 : 9) && distance < nearest) {
           nearest = distance;
           best = { part, index };
         }
@@ -1747,7 +1758,11 @@ export class Stage {
     includeHidden = false,
   ) {
     let best = '',
-      distance = reach || Math.min(14, Math.max(7, 1.2 * this.zoom));
+      distance =
+        reach ||
+        (this.coarse
+          ? Math.min(22, Math.max(13, 2 * this.zoom))
+          : Math.min(14, Math.max(7, 1.2 * this.zoom)));
     for (const [id, spot] of this.spots) {
       if (id === exclude || (!includeHidden && this.hidden.has(id))) continue;
       if (owner && !id.startsWith(`${owner}:`)) continue;
@@ -1765,6 +1780,7 @@ export class Stage {
    * little past the edge of a header does not leave the student without a target.
    */
   private dragReach() {
+    if (this.coarse) return Math.min(46, Math.max(28, 4.4 * this.zoom));
     return Math.min(34, Math.max(20, 3.2 * this.zoom));
   }
   /**
@@ -1937,6 +1953,29 @@ export class Stage {
     const canvas = this.renderer.domElement;
     canvas.setPointerCapture(event.pointerId);
     const point = this.pointer(event);
+    this.coarse = event.pointerType === 'touch';
+    if (this.coarse) {
+      // The first finger of a gesture: forget fingers whose release was never reported.
+      if (event.isPrimary) {
+        this.touches.clear();
+        this.pinch = null;
+      }
+      this.touches.set(event.pointerId, point);
+      window.clearTimeout(this.longPress);
+      if (this.touches.size === 2) {
+        this.beginPinch();
+        return;
+      }
+      if (this.touches.size > 2) return;
+      // A finger held still on a part, a wire or the bench opens the menu a right click would.
+      this.longPress = window.setTimeout(() => {
+        const mode = this.mode;
+        if ((mode.kind !== 'part' && mode.kind !== 'pan') || mode.moved) return;
+        this.mode = { kind: 'idle' };
+        this.clearPreview();
+        this.events.context({ ...point, target: this.contextTarget(point) });
+      }, 520);
+    }
     this.velocity.set(0, 0);
     this.events.hover(null);
     if (event.button === 1) {
@@ -2080,9 +2119,16 @@ export class Stage {
     if (!input) return;
     const point = this.pointer(event),
       mode = this.mode;
+    if (event.pointerType === 'touch' && this.touches.has(event.pointerId)) {
+      this.touches.set(event.pointerId, point);
+      if (this.touches.size >= 2) {
+        this.movePinch();
+        return;
+      }
+    }
     switch (mode.kind) {
       case 'idle':
-        this.hover(point);
+        if (event.pointerType !== 'touch') this.hover(point);
         return;
       case 'rotate': {
         const steps = Math.trunc((point.x - mode.x) / 110);
@@ -2243,6 +2289,14 @@ export class Stage {
     }
   };
   private onPointerUp = (event: PointerEvent) => {
+    window.clearTimeout(this.longPress);
+    if (event.pointerType === 'touch') {
+      this.touches.delete(event.pointerId);
+      if (this.pinch) {
+        if (this.touches.size < 2) this.pinch = null;
+        return;
+      }
+    }
     const input = this.input,
       mode = this.mode;
     this.mode = { kind: 'idle' };
@@ -2253,8 +2307,10 @@ export class Stage {
     switch (mode.kind) {
       case 'pull': {
         const target = this.terminalAt(point, mode.from, '', this.dragReach());
-        if (!mode.moved) this.events.terminal(mode.from);
-        else if (target) {
+        if (!mode.moved) {
+          this.events.terminal(mode.from);
+          if (this.coarse) this.events.hover(this.terminalInfo(mode.from));
+        } else if (target) {
           this.flashStrips([this.stripOf(mode.from), this.stripOf(target)]);
           this.events.connect(mode.from, target);
         }
@@ -2354,6 +2410,55 @@ export class Stage {
     this.updateMarker();
     this.requestRender();
   };
+  private contextTarget(point: { x: number; y: number }) {
+    const pick = this.hit(point)?.pick;
+    return pick?.type === 'part' || pick?.type === 'control'
+      ? { type: 'part' as const, id: pick.id }
+      : pick?.type === 'tool'
+        ? { type: 'tool' as const, id: pick.id }
+        : pick?.type === 'wire' || pick?.type === 'wire-end'
+          ? { type: 'wire' as const, id: pick.id }
+          : pick?.type === 'board'
+            ? { type: 'board' as const }
+            : null;
+  }
+  /** Two fingers: whatever one of them had begun is dropped, then the bench follows the pair. */
+  private beginPinch() {
+    const mode = this.mode;
+    this.mode = { kind: 'idle' };
+    this.clearPreview();
+    this.showHiddenWire();
+    if (mode.kind === 'press' || mode.kind === 'stick') this.events.value(mode.id, 0);
+    else if (mode.kind === 'boardkey') this.events.boardKey?.(mode.id, false);
+    else if (mode.kind === 'part' && this.input) {
+      this.carrying = '';
+      this.syncContent(this.input.project);
+    }
+    this.events.hover(null);
+    const [a, b] = [...this.touches.values()];
+    this.pinch = {
+      distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
+      zoom: this.zoomGoal,
+      mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+      target: this.targetGoal.clone(),
+    };
+  }
+  private movePinch() {
+    const start = this.pinch;
+    if (!start) return;
+    const [a, b] = [...this.touches.values()];
+    const distance = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
+      mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    this.zoomGoal = THREE.MathUtils.clamp(
+      (start.zoom * distance) / start.distance,
+      ZOOM.min,
+      ZOOM.max,
+    );
+    this.targetGoal.copy(start.target);
+    this.pan(-(mid.x - start.mid.x), -(mid.y - start.mid.y));
+    this.target.copy(this.targetGoal);
+    this.requestRender();
+  }
   private onPointerLeave = () => {
     if (this.mode.kind !== 'idle') return;
     this.hoverTerminal = '';

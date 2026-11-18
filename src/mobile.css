@@ -6,7 +6,7 @@
   display: contents;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-height: 500px) and (pointer: coarse) {
   :root {
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -18,7 +18,7 @@
   body {
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
-    touch-action: manipulation;
+    touch-action: pan-x pan-y;
   }
   /* Double-tap must never zoom the page; canvases handle their own gestures. */
   svg,
@@ -318,35 +318,189 @@
     }
 
     /* ---- Laboratory ---- */
+    /* Messages float over the bench so the scene never jumps when one appears. */
+    .lab-workspace {
+      position: relative;
+    }
+    .lab-pending,
+    .lab-problem {
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: calc(64px + var(--safe-bottom));
+      z-index: 10;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 6px 20px #00000050;
+    }
+    /* One row that fits: run controls as icons, undo/redo, "…" for speed, fit and clock;
+       the board buttons S1/S2 float over the bench next to the part buttons. */
     .lab-toolbar {
       flex-wrap: nowrap;
-      overflow-x: auto;
-      scrollbar-width: none;
+      gap: 6px;
       padding: 6px 10px;
     }
-    .lab-toolbar > * {
-      flex: none;
+    .lab-toolbar .lab-run {
+      gap: 6px;
     }
-    .lab-columns {
+    .lab-toolbar .lab-run .button:not(.primary) .lbl {
+      display: none;
+    }
+    .lab-toolbar .lab-run .button:not(.primary) {
+      padding: 0;
+    }
+    .lab-toolbar .lab-more {
+      margin-left: auto;
+    }
+    .lab-toolbar .lab-keys {
+      position: absolute;
+      right: 8px;
+      bottom: calc(8px + var(--safe-bottom));
+      z-index: 9;
+      display: flex;
+      gap: 8px;
+    }
+    .lab-toolbar .lab-keys .button {
+      min-width: 52px;
+      border-radius: 999px;
+      box-shadow: 0 4px 16px #00000050;
+      font-weight: 700;
+    }
+    .lab-toolbar .lab-speed,
+    .lab-toolbar .lab-fit,
+    .lab-toolbar .lab-clock {
+      display: none;
+    }
+    .lab-toolbar.more-open .lab-speed,
+    .lab-toolbar.more-open .lab-fit,
+    .lab-toolbar.more-open .lab-clock {
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      z-index: 12;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: var(--tap);
+      padding: 0 12px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 6px 20px #00000050;
+    }
+    .lab-toolbar.more-open .lab-speed {
+      top: 63px;
+    }
+    .lab-toolbar.more-open .lab-fit {
+      top: 113px;
+    }
+    .lab-toolbar.more-open .lab-clock {
+      top: 163px;
+      height: auto;
+      padding-block: 6px;
+    }
+    .lab-toolbar.more-open .lab-clock p {
+      margin: 0;
+    }
+    /* The bench fills the screen; the library and the details are sheets above two buttons. */
+    .lab-columns:not(.scene-only) {
+      position: relative;
+      display: block;
+      overflow: hidden;
+    }
+    .lab-columns:not(.scene-only) > .bench {
+      position: absolute;
+      inset: 0;
+    }
+    .lab-columns:not(.scene-only) > .lab-library,
+    .lab-columns:not(.scene-only) > .lab-side {
+      display: none;
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 64px;
+      z-index: 8;
+      max-height: 54%;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-width: 1px 0;
+      border-radius: 16px 16px 0 0;
+      background: var(--panel);
+      box-shadow: 0 -8px 28px #00000050;
+    }
+    .lab-columns[data-sheet='library'] > .lab-library {
+      display: flex;
+      height: 54%;
+    }
+    .lab-columns[data-sheet='details'] > .lab-side {
       display: flex;
       flex-direction: column;
-      overflow-y: auto;
     }
-    .lab-columns > :nth-child(2) {
+    .lab-fabs {
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: calc(8px + var(--safe-bottom));
+      z-index: 9;
+      display: flex;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .lab-fab {
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: var(--tap);
+      padding: 0 16px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--text);
+      font-weight: 600;
+      box-shadow: 0 4px 16px #00000050;
+    }
+    .lab-fab.icon {
+      position: relative;
+      justify-content: center;
+      width: var(--tap);
+      padding: 0;
+    }
+    .lab-fab.primary {
+      border-color: transparent;
+      background: var(--pad);
+      color: var(--pad-text);
+    }
+    .lab-fab.marked::after {
+      content: '';
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--pad);
+    }
+    .lab-columns:not(.scene-only) .bench-viewbar {
+      right: 8px;
+      top: 8px;
+      bottom: auto;
+    }
+    .lab-columns:not(.scene-only) .bench-hint {
+      display: none;
+    }
+    .lab-columns.scene-only > .bench {
       flex: none;
       height: 62dvh;
       min-height: 320px;
     }
-    .lab-library {
-      flex: none;
-      max-height: 260px;
-      order: 2;
-    }
-    .lab-side {
-      order: 3;
-      flex: none;
-      max-height: none;
+    .lab-columns.scene-only {
+      display: flex;
       flex-direction: column;
+      overflow-y: auto;
+    }
+    .bench-tooltip {
+      max-width: 70vw;
     }
 
     /* ---- Pin planner: one scrolling page instead of squeezed panes ---- */
@@ -377,6 +531,412 @@
     .pin-package-container {
       overflow: auto;
       touch-action: pan-x pan-y pinch-zoom;
+    }
+
+    /* ---- RTL / Gowin schematic: the drawing first, the inspector only for a chosen element ---- */
+    .schematic-footer,
+    .schematic-hint,
+    .inspector-pane:has(.inspector-guide) {
+      display: none;
+    }
+    .logic-workspace {
+      position: relative;
+    }
+    .logic-workspace > .inspector-pane {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 8;
+      max-height: 55%;
+      border: 1px solid var(--border);
+      border-width: 1px 0 0;
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 -8px 28px #00000050;
+    }
+    .logic-workspace > .inspector-pane .inspector-scroll {
+      flex-direction: column;
+      overflow: auto;
+    }
+
+    /* ---- Pin screen on a phone: one card per signal, the map behind a button ---- */
+    .pin-steps,
+    .pin-workflow-note {
+      display: none;
+    }
+    .pin-toolbar {
+      padding: 8px 12px;
+      gap: 8px;
+    }
+    .pin-view-switch {
+      display: flex;
+      width: 100%;
+    }
+    .pin-view-switch button {
+      flex: 1;
+      justify-content: center;
+    }
+    .pin-file.single {
+      display: none;
+    }
+    .pin-file {
+      width: 100%;
+      justify-content: space-between;
+    }
+    .pin-analysis-needed {
+      padding: 10px 12px;
+      font-size: 13px;
+      gap: 8px;
+    }
+    .pin-analysis-needed .button {
+      flex: 1 0 100%;
+    }
+    .pin-signal-heading {
+      padding: 12px 14px 4px;
+    }
+    .pin-search {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      margin: 0;
+      padding: 8px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .pin-signal-table,
+    .pin-signal-table tbody {
+      display: block;
+    }
+    .pin-signal-table thead {
+      display: none;
+    }
+    .pin-signal-table tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas: 'name pick' 'dir pick';
+      align-items: center;
+      column-gap: 12px;
+      padding: 8px 14px;
+      min-height: 64px;
+      border-bottom: 1px solid var(--border);
+    }
+    .pin-signal-table tr.selected {
+      background: var(--accent-soft);
+    }
+    .pin-signal-table td {
+      display: block;
+      padding: 0;
+      border: 0;
+      background: none;
+    }
+    .pin-signal-table td:nth-child(1) {
+      grid-area: name;
+    }
+    .pin-signal-table td:nth-child(1) button {
+      min-height: 28px;
+      min-width: 0;
+      padding: 0;
+      text-align: left;
+    }
+    .pin-signal-table td:nth-child(1) code {
+      font-size: 17px;
+      font-weight: 700;
+    }
+    .pin-signal-table td:nth-child(2) {
+      grid-area: dir;
+      color: var(--text-soft);
+      font-size: 12px;
+    }
+    .pin-signal-table td:nth-child(3) {
+      grid-area: pick;
+    }
+    .pin-row-pick {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 132px;
+      padding: 0 10px 0 14px;
+    }
+    .pin-row-pick b {
+      font-size: 17px;
+    }
+    .pin-row-pick small {
+      flex: 1;
+      color: var(--text-soft);
+      font-size: 12px;
+      text-align: left;
+    }
+    .pin-row-pick svg {
+      margin-left: auto;
+      color: var(--text-soft);
+    }
+    .pin-signal-panel .pin-edit-card {
+      display: none;
+    }
+    .pin-signal-panel .pin-edit-card:has(.pin-error, .pin-message) {
+      display: block;
+      position: sticky;
+      bottom: 0;
+      z-index: 3;
+      margin: 0;
+      border-radius: 0;
+      border-width: 1px 0 0;
+    }
+    .pin-map-panel:not(.full) {
+      padding: 12px;
+    }
+    .pin-map-panel:not(.full) .pin-package-container,
+    .pin-map-panel:not(.full) .pin-bank-chips,
+    .pin-map-panel:not(.full) .pin-legend-fold {
+      display: none;
+    }
+    .pin-map-panel:not(.full) .pin-map-toggle {
+      flex: 1;
+      margin-left: 0;
+      justify-content: center;
+      background: var(--pad);
+      color: var(--pad-text);
+      border-color: transparent;
+    }
+    .pin-map-panel:not(.full) .pin-map-tools {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    /* ---- Pin screen: bank chips and empty states ---- */
+    .pin-bank-chips {
+      display: flex;
+      gap: 6px;
+      width: 100%;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .pin-bank-chips button {
+      flex: none;
+      min-width: var(--tap);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--text);
+      font-weight: 600;
+    }
+    .pin-bank-chips button[aria-pressed='true'] {
+      background: var(--pad);
+      border-color: transparent;
+      color: var(--pad-text);
+    }
+    .pin-columns.empty .pin-map-panel,
+    .pin-columns.empty .pin-signal-table {
+      display: none;
+    }
+    .pin-analysis-needed .button {
+      flex: 1 0 100%;
+    }
+
+    /* ---- Pin picker sheet ---- */
+    .pin-row-pick {
+      min-width: 96px;
+      justify-content: flex-start;
+    }
+    .pin-sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      background: #00000066;
+    }
+    .pin-sheet {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 71;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 78dvh;
+      padding: 10px 12px calc(10px + var(--safe-bottom));
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 -10px 30px #00000060;
+    }
+    .pin-sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .pin-sheet-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-control);
+    }
+    .pin-sheet-search input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+    }
+    .pin-sheet-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      overflow-y: auto;
+    }
+    .pin-sheet-list button {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      min-height: 52px;
+      padding: 0 8px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .pin-sheet-list button b {
+      min-width: 32px;
+      font-size: 17px;
+    }
+    .pin-sheet-list button span {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .pin-sheet-list button small,
+    .pin-sheet-list button em {
+      color: var(--text-soft);
+      font-size: 12px;
+      font-style: normal;
+    }
+    .pin-sheet-list button.current {
+      background: var(--accent-soft);
+    }
+    .pin-sheet-empty {
+      padding: 16px 8px;
+      color: var(--text-soft);
+    }
+
+    /* ---- Pin map: a full-screen mode with an action bar ---- */
+    .package-pin rect.pin-hit {
+      fill: transparent;
+      stroke: none;
+    }
+    .pin-map-tools {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .pin-map-toggle {
+      margin-left: auto;
+    }
+    .pin-map-panel.full {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--surface);
+      padding-top: var(--safe-top);
+    }
+    .pin-map-panel.full .pin-map-tools {
+      flex: none;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .pin-map-panel.full .pin-package-container {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      overflow: hidden;
+    }
+    .pin-map-panel.full .pin-package {
+      flex: 1;
+      min-height: 0;
+    }
+    /* One row: bank chips scroll sideways (a fade on the right says so), the close button stays. */
+    .pin-map-panel.full .pin-map-tools {
+      flex-wrap: nowrap;
+      align-items: center;
+    }
+    .pin-map-panel.full .pin-bank-chips {
+      order: 1;
+      flex: 1;
+      width: auto;
+      min-width: 0;
+      padding-right: 24px;
+      mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+      -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    }
+    .pin-map-panel.full .pin-map-toggle {
+      order: 2;
+      flex: none;
+      margin-left: 0;
+      padding: 0 12px;
+    }
+    /* Zoom buttons sit in the empty bottom corner, not over the pin labels. */
+    .pin-map-panel.full .canvas-controls {
+      top: auto;
+      bottom: 10px;
+      right: 10px;
+      box-shadow: 0 4px 14px #00000050;
+    }
+    .pin-map-panel.full .canvas-controls output {
+      display: none;
+    }
+    .pin-map-panel.full .pin-map-tools > strong {
+      display: none;
+    }
+    .pin-map-panel.full .pin-legend-fold {
+      display: none;
+    }
+    .pin-map-bar {
+      flex: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px 10px calc(10px + var(--safe-bottom));
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -8px 24px #00000040;
+    }
+    .pin-bar-signal,
+    .pin-bar-pin {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pin-bar-signal strong {
+      font-size: 17px;
+    }
+    .pin-bar-signal span,
+    .pin-bar-pin span {
+      color: var(--text-soft);
+      font-size: 13px;
+    }
+    .pin-bar-signal > span {
+      flex: 1;
+      min-width: 0;
+    }
+    .pin-bar-pin > div {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      text-align: center;
+    }
+    .pin-map-bar .pin-edit-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .pin-map-bar .pin-edit-actions .button {
+      flex: 1;
+    }
+    .pin-map-bar p {
+      margin: 0;
     }
 
     /* ---- Textbook / lesson screen ---- */
@@ -442,6 +1002,54 @@
     }
     .lc-stop {
       min-height: var(--tap);
+    }
+  }
+}
+
+/* A phone held sideways: every strip of chrome gets thinner so the work area keeps its height. */
+@media (max-height: 500px) and (pointer: coarse) {
+  :root:root {
+    .studio,
+    .studio.rail-narrow {
+      --bar-height: 44px;
+    }
+    .sh-bottom .sh-more-tab {
+      flex: 0 0 76px;
+    }
+    .sh-bottom .sh-tab {
+      flex-direction: row;
+      gap: 6px;
+      height: 44px;
+    }
+    .sh-sheet {
+      bottom: calc(45px + var(--safe-bottom));
+      max-height: 80dvh;
+    }
+    .sh-sheet-tabs {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .logs-panel.open {
+      height: 55dvh;
+    }
+    .pin-map-bar {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .pin-map-bar > * {
+      flex: 1 1 40%;
+    }
+    .lab-columns:not(.scene-only) > .lab-library,
+    .lab-columns:not(.scene-only) > .lab-side {
+      bottom: 0;
+      max-height: 60%;
+    }
+    .lab-columns[data-sheet='library'] > .lab-library {
+      height: 60%;
+    }
+    .circuit-columns > .circuit-palette,
+    .circuit-columns > .circuit-inspector {
+      height: 60%;
     }
   }
 }

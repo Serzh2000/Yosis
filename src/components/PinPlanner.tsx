@@ -1,5 +1,17 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Check, Code2, Lightbulb, MapPin, Play, Search, X } from 'lucide-react';
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Code2,
+  Lightbulb,
+  MapPin,
+  Maximize2,
+  Play,
+  Search,
+  X,
+} from 'lucide-react';
+import { useIsMobile } from '../hooks/useIsMobile';
 import type { Project, SourceFile, YosysNetlist } from '../../shared/types';
 import {
   applyPinEdit,
@@ -23,6 +35,7 @@ import { partForPin } from '../lib/board-parts';
 import './pin-planner.css';
 import { CanvasViewport } from './CanvasViewport';
 import { Dialog } from './Dialog';
+import { PinPickerSheet } from './PinPickerSheet';
 import { explainPin } from '../lib/pin-glossary';
 import { t } from '../lib/i18n';
 
@@ -46,6 +59,12 @@ export function PinPlanner({
   onSynthesize: () => void;
   renderEditor: (file: SourceFile) => ReactNode;
 }) {
+  const mobile = useIsMobile();
+  const [mapOpen, setMapOpen] = useState(false);
+  // Phone: the signal whose pin is being picked in the sheet.
+  const [picking, setPicking] = useState<PlannerSignal | null>(null);
+  const fullMap = mobile && mapOpen;
+  const [focusAt, setFocusAt] = useState<{ x: number; y: number; scale: number; key: number }>();
   const [view, setView] = useState<'planner' | 'text'>('planner');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(initialSignal ?? '');
@@ -186,6 +205,44 @@ export function PinPlanner({
     const existing = current && readPinProperties(directives, current.name).PULL_MODE;
     if (!existing) setPull([87, 88].includes(number) ? 'DOWN' : 'NONE');
   }
+  /** Centres the zoomed map on a pin (phone map): the pad sits at the middle of the screen. */
+  function focusPin(number: number, scale = 2.6) {
+    const position = pinPosition(number);
+    setFocusAt((previous) => ({
+      x: 172 + position.x,
+      y: 82 + position.y,
+      scale,
+      key: (previous?.key ?? 0) + 1,
+    }));
+  }
+  const freePins = packagePins.filter((value) => !value.reserved);
+  /** Steps to the neighbouring pin round the package: a near miss is fixed with one tap. */
+  function nudge(direction: 1 | -1) {
+    const at = freePins.findIndex((value) => value.number === pin);
+    const index =
+      at < 0
+        ? direction > 0
+          ? 0
+          : freePins.length - 1
+        : (at + direction + freePins.length) % freePins.length;
+    const next = freePins[index];
+    selectPin(next.number);
+    focusPin(next.number);
+  }
+  function stepSignal(direction: 1 | -1) {
+    if (!signals.length) return;
+    const at = current ? signals.findIndex((value) => value.name === current.name) : -1;
+    const next = signals[(at + direction + signals.length) % signals.length];
+    choose(next);
+    const location = signalAssignments(next.name)[0];
+    if (location && /^\d+$/.test(location.value)) focusPin(Number(location.value));
+  }
+  function openMap() {
+    setMapOpen(true);
+    const location = current && signalAssignments(current.name)[0];
+    const start = pin ?? (location && /^\d+$/.test(location.value) ? Number(location.value) : 4);
+    focusPin(start);
+  }
   function commit(unassign = false) {
     if (!current) return;
     try {
@@ -254,7 +311,7 @@ export function PinPlanner({
             {t('Текст .cst')}
           </button>
         </div>
-        <label className="pin-file">
+        <label className={`pin-file ${mobile && cstFiles.length <= 1 ? 'single' : ''}`}>
           {t('Файл')}
           <select
             aria-label={t('Файл назначений')}
@@ -328,7 +385,19 @@ export function PinPlanner({
               </button>
             </div>
           )}
-          <div className="pin-columns">
+          {mobile && !file && !!signals.length && (
+            <div className="pin-analysis-needed">
+              <span>
+                {t('Файл {fileName} ещё не создан: без него назначения некуда записать.', {
+                  fileName,
+                })}
+              </span>
+              <button className="button primary" onClick={createFile}>
+                {t('Создать {fileName}', { fileName })}
+              </button>
+            </div>
+          )}
+          <div className={`pin-columns ${signals.length ? '' : 'empty'}`}>
             <section className="pin-signal-panel" aria-label={t('Порты верхнего модуля')}>
               <div className="pin-signal-heading">
                 <strong>{project.top}</strong>
@@ -370,22 +439,42 @@ export function PinPlanner({
                           onMouseLeave={() => setHoverSignal(null)}
                           onClick={(event) => {
                             // The whole row picks the port; its own controls do their own job.
-                            if (!(event.target as Element).closest('button, select'))
+                            if (!(event.target as Element).closest('button, select')) {
                               choose(signal);
+                              if (mobile && file && locations.length <= 1) setPicking(signal);
+                            }
                           }}
                         >
                           <td>
                             <button
                               aria-label={signal.name}
                               aria-pressed={current?.name === signal.name}
-                              onClick={() => choose(signal)}
+                              onClick={() => {
+                                choose(signal);
+                                if (mobile && file && locations.length <= 1) setPicking(signal);
+                              }}
                             >
                               <code>{signal.name}</code>
                             </button>
                           </td>
                           <td>{directionLabels[signal.direction]}</td>
                           <td>
-                            {locations.length <= 1 && file ? (
+                            {locations.length <= 1 && file && mobile ? (
+                              <button
+                                type="button"
+                                className="button subtle pin-row-pick"
+                                aria-label={t('Вывод для {name}', { name: signal.name })}
+                                disabled={busy}
+                                onClick={() => setPicking(signal)}
+                              >
+                                <b>{locations[0]?.value || t('— нет')}</b>
+                                {locations.length === 1 &&
+                                  partForPin(Number(locations[0].value)) && (
+                                    <small>{partForPin(Number(locations[0].value))!.caption}</small>
+                                  )}
+                                <ChevronRight size={16} aria-hidden="true" />
+                              </button>
+                            ) : locations.length <= 1 && file ? (
                               <select
                                 className="pin-row-select"
                                 aria-label={t('Вывод для {name}', { name: signal.name })}
@@ -413,11 +502,13 @@ export function PinPlanner({
                             ) : (
                               locations.map((value) => value.value).join(', ') || '—'
                             )}
-                            {locations.length === 1 && partForPin(Number(locations[0].value)) && (
-                              <small className="pin-part-tag">
-                                {partForPin(Number(locations[0].value))!.caption}
-                              </small>
-                            )}
+                            {!mobile &&
+                              locations.length === 1 &&
+                              partForPin(Number(locations[0].value)) && (
+                                <small className="pin-part-tag">
+                                  {partForPin(Number(locations[0].value))!.caption}
+                                </small>
+                              )}
                           </td>
                         </tr>
                       );
@@ -590,26 +681,85 @@ export function PinPlanner({
                 </details>
               )}
             </section>
-            <section className="pin-map-panel" aria-label={t('Корпус и назначение')}>
+            {picking && (
+              <PinPickerSheet
+                signal={picking.name}
+                current={
+                  /^\d+$/.test(signalAssignments(picking.name)[0]?.value ?? '')
+                    ? Number(signalAssignments(picking.name)[0].value)
+                    : null
+                }
+                choices={packagePins
+                  .filter(
+                    (value) =>
+                      !value.reserved &&
+                      (!value.direction || value.direction === picking.direction),
+                  )
+                  .map((value) => ({
+                    number: value.number,
+                    label: [value.io, ...value.functions].filter(Boolean).join('/'),
+                    role: partForPin(value.number)?.caption ?? '',
+                    holder: occupantOf(value.number, picking.name),
+                  }))}
+                onPick={(number) => {
+                  changeInTable(picking, number === null ? '' : String(number));
+                  setPicking(null);
+                }}
+                onClose={() => setPicking(null)}
+              />
+            )}
+            <section
+              className={`pin-map-panel ${fullMap ? 'full' : ''}`}
+              aria-label={t('Корпус и назначение')}
+            >
               <div className="pin-map-tools">
                 <strong>GW2AR-18 · QN88</strong>
-                <label>
-                  {t('Банк')}
-                  <select
-                    aria-label={t('Фильтр I/O банка')}
-                    value={bank ?? 'all'}
-                    onChange={(event) =>
-                      setBank(event.target.value === 'all' ? null : Number(event.target.value))
-                    }
+                {mobile && (
+                  <button
+                    type="button"
+                    className="button subtle pin-map-toggle"
+                    onClick={() => (mapOpen ? setMapOpen(false) : openMap())}
                   >
-                    <option value="all">{t('Все')}</option>
-                    {[0, 1, 2, 3, 4, 5, 6, 7].map((value) => (
-                      <option key={value} value={value}>
-                        Bank {value}
-                      </option>
+                    {mapOpen ? (
+                      <X size={16} aria-hidden="true" />
+                    ) : (
+                      <Maximize2 size={16} aria-hidden="true" />
+                    )}
+                    {mapOpen ? t('Закрыть карту') : t('Открыть карту')}
+                  </button>
+                )}
+                {mobile ? (
+                  <div className="pin-bank-chips" role="group" aria-label={t('Фильтр I/O банка')}>
+                    {[null, 0, 1, 2, 3, 4, 5, 6, 7].map((value) => (
+                      <button
+                        key={value ?? 'all'}
+                        type="button"
+                        aria-pressed={bank === value}
+                        onClick={() => setBank(value)}
+                      >
+                        {value === null ? t('Все') : value}
+                      </button>
                     ))}
-                  </select>
-                </label>
+                  </div>
+                ) : (
+                  <label>
+                    {t('Банк')}
+                    <select
+                      aria-label={t('Фильтр I/O банка')}
+                      value={bank ?? 'all'}
+                      onChange={(event) =>
+                        setBank(event.target.value === 'all' ? null : Number(event.target.value))
+                      }
+                    >
+                      <option value="all">{t('Все')}</option>
+                      {[0, 1, 2, 3, 4, 5, 6, 7].map((value) => (
+                        <option key={value} value={value}>
+                          Bank {value}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
               </div>
               <div className="pin-package-container">
                 <CanvasViewport
@@ -617,6 +767,7 @@ export function PinPlanner({
                   width={1010}
                   height={850}
                   label={t('Назначение портов на корпус QN88, вид сверху')}
+                  focus={focusAt}
                 >
                   {() => (
                     <g transform="translate(172 82)">
@@ -755,6 +906,15 @@ export function PinPlanner({
                               {label}
                               {value.io ? ` · ${value.io} ${value.functions.join('/')}` : ''}
                             </title>
+                            {mobile && (
+                              <rect
+                                className="pin-hit"
+                                x={position.x - (horizontal ? width / 2 + 24 : 9.5)}
+                                y={position.y - (horizontal ? 9.5 : height / 2 + 24)}
+                                width={horizontal ? width + 24 : 19}
+                                height={horizontal ? 19 : height + 24}
+                              />
+                            )}
                             <rect
                               x={position.x - width / 2}
                               y={position.y - height / 2}
@@ -846,6 +1006,111 @@ export function PinPlanner({
                     );
                   })()}
               </div>
+              {fullMap && (
+                <div className="pin-map-bar" role="group" aria-label={t('Назначение на карте')}>
+                  <div className="pin-bar-signal">
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label={t('Предыдущий сигнал')}
+                      onClick={() => stepSignal(-1)}
+                    >
+                      <ChevronLeft size={20} aria-hidden="true" />
+                    </button>
+                    <strong>{current ? current.name : t('Выберите сигнал')}</strong>
+                    <span>
+                      {current ? directionLabels[current.direction] : ''}
+                      {current && signalAssignments(current.name)[0]
+                        ? ` · ${t('сейчас')} ${signalAssignments(current.name)[0].value}`
+                        : ''}
+                    </span>
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label={t('Следующий сигнал')}
+                      onClick={() => stepSignal(1)}
+                    >
+                      <ChevronRight size={20} aria-hidden="true" />
+                    </button>
+                  </div>
+                  <div className="pin-bar-pin">
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label={t('Предыдущий вывод')}
+                      onClick={() => nudge(-1)}
+                    >
+                      <ChevronLeft size={20} aria-hidden="true" />
+                    </button>
+                    <div>
+                      {selectedPin ? (
+                        <>
+                          <strong>
+                            {t('Вывод')} {selectedPin.number}
+                          </strong>
+                          <span>
+                            {[
+                              selectedPin.io ?? t('служебный'),
+                              selectedPin.bank !== undefined ? `Bank ${selectedPin.bank}` : '',
+                              partForPin(selectedPin.number)?.caption ?? '',
+                              pin && signalOfPin(pin) ? `→ ${signalOfPin(pin)}` : t('свободен'),
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </span>
+                        </>
+                      ) : (
+                        <span>{t('Коснитесь вывода на карте или листайте стрелками')}</span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label={t('Следующий вывод')}
+                      onClick={() => nudge(1)}
+                    >
+                      <ChevronRight size={20} aria-hidden="true" />
+                    </button>
+                  </div>
+                  {(conflict || error) && (
+                    <p className="pin-error" role="alert">
+                      {conflict || error}
+                    </p>
+                  )}
+                  {!conflict && !error && swapWith && (
+                    <p className="pin-swap" role="status">
+                      {t(
+                        'Вывод {pin} сейчас у сигнала {swapWith}. При назначении они поменяются местами.',
+                        { pin: pin ?? '', swapWith },
+                      )}
+                    </p>
+                  )}
+                  {message && !error && (
+                    <p className="pin-message" role="status">
+                      <Check size={15} aria-hidden="true" />
+                      {message}
+                    </p>
+                  )}
+                  <div className="pin-edit-actions">
+                    <button
+                      className="button primary"
+                      disabled={!current || !pin || !!conflict || busy}
+                      onClick={() => commit()}
+                    >
+                      <Check size={16} aria-hidden="true" />
+                      {t('Назначить')}
+                    </button>
+                    <button
+                      className="button subtle"
+                      disabled={!current || !signalAssignments(current.name).length || busy}
+                      onClick={() => commit(true)}
+                    >
+                      <X size={16} aria-hidden="true" />
+                      {t('Освободить')}
+                    </button>
+                  </div>
+                </div>
+              )}
               <details className="pin-legend-fold">
                 <summary>{t('Цвета и обозначения')}</summary>
                 <div className="pin-legend" aria-label={t('Условные обозначения')}>
